@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Amr Abdelgawad — Remote Sales and Acquisition Specialist with 6 years supporting US real estate, solar, roofing, and B2B clients.">
+<title>Amr Abdelgawad | Remote Sales & Acquisition Specialist</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
+  :root {
+    --bg:#080C14; --bg2:#0D1220; --bg3:#111827;
+    --border:#1E2A3A; --accent:#3B7BFF; --accent2:#5A9BFF;
+    --text:#E8EDF5; --muted:#6B7C94; --light:#A8B8CC; --white:#FFFFFF;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:15px;line-height:1.6;overflow-x:hidden}
+
+  /* NAV */
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:18px 60px;background:rgba(8,12,20,0.88);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);transition:padding .3s}
+  nav.scrolled{padding:12px 60px}
+  .nav-logo{font-family:'DM Serif Display',serif;font-size:20px;color:var(--white);text-decoration:none}
+  .nav-links{display:flex;gap:32px;list-style:none;align-items:center}
+  .nav-links a{color:var(--light);text-decoration:none;font-size:13px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;transition:color .2s}
+  .nav-links a:hover{color:var(--white)}
+  .nav-cta{background:var(--accent);color:var(--white)!important;padding:8px 20px;border-radius:6px;transition:background .2s!important}
+  .nav-cta:hover{background:var(--accent2)!important}
+
+  /* HERO */
+  #hero{min-height:100vh;display:flex;align-items:center;padding:120px 60px 80px;position:relative;overflow:hidden}
+  .hero-grid{display:grid;grid-template-columns:1fr 420px;gap:60px;align-items:center;max-width:1100px;margin:0 auto;width:100%}
+  .hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(59,123,255,.12);border:1px solid rgba(59,123,255,.3);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--accent2);font-weight:500;letter-spacing:.4px;margin-bottom:24px}
+  .hero-badge span{width:7px;height:7px;background:#4ADE80;border-radius:50%;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .hero-title{font-family:'DM Serif Display',serif;font-size:clamp(38px,5vw,58px);line-height:1.1;color:var(--white);margin-bottom:8px}
+  .hero-title em{font-style:italic;color:var(--accent2)}
+  .hero-sub{font-size:16px;color:var(--light);max-width:500px;margin-bottom:36px;line-height:1.7}
+  .hero-actions{display:flex;gap:14px;flex-wrap:wrap}
+  .btn-primary{background:var(--accent);color:var(--white);padding:13px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;transition:background .2s,transform .1s;display:inline-flex;align-items:center;gap:8px}
+  .btn-primary:hover{background:var(--accent2);transform:translateY(-1px)}
+  .btn-secondary{background:transparent;color:var(--text);padding:13px 28px;border-radius:8px;border:1px solid var(--border);text-decoration:none;font-weight:500;font-size:14px;transition:border-color .2s,color .2s,transform .1s;display:inline-flex;align-items:center;gap:8px}
+  .btn-secondary:hover{border-color:var(--accent);color:var(--accent2);transform:translateY(-1px)}
+  .hero-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:36px;position:relative}
+  .hero-card::before{content:'';position:absolute;inset:-1px;border-radius:20px;background:linear-gradient(135deg,rgba(59,123,255,.2),transparent 60%);pointer-events:none}
+  .hero-avatar{width:72px;height:72px;background:linear-gradient(135deg,var(--accent),#7C3AED);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:28px;color:var(--white);margin-bottom:16px}
+  .hero-card-name{font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px}
+  .hero-card-role{font-size:13px;color:var(--muted);margin-bottom:24px}
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .stat-box{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+  .stat-num{font-family:'DM Serif Display',serif;font-size:26px;color:var(--white);line-height:1;margin-bottom:4px}
+  .stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .upwork-badge{margin-top:16px;background:var(--bg3);border:1px solid #2D4A1E;border-radius:10px;padding:12px 16px}
+  .upwork-stars{color:#6FDA44;font-size:14px;letter-spacing:2px;margin-bottom:4px}
+  .upwork-text{font-size:12px;color:var(--light)}
+  .upwork-text strong{color:var(--white)}
+
+  /* SECTIONS */
+  section{padding:90px 60px}
+  .section-inner{max-width:1100px;margin:0 auto}
+  .eyebrow{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--accent2);margin-bottom:12px}
+  .section-title{font-family:'DM Serif Display',serif;font-size:clamp(28px,4vw,40px);color:var(--white);line-height:1.15;margin-bottom:16px}
+  .section-sub{font-size:15px;color:var(--light);max-width:560px;line-height:1.7;margin-bottom:50px}
+  .divider{height:1px;background:var(--border)}
+
+  /* ACHIEVEMENTS */
+  #achievements{background:var(--bg2)}
+  .ach-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .ach-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:28px;transition:border-color .2s,transform .2s}
+  .ach-card:hover{border-color:var(--accent);transform:translateY(-3px)}
+  .ach-icon{font-size:26px;margin-bottom:14px}
+  .ach-title{font-size:15px;font-weight:700;color:var(--white);margin-bottom:8px}
+  .ach-desc{font-size:13px;color:var(--light);line-height:1.6}
+
+  /* PORTFOLIO */
+  #portfolio{background:var(--bg)}
+  .portfolio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .portfolio-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .2s,transform .2s}
+  .portfolio-card:hover{border-color:var(--accent);transform:translateY(-3px)}
+  .portfolio-img{width:100%;height:180px;object-fit:cover;display:block;background:var(--bg3)}
+  .portfolio-img-placeholder{width:100%;height:180px;background:linear-gradient(135deg,var(--bg3),#1a2535);display:flex;align-items:center;justify-content:center;font-size:36px;color:var(--muted)}
+  .portfolio-body{padding:20px}
+  .portfolio-tag{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent2);margin-bottom:8px}
+  .portfolio-title{font-size:15px;font-weight:700;color:var(--white);margin-bottom:6px}
+  .portfolio-desc{font-size:13px;color:var(--light);line-height:1.5}
+  .portfolio-add{background:var(--bg2);border:2px dashed var(--border);border-radius:14px;height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);font-size:13px;cursor:pointer;transition:border-color .2s}
+  .portfolio-add:hover{border-color:var(--accent);color:var(--accent2)}
+  .portfolio-add-icon{font-size:32px}
+
+  /* EXPERIENCE */
+  #experience{background:var(--bg2)}
+  .exp-list{display:flex;flex-direction:column;gap:14px}
+  .exp-item{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:26px 30px;cursor:pointer;transition:border-color .2s}
+  .exp-item:hover{border-color:rgba(59,123,255,.4)}
+  .exp-item.open{border-color:var(--accent)}
+  .exp-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+  .exp-left{flex:1}
+  .exp-role{font-size:16px;font-weight:700;color:var(--white);margin-bottom:4px}
+  .exp-company{font-size:13px;color:var(--accent2);margin-bottom:6px}
+  .exp-date{font-size:11px;color:var(--muted);font-weight:500;background:var(--bg);display:inline-block;padding:3px 10px;border-radius:20px;border:1px solid var(--border)}
+  .exp-toggle{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:16px;transition:all .2s;flex-shrink:0;margin-top:2px}
+  .exp-item.open .exp-toggle{background:var(--accent);border-color:var(--accent);color:var(--white);transform:rotate(45deg)}
+  .exp-body{max-height:0;overflow:hidden;transition:max-height .4s ease,padding .3s}
+  .exp-item.open .exp-body{max-height:700px;padding-top:18px}
+  .exp-bullets{list-style:none;display:flex;flex-direction:column;gap:8px}
+  .exp-bullets li{font-size:13.5px;color:var(--light);padding-left:16px;position:relative;line-height:1.6}
+  .exp-bullets li::before{content:'';position:absolute;left:0;top:8px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+
+  /* SKILLS */
+  #skills{background:var(--bg2)}
+  .skills-layout{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start}
+  .skill-row{margin-bottom:20px}
+  .skill-top{display:flex;justify-content:space-between;margin-bottom:8px}
+  .skill-name{font-size:13px;font-weight:500;color:var(--text)}
+  .skill-pct{font-size:12px;color:var(--muted)}
+  .skill-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+  .skill-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;width:0;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+  .tools-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .tool-tag{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--light);text-align:center;transition:border-color .2s,color .2s}
+  .tool-tag:hover{border-color:var(--accent);color:var(--accent2)}
+  .tools-label{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin:22px 0 10px}
+
+  /* WHY */
+  #why{background:var(--bg)}
+  .why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .why-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:26px 22px;text-align:center;transition:border-color .2s,transform .2s}
+  .why-card:hover{border-color:var(--accent);transform:translateY(-3px)}
+  .why-icon{font-size:28px;margin-bottom:14px}
+  .why-title{font-size:14px;font-weight:700;color:var(--white);margin-bottom:8px}
+  .why-desc{font-size:12.5px;color:var(--muted);line-height:1.5}
+
+  /* PROCESS */
+  #process{background:var(--bg2)}
+  .process-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;position:relative}
+  .process-steps::before{content:'';position:absolute;top:28px;left:10%;right:10%;height:1px;background:var(--border);z-index:0}
+  .process-step{text-align:center;position:relative;z-index:1}
+  .step-num{width:56px;height:56px;background:var(--bg3);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:20px;color:var(--accent2);margin:0 auto 20px}
+  .step-title{font-size:15px;font-weight:700;color:var(--white);margin-bottom:8px}
+  .step-desc{font-size:13px;color:var(--muted);line-height:1.6}
+
+  /* CONTACT */
+  #contact{background:var(--bg)}
+  .contact-box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:60px;text-align:center;position:relative;overflow:hidden}
+  .contact-box::before{content:'';position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(59,123,255,.08),transparent 70%);pointer-events:none}
+  .contact-title{font-family:'DM Serif Display',serif;font-size:36px;color:var(--white);margin-bottom:12px}
+  .contact-sub{font-size:15px;color:var(--light);margin-bottom:36px}
+  .contact-links{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+  .contact-link{display:inline-flex;align-items:center;gap:10px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 24px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:border-color .2s,color .2s,transform .1s}
+  .contact-link:hover{border-color:var(--accent);color:var(--accent2);transform:translateY(-2px)}
+  .schedule-btn{display:inline-flex;align-items:center;gap:10px;background:var(--accent);border:none;border-radius:10px;padding:16px 32px;text-decoration:none;color:var(--white);font-size:15px;font-weight:600;transition:background .2s,transform .1s;cursor:pointer}
+  .schedule-btn:hover{background:var(--accent2);transform:translateY(-2px)}
+  .schedule-note{font-size:12px;color:var(--muted);margin-top:14px}
+
+  /* FOOTER */
+  footer{background:var(--bg2);border-top:1px solid var(--border);padding:28px 60px;display:flex;justify-content:space-between;align-items:center}
+  footer p{font-size:13px;color:var(--muted)}
+  .back-top{color:var(--muted);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px;transition:color .2s}
+  .back-top:hover{color:var(--text)}
+
+  /* GLOW */
+  .glow{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0}
+  .glow-blue{width:500px;height:500px;background:rgba(59,123,255,.06);top:-100px;right:-100px}
+  .glow-purple{width:400px;height:400px;background:rgba(124,58,237,.05);bottom:0;left:-80px}
+  #hero>*{position:relative;z-index:1}
+
+  @media(max-width:900px){
+    nav{padding:16px 24px}
+    .nav-links{display:none}
+    section{padding:60px 24px}
+    #hero{padding:100px 24px 60px}
+    .hero-grid{grid-template-columns:1fr}
+    .hero-card{display:none}
+    .ach-grid,.portfolio-grid,.why-grid{grid-template-columns:1fr}
+    .skills-layout{grid-template-columns:1fr}
+    .process-steps{grid-template-columns:1fr 1fr}
+    .process-steps::before{display:none}
+    footer{flex-direction:column;gap:12px;text-align:center}
+  }
+</style>
+</head>
+<body>
+
+<nav id="navbar">
+  <a href="#hero" class="nav-logo">Amr Abdelgawad</a>
+  <ul class="nav-links">
+    <li><a href="#achievements">Achievements</a></li>
+    <li><a href="#portfolio">Portfolio</a></li>
+    <li><a href="#experience">Experience</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#contact" class="nav-cta">Schedule a Call</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="glow glow-blue"></div>
+  <div class="glow glow-purple"></div>
+  <div class="hero-grid">
+    <div>
+      <div class="hero-badge"><span></span> Available for Remote Work</div>
+      <h1 class="hero-title">Remote Sales &amp;<br><em>Acquisition</em> Specialist</h1>
+      <p class="hero-sub">Six years supporting US-based companies across real estate, acquisitions, solar, roofing, and B2B sales. I generate qualified opportunities and move pipelines from first contact to closed agreement.</p>
+      <div class="hero-actions">
+        <a href="Amr_Abdelgawad_CV.pdf" class="btn-primary" download>&#8659; Download CV</a>
+        <a href="#experience" class="btn-secondary">View Experience</a>
+      </div>
+    </div>
+    <div class="hero-card">
+      <div class="hero-avatar">A</div>
+      <div class="hero-card-name">Amr Abdelgawad</div>
+      <div class="hero-card-role">Sales &amp; Acquisition Specialist · Remote</div>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-num" data-target="6" data-suffix="+">0</div><div class="stat-label">Years Exp.</div></div>
+        <div class="stat-box"><div class="stat-num" data-target="5" data-suffix=".0&#9733;">0</div><div class="stat-label">Upwork Rating</div></div>
+        <div class="stat-box"><div class="stat-num" data-target="5" data-suffix="/day">0</div><div class="stat-label">Leads Generated</div></div>
+        <div class="stat-box"><div class="stat-num" data-target="4" data-suffix=" Industries">0</div><div class="stat-label">Industries Served</div></div>
+      </div>
+      <div class="upwork-badge">
+        <div class="upwork-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <div class="upwork-text"><strong>5.0 Upwork Rating</strong> · All contracts completed · Client endorsed</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ACHIEVEMENTS -->
+<section id="achievements">
+  <div class="section-inner">
+    <div class="eyebrow">Track Record</div>
+    <h2 class="section-title">Key Achievements</h2>
+    <p class="section-sub">Results that speak for themselves across six years and multiple US markets.</p>
+    <div class="ach-grid">
+      <div class="ach-card"><div class="ach-icon">&#127942;</div><div class="ach-title">Consistent Overachiever</div><div class="ach-desc">Recognized across every client engagement for exceeding daily lead generation and appointment setting targets.</div></div>
+      <div class="ach-card"><div class="ach-icon">&#11088;</div><div class="ach-title">5.0 Upwork Rating</div><div class="ach-desc">Perfect rating across all completed contracts with verified client endorsements for outbound performance and industry expertise.</div></div>
+      <div class="ach-card"><div class="ach-icon">&#128222;</div><div class="ach-title">Up to 5 Leads Daily</div><div class="ach-desc">Consistently generated 2 to 5 qualified seller leads per day across multiple US real estate clients through cold outreach and circle prospecting.</div></div>
+      <div class="ach-card"><div class="ach-icon">&#128200;</div><div class="ach-title">Full Pipeline Management</div><div class="ach-desc">Managed acquisition pipelines from lead pre-qualification through offer negotiation, contract signing, and handoff.</div></div>
+      <div class="ach-card"><div class="ach-icon">&#127759;</div><div class="ach-title">Multi-Industry Expertise</div><div class="ach-desc">Six years supporting US businesses across real estate, acquisitions, solar, roofing, and B2B sales entirely in a remote capacity.</div></div>
+      <div class="ach-card"><div class="ach-icon">&#9728;</div><div class="ach-title">3 Solar Appointments/Day</div><div class="ach-desc">Consistently scheduled up to 3 qualified solar energy consultations per day across multiple high-volume outbound campaigns.</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PORTFOLIO -->
+<section id="portfolio">
+  <div class="section-inner">
+    <div class="eyebrow">Proof of Work</div>
+    <h2 class="section-title">Portfolio</h2>
+    <p class="section-sub">A growing record of verified results, client recognition, and performance milestones.</p>
+    <div class="portfolio-grid">
+
+      <div class="portfolio-card">
+        <div class="portfolio-img-placeholder">&#11088;</div>
+        <div class="portfolio-body">
+          <div class="portfolio-tag">Upwork Verified</div>
+          <div class="portfolio-title">Top Performer — All Contracts 5.0 Rated</div>
+          <div class="portfolio-desc">Completed four back-to-back contracts across solar sales, real estate outreach, and B2B outreach — every single one rated 5.0 by the client. Client endorsements cover solar expertise, outbound calling, and lead generation.</div>
+        </div>
+      </div>
+
+      <div class="portfolio-add" title="Coming soon">
+        <div class="portfolio-add-icon">&#43;</div>
+        <div>More results coming soon</div>
+      </div>
+
+      <div class="portfolio-add" title="Coming soon">
+        <div class="portfolio-add-icon">&#43;</div>
+        <div>More results coming soon</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- EXPERIENCE -->
+<section id="experience">
+  <div class="section-inner">
+    <div class="eyebrow">Background</div>
+    <h2 class="section-title">Work Experience</h2>
+    <p class="section-sub">A deliberate path from customer service through sales, acquisitions, and operations.</p>
+    <div class="exp-list">
+
+      <!-- 1. TerraCore Asset Operations -->
+      <div class="exp-item" onclick="toggleExp(this)">
+        <div class="exp-header">
+          <div class="exp-left">
+            <div class="exp-role">Asset Operations Specialist</div>
+            <div class="exp-company">TerraCore / Bella Terra Partners · Remote</div>
+            <div class="exp-date">6 Months of Experience</div>
+          </div>
+          <div class="exp-toggle">+</div>
+        </div>
+        <div class="exp-body">
+          <ul class="exp-bullets">
+            <li>Oversaw day-to-day operations across multiple real estate assets, coordinating with on-site property managers to keep performance on track.</li>
+            <li>Led delinquency follow-up efforts across the portfolio, improving collection performance through structured outreach.</li>
+            <li>Produced weekly KPI reports for senior leadership covering occupancy, collections, and delinquency trends.</li>
+            <li>Coordinated vendor activity across multiple properties, ensuring approved work was completed on schedule while proactively resolving operational issues.</li>
+            <li>Maintained accurate CRM and property management records, ensuring leadership had reliable operational data for reporting and decision-making.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 2. CNL Acquisition and Lead Management -->
+      <div class="exp-item" onclick="toggleExp(this)">
+        <div class="exp-header">
+          <div class="exp-left">
+            <div class="exp-role">Acquisition Manager and Lead Manager</div>
+            <div class="exp-company">CNL · Remote</div>
+            <div class="exp-date">1 Year of Experience</div>
+          </div>
+          <div class="exp-toggle">+</div>
+        </div>
+        <div class="exp-body">
+          <ul class="exp-bullets">
+            <li>Pre-qualified motivated seller leads by assessing their situation, gathering property details, and using a low anchor to test flexibility before routing to the acquisitions team.</li>
+            <li>Identified each seller's pain points and matched the appropriate exit strategy — cash offer, seller finance, sub-to, novation, or listing referral — based on motivation and price position.</li>
+            <li>Negotiated deals directly with property owners, walked through contract terms, and secured signed agreements on off-market acquisitions.</li>
+            <li>Applied the VRT framework (Validate, Respond, Transition) to handle objections including pricing pushback, spouse consultations, competing offers, and seller hesitation.</li>
+            <li>Assessed seller motivation versus asking price across all four negotiation quadrants to determine the most effective approach for each deal.</li>
+            <li>Worked across Fix and Flip, Buy and Hold, and Wholesale deal structures depending on what the investor client needed.</li>
+            <li>Managed land acquisition lead pipeline under CNL, from first outreach through offer preparation and CRM tracking.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 3. Real Estate Outreach -->
+      <div class="exp-item" onclick="toggleExp(this)">
+        <div class="exp-header">
+          <div class="exp-left">
+            <div class="exp-role">Real Estate Outreach Specialist</div>
+            <div class="exp-company">TTO · Iron Horse · Galaxy CC · BoomVA · NAC · Dial Force · Coldio · Remote</div>
+            <div class="exp-date">3 Years of Experience</div>
+          </div>
+          <div class="exp-toggle">+</div>
+        </div>
+        <div class="exp-body">
+          <ul class="exp-bullets">
+            <li>Delivered outreach services to investors, wholesalers, and brokerages across seven concurrent client engagements over three years.</li>
+            <li>Consistently generated 2 to 5 qualified seller leads per day through cold outreach, circle prospecting, and structured follow-up campaigns.</li>
+            <li>Qualified homeowners based on each client's criteria, handled objections in real time, and moved motivated sellers forward in the pipeline.</li>
+            <li>Scheduled listing appointments for licensed real estate agents at Galaxy CC, connecting interested homeowners directly with available realtors.</li>
+            <li>Ran circle prospecting campaigns at BoomVA, contacting neighbors of recent listings to surface motivated sellers in active markets.</li>
+            <li>When sellers declined offers, developed relationship-preserving follow-up plans to keep the pipeline active beyond initial rejection.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 4. Solar -->
+      <div class="exp-item" onclick="toggleExp(this)">
+        <div class="exp-header">
+          <div class="exp-left">
+            <div class="exp-role">Solar Energy Sales Consultant</div>
+            <div class="exp-company">Sun Rock Solar · Upwork Contracts · Remote</div>
+            <div class="exp-date">6 Months of Experience</div>
+          </div>
+          <div class="exp-toggle">+</div>
+        </div>
+        <div class="exp-body">
+          <ul class="exp-bullets">
+            <li>Conducted high-volume outbound outreach to American homeowners, educating prospects on potential energy savings and introducing solar as a practical solution to rising electricity costs.</li>
+            <li>Consistently scheduled up to 3 qualified consultations per day for the field sales team across extended outbound campaigns.</li>
+            <li>Completed multiple solar sales contracts on Upwork, earning verified 5.0 client ratings for outbound performance and solar industry knowledge on every engagement.</li>
+            <li>Adapted pitch approach based on homeowner objections, maintaining strong appointment booking rates throughout each campaign.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 5. Roofing -->
+      <div class="exp-item" onclick="toggleExp(this)">
+        <div class="exp-header">
+          <div class="exp-left">
+            <div class="exp-role">Roofing Outbound Sales Specialist</div>
+            <div class="exp-company">SML · Call Hammer Leads · Remote</div>
+            <div class="exp-date">6 Months of Experience</div>
+          </div>
+          <div class="exp-toggle">+</div>
+        </div>
+        <div class="exp-body">
+          <ul class="exp-bullets">
+            <li>Conducted outbound outreach to homeowners in weather-affected US states to identify roof damage and introduce repair services.</li>
+            <li>Screened prospects against client-specific damage and insurance criteria before routing to field inspection teams.</li>
+            <li>Generated up to 2 qualified roofing leads per day across both engagements.</li>
+            <li>Built rapport through consultative conversations, making the inspection process feel accessible rather than transactional.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 6. B2B -->
+      <div class="exp-item" onclick="toggleExp(this)">
+        <div class="exp-header">
+          <div class="exp-left">
+            <div class="exp-role">B2B Cold Outreach Specialist</div>
+            <div class="exp-company">Moving Marketing Services · Upwork · Remote</div>
+            <div class="exp-date">6 Months of Experience</div>
+          </div>
+          <div class="exp-toggle">+</div>
+        </div>
+        <div class="exp-body">
+          <ul class="exp-bullets">
+            <li>Contacted moving companies across the US to pitch tailored marketing plans designed to grow their client acquisition.</li>
+            <li>Generated up to 2 qualified business leads per day through targeted outbound outreach.</li>
+            <li>Completed as a 5.0-rated Upwork contract, recognized for consistent pipeline output and professional communication.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 7. Sutherland -->
+      <div class="exp-item" onclick="toggleExp(this)">
+        <div class="exp-header">
+          <div class="exp-left">
+            <div class="exp-role">Customer Service and Technical Support Specialist</div>
+            <div class="exp-company">Sutherland Global Services · AT&amp;T · Cricut · FTD</div>
+            <div class="exp-date">2 Years of Experience</div>
+          </div>
+          <div class="exp-toggle">+</div>
+        </div>
+        <div class="exp-body">
+          <ul class="exp-bullets">
+            <li>Resolved billing disputes and retained at-risk AT&T customers by identifying cancellation reasons and offering targeted solutions.</li>
+            <li>Recommended and sold wireless, internet, and TV services based on customer needs and usage patterns.</li>
+            <li>Completed internal cross-training and expanded into device and internet troubleshooting support within the same role.</li>
+            <li>Provided phone and email technical support for Cricut customers with product setup, troubleshooting, and repairs.</li>
+            <li>Resolved order and delivery issues for FTD during high-volume seasonal periods, coordinating with logistics and sales.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="section-inner">
+    <div class="eyebrow">Capabilities</div>
+    <h2 class="section-title">Skills and Tools</h2>
+    <div class="skills-layout">
+      <div>
+        <div class="skill-row"><div class="skill-top"><span class="skill-name">Cold Calling and Lead Generation</span><span class="skill-pct">96%</span></div><div class="skill-bar"><div class="skill-fill" data-width="96"></div></div></div>
+        <div class="skill-row"><div class="skill-top"><span class="skill-name">Objection Handling</span><span class="skill-pct">94%</span></div><div class="skill-bar"><div class="skill-fill" data-width="94"></div></div></div>
+        <div class="skill-row"><div class="skill-top"><span class="skill-name">Appointment Setting</span><span class="skill-pct">95%</span></div><div class="skill-bar"><div class="skill-fill" data-width="95"></div></div></div>
+        <div class="skill-row"><div class="skill-top"><span class="skill-name">Deal Negotiation and Closing</span><span class="skill-pct">90%</span></div><div class="skill-bar"><div class="skill-fill" data-width="90"></div></div></div>
+        <div class="skill-row"><div class="skill-top"><span class="skill-name">Real Estate Acquisitions</span><span class="skill-pct">88%</span></div><div class="skill-bar"><div class="skill-fill" data-width="88"></div></div></div>
+        <div class="skill-row"><div class="skill-top"><span class="skill-name">Property Operations and KPI Reporting</span><span class="skill-pct">85%</span></div><div class="skill-bar"><div class="skill-fill" data-width="85"></div></div></div>
+        <div class="skill-row"><div class="skill-top"><span class="skill-name">B2B Outreach and Business Development</span><span class="skill-pct">89%</span></div><div class="skill-bar"><div class="skill-fill" data-width="89"></div></div></div>
+        <div class="skill-row"><div class="skill-top"><span class="skill-name">Solar and Roofing Sales</span><span class="skill-pct">87%</span></div><div class="skill-bar"><div class="skill-fill" data-width="87"></div></div></div>
+      </div>
+      <div>
+        <div class="tools-label">CRM Platforms</div>
+        <div class="tools-grid">
+          <div class="tool-tag">Salesforce</div><div class="tool-tag">Podio</div>
+          <div class="tool-tag">Follow Up Boss</div><div class="tool-tag">GoHighLevel</div>
+          <div class="tool-tag">Asana</div>
+        </div>
+        <div class="tools-label">Dialers and Communication</div>
+        <div class="tools-grid">
+          <div class="tool-tag">Mojo Dialer</div><div class="tool-tag">BatchDialer</div>
+          <div class="tool-tag">CallTools</div><div class="tool-tag">ReadyMode</div>
+          <div class="tool-tag">Aircall</div><div class="tool-tag">Zoom</div>
+          <div class="tool-tag">Dialpad</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- WHY -->
+<section id="why">
+  <div class="section-inner">
+    <div class="eyebrow">Value</div>
+    <h2 class="section-title">Why Work with Me</h2>
+    <p class="section-sub">What I bring to every engagement, every time.</p>
+    <div class="why-grid">
+      <div class="why-card"><div class="why-icon">&#127919;</div><div class="why-title">Target-Focused</div><div class="why-desc">Recognized as an overachiever across every engagement. I hit numbers and then some.</div></div>
+      <div class="why-card"><div class="why-icon">&#128172;</div><div class="why-title">Rapport Builder</div><div class="why-desc">I build trust fast, turn cold conversations into warm leads, and keep pipelines moving.</div></div>
+      <div class="why-card"><div class="why-icon">&#128736;</div><div class="why-title">Multi-Industry</div><div class="why-desc">Real estate, solar, roofing, B2B — I adapt my approach to your market and your client.</div></div>
+      <div class="why-card"><div class="why-icon">&#127760;</div><div class="why-title">Remote-Ready</div><div class="why-desc">Six years of fully remote US-market experience with the tools and discipline to match.</div></div>
+      <div class="why-card"><div class="why-icon">&#128200;</div><div class="why-title">Ops and Sales</div><div class="why-desc">Comfortable on the phones and behind the scenes managing pipelines, CRMs, and reports.</div></div>
+      <div class="why-card"><div class="why-icon">&#11088;</div><div class="why-title">Verified Results</div><div class="why-desc">5.0 Upwork rating and client endorsements that back up every claim on this page.</div></div>
+      <div class="why-card"><div class="why-icon">&#128221;</div><div class="why-title">CRM Fluent</div><div class="why-desc">Experienced across Salesforce, Podio, GoHighLevel, Follow Up Boss, and more.</div></div>
+      <div class="why-card"><div class="why-icon">&#9889;</div><div class="why-title">No Supervision Needed</div><div class="why-desc">Self-managed across concurrent engagements. I show up, I deliver, I report back.</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PROCESS -->
+<section id="process">
+  <div class="section-inner">
+    <div class="eyebrow">How I Work</div>
+    <h2 class="section-title">My Process</h2>
+    <p class="section-sub">Every pipeline, handled the same way every time.</p>
+    <div class="process-steps">
+      <div class="process-step"><div class="step-num">1</div><div class="step-title">Connect</div><div class="step-desc">Start with a genuine conversation. Build rapport before anything else.</div></div>
+      <div class="process-step"><div class="step-num">2</div><div class="step-title">Qualify</div><div class="step-desc">Understand motivation, timeline, and fit. Only move forward the right leads.</div></div>
+      <div class="process-step"><div class="step-num">3</div><div class="step-title">Follow Up</div><div class="step-desc">Stay consistent. Most deals close on the follow-up, not the first call.</div></div>
+      <div class="process-step"><div class="step-num">4</div><div class="step-title">Close</div><div class="step-desc">Identify pain points, match the right offer type, and get the agreement signed.</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="section-inner">
+    <div class="contact-box">
+      <div class="eyebrow" style="margin-bottom:16px">Get in Touch</div>
+      <div class="contact-title">Ready to work together?</div>
+      <p class="contact-sub">Open to remote roles in real estate, acquisitions, solar, B2B sales, and property operations.</p>
+      <div class="contact-links">
+        <a href="mailto:Amrabdelgawad423@gmail.com" class="contact-link">&#9993; Amrabdelgawad423@gmail.com</a>
+        <a href="tel:+201032613433" class="contact-link">&#128222; +20 103 261 3433</a>
+        <a href="Amr_Abdelgawad_CV.pdf" class="contact-link" download>&#8659; Download CV</a>
+      </div>
+      <a href="https://calendar.app.google/ZRiGG4yDQKsZWQPK9" target="_blank" class="schedule-btn">&#128197; Schedule a Call</a>
+      <p class="schedule-note">Pick a time that works for you — goes straight on the calendar.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>&#169; 2026 Amr Abdelgawad. Built for high-trust professional outreach.</p>
+  <a href="#hero" class="back-top">&#8593; Back to top</a>
+</footer>
+
+<script>
+  window.addEventListener('scroll',()=>{
+    document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>50);
+  });
+
+  function toggleExp(el){
+    const isOpen=el.classList.contains('open');
+    document.querySelectorAll('.exp-item').forEach(i=>i.classList.remove('open'));
+    if(!isOpen)el.classList.add('open');
+  }
+
+  function animateCounters(){
+    document.querySelectorAll('[data-target]').forEach(el=>{
+      const target=parseInt(el.dataset.target);
+      const suffix=el.dataset.suffix||'+';
+      let current=0;
+      const step=target/40;
+      const timer=setInterval(()=>{
+        current=Math.min(current+step,target);
+        el.textContent=Math.floor(current)+(current>=target?suffix:'');
+        if(current>=target)clearInterval(timer);
+      },30);
+    });
+  }
+
+  function animateBars(){
+    document.querySelectorAll('.skill-fill').forEach(el=>{
+      el.style.width=el.dataset.width+'%';
+    });
+  }
+
+  const observer=new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        if(entry.target.id==='hero')animateCounters();
+        if(entry.target.id==='skills')animateBars();
+      }
+    });
+  },{threshold:0.2});
+
+  observer.observe(document.getElementById('hero'));
+  observer.observe(document.getElementById('skills'));
+</script>
+</body>
+</html>
