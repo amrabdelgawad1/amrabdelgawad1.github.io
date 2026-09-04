@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Booking Section (Live)</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="booking.css">
+</head>
+<body>
+
+<div class="preview-banner" style="background:var(--accent2);color:#fff;">
+  <strong>NOT YET LIVE</strong> &mdash; This calls a real backend at the URL set in booking.js. Until that backend is deployed (see amr-booking-api/README.md) and the URL is filled in, availability checks and bookings will fail.
+</div>
+
+<main>
+  <section class="section booking-section" id="lets-talk">
+    <div class="container container-narrow">
+      <p class="eyebrow" data-animate="fade-up">Let's Talk</p>
+      <h2 class="section-heading" data-animate="fade-up">Pick a Time That Works for You</h2>
+      <p class="section-lede" data-animate="fade-up">Have an opportunity, project, or role you'd like to discuss? Grab a slot below and we'll talk it through.</p>
+
+      <div class="booking-card" data-animate="fade-in-scale">
+
+        <!-- STEP 1+2: Calendar + Times -->
+        <div class="booking-step" data-step="pick" data-active="true">
+          <div class="booking-grid">
+            <div class="booking-cal">
+              <div class="booking-cal-head">
+                <button type="button" class="cal-nav" data-cal-prev aria-label="Previous month">&#8249;</button>
+                <p class="cal-month" data-cal-month>September 2026</p>
+                <button type="button" class="cal-nav" data-cal-next aria-label="Next month">&#8250;</button>
+              </div>
+              <div class="cal-weekdays">
+                <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+              </div>
+              <div class="cal-days" data-cal-days></div>
+              <p class="cal-tz">Times shown in <strong data-tz-label>Eastern time</strong></p>
+            </div>
+
+            <div class="booking-times">
+              <p class="times-label" data-times-label>Select a date</p>
+              <div class="times-list" data-times-list>
+                <p class="times-empty">Choose an available date to see open times.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: Form -->
+        <div class="booking-step" data-step="form">
+          <button type="button" class="booking-back" data-back-to-pick>&#8592; Back</button>
+          <div class="booking-recap" data-recap></div>
+          <form class="booking-form" data-booking-form>
+            <label>
+              <span>Name</span>
+              <input type="text" name="name" required autocomplete="name" />
+            </label>
+            <label>
+              <span>Email</span>
+              <input type="email" name="email" required autocomplete="email" />
+            </label>
+            <label>
+              <span>Company <em>(optional)</em></span>
+              <input type="text" name="company" autocomplete="organization" />
+            </label>
+            <label>
+              <span>What would you like to discuss? <em>(optional)</em></span>
+              <textarea name="topic" rows="3"></textarea>
+            </label>
+            <p class="form-error" data-form-error hidden></p>
+            <button type="submit" class="btn btn-primary booking-submit" data-submit-btn>Confirm Booking</button>
+          </form>
+        </div>
+
+        <!-- STEP 4: Loading -->
+        <div class="booking-step booking-loading" data-step="loading">
+          <div class="loading-spinner"></div>
+          <p data-loading-text>Checking availability&hellip;</p>
+        </div>
+
+        <!-- STEP 5: Confirmation -->
+        <div class="booking-step booking-confirm" data-step="confirm">
+          <div class="confirm-check">&#10003;</div>
+          <h3>You're booked.</h3>
+          <p class="confirm-datetime" data-confirm-datetime>Thursday, September 10 &middot; 2:00 PM &ndash; 2:30 PM</p>
+          <p class="confirm-meet" data-confirm-meet>&#128249; Google Meet &mdash; link included below</p>
+          <div class="confirm-actions">
+            <a href="#" class="btn btn-ghost" data-add-calendar target="_blank" rel="noopener">Add to Calendar</a>
+            <a href="#" class="btn btn-primary" data-join-meet target="_blank" rel="noopener">Join Google Meet</a>
+          </div>
+          <button type="button" class="booking-restart" data-restart>Book another time</button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/gsap.min.js"></script>
+<script src="booking.js"></script>
+</body>
+</html>

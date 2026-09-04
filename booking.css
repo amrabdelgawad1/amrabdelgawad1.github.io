@@ -1,0 +1,140 @@
+/* ==========================================================================
+   Preview-only banner (remove when integrated into the real site)
+   ========================================================================== */
+.preview-banner{
+  background:var(--gold); color:#1a1200; font-size:13.5px; text-align:center;
+  padding:12px 24px; line-height:1.5;
+}
+.preview-banner strong{ letter-spacing:.04em; }
+
+body{ padding-top:0; }
+
+/* ==========================================================================
+   Booking section
+   ========================================================================== */
+.booking-section{ text-align:center; }
+.booking-section .eyebrow, .booking-section .section-heading, .booking-section .section-lede{
+  text-align:center; margin-left:auto; margin-right:auto;
+}
+.booking-card{
+  text-align:left;
+  background:linear-gradient(160deg, var(--bg3), var(--bg2));
+  border:1px solid var(--border2); border-radius:var(--radius-lg);
+  overflow:hidden; box-shadow:0 30px 80px -30px rgba(0,0,0,.6);
+  position:relative; min-height:520px;
+}
+.booking-step{ display:none; padding:40px; }
+.booking-step[data-active="true"]{ display:block; }
+
+/* ==========================================================================
+   Calendar
+   ========================================================================== */
+.booking-grid{ display:grid; grid-template-columns:1.15fr 1fr; gap:36px; }
+.booking-cal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.cal-month{ font-family:var(--font-display); font-size:19px; }
+.cal-nav{
+  width:32px; height:32px; border-radius:50%; border:1px solid var(--border2); background:transparent;
+  color:var(--light); font-size:16px; cursor:pointer; transition:border-color .25s ease, color .25s ease;
+}
+.cal-nav:hover{ border-color:var(--accent2); color:var(--accent2); }
+.cal-weekdays{
+  display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; margin-bottom:8px;
+  font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); text-align:center;
+}
+.cal-days{ display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; }
+.cal-day{
+  aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  border-radius:var(--radius-sm); font-size:13.5px; color:var(--text); background:none; border:1px solid transparent;
+  cursor:pointer; transition:background .25s ease, border-color .25s ease, transform .2s ease;
+}
+.cal-day:hover:not(.is-disabled):not(.is-empty){ background:var(--accent-dim); border-color:var(--border2); }
+.cal-day.is-empty{ visibility:hidden; cursor:default; }
+.cal-day.is-disabled{ color:var(--muted); opacity:.35; cursor:not-allowed; }
+.cal-day.is-today{ border-color:var(--border2); font-weight:600; }
+.cal-day.is-selected{ background:var(--accent); color:var(--white); font-weight:600; transform:scale(1.05); }
+.cal-tz{ margin-top:20px; font-size:12.5px; color:var(--muted); }
+.cal-tz strong{ color:var(--light); }
+
+.times-label{ font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:16px; }
+.times-list{ display:flex; flex-direction:column; gap:10px; max-height:320px; overflow-y:auto; }
+.times-empty{ font-size:13.5px; color:var(--muted); }
+.time-slot{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:13px 18px; border-radius:var(--radius-sm); border:1px solid var(--border2);
+  background:var(--bg2); color:var(--text); font-size:14.5px; font-weight:500; cursor:pointer;
+  transition:border-color .25s ease, background .25s ease, transform .2s ease;
+}
+.time-slot:hover{ border-color:var(--accent2); transform:translateX(2px); }
+.time-slot.is-selected{ background:var(--accent-dim); border-color:var(--accent2); color:var(--accent2); }
+.time-slot span.arrow{ opacity:0; transition:opacity .25s ease, transform .25s ease; }
+.time-slot:hover span.arrow{ opacity:1; transform:translateX(2px); }
+
+/* ==========================================================================
+   Form
+   ========================================================================== */
+.booking-back{
+  background:none; border:none; color:var(--muted); font-size:13.5px; cursor:pointer;
+  margin-bottom:20px; padding:0; transition:color .25s ease;
+}
+.booking-back:hover{ color:var(--accent2); }
+.booking-recap{
+  background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-sm);
+  padding:16px 20px; margin-bottom:28px; font-size:14.5px; color:var(--text); font-weight:600;
+}
+.booking-form{ display:flex; flex-direction:column; gap:18px; max-width:480px; }
+.booking-form label{ display:flex; flex-direction:column; gap:8px; font-size:13.5px; color:var(--light); }
+.booking-form label em{ color:var(--muted); font-style:normal; }
+.booking-form input, .booking-form textarea{
+  background:var(--bg2); border:1px solid var(--border2); border-radius:var(--radius-sm);
+  padding:12px 14px; color:var(--text); font-family:var(--font-body); font-size:14.5px; resize:vertical;
+  transition:border-color .25s ease;
+}
+.booking-form input:focus, .booking-form textarea:focus{ outline:none; border-color:var(--accent2); }
+.form-error{ color:#F87171; font-size:13px; }
+.booking-submit{ align-self:flex-start; margin-top:8px; }
+
+/* ==========================================================================
+   Loading
+   ========================================================================== */
+.booking-loading{ display:none; flex-direction:column; align-items:center; justify-content:center; gap:20px; min-height:440px; text-align:center; }
+.booking-loading[data-active="true"]{ display:flex; }
+.loading-spinner{
+  width:36px; height:36px; border-radius:50%; border:3px solid var(--border2); border-top-color:var(--accent2);
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+.booking-loading p{ color:var(--light); font-size:14.5px; }
+
+/* ==========================================================================
+   Confirmation
+   ========================================================================== */
+.booking-confirm{ display:none; flex-direction:column; align-items:center; justify-content:center; gap:14px; min-height:440px; text-align:center; }
+.booking-confirm[data-active="true"]{ display:flex; }
+.confirm-check{
+  width:56px; height:56px; border-radius:50%; background:var(--green); color:var(--white);
+  display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:6px;
+}
+.booking-confirm h3{ font-size:28px; }
+.confirm-datetime{ font-size:16px; color:var(--text); font-weight:600; }
+.confirm-meet{ font-size:13.5px; color:var(--muted); margin-bottom:12px; }
+.confirm-actions{ display:flex; gap:14px; margin-bottom:24px; }
+.booking-restart{ background:none; border:none; color:var(--muted); font-size:13px; cursor:pointer; text-decoration:underline; }
+.booking-restart:hover{ color:var(--accent2); }
+
+[data-disabled-note]{ position:relative; opacity:.85; }
+
+/* ==========================================================================
+   Reduced motion / entrance defaults reused from style.css already cover
+   [data-animate] — booking-card entrance handled the same way.
+   ========================================================================== */
+
+@media (max-width:900px){
+  .booking-grid{ grid-template-columns:1fr; gap:32px; }
+}
+
+@media (max-width:680px){
+  .booking-step{ padding:28px 20px; }
+  .confirm-actions{ flex-direction:column; width:100%; }
+  .confirm-actions .btn{ width:100%; }
+  .booking-submit{ width:100%; }
+}
