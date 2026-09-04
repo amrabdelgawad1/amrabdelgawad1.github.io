@@ -507,7 +507,15 @@
                 <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
               </div>
               <div class="cal-days" data-cal-days></div>
-              <p class="cal-tz">Times shown in <strong data-tz-label>Eastern time</strong></p>
+              <div class="tz-picker">
+                <button type="button" class="cal-tz" data-tz-toggle aria-haspopup="listbox" aria-expanded="false">
+                  Times shown in <strong data-tz-label>your local time</strong> <span class="tz-caret" aria-hidden="true">&#9662;</span>
+                </button>
+                <div class="tz-dropdown" data-tz-dropdown hidden>
+                  <input type="text" class="tz-search" data-tz-search placeholder="Search timezone&hellip;" autocomplete="off" />
+                  <div class="tz-list" data-tz-list role="listbox"></div>
+                </div>
+              </div>
             </div>
 
             <div class="booking-times">
