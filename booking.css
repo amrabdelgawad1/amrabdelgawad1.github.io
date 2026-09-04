@@ -41,8 +41,37 @@
 .cal-day.is-disabled{ color:var(--muted); opacity:.35; cursor:not-allowed; }
 .cal-day.is-today{ border-color:var(--border2); font-weight:600; }
 .cal-day.is-selected{ background:var(--accent); color:var(--white); font-weight:600; transform:scale(1.05); }
-.cal-tz{ margin-top:20px; font-size:12.5px; color:var(--muted); }
-.cal-tz strong{ color:var(--light); }
+.tz-picker{ position:relative; margin-top:20px; }
+.cal-tz{
+  background:none; border:none; padding:0; margin:0; font-family:var(--font-body);
+  font-size:12.5px; color:var(--muted); cursor:pointer; display:inline-flex; align-items:center; gap:5px;
+  transition:color .25s ease;
+}
+.cal-tz:hover{ color:var(--accent2); }
+.cal-tz strong{ color:var(--light); font-weight:600; }
+.cal-tz:hover strong{ color:var(--accent2); }
+.tz-caret{ font-size:10px; color:var(--muted); transition:transform .2s ease; }
+.cal-tz[aria-expanded="true"] .tz-caret{ transform:rotate(180deg); }
+
+.tz-dropdown{
+  position:absolute; top:calc(100% + 8px); left:0; z-index:20; width:280px; max-width:90vw;
+  background:var(--bg3); border:1px solid var(--border2); border-radius:var(--radius-sm);
+  box-shadow:0 20px 50px -16px rgba(0,0,0,.7); padding:10px; display:flex; flex-direction:column; gap:8px;
+}
+.tz-search{
+  background:var(--bg2); border:1px solid var(--border2); border-radius:var(--radius-sm);
+  padding:9px 12px; color:var(--text); font-family:var(--font-body); font-size:13.5px;
+}
+.tz-search:focus{ outline:none; border-color:var(--accent2); }
+.tz-list{ display:flex; flex-direction:column; gap:2px; max-height:220px; overflow-y:auto; }
+.tz-item{
+  background:none; border:none; text-align:left; padding:8px 10px; border-radius:6px;
+  color:var(--text); font-family:var(--font-body); font-size:13px; cursor:pointer;
+  transition:background .2s ease, color .2s ease;
+}
+.tz-item:hover{ background:var(--accent-dim); color:var(--accent2); }
+.tz-item.is-selected{ background:var(--accent-dim); color:var(--accent2); font-weight:600; }
+.tz-empty{ font-size:13px; color:var(--muted); padding:8px 10px; }
 
 .times-label{ font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:16px; }
 .times-list{ display:flex; flex-direction:column; gap:10px; max-height:320px; overflow-y:auto; }
