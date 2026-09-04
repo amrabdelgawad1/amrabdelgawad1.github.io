@@ -7,16 +7,82 @@
   // closed days (weekends, past dates) without an API round trip. The
   // backend is still the source of truth — a day that looks open here
   // but has no real slots just shows "No open times" once clicked.
+  // This checks the calendar's own date numbers, so it approximates the
+  // host's business days regardless of which timezone is displayed.
   const FRONTEND_CONFIG = {
     workingDaysJs: [1, 2, 3, 4, 5], // JS Date.getDay(): 0=Sun...6=Sat
-    timezoneDisplayLabel: "Eastern time",
   };
+
+  const TZ_STORAGE_KEY = "booking_tz";
+
+  const POPULAR_TIMEZONES = [
+    "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
+    "Africa/Cairo", "Europe/London", "Europe/Berlin", "Asia/Dubai", "Asia/Kolkata",
+    "Asia/Shanghai", "Asia/Tokyo", "Australia/Sydney", "UTC",
+  ];
+
+  function getTimezoneList() {
+    try {
+      if (typeof Intl.supportedValuesOf === "function") {
+        return Intl.supportedValuesOf("timeZone");
+      }
+    } catch {
+      /* fall through to the static list below */
+    }
+    return [
+      "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
+      "America/Sao_Paulo", "Europe/London", "Europe/Paris", "Europe/Berlin", "Europe/Moscow",
+      "Africa/Cairo", "Africa/Lagos", "Africa/Johannesburg", "Asia/Dubai", "Asia/Karachi",
+      "Asia/Kolkata", "Asia/Dhaka", "Asia/Bangkok", "Asia/Shanghai", "Asia/Tokyo", "Asia/Seoul",
+      "Australia/Sydney", "Pacific/Auckland", "UTC",
+    ];
+  }
+
+  // Some browsers' canonical zone list uses an older alias (e.g. "Asia/Calcutta"
+  // instead of "Asia/Kolkata") even though the more common modern name still
+  // works fine as an actual timeZone value — add a few so search finds them.
+  const EXTRA_SEARCHABLE_ZONES = ["Asia/Kolkata", "UTC"];
+
+  const ALL_TIMEZONES = [...new Set([...getTimezoneList(), ...EXTRA_SEARCHABLE_ZONES])];
+
+  function friendlyZoneLabel(tz) {
+    if (tz === "UTC") return "UTC";
+    const city = tz.split("/").pop().replace(/_/g, " ");
+    return `${city} time`;
+  }
+
+  function isValidTimezone(tz) {
+    try {
+      Intl.DateTimeFormat("en-US", { timeZone: tz });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function detectTimezone() {
+    try {
+      const stored = localStorage.getItem(TZ_STORAGE_KEY);
+      if (stored && isValidTimezone(stored)) return stored;
+    } catch {
+      /* localStorage unavailable — fall through */
+    }
+    try {
+      const auto = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (auto) return auto;
+    } catch {
+      /* Intl unavailable — fall through */
+    }
+    return "America/New_York";
+  }
 
   const state = {
     viewYear: new Date().getFullYear(),
     viewMonth: new Date().getMonth(),
     selectedDate: null,
-    selectedTime: null,
+    selectedIso: null,
+    lastSlots: null,
+    tz: detectTimezone(),
   };
 
   const els = {
@@ -31,6 +97,11 @@
     loadingText: document.querySelector("[data-loading-text]"),
     confirmDatetime: document.querySelector("[data-confirm-datetime]"),
     confirmMeet: document.querySelector("[data-confirm-meet]"),
+    tzLabel: document.querySelector("[data-tz-label]"),
+    tzToggle: document.querySelector("[data-tz-toggle]"),
+    tzDropdown: document.querySelector("[data-tz-dropdown]"),
+    tzSearch: document.querySelector("[data-tz-search]"),
+    tzList: document.querySelector("[data-tz-list]"),
   };
 
   const MONTH_NAMES = [
@@ -53,10 +124,16 @@
     return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   }
 
+  function formatTimeInZone(iso, tz) {
+    return new Date(iso).toLocaleTimeString("en-US", {
+      hour: "numeric", minute: "2-digit", hour12: true, timeZone: tz,
+    });
+  }
+
   async function fetchSlots(dateStr) {
     const res = await fetch(`${API_BASE_URL}/api/availability?date=${dateStr}`);
     if (!res.ok) throw new Error("availability_failed");
-    return res.json(); // { date, timezone, slots }
+    return res.json(); // { date, timezone, slots: [{ iso, label }] }
   }
 
   async function submitBooking(payload) {
@@ -118,7 +195,8 @@
 
   async function selectDate(dateStr) {
     state.selectedDate = dateStr;
-    state.selectedTime = null;
+    state.selectedIso = null;
+    state.lastSlots = null;
     renderCalendar();
 
     els.timesLabel.textContent = formatDateLong(dateStr);
@@ -126,6 +204,7 @@
 
     try {
       const { slots } = await fetchSlots(dateStr);
+      state.lastSlots = slots;
       renderTimes(slots);
     } catch {
       els.timesList.innerHTML =
@@ -141,18 +220,20 @@
       return;
     }
 
-    slots.forEach((time) => {
+    slots.forEach((slot) => {
+      const label = formatTimeInZone(slot.iso, state.tz);
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "time-slot";
-      btn.innerHTML = `<span>${time}</span><span class="arrow">&#8594;</span>`;
-      btn.addEventListener("click", () => selectTime(time, btn));
+      if (slot.iso === state.selectedIso) btn.classList.add("is-selected");
+      btn.innerHTML = `<span>${label}</span><span class="arrow">&#8594;</span>`;
+      btn.addEventListener("click", () => selectTime(slot.iso, btn));
       els.timesList.appendChild(btn);
     });
   }
 
-  function selectTime(time, btnEl) {
-    state.selectedTime = time;
+  function selectTime(iso, btnEl) {
+    state.selectedIso = iso;
     document.querySelectorAll(".time-slot").forEach((b) => b.classList.remove("is-selected"));
     btnEl.classList.add("is-selected");
     setTimeout(() => goToStep("form"), 250);
@@ -163,13 +244,89 @@
       el.dataset.active = el.dataset.step === name ? "true" : "false";
     });
     if (name === "form") {
-      els.recap.textContent = `${formatDateLong(state.selectedDate)} · ${state.selectedTime} (${FRONTEND_CONFIG.timezoneDisplayLabel})`;
+      const timeLabel = formatTimeInZone(state.selectedIso, state.tz);
+      els.recap.textContent = `${formatDateLong(state.selectedDate)} · ${timeLabel} (${friendlyZoneLabel(state.tz)})`;
     }
   }
 
   function showError(msg) {
     els.formError.textContent = msg;
     els.formError.hidden = false;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Timezone picker — auto-detects the visitor's timezone on load, but
+   * lets them override it (e.g. booking on someone else's behalf, or the
+   * auto-detected zone being wrong). The choice is remembered locally.
+   * ------------------------------------------------------------------ */
+  function setTimezone(tz) {
+    state.tz = tz;
+    try {
+      localStorage.setItem(TZ_STORAGE_KEY, tz);
+    } catch {
+      /* localStorage unavailable — selection just won't persist */
+    }
+    if (els.tzLabel) els.tzLabel.textContent = friendlyZoneLabel(tz);
+    if (state.lastSlots) renderTimes(state.lastSlots);
+  }
+
+  function renderTzList(filter) {
+    const q = (filter || "").trim().toLowerCase();
+    const source = q
+      ? ALL_TIMEZONES.filter((tz) => tz.toLowerCase().replace(/_/g, " ").includes(q)).slice(0, 60)
+      : POPULAR_TIMEZONES;
+
+    els.tzList.innerHTML = "";
+
+    if (!source.length) {
+      const empty = document.createElement("p");
+      empty.className = "tz-empty";
+      empty.textContent = "No matching timezone.";
+      els.tzList.appendChild(empty);
+      return;
+    }
+
+    source.forEach((tz) => {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "tz-item";
+      if (tz === state.tz) item.classList.add("is-selected");
+      item.textContent = `${friendlyZoneLabel(tz)} — ${tz}`;
+      item.addEventListener("click", () => {
+        setTimezone(tz);
+        closeTzDropdown();
+      });
+      els.tzList.appendChild(item);
+    });
+  }
+
+  function openTzDropdown() {
+    els.tzDropdown.hidden = false;
+    els.tzToggle.setAttribute("aria-expanded", "true");
+    els.tzSearch.value = "";
+    renderTzList("");
+    els.tzSearch.focus();
+  }
+
+  function closeTzDropdown() {
+    els.tzDropdown.hidden = true;
+    els.tzToggle.setAttribute("aria-expanded", "false");
+  }
+
+  if (els.tzToggle && els.tzDropdown) {
+    if (els.tzLabel) els.tzLabel.textContent = friendlyZoneLabel(state.tz);
+
+    els.tzToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (els.tzDropdown.hidden) openTzDropdown();
+      else closeTzDropdown();
+    });
+    els.tzSearch.addEventListener("input", () => renderTzList(els.tzSearch.value));
+    els.tzDropdown.addEventListener("click", (e) => e.stopPropagation());
+    document.addEventListener("click", () => closeTzDropdown());
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeTzDropdown();
+    });
   }
 
   document.querySelector("[data-cal-prev]").addEventListener("click", () => {
@@ -194,7 +351,8 @@
 
   document.querySelector("[data-restart]").addEventListener("click", () => {
     state.selectedDate = null;
-    state.selectedTime = null;
+    state.selectedIso = null;
+    state.lastSlots = null;
     els.timesLabel.textContent = "Select a date";
     els.timesList.innerHTML = '<p class="times-empty">Choose an available date to see open times.</p>';
     els.form.reset();
@@ -224,7 +382,14 @@
     }, 900);
 
     try {
-      const result = await submitBooking({ date: state.selectedDate, time: state.selectedTime, name, email, company, topic });
+      const result = await submitBooking({
+        startIso: state.selectedIso,
+        name,
+        email,
+        company,
+        topic,
+        displayTimezone: state.tz,
+      });
       clearInterval(cycle);
       els.confirmDatetime.textContent = `${result.date} · ${result.startTime} – ${result.endTime}`;
       const meetBtn = document.querySelector('[data-join-meet]');
