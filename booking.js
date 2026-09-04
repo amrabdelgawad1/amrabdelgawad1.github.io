@@ -2,6 +2,7 @@
   "use strict";
 
   const API_BASE_URL = "https://amr-booking-api.vercel.app";
+
   // Mirrors config.js on the backend, used only to gray out obviously
   // closed days (weekends, past dates) without an API round trip. The
   // backend is still the source of truth — a day that looks open here
@@ -245,23 +246,4 @@
   });
 
   renderCalendar();
-
-  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (window.gsap && !reduced) {
-    gsap.fromTo(
-      ".booking-section .eyebrow, .booking-section .section-heading, .booking-section .section-lede",
-      { y: 20, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.7, stagger: 0.1, ease: "power2.out" }
-    );
-    gsap.fromTo(
-      ".booking-card",
-      { y: 24, opacity: 0, scale: 0.98 },
-      { y: 0, opacity: 1, scale: 1, duration: 0.7, delay: 0.2, ease: "power3.out" }
-    );
-  } else {
-    document.querySelectorAll(".booking-section [data-animate], .booking-card").forEach((el) => {
-      el.style.opacity = 1;
-      el.style.transform = "none";
-    });
-  }
 })();
