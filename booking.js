@@ -1,13 +1,7 @@
 (() => {
   "use strict";
 
-  /* ------------------------------------------------------------------ *
-   * Fill this in once the backend is deployed — see
-   * amr-booking-api/README.md step 7. Everything else in this file is
-   * already wired to the real API; this is the only placeholder left.
-   * ------------------------------------------------------------------ */
-  const API_BASE_URL = "https://REPLACE-ME.vercel.app";
-
+  const API_BASE_URL = "https://amr-booking-api.vercel.app";
   // Mirrors config.js on the backend, used only to gray out obviously
   // closed days (weekends, past dates) without an API round trip. The
   // backend is still the source of truth — a day that looks open here
