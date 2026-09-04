@@ -1,15 +1,4 @@
 /* ==========================================================================
-   Preview-only banner (remove when integrated into the real site)
-   ========================================================================== */
-.preview-banner{
-  background:var(--gold); color:#1a1200; font-size:13.5px; text-align:center;
-  padding:12px 24px; line-height:1.5;
-}
-.preview-banner strong{ letter-spacing:.04em; }
-
-body{ padding-top:0; }
-
-/* ==========================================================================
    Booking section
    ========================================================================== */
 .booking-section{ text-align:center; }
