@@ -11,6 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="booking.css">
 </head>
 <body>
 
@@ -24,9 +25,9 @@
     <a href="#experience">Experience</a>
     <a href="#skills">Skills</a>
     <a href="#upwork">Upwork</a>
-    <a href="https://calendar.app.google/ZRiGG4yDQKsZWQPK9" class="btn btn-primary main-nav-cta" target="_blank" rel="noopener">Schedule a Call</a>
+    <a href="#lets-talk" class="btn btn-primary main-nav-cta">Schedule a Call</a>
   </nav>
-  <a href="https://calendar.app.google/ZRiGG4yDQKsZWQPK9" class="btn btn-primary btn-sm header-cta" target="_blank" rel="noopener">Schedule a Call</a>
+  <a href="#lets-talk" class="btn btn-primary btn-sm header-cta">Schedule a Call</a>
   <button class="nav-toggle" data-nav-toggle aria-label="Open menu" aria-expanded="false">
     <span></span><span></span><span></span>
   </button>
@@ -49,7 +50,7 @@
         <h1 class="hero-headline" data-split-lines>I Help US Companies <em>Generate Qualified Leads</em> and Close More Deals</h1>
         <p class="hero-sub">Remote sales and acquisition specialist with <strong>6 years of proven results</strong> across real estate, solar, roofing, and B2B. Ranked <strong>#1 at TTO Real Estate</strong>. 5.0 rated on Upwork. CEO endorsed.</p>
         <div class="hero-actions">
-          <a href="https://calendar.app.google/ZRiGG4yDQKsZWQPK9" class="btn btn-primary" target="_blank" rel="noopener">Let's Work Together <span class="btn-arrow">&#8594;</span></a>
+          <a href="#lets-talk" class="btn btn-primary">Let's Work Together <span class="btn-arrow">&#8594;</span></a>
           <a href="#experience" class="btn btn-ghost">View My Experience <span class="btn-arrow">&#8594;</span></a>
           <a href="assets/Amr-Abdelgawad-CV.pdf" class="link-download" download>Download CV</a>
         </div>
@@ -447,7 +448,7 @@
           <p class="why-body">Real estate, solar, roofing, B2B, and property operations each required learning new criteria, scripts, and tools from scratch.</p>
         </div>
       </div>
-      <a href="https://calendar.app.google/ZRiGG4yDQKsZWQPK9" class="btn btn-primary" data-animate="fade-up" target="_blank" rel="noopener">Let's Talk</a>
+      <a href="#lets-talk" class="btn btn-primary" data-animate="fade-up">Let's Talk</a>
     </div>
   </section>
 
@@ -484,6 +485,89 @@
     </div>
   </section>
 
+  <!-- ============ BOOKING ============ -->
+  <section class="section booking-section" id="lets-talk">
+    <div class="container container-narrow">
+      <p class="eyebrow" data-animate="fade-up">Let's Talk</p>
+      <h2 class="section-heading" data-animate="fade-up">Pick a Time That Works for You</h2>
+      <p class="section-lede" data-animate="fade-up">Have an opportunity, project, or role you'd like to discuss? Grab a slot below and we'll talk it through.</p>
+
+      <div class="booking-card" data-animate="fade-in-scale">
+
+        <!-- STEP 1+2: Calendar + Times -->
+        <div class="booking-step" data-step="pick" data-active="true">
+          <div class="booking-grid">
+            <div class="booking-cal">
+              <div class="booking-cal-head">
+                <button type="button" class="cal-nav" data-cal-prev aria-label="Previous month">&#8249;</button>
+                <p class="cal-month" data-cal-month>September 2026</p>
+                <button type="button" class="cal-nav" data-cal-next aria-label="Next month">&#8250;</button>
+              </div>
+              <div class="cal-weekdays">
+                <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+              </div>
+              <div class="cal-days" data-cal-days></div>
+              <p class="cal-tz">Times shown in <strong data-tz-label>Eastern time</strong></p>
+            </div>
+
+            <div class="booking-times">
+              <p class="times-label" data-times-label>Select a date</p>
+              <div class="times-list" data-times-list>
+                <p class="times-empty">Choose an available date to see open times.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: Form -->
+        <div class="booking-step" data-step="form">
+          <button type="button" class="booking-back" data-back-to-pick>&#8592; Back</button>
+          <div class="booking-recap" data-recap></div>
+          <form class="booking-form" data-booking-form>
+            <label>
+              <span>Name</span>
+              <input type="text" name="name" required autocomplete="name" />
+            </label>
+            <label>
+              <span>Email</span>
+              <input type="email" name="email" required autocomplete="email" />
+            </label>
+            <label>
+              <span>Company <em>(optional)</em></span>
+              <input type="text" name="company" autocomplete="organization" />
+            </label>
+            <label>
+              <span>What would you like to discuss? <em>(optional)</em></span>
+              <textarea name="topic" rows="3"></textarea>
+            </label>
+            <p class="form-error" data-form-error hidden></p>
+            <button type="submit" class="btn btn-primary booking-submit" data-submit-btn>Confirm Booking</button>
+          </form>
+        </div>
+
+        <!-- STEP 4: Loading -->
+        <div class="booking-step booking-loading" data-step="loading">
+          <div class="loading-spinner"></div>
+          <p data-loading-text>Checking availability&hellip;</p>
+        </div>
+
+        <!-- STEP 5: Confirmation -->
+        <div class="booking-step booking-confirm" data-step="confirm">
+          <div class="confirm-check">&#10003;</div>
+          <h3>You're booked.</h3>
+          <p class="confirm-datetime" data-confirm-datetime>Thursday, September 10 &middot; 2:00 PM &ndash; 2:30 PM</p>
+          <p class="confirm-meet" data-confirm-meet>&#128249; Video call link included below</p>
+          <div class="confirm-actions">
+            <a href="#" class="btn btn-ghost" data-add-calendar target="_blank" rel="noopener">Add to Calendar</a>
+            <a href="#" class="btn btn-primary" data-join-meet target="_blank" rel="noopener">Join Google Meet</a>
+          </div>
+          <button type="button" class="booking-restart" data-restart>Book another time</button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
   <!-- ============ CLOSE / CTA ============ -->
   <section class="section close" id="schedule">
     <div class="container container-narrow">
@@ -491,7 +575,7 @@
       <h2 class="close-heading" data-animate="fade-up">Ready to Work Together?</h2>
       <p class="close-body" data-animate="fade-up">Open to remote roles in real estate, acquisitions, solar, B2B sales, and property operations. Let's talk about what you need.</p>
       <div class="close-actions" data-animate="fade-up">
-        <a href="https://calendar.app.google/ZRiGG4yDQKsZWQPK9" class="btn btn-primary btn-lg" target="_blank" rel="noopener">Let's Work Together <span class="btn-arrow">&#8594;</span></a>
+        <a href="#lets-talk" class="btn btn-primary btn-lg">Let's Work Together <span class="btn-arrow">&#8594;</span></a>
       </div>
       <div class="close-links" data-animate="fade-up">
         <a href="mailto:Amrabdelgawad423@gmail.com">&#9993; Amrabdelgawad423@gmail.com</a>
@@ -529,5 +613,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/SplitText.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.25/dist/lenis.min.js"></script>
 <script src="main.js?v=4"></script>
+<script src="booking.js"></script>
 </body>
 </html>
