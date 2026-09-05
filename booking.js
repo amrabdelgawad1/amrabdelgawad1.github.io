@@ -291,7 +291,7 @@
       item.type = "button";
       item.className = "tz-item";
       if (tz === state.tz) item.classList.add("is-selected");
-      item.textContent = `${friendlyZoneLabel(tz)} — ${tz}`;
+      item.textContent = `${friendlyZoneLabel(tz)} (${tz})`;
       item.addEventListener("click", () => {
         setTimezone(tz);
         closeTzDropdown();
