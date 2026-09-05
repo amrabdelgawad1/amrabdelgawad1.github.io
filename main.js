@@ -132,6 +132,99 @@
   })();
 
   /* ------------------------------------------------------------------ *
+   * Tool chip tooltips — hover works on its own via CSS; this just adds
+   * tap-to-toggle so touch devices (no :hover) can reach the description.
+   * ------------------------------------------------------------------ */
+  (function toolChips() {
+    const chips = document.querySelectorAll(".chip[data-tool-desc]");
+    if (!chips.length) return;
+
+    chips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const wasActive = chip.classList.contains("is-active");
+        chips.forEach((c) => c.classList.remove("is-active"));
+        if (!wasActive) chip.classList.add("is-active");
+      });
+    });
+    document.addEventListener("click", (e) => {
+      if (![...chips].some((c) => c.contains(e.target))) {
+        chips.forEach((c) => c.classList.remove("is-active"));
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") chips.forEach((c) => c.classList.remove("is-active"));
+    });
+  })();
+
+  /* ------------------------------------------------------------------ *
+   * Experience timeline: accordion. Only the highlighted role starts
+   * expanded — the rest show role/company/duration and open on click,
+   * so the section doesn't dump every bullet on screen at once.
+   * ------------------------------------------------------------------ */
+  (function timelineAccordion() {
+    const cards = document.querySelectorAll("[data-timeline-card]");
+    if (!cards.length) return;
+
+    function setOpen(card, open, animate) {
+      const btn = card.querySelector("[data-timeline-toggle]");
+      const panel = card.querySelector("[data-timeline-panel]");
+      btn.setAttribute("aria-expanded", String(open));
+
+      if (!animate) {
+        panel.classList.toggle("is-open", open);
+        panel.style.height = open ? "auto" : "0px";
+        return;
+      }
+
+      gsap.killTweensOf(panel);
+      if (open) {
+        panel.classList.add("is-open");
+        const target = panel.scrollHeight;
+        gsap.fromTo(
+          panel,
+          { height: 0 },
+          {
+            height: target,
+            duration: 0.45,
+            ease: "power2.out",
+            onComplete: () => {
+              panel.style.height = "auto";
+            },
+          }
+        );
+      } else {
+        gsap.fromTo(
+          panel,
+          { height: panel.scrollHeight },
+          {
+            height: 0,
+            duration: 0.35,
+            ease: "power2.in",
+            onComplete: () => panel.classList.remove("is-open"),
+          }
+        );
+      }
+    }
+
+    cards.forEach((card) => {
+      const defaultOpen = card.classList.contains("timeline-card--highlight");
+      setOpen(card, defaultOpen, false);
+
+      card.querySelector("[data-timeline-toggle]").addEventListener("click", () => {
+        const isOpen = card.querySelector("[data-timeline-toggle]").getAttribute("aria-expanded") === "true";
+        if (isOpen) {
+          setOpen(card, false, !reduced);
+        } else {
+          cards.forEach((c) => {
+            if (c !== card) setOpen(c, false, !reduced);
+          });
+          setOpen(card, true, !reduced);
+        }
+      });
+    });
+  })();
+
+  /* ------------------------------------------------------------------ *
    * Reduced motion: land everything in its final, readable state.
    * ------------------------------------------------------------------ */
   if (reduced) {
@@ -190,6 +283,11 @@
         ".hero-card",
         { y: 26, opacity: 0, scale: 0.97, duration: 0.8, ease: "power3.out" },
         "-=0.35"
+      )
+      .from(
+        ".hero-portrait",
+        { y: 14, opacity: 0, scale: 0.92, duration: 0.7, ease: "power3.out" },
+        "-=0.45"
       );
 
     gsap.from(".scroll-cue", { opacity: 0, duration: 1, delay: 1.8 });
@@ -223,6 +321,8 @@
       const glowBY = gsap.quickTo(".hero-glow-b", "y", { duration: 1.1, ease: "power3.out" });
       const cardX = gsap.quickTo(".hero-card", "x", { duration: 0.7, ease: "power3.out" });
       const cardY = gsap.quickTo(".hero-card", "y", { duration: 0.7, ease: "power3.out" });
+      const portraitX = gsap.quickTo(".hero-portrait", "x", { duration: 0.6, ease: "power3.out" });
+      const portraitY = gsap.quickTo(".hero-portrait", "y", { duration: 0.6, ease: "power3.out" });
 
       document.querySelector(".hero").addEventListener("mousemove", (e) => {
         const relX = e.clientX / window.innerWidth - 0.5;
@@ -233,6 +333,9 @@
         glowBY(relY * -18);
         cardX(relX * -10);
         cardY(relY * -8);
+        /* Closest layer to the viewer moves the most — the depth cue. */
+        portraitX(relX * -16);
+        portraitY(relY * -13);
       });
     } else {
       /* No fine pointer (touch/mobile): a slow, subtle idle drift keeps
@@ -355,6 +458,25 @@
       onLeaveBack: (batch) => gsap.to(batch, { y: 24, opacity: 0, duration: 0.4, overwrite: true }),
     });
   });
+
+  /* ------------------------------------------------------------------ *
+   * Verified Results: the leaderboard screenshot wipes into view left-to-
+   * right (clip-path) with a slight Ken-Burns settle, instead of just
+   * fading up like every other image on the page — this is the section's
+   * one authored moment, not a technique reused everywhere.
+   * ------------------------------------------------------------------ */
+  (function proofReveal() {
+    const shot = document.querySelector(".proof-shot--reveal");
+    if (!shot) return;
+    const img = shot.querySelector("img");
+
+    gsap
+      .timeline({
+        scrollTrigger: { trigger: shot, start: "top 82%", toggleActions: "play none none reverse" },
+      })
+      .fromTo(shot, { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: 1.1, ease: "power3.inOut" })
+      .fromTo(img, { scale: 1.12 }, { scale: 1, duration: 1.3, ease: "power2.out" }, "<");
+  })();
 
   /* ------------------------------------------------------------------ *
    * Experience timeline: spine draws as you scroll, each card lifts in

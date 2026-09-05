@@ -163,6 +163,7 @@ button.link-download{
 .hero-actions{ display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
 
 .hero-card{
+  position:relative;
   background:linear-gradient(160deg, var(--bg4), var(--bg3));
   border:1px solid var(--border2);
   border-radius:var(--radius-lg);
@@ -176,10 +177,51 @@ button.link-download{
 }
 .hero-card-name{ font-weight:600; font-size:15.5px; }
 .hero-card-role{ font-size:13px; color:var(--muted); }
-.hero-stats{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:24px; }
+
+/* Floating portrait — breaks out of the card's top-left corner for depth.
+   The source photo is already a hard-edged circle crop on white; the mask
+   feathers that rim into true transparency instead of pasting a matching
+   flat color over it, so whatever sits behind (card or page bg) shows through. */
+.hero-portrait{
+  position:absolute;
+  top:clamp(-64px, -7vw, -44px);
+  left:clamp(-52px, -6vw, -36px);
+  width:clamp(132px, 13vw, 196px);
+  height:clamp(132px, 13vw, 196px);
+  z-index:2;
+  will-change:transform;
+}
+.hero-portrait-glow{
+  position:absolute; inset:-34%;
+  background:radial-gradient(circle, var(--accent) 0%, transparent 68%);
+  opacity:.4; filter:blur(30px); border-radius:50%; z-index:0;
+}
+.hero-portrait img{
+  position:relative; z-index:1;
+  display:block; width:100%; height:100%; object-fit:cover; border-radius:50%;
+  -webkit-mask-image:radial-gradient(circle at 50% 50%, #000 40%, transparent 47%);
+  mask-image:radial-gradient(circle at 50% 50%, #000 40%, transparent 47%);
+  filter:drop-shadow(0 18px 34px rgba(0,0,0,.6));
+}
+.hero-portrait-ring{
+  position:absolute; inset:9%; z-index:2; border-radius:50%;
+  border:1px solid rgba(226,232,244,.16); pointer-events:none;
+}
+
+.hero-stats{ display:flex; flex-direction:column; gap:12px; margin-bottom:24px; }
 .hero-stat{ background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:18px 14px; text-align:center; }
 .hero-stat-num{ font-family:var(--font-display); font-size:28px; color:var(--white); margin-bottom:4px; }
 .hero-stat-label{ font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+.hero-stat--primary{
+  display:flex; align-items:baseline; gap:16px; text-align:left;
+  background:linear-gradient(135deg, var(--accent-dim), var(--bg2));
+  border-color:var(--border2); padding:18px 20px;
+}
+.hero-stat--primary .hero-stat-num{ font-size:46px; color:var(--accent2); margin-bottom:0; line-height:1; }
+.hero-stats-secondary{ display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+.hero-stats-secondary .hero-stat{ padding:14px 8px; }
+.hero-stats-secondary .hero-stat-num{ font-size:21px; margin-bottom:3px; }
+.hero-stats-secondary .hero-stat-label{ font-size:10px; }
 .hero-card-rating{ display:flex; align-items:center; gap:10px; font-size:13px; color:var(--light); padding-top:18px; border-top:1px solid var(--border); }
 .stars{ color:var(--gold); letter-spacing:1px; }
 
@@ -228,18 +270,24 @@ button.link-download{
 /* ==========================================================================
    VERIFIED RESULTS
    ========================================================================== */
-.verified-grid{ display:grid; grid-template-columns:1.5fr 1fr; gap:28px; align-items:start; }
-.rank-card, .upwork-card{
+.proof-story{ margin-bottom:52px; }
+.proof-story-stat{ margin-bottom:30px; }
+.proof-story-num{
+  font-family:var(--font-display); font-size:clamp(56px, 9vw, 84px); line-height:1;
+  color:var(--accent2); margin-bottom:10px;
+}
+.proof-story-stat--secondary .proof-story-num{ color:var(--white); font-size:clamp(42px, 6.5vw, 58px); }
+.proof-story-caption{ font-size:19px; font-weight:600; margin-bottom:4px; }
+.proof-story-sub{ font-size:13.5px; color:var(--muted); max-width:520px; }
+.proof-shot--reveal{ max-width:680px; will-change:clip-path; }
+
+.verified-grid{ display:grid; grid-template-columns:1fr 1.3fr; gap:28px; align-items:start; }
+.upwork-card{
   background:linear-gradient(160deg, var(--bg3), var(--bg2));
   border:1px solid var(--border); border-radius:var(--radius-lg); padding:40px;
 }
-.rank-number{ font-family:var(--font-display); font-size:64px; color:var(--accent2); line-height:1; margin-bottom:12px; }
-.rank-title{ font-size:20px; font-weight:600; margin-bottom:6px; }
-.rank-sub{ font-size:13.5px; color:var(--muted); margin-bottom:20px; }
-.rank-body{ color:var(--light); margin-bottom:28px; }
 
 .testimonial-card{
-  margin-top:28px;
   background:linear-gradient(160deg, var(--bg3), var(--bg2));
   border:1px solid var(--border); border-radius:var(--radius-lg); padding:40px;
 }
@@ -295,11 +343,26 @@ button.link-download{
 .timeline-node--highlight{ background:var(--accent); border-color:var(--accent2); box-shadow:0 0 0 6px var(--accent-dim); }
 .timeline-card{ background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:28px 32px; }
 .timeline-card--highlight{ border-color:var(--border2); background:linear-gradient(160deg, var(--bg4), var(--bg3)); }
-.timeline-card-head{ display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:6px; }
+.timeline-card-head{
+  display:flex; align-items:baseline; justify-content:space-between; gap:16px;
+  width:100%; margin:0 0 6px; padding:0; background:none; border:none; cursor:pointer;
+  font-family:inherit; color:inherit; text-align:left;
+}
+.timeline-card-head-text{ display:flex; align-items:baseline; gap:16px; flex-wrap:wrap; }
 .timeline-card-head h3{ font-size:20px; }
 .timeline-period{ font-size:12.5px; color:var(--accent2); font-weight:600; letter-spacing:.04em; white-space:nowrap; }
+.timeline-chevron{
+  flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  width:22px; height:22px; margin-top:2px; color:var(--muted);
+  transition:transform .3s cubic-bezier(.16,1,.3,1), color .25s ease;
+}
+.timeline-chevron svg{ width:16px; height:16px; }
+.timeline-card-head[aria-expanded="true"] .timeline-chevron{ transform:rotate(180deg); color:var(--accent2); }
+.timeline-card-head:hover .timeline-chevron{ color:var(--accent2); }
 .timeline-meta{ font-size:13.5px; color:var(--muted); margin-bottom:16px; }
-.timeline-card ul{ display:flex; flex-direction:column; gap:10px; }
+.timeline-panel{ overflow:hidden; height:0; }
+.timeline-panel.is-open{ height:auto; }
+.timeline-card ul{ display:flex; flex-direction:column; gap:10px; padding-top:2px; }
 .timeline-card li{ font-size:14.5px; color:var(--light); padding-left:18px; position:relative; }
 .timeline-card li::before{ content:"-"; position:absolute; left:0; color:var(--muted); }
 .timeline-card li strong{ color:var(--text); }
@@ -399,9 +462,31 @@ body.modal-open{ overflow:hidden; }
 .chip-row{ display:flex; flex-wrap:wrap; gap:8px; }
 .chip{
   font-size:13px; padding:7px 14px; border-radius:999px; background:var(--bg2); border:1px solid var(--border2); color:var(--light);
+  font-family:inherit; margin:0; cursor:default;
   transition:color .25s ease, border-color .25s ease, transform .25s ease;
 }
 .chip:hover{ color:var(--accent2); border-color:var(--accent2); transform:translateY(-2px); }
+
+/* Tool chips (Tools & Platforms only) are real buttons: hover/focus/tap
+   reveals what the tool is actually used for, instead of a plain logo wall. */
+button.chip[data-tool-desc]{ position:relative; cursor:pointer; }
+button.chip[data-tool-desc]:focus-visible{ outline:none; color:var(--accent2); border-color:var(--accent2); }
+.chip[data-tool-desc]::after{
+  content:attr(data-tool-desc);
+  position:absolute; left:50%; bottom:calc(100% + 10px); transform:translate(-50%, 4px);
+  width:max-content; max-width:220px;
+  background:var(--bg4); border:1px solid var(--border2); border-radius:var(--radius-sm);
+  padding:10px 12px; font-size:12px; line-height:1.45; color:var(--text); text-align:left; font-weight:400;
+  box-shadow:0 20px 44px -14px rgba(0,0,0,.65);
+  opacity:0; visibility:hidden; pointer-events:none; z-index:10;
+  transition:opacity .2s ease, transform .2s ease, visibility 0s linear .2s;
+}
+.chip[data-tool-desc]:hover::after,
+.chip[data-tool-desc]:focus-visible::after,
+.chip[data-tool-desc].is-active::after{
+  opacity:1; visibility:visible; transform:translate(-50%, 0);
+  transition:opacity .2s ease, transform .2s ease, visibility 0s linear 0s;
+}
 
 /* ==========================================================================
    WHY WORK WITH ME
@@ -476,6 +561,9 @@ body.modal-open{ overflow:hidden; }
 @media (max-width: 980px){
   .hero-grid-layout{ grid-template-columns:1fr; }
   .hero{ padding-top:140px; text-align:left; }
+  .hero-portrait{
+    position:static; margin:0 auto 20px; width:112px; height:112px;
+  }
   .badge-row{ grid-template-columns:repeat(3, 1fr); row-gap:32px; }
   .samples-grid{ grid-template-columns:1fr; }
   .sample-card--wide{ grid-row:auto; }
@@ -524,7 +612,9 @@ body.modal-open{ overflow:hidden; }
   .badge-row{ grid-template-columns:repeat(2, 1fr); }
   .why-grid{ grid-template-columns:1fr; }
   .process-track{ grid-template-columns:1fr; }
-  .hero-stats{ grid-template-columns:1fr 1fr; }
+  .hero-stat--primary{ padding:16px 18px; }
+  .hero-stat--primary .hero-stat-num{ font-size:38px; }
+  .hero-stats-secondary{ gap:8px; }
   .site-footer{ flex-direction:column; gap:12px; text-align:center; }
   .btn-lg{ width:100%; }
 }
