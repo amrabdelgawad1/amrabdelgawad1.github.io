@@ -395,7 +395,16 @@
       const meetBtn = document.querySelector('[data-join-meet]');
       const calBtn = document.querySelector('[data-add-calendar]');
       if (meetBtn && result.meetLink) meetBtn.href = result.meetLink;
-      if (calBtn && result.eventLink) calBtn.href = result.eventLink;
+      if (calBtn && result.icsContent) {
+        // A downloadable .ics file, not a link to the event on Amr's calendar —
+        // the visitor was never added as a Google attendee (see book.js on the
+        // backend), so a link to the event itself would just be permission-denied
+        // for them. The .ics works with any calendar app, no permissions needed.
+        const blob = new Blob([result.icsContent], { type: "text/calendar;charset=utf-8" });
+        calBtn.href = URL.createObjectURL(blob);
+        calBtn.download = "portfolio-call.ics";
+        calBtn.removeAttribute("target");
+      }
       goToStep("confirm");
     } catch (err) {
       clearInterval(cycle);
