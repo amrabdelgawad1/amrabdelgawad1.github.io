@@ -994,7 +994,7 @@
         '<div><span>Expenses</span><span class="mono">−' + usd(t.expense) + '</span></div>' +
         (t.toReceive > 0 ? '<div><span>Not received yet</span><span class="mono">' + usd(t.toReceive) + '</span></div>' : '') +
         '<div class="grand"><span>Total profit</span><span class="mono">' + usd(t.net) + '</span></div>' +
-        (fx.rate ? '<div class="in-egp"><span>' + usd(t.net) + ' = ' + egp(t.net * fx.rate) + '</span><span>at ' + fx.rate + ' per $1, ' + longDate(new Date()) + '</span></div>' : '') +
+        (fx.rate ? '<div class="in-egp"><span>' + usd(t.net) + ' = ' + egp(t.net * fx.rate) + '</span><span>at ' + fx.rate.toFixed(2) + ' per $1, ' + longDate(new Date()) + '</span></div>' : '') +
         '</div></div>' +
       '<div class="foot"><div><span>Amr Abdelgawad Talents · amrabdelgawad.site</span><span>' + number + '</span></div></div>';
   }
