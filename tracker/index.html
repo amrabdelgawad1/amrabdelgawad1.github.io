@@ -23,6 +23,9 @@
   .gate .btn{ width:100%; }
   .gate .form-error{ text-align:center; margin-top:0; }
   .gate input{ letter-spacing:.06em; }
+  .company-pill{ display:inline-flex; align-items:center; gap:6px; font-size:14px; color:var(--light); border:1px solid var(--border2); background:rgba(7,9,15,.5); border-radius:999px; padding:7px 16px; margin:-6px 0 18px; }
+  .company-pill strong{ color:var(--text); font-weight:600; }
+  .company-pill:has(strong:empty){ display:none; }
   .btn[aria-busy="true"]{ opacity:.6; pointer-events:none; }
   .foot-link{ text-align:center; font-size:13px; color:var(--muted); margin-top:28px; }
   .foot-link button{ background:none; border:0; color:var(--light); font:inherit; cursor:pointer; border-bottom:1px solid var(--border2); padding:0 0 1px; }
@@ -152,6 +155,7 @@
 
     <div id="app" hidden>
     <p class="eyebrow"><span class="dot-live"></span>Shift tracker</p>
+    <p class="company-pill">Logging time for <strong id="coName"></strong></p>
     <h1 class="section-heading">Clock in for your shift</h1>
     <p class="section-lede" style="margin-bottom:36px;">Enter your name and the date you're covering, then hit Run. Use Break for breaks and Off when you're done.</p>
 
@@ -245,17 +249,17 @@
   const GOAL = 8*3600, CIRC = 326.7;
 
   // ---------- team code gate ----------
-  // The page never shows company names; the database files the shift under the code's company.
-  let teamCode = store.get(CODE_KEY);
-  store.del('tracker-company-name');
+  // The page only ever learns the company behind the code that was typed, never the others.
+  const CO_KEY = 'tracker-company-name';
+  let teamCode = store.get(CODE_KEY), companyName = store.get(CO_KEY) || '';
 
   function showGate(msg){
     $('app').hidden = true; $('gate').hidden = false;
     $('gateErr').textContent = msg || '';
     $('code').value = ''; $('code').focus();
   }
-  function showApp(){ $('gate').hidden = true; $('app').hidden = false; }
-  function setCompany(code){ teamCode = code; store.set(CODE_KEY, code); }
+  function showApp(){ $('gate').hidden = true; $('app').hidden = false; $('coName').textContent = companyName; }
+  function setCompany(code, name){ teamCode = code; companyName = name; store.set(CODE_KEY, code); store.set(CO_KEY, name); $('coName').textContent = name; }
 
   $('gateForm').addEventListener('submit', async e => {
     e.preventDefault();
@@ -266,12 +270,12 @@
     $('gateBtn').removeAttribute('aria-busy');
     if (error) { $('gateErr').textContent = "Couldn't reach the server. Check your connection and try again."; return; }
     if (!data) { $('gateErr').textContent = "That code isn't right. Check it with Amr."; return; }
-    setCompany(code); showApp();
+    setCompany(code, data); showApp();
   });
   $('code').addEventListener('input', () => $('gateErr').textContent = '');
   $('switchCo').addEventListener('click', () => {
     if (mode !== 'off') { alert('Finish your current shift first, then enter a different code.'); return; }
-    store.del(CODE_KEY); teamCode = null; showGate();
+    store.del(CODE_KEY); store.del(CO_KEY); teamCode = null; companyName = ''; showGate();
   });
 
   // ---------- shift state (kept on this device so closing the tab doesn't lose it) ----------
@@ -366,7 +370,7 @@
     document.querySelectorAll('.ctl').forEach(b => b.removeAttribute('aria-busy'));
     work = brk = 0; segs = []; startedAt = null;
     applyMode('off'); persist();
-    $('savedSub').textContent = p.p_name + ' · ' + fmtDate(p.p_shift_date);
+    $('savedSub').textContent = p.p_name + ' · ' + fmtDate(p.p_shift_date) + (companyName ? ' · ' + companyName : '');
     $('svW').textContent = hm(p.p_work_seconds);
     $('svB').textContent = hm(p.p_break_seconds);
     $('svC').textContent = hhmm(new Date(p.p_started_at)) + '–' + hhmm(new Date(p.p_ended_at));
@@ -380,7 +384,7 @@
       if (!code) return;
       const { data } = await db.rpc('check_team_code', { p_code: code.trim() });
       if (!data) { $('saveErrMsg').textContent = "That code isn't right. Check it with Amr."; return; }
-      setCompany(code.trim());
+      setCompany(code.trim(), data);
       pending.p_code = teamCode; $('retry').textContent = 'Try again';
     }
     finish();
