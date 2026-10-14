@@ -145,10 +145,49 @@
     drawClock();
     clearInterval(tickTimer); tickTimer = setInterval(drawClock, 1000);
     loadHistory();
+    loadRequests();
     loadFx().then(() => loadHistory());
   }
 
+  // After 10 hours on the clock, ask whether they're still working
+  const GUARD_SECS = 10 * 3600, GUARD_KEY = 'talents-guard-ok-until';
+  function drawGuard(){
+    const since = live ? (Date.now() - new Date(live.started_at).getTime()) / 1000 : 0;
+    let okUntil = 0; try { okUntil = Number(localStorage.getItem(GUARD_KEY) || 0); } catch(e){}
+    const show = !!live && since > GUARD_SECS && Date.now() > okUntil;
+    if ($('guard').hidden === !show) return;
+    $('guard').hidden = !show;
+    if (show) { $('guardText').textContent = 'You clocked in at ' + hhmm(new Date(live.started_at)) + ', ' + hm(since) + ' ago. If you finished earlier and forgot to press Off, set the time you stopped.'; $('guardForm').hidden = true; }
+  }
+  $('guardYes').addEventListener('click', () => { try { localStorage.setItem(GUARD_KEY, String(Date.now() + 2 * 3600e3)); } catch(e){} $('guard').hidden = true; });
+  $('guardFix').addEventListener('click', () => { $('guardForm').hidden = false; $('guardEnd').value = ''; $('guardEnd').focus(); });
+  $('guardEnd').addEventListener('input', () => $('guardErr').textContent = '');
+  $('guardForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!live) return;
+    const v = $('guardEnd').value;
+    if (!v) { $('guardErr').textContent = 'Pick the time you finished.'; return; }
+    const start = new Date(live.started_at), [hh, mm] = v.split(':').map(Number);
+    const end = new Date(start); end.setHours(hh, mm, 0, 0);
+    if (end <= start) end.setDate(end.getDate() + 1); // finished after midnight
+    if (end > new Date()) { $('guardErr').textContent = 'That time hasn’t happened yet.'; return; }
+    // Count the work up to that time, never more than the clock has
+    const work = Math.round(Math.max(0, Math.min(workNow(), (end - start) / 1000 - live.break_seconds)));
+    if (work < 60) { $('guardErr').textContent = 'That would be less than a minute of work. Pick a later time.'; return; }
+    $('guardSave').setAttribute('aria-busy', 'true');
+    const { error } = await db.rpc('member_log_shift', {
+      p_shift_date: iso(start), p_work_seconds: Math.min(work, 86400), p_break_seconds: live.break_seconds,
+      p_started_at: live.started_at, p_ended_at: end.toISOString()
+    });
+    $('guardSave').removeAttribute('aria-busy');
+    if (error) { $('guardErr').textContent = "Couldn't save it. Check your connection and try again."; return; }
+    live = null; keepLocal(); $('guard').hidden = true; drawClock();
+    toast('Shift saved: ' + hm(work) + ', ended ' + v);
+    loadHistory();
+  });
+
   function drawClock(){
+    drawGuard();
     const mode = live ? live.mode : 'off';
     $('tStatus').className = 'status ' + LBL[mode][1]; $('tStatus').querySelector('span').textContent = LBL[mode][0];
     $('tClock').textContent = clock(workNow());
@@ -207,6 +246,51 @@
     loadHistory();
   }
 
+  // ---------- missed shifts ----------
+  $('missToggle').addEventListener('click', () => {
+    $('missForm').hidden = false; $('missToggle').hidden = true;
+    if (!$('mDate').value) { const y = new Date(); y.setDate(y.getDate() - 1); $('mDate').value = iso(y); }
+    $('mDate').max = iso(new Date());
+    $('mFrom').focus();
+  });
+  $('missCancel').addEventListener('click', () => { $('missForm').hidden = true; $('missToggle').hidden = false; $('mErr').textContent = ''; });
+  ['mDate', 'mFrom', 'mTo', 'mBreak'].forEach(id => $(id).addEventListener('input', () => $('mErr').textContent = ''));
+  $('missForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const err = m => { $('mErr').textContent = m; };
+    const d = $('mDate').value, a = $('mFrom').value, b = $('mTo').value, brk = parseInt($('mBreak').value || '0', 10);
+    if (!d) return err('Pick the date you worked.');
+    if (!a || !b) return err('Enter when you started and finished.');
+    if (a === b) return err('The start and finish times are the same. Check them.');
+    if (isNaN(brk) || brk < 0) return err('Check the break minutes.');
+    const start = new Date(d + 'T' + a), end = new Date(d + 'T' + b);
+    if (end <= start) end.setDate(end.getDate() + 1); // finished after midnight
+    if (end > new Date()) return err('That shift ends in the future.');
+    const work = (end - start) / 1000 - brk * 60;
+    if (work < 60) return err('That’s less than a minute of work once the break is taken out.');
+    if (work > 86400) return err('That’s over 24 hours. Check the times.');
+    $('missSave').setAttribute('aria-busy', 'true');
+    const { error } = await db.rpc('member_request_shift', { p_shift_date: d, p_started_at: start.toISOString(), p_ended_at: end.toISOString(), p_break_seconds: brk * 60, p_note: $('mNote').value.trim() || null });
+    $('missSave').removeAttribute('aria-busy');
+    if (error) return err(/future/i.test(error.message) ? 'That date is in the future.' : /far back/i.test(error.message) ? 'That’s more than two months ago. Ask Amr directly.' : /Too many/i.test(error.message) ? 'You have a lot of requests waiting. Wait for Amr to go through them.' : "Couldn't send it. Check your connection and try again.");
+    $('mFrom').value = ''; $('mTo').value = ''; $('mBreak').value = ''; $('mNote').value = '';
+    $('missForm').hidden = true; $('missToggle').hidden = false;
+    toast('Sent to Amr for approval');
+    loadRequests();
+  });
+  async function loadRequests(){
+    const { data, error } = await db.from('shift_requests').select('*').order('created_at', { ascending:false }).limit(20);
+    const box = $('reqList'); box.innerHTML = '';
+    if (error) return;
+    const recent = (data || []).filter(r => r.status === 'pending' || (r.status === 'rejected' && Date.now() - new Date(r.decided_at).getTime() < 14 * 864e5));
+    recent.forEach(r => {
+      const d = document.createElement('div'); d.className = 'row req';
+      d.innerHTML = '<span class="n"><b>' + esc(dayDate(r.shift_date)) + '</b><small>' + esc((r.status === 'pending' ? 'Missed shift, waiting for Amr' : 'Not approved' + (r.reason ? ': ' + r.reason : '')) + ' · ' + hm(r.work_seconds)) + '</small></span>' +
+        '<span class="v">' + (r.status === 'pending' ? '<span class="pill p-pau">Pending</span>' : '<span class="pill p-off">Declined</span>') + '</span>';
+      box.appendChild(d);
+    });
+  }
+
   // Pounds for "not paid yet": today's rate from a public feed
   const fx = { rate:null };
   async function loadFx(){
@@ -262,7 +346,7 @@
   // ======================================================================
   // Owner: menu, Live now, Invite and access, and the /cash pages
   // ======================================================================
-  const OWNER_PAGES = { live:'Live now', people:'Invite and access', mytime:'My time', overview:'Overview', team:'Team', income:'Income', expense:'Expenses' };
+  const OWNER_PAGES = { live:'Live now', requests:'Missed-shift requests', people:'Invite and access', mytime:'My time', overview:'Overview', team:'Team', income:'Income', expense:'Expenses' };
   let companies = [];
 
   async function startOwner(){
@@ -280,12 +364,14 @@
     if (!OWNER_PAGES[page]) { page = 'live'; history.replaceState(null, '', '#live'); }
     $('title').textContent = OWNER_PAGES[page];
     document.querySelectorAll('.drawer .mi[href]').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + page));
-    $('pLive').hidden = page !== 'live'; $('pPeople').hidden = page !== 'people';
-    const cashPage = !['live', 'people'].includes(page);
+    $('pLive').hidden = page !== 'live'; $('pPeople').hidden = page !== 'people'; $('pRequests').hidden = page !== 'requests';
+    const cashPage = !['live', 'people', 'requests'].includes(page);
     $('pCash').hidden = !cashPage;
     clearInterval(liveTimer);
     if (page === 'live') { loadLive(); liveTimer = setInterval(loadLive, 15000); }
     if (page === 'people') loadPeople();
+    if (page === 'requests') loadOwnerRequests();
+    countRequests();
     if (cashPage) openCash(page);
     closeMenu();
     window.scrollTo(0, 0);
@@ -312,6 +398,7 @@
     const [st, mem] = await Promise.all([db.from('live_status').select('*'), db.from('members').select('user_id,name,company_id,active').order('name')]);
     if (st.error || mem.error) { $('liveNote').textContent = /live_status|members/.test((st.error || mem.error).message || '') ? 'The app isn’t set up yet. Run supabase/app-setup.sql.' : "Couldn't refresh. Check your connection."; return; }
     liveRows = st.data || []; liveMembers = (mem.data || []).filter(m => m.active);
+    countRequests();
     $('liveNote').textContent = 'Updates every 15 seconds.';
     drawLive();
     clearInterval(tickTimer); tickTimer = setInterval(() => { if (!$('pLive').hidden) drawLive(); }, 1000);
@@ -323,7 +410,7 @@
       const s = liveRows.find(r => r.user_id === m.user_id);
       if (!s) return { m, mode:'off' };
       const seg = Math.max(0, (now - new Date(s.seg_at).getTime()) / 1000);
-      return { m, mode:s.mode, work: s.work_seconds + (s.mode === 'run' ? seg : 0), brk: s.break_seconds + (s.mode === 'brk' ? seg : 0), seg, since: new Date(s.started_at) };
+      return { m, mode:s.mode, work: s.work_seconds + (s.mode === 'run' ? seg : 0), brk: s.break_seconds + (s.mode === 'brk' ? seg : 0), seg, since: new Date(s.started_at), long: (now - new Date(s.started_at).getTime()) / 1000 > 10 * 3600 };
     });
     const order = { run:0, brk:1, pau:2, off:3 };
     people.sort((a, b) => order[a.mode] - order[b.mode] || a.m.name.localeCompare(b.m.name));
@@ -334,10 +421,49 @@
     if (!people.length) { box.innerHTML = '<p class="empty">No team members yet. Invite someone from Invite and access.</p>'; return; }
     const pill = { run:'<span class="pill p-ok">Working</span>', brk:'<span class="pill p-due">On break</span>', pau:'<span class="pill p-pau">Paused</span>', off:'<span class="pill p-off">Off</span>' };
     box.innerHTML = people.map(p => {
-      const sub = p.mode === 'off' ? 'Not clocked in' : coName(p.m.company_id) + ' · ' + (p.mode === 'run' ? 'working since ' + hhmm(p.since) : p.mode === 'brk' ? 'on break ' + Math.floor(p.seg / 60) + 'm' : 'paused ' + Math.floor(p.seg / 60) + 'm');
-      return '<div class="row"><span class="av">' + esc(initials(p.m.name)) + '</span><span class="n"><b>' + esc(p.m.name) + '</b><small>' + esc(sub) + '</small></span>' +
+      const sub = p.mode === 'off' ? 'Not clocked in' : (p.long ? 'Clocked in over 10 hours ago. Did they forget to clock out? · ' : '') + coName(p.m.company_id) + ' · ' + (p.mode === 'run' ? 'working since ' + hhmm(p.since) : p.mode === 'brk' ? 'on break ' + Math.floor(p.seg / 60) + 'm' : 'paused ' + Math.floor(p.seg / 60) + 'm');
+      return '<div class="row' + (p.long ? ' long' : '') + '"><span class="av">' + esc(initials(p.m.name)) + '</span><span class="n"><b>' + esc(p.m.name) + '</b><small>' + esc(sub) + '</small></span>' +
         '<span class="v">' + (p.mode === 'off' ? '' : '<span class="num">' + clock(p.work) + '</span><small>') + pill[p.mode] + (p.mode === 'off' ? '' : '</small>') + '</span></div>';
     }).join('');
+  }
+
+  // ---------- missed-shift requests (owner) ----------
+  async function countRequests(){
+    const { count } = await db.from('shift_requests').select('id', { count:'exact', head:true }).eq('status', 'pending');
+    const n = count || 0;
+    $('reqCnt').hidden = !n; $('reqCnt').textContent = n + ' waiting';
+    $('burgerDot').hidden = !n;
+  }
+  async function loadOwnerRequests(){
+    const { data, error } = await db.from('shift_requests').select('*').order('created_at', { ascending:false }).limit(60);
+    if (error) { $('reqPending').innerHTML = '<p class="empty">' + (/shift_requests/.test(error.message || '') ? 'Not set up yet. Run supabase/app-requests.sql.' : 'Couldn’t load requests.') + '</p>'; return; }
+    const coName = id => (companies.find(c => c.id === id) || {}).name || '';
+    const pend = data.filter(r => r.status === 'pending'), done = data.filter(r => r.status !== 'pending').slice(0, 20);
+    const row = (r, actions) => {
+      const d = document.createElement('div'); d.className = 'person';
+      d.innerHTML = '<div class="head"><span class="av"></span><span class="n"><b></b><small></small></span><span class="num rq-h"></span></div>' + (actions ? '<div class="acts"><button class="btn small" data-ok="1">Approve</button><button class="btn ghost small" data-ok="0">Decline</button></div>' : '');
+      d.querySelector('.av').textContent = initials(r.name);
+      d.querySelector('b').textContent = r.name + ' · ' + dayDate(r.shift_date);
+      d.querySelector('small').textContent = hhmm(new Date(r.started_at)) + '–' + hhmm(new Date(r.ended_at)) + (r.break_seconds >= 60 ? ' · ' + hm(r.break_seconds) + ' break' : '') + ' · ' + coName(r.company_id) +
+        (r.note ? ' · “' + r.note + '”' : '') + (actions ? '' : ' · ' + (r.status === 'approved' ? 'Approved' : 'Declined' + (r.reason ? ': ' + r.reason : '')));
+      d.querySelector('.rq-h').textContent = hm(r.work_seconds);
+      if (actions) d.querySelectorAll('[data-ok]').forEach(b => b.addEventListener('click', async () => {
+        const ok = b.dataset.ok === '1';
+        let reason = null;
+        if (!ok) { reason = prompt('Why are you declining it? (optional, ' + r.name.split(' ')[0] + ' will see this)', ''); if (reason === null) return; }
+        b.setAttribute('aria-busy', 'true');
+        const { error } = await db.rpc('decide_shift_request', { p_id: r.id, p_approve: ok, p_reason: reason });
+        b.removeAttribute('aria-busy');
+        if (error) { toast(/Already/.test(error.message) ? 'That one was already decided.' : 'Couldn’t save that. Try again.'); return; }
+        toast(ok ? 'Approved. It’s now in ' + r.name.split(' ')[0] + '’s shifts.' : 'Declined');
+        loadOwnerRequests(); countRequests();
+      }));
+      return d;
+    };
+    $('reqPending').innerHTML = pend.length ? '' : '<p class="empty">Nothing waiting. When someone forgets to clock in, their request shows up here.</p>';
+    pend.forEach(r => $('reqPending').appendChild(row(r, true)));
+    $('reqDone').innerHTML = done.length ? '' : '<p class="empty">Nothing yet.</p>';
+    done.forEach(r => $('reqDone').appendChild(row(r, false)));
   }
 
   // ---------- invite and access ----------
@@ -368,17 +494,22 @@
     try { await navigator.clipboard.writeText($('linkVal').value); toast('Link copied'); }
     catch(e) { $('linkVal').select(); toast('Press and hold to copy the link'); }
   });
+  let inviteVia = 'email';
+  ['invBtn', 'invWa'].forEach(id => $(id).addEventListener('click', () => { inviteVia = $(id).dataset.via; }));
   $('invForm').addEventListener('submit', async e => {
     e.preventDefault();
+    const btn = inviteVia === 'email' ? $('invBtn') : $('invWa');
     const name = $('invName').value.trim().replace(/\s+/g, ' '), email = $('invEmail').value.trim(), co = Number($('invCo').value) || null;
     if (name.length < 2) { $('invErr').textContent = 'Enter their full name.'; return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { $('invErr').textContent = 'Enter a valid email.'; return; }
     $('invErr').textContent = '';
-    $('invBtn').setAttribute('aria-busy', 'true');
-    const r = await callAccess({ action:'invite', name, email, company_id: co });
-    $('invBtn').removeAttribute('aria-busy');
+    btn.setAttribute('aria-busy', 'true');
+    const r = await callAccess({ action:'invite', name, email, company_id: co, via: inviteVia });
+    btn.removeAttribute('aria-busy');
     if (r.error) { $('invErr').textContent = r.error; return; }
-    showLink(name, r.link, 'Send this to ' + name.split(' ')[0] + '. It works once and expires in 24 hours.' + (r.linked_shifts ? ' ' + plural(r.linked_shifts, 'earlier shift') + ' joined their history.' : ''));
+    const joined = r.linked_shifts ? ' ' + plural(r.linked_shifts, 'earlier shift') + ' joined their history.' : '';
+    if (r.sent) { $('linkBox').hidden = true; toast('Invite emailed to ' + email + '.' + joined); }
+    else showLink(name, r.link, 'Send this to ' + name.split(' ')[0] + '. It works once and expires in 24 hours.' + joined);
     $('invName').value = ''; $('invEmail').value = '';
     loadPeople();
   });
@@ -394,7 +525,7 @@
     data.forEach(m => {
       const d = document.createElement('div'); d.className = 'person';
       d.innerHTML = '<div class="head"><span class="av' + (m.active ? '' : ' gone') + '"></span><span class="n"><b></b><small></small></span>' + (m.active ? '<span class="pill p-ok">Active</span>' : '<span class="pill p-off">Removed</span>') + '</div>' +
-        '<div class="acts"><select class="field" aria-label="Works for"></select><button class="btn ghost small" data-a="link">New sign-in link</button><button class="btn ghost small" data-a="' + (m.active ? 'remove' : 'restore') + '">' + (m.active ? 'Remove access' : 'Restore access') + '</button></div>';
+        '<div class="acts"><select class="field" aria-label="Works for"></select><button class="btn ghost small" data-a="link" data-via="email">Email a sign-in link</button><button class="btn ghost small" data-a="link" data-via="whatsapp">WhatsApp a sign-in link</button><button class="btn ghost small" data-a="' + (m.active ? 'remove' : 'restore') + '">' + (m.active ? 'Remove access' : 'Restore access') + '</button></div>';
       d.querySelector('.av').textContent = initials(m.name);
       d.querySelector('b').textContent = m.name;
       d.querySelector('small').textContent = (m.email || '') + ' · since ' + new Date(m.created_at).toLocaleDateString('en-US', { month:'short', year:'numeric' });
@@ -407,9 +538,10 @@
         const a = b.dataset.a;
         if (a === 'remove' && !confirm('Remove ' + m.name + '’s access? They won’t be able to sign in. Their shifts stay in your records.')) return;
         b.setAttribute('aria-busy', 'true');
-        const r = await callAccess({ action:a, user_id:m.user_id });
+        const r = await callAccess({ action:a, user_id:m.user_id, via: b.dataset.via || null });
         b.removeAttribute('aria-busy');
         if (r.error) { toast(r.error); return; }
+        if (a === 'link' && r.sent) { toast('Sign-in link emailed to ' + m.email); return; }
         if (a === 'link') { showLink(m.name, r.link, 'A new sign-in link for ' + m.name.split(' ')[0] + ', for a forgotten password or a new phone. It works once and expires in an hour.'); window.scrollTo({ top:0, behavior:'smooth' }); return; }
         toast(a === 'remove' ? 'Access removed' : 'Access restored'); loadPeople();
       }));
@@ -423,7 +555,27 @@
   let installPrompt = null;
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; $('installBtn').hidden = false; });
   $('installBtn').addEventListener('click', async () => { if (!installPrompt) return; installPrompt.prompt(); installPrompt = null; $('installBtn').hidden = true; closeMenu(); });
-  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  // When a new version is published, the open app offers it; one tap reloads into it
+  let waitingSW = null;
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      const offer = w => { waitingSW = w; $('updateBar').hidden = false; };
+      if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
+      reg.addEventListener('updatefound', () => {
+        const w = reg.installing;
+        if (w) w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) offer(w); });
+      });
+      // look for a new version whenever the app comes back to the front, and every 30 minutes
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
+      setInterval(() => reg.update().catch(() => {}), 30 * 60 * 1000);
+    }).catch(() => {});
+    let reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (reloading) return; reloading = true; location.reload(); });
+  }
+  $('updateBtn').addEventListener('click', () => {
+    $('updateBtn').setAttribute('aria-busy', 'true');
+    if (waitingSW) waitingSW.postMessage({ type:'SKIP_WAITING' }); else location.reload();
+  });
 
   // ---------- start ----------
   (async () => {

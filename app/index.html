@@ -10,12 +10,12 @@
 <meta name="apple-mobile-web-app-title" content="Talents" />
 <title>Talents</title>
 <link rel="manifest" href="manifest.webmanifest" />
-<link rel="icon" href="icon-192.png" />
+<link rel="icon" href="icon-64.png" />
 <link rel="apple-touch-icon" href="icon-180.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=2" />
+<link rel="stylesheet" href="app.css?v=3" />
 </head>
 <body>
 <div class="shell">
@@ -26,7 +26,7 @@
   <!-- sign in -->
   <section class="center" id="vLogin" hidden>
     <form class="card auth" id="loginForm" novalidate>
-      <div class="logo" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></div>
+      <img class="logo" src="icon-180.png" alt="" />
       <h1>Amr Abdelgawad Talents</h1>
       <p class="sub">Sign in to clock in and see your hours</p>
       <label class="label">Email<input class="field" id="em" type="email" autocomplete="username" placeholder="you@email.com" /></label>
@@ -40,7 +40,7 @@
   <!-- set a password (from an invite or a new sign-in link) -->
   <section class="center" id="vSetPw" hidden>
     <form class="card auth" id="pwForm" novalidate>
-      <div class="logo" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+      <img class="logo" src="icon-180.png" alt="" />
       <h1 id="pwTitle">Welcome</h1>
       <p class="sub">Choose a password for your account. You'll use it with your email to sign in.</p>
       <label class="label">New password<input class="field" id="pw1" type="password" autocomplete="new-password" placeholder="At least 8 characters" /></label>
@@ -53,7 +53,7 @@
   <!-- owner: authenticator code -->
   <section class="center" id="vMfa" hidden>
     <form class="card auth" id="mfaForm" novalidate>
-      <div class="logo" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 17h2"/></svg></div>
+      <img class="logo" src="icon-180.png" alt="" />
       <h1>Enter your code</h1>
       <p class="sub">Open your authenticator app and type the 6-digit code. This device stays verified until you sign out.</p>
       <label class="label" id="mfaWhichWrap" hidden>Which app are you using?<select class="field" id="mfaWhich"></select></label>
@@ -76,7 +76,7 @@
   <!-- the app -->
   <div id="vApp" hidden>
     <header class="top">
-      <button class="burger" id="burger" aria-label="Open menu" hidden><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <button class="burger" id="burger" aria-label="Open menu" hidden><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="dot" id="burgerDot" hidden></span></button>
       <h1 id="title">Tracker</h1>
       <span class="me" id="me" aria-hidden="true">?</span>
     </header>
@@ -84,6 +84,17 @@
 
     <!-- team member: tracker and own history -->
     <main class="pad" id="pTrack" hidden>
+      <section class="card guard" id="guard" hidden>
+        <h2>Still working?</h2>
+        <p id="guardText">You've been clocked in for over 10 hours.</p>
+        <div class="row2"><button class="btn ghost" type="button" id="guardYes">Yes, still working</button><button class="btn" type="button" id="guardFix">I forgot to clock out</button></div>
+        <form class="form" id="guardForm" hidden novalidate>
+          <label class="label">When did you finish?<input class="field" id="guardEnd" type="time" /></label>
+          <p class="note">Your shift will end at that time. Amr can still adjust it.</p>
+          <p class="err" id="guardErr"></p>
+          <button class="btn" type="submit" id="guardSave">Clock out at that time</button>
+        </form>
+      </section>
       <div class="grid2">
         <section class="card">
           <div class="co-line"><span class="status s-off" id="tStatus"><i></i><span>Off</span></span><span class="muted" id="tCompany"></span></div>
@@ -102,8 +113,22 @@
             <div class="tile"><p>This month</p><strong class="num" id="hMonth">0h 00m</strong><small id="hShifts">0 shifts</small></div>
             <div class="tile due"><p>Not paid yet</p><strong class="num" id="hDue">$0.00</strong><small id="hDueEgp"></small></div>
           </div>
+          <section class="card" id="missCard">
+            <button class="btn ghost" type="button" id="missToggle">Add a missed shift</button>
+            <form class="form" id="missForm" hidden novalidate>
+              <h2 style="margin:4px 0 0">Add a missed shift</h2>
+              <p class="note">Forgot to clock in? Tell Amr what you worked. It counts once he approves it.</p>
+              <label class="label">Date<input class="field" id="mDate" type="date" /></label>
+              <div class="row2"><label class="label">Started<input class="field" id="mFrom" type="time" /></label><label class="label">Finished<input class="field" id="mTo" type="time" /></label></div>
+              <label class="label">Break (minutes)<input class="field" id="mBreak" type="number" min="0" max="600" step="5" placeholder="0" /></label>
+              <label class="label">Note for Amr (optional)<input class="field" id="mNote" maxlength="300" placeholder="Forgot to press Run" /></label>
+              <p class="err" id="mErr"></p>
+              <div class="row2"><button class="btn ghost" type="button" id="missCancel">Cancel</button><button class="btn" type="submit" id="missSave">Send to Amr</button></div>
+            </form>
+          </section>
           <section class="card list">
             <h2>My history</h2>
+            <div id="reqList"></div>
             <div id="hList"><p class="empty">Loading…</p></div>
           </section>
           <button class="btn ghost" type="button" data-signout>Sign out</button>
@@ -122,6 +147,18 @@
       <p class="note" id="liveNote">Updates every 15 seconds.</p>
     </main>
 
+    <!-- owner: missed-shift requests -->
+    <main class="pad" id="pRequests" hidden>
+      <section class="card list">
+        <h2>Waiting for you</h2>
+        <div id="reqPending"><p class="empty">Loading…</p></div>
+      </section>
+      <section class="card list">
+        <h2>Decided</h2>
+        <div id="reqDone"><p class="empty">Nothing yet.</p></div>
+      </section>
+    </main>
+
     <!-- owner: invite and access -->
     <main class="pad" id="pPeople" hidden>
       <div class="grid2">
@@ -132,7 +169,7 @@
             <label class="label">Email<input class="field" id="invEmail" type="email" autocomplete="off" placeholder="sara@email.com" /></label>
             <label class="label">Works for<select class="field" id="invCo"></select></label>
             <p class="err" id="invErr"></p>
-            <button class="btn" id="invBtn" type="submit">Create invite link</button>
+            <div class="row2"><button class="btn" id="invBtn" type="submit" data-via="email">Send email invite</button><button class="btn ghost" id="invWa" type="submit" data-via="whatsapp">Get WhatsApp link</button></div>
           </form>
           <div class="linkbox" id="linkBox" hidden>
             <p><b id="linkFor"></b></p>
@@ -163,6 +200,7 @@
     <a class="mi" href="#income"><svg class="i" viewBox="0 0 24 24"><path d="M17 7L7 17M7 9v8h8"/></svg>Income</a>
     <a class="mi" href="#expense"><svg class="i" viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>Expenses</a>
     <p class="sec">People</p>
+    <a class="mi" href="#requests"><svg class="i" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>Missed-shift requests<span class="cnt due" id="reqCnt" hidden></span></a>
     <a class="mi" href="#people"><svg class="i" viewBox="0 0 24 24"><circle cx="10" cy="8" r="3.2"/><path d="M4 19c.8-3.2 3.2-5 6-5s4.9 1.6 5.7 4"/><path d="M18 8v6M15 11h6"/></svg>Invite and access</a>
     <div class="bottom">
       <button class="mi" type="button" id="installBtn" hidden><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Install the app</button>
@@ -170,11 +208,12 @@
     </div>
   </nav>
 
+  <div class="update" id="updateBar" hidden role="status"><span>A new version of the app is ready.</span><button class="btn small" type="button" id="updateBtn">Update</button></div>
   <div class="toast" id="toast"><span id="toastMsg"></span></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="../tracker/config.js"></script>
-<script src="app.js?v=2"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>
