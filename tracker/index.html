@@ -237,6 +237,20 @@
 
   const CODE_KEY = 'tracker-company-code';
   const SHIFT_KEY = 'tracker-active-shift';
+  // Live now: this phone or browser reports Run / Pause / Break / Off to Amr under the company code
+  const DEVICE_KEY = 'tracker-device';
+  let deviceId = null;
+  try { deviceId = localStorage.getItem(DEVICE_KEY); if (!deviceId) { deviceId = (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); })); localStorage.setItem(DEVICE_KEY, deviceId); } } catch(e){}
+  function pushLive(force){
+    if (!teamCode || !deviceId) return;
+    const m = force || mode;
+    if (m !== 'off' && !startedAt) return;
+    db.rpc('code_live_update', {
+      p_code: teamCode, p_device: deviceId, p_name: ($('nm').value || '').trim() || 'Team member',
+      p_mode: m === 'pause' ? 'pau' : m, p_started_at: (startedAt || new Date()).toISOString(),
+      p_work: Math.round(work), p_break: Math.round(brk)
+    }).then(() => {}, () => {});
+  }
   const store = {
     get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
     set(k, v){ try { localStorage.setItem(k, v); } catch(e){} },
@@ -315,7 +329,7 @@
     advance();
     if (mode === 'off') { startedAt = new Date(); work = brk = 0; segs = []; }
     segs.push({ k:m, t:0 });
-    applyMode(m); persist();
+    applyMode(m); persist(); pushLive();
   }
 
   function valid(){
@@ -370,6 +384,7 @@
     }
 
     const p = pending; pending = null;
+    pushLive('off');
     document.querySelectorAll('.ctl').forEach(b => b.removeAttribute('aria-busy'));
     work = brk = 0; segs = []; startedAt = null;
     applyMode('off'); persist();
@@ -415,7 +430,7 @@
   let tickCount = 0;
   setInterval(() => {
     advance();
-    if (mode !== 'off') { draw(); if (++tickCount % 20 === 0) persist(); }
+    if (mode !== 'off') { draw(); if (++tickCount % 20 === 0) persist(); if (tickCount % 1200 === 0) pushLive(); } // every 5 minutes
   }, 250);
   window.addEventListener('pagehide', () => { advance(); persist(); });
   document.addEventListener('visibilitychange', () => { advance(); persist(); draw(); });
@@ -425,6 +440,7 @@
   $('nm').value = store.get('tracker-name') || '';
   document.querySelector('[data-k="pause"]').setAttribute('aria-disabled', 'true');
   const resumed = restore();
+  if (resumed) pushLive();
   draw();
   if (teamCode || resumed) showApp(); else showGate();
 })();

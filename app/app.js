@@ -8,6 +8,8 @@
 
   // An invite or new sign-in link lands here with its type in the address; read it before supabase-js clears it
   const linkType = new URLSearchParams(location.hash.slice(1)).get('type');
+  // Emailed and WhatsApp links point at amrabdelgawad.site/app/?token_hash=...&type=invite|recovery
+  const qs = new URLSearchParams(location.search), tokenHash = qs.get('token_hash'), tokenType = qs.get('type');
   const linkError = new URLSearchParams(location.hash.slice(1)).get('error_description');
 
   const iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -393,9 +395,11 @@
   document.querySelectorAll('.drawer .mi[href]').forEach(a => a.addEventListener('click', () => { if (a.getAttribute('href') === location.hash) ownerRoute(); }));
 
   // ---------- live now ----------
-  let liveRows = [], liveMembers = [];
+  let liveRows = [], liveMembers = [], codeRows = [];
   async function loadLive(){
-    const [st, mem] = await Promise.all([db.from('live_status').select('*'), db.from('members').select('user_id,name,company_id,active').order('name')]);
+    const [st, mem, code] = await Promise.all([db.from('live_status').select('*'), db.from('members').select('user_id,name,company_id,active').order('name'), db.from('code_live_status').select('*')]);
+    // People on amrabdelgawad.site/tracker (company code, no account); an old row from a closed phone drops off after 16 hours
+    codeRows = code.error ? [] : (code.data || []).filter(r => Date.now() - new Date(r.updated_at).getTime() < 16 * 3600e3);
     if (st.error || mem.error) { $('liveNote').textContent = /live_status|members/.test((st.error || mem.error).message || '') ? 'The app isn’t set up yet. Run supabase/app-setup.sql.' : "Couldn't refresh. Check your connection."; return; }
     liveRows = st.data || []; liveMembers = (mem.data || []).filter(m => m.active);
     countRequests();
@@ -406,11 +410,11 @@
   function drawLive(){
     const coName = id => (companies.find(c => c.id === id) || {}).name || '';
     const now = Date.now();
-    const people = liveMembers.map(m => {
-      const s = liveRows.find(r => r.user_id === m.user_id);
+    const fromCode = codeRows.map(r => ({ m:{ name:r.name, company_id:r.company_id }, s:r, viaCode:true }));
+    const people = liveMembers.map(m => ({ m, s: liveRows.find(r => r.user_id === m.user_id) })).concat(fromCode).map(({ m, s, viaCode }) => {
       if (!s) return { m, mode:'off' };
       const seg = Math.max(0, (now - new Date(s.seg_at).getTime()) / 1000);
-      return { m, mode:s.mode, work: s.work_seconds + (s.mode === 'run' ? seg : 0), brk: s.break_seconds + (s.mode === 'brk' ? seg : 0), seg, since: new Date(s.started_at), long: (now - new Date(s.started_at).getTime()) / 1000 > 10 * 3600 };
+      return { m, mode:s.mode, work: s.work_seconds + (s.mode === 'run' ? seg : 0), brk: s.break_seconds + (s.mode === 'brk' ? seg : 0), seg, since: new Date(s.started_at), long: (now - new Date(s.started_at).getTime()) / 1000 > 10 * 3600, viaCode, quiet: viaCode && now - new Date(s.updated_at).getTime() > 15 * 60e3, seen: new Date(s.updated_at) };
     });
     const order = { run:0, brk:1, pau:2, off:3 };
     people.sort((a, b) => order[a.mode] - order[b.mode] || a.m.name.localeCompare(b.m.name));
@@ -421,7 +425,7 @@
     if (!people.length) { box.innerHTML = '<p class="empty">No team members yet. Invite someone from Invite and access.</p>'; return; }
     const pill = { run:'<span class="pill p-ok">Working</span>', brk:'<span class="pill p-due">On break</span>', pau:'<span class="pill p-pau">Paused</span>', off:'<span class="pill p-off">Off</span>' };
     box.innerHTML = people.map(p => {
-      const sub = p.mode === 'off' ? 'Not clocked in' : (p.long ? 'Clocked in over 10 hours ago. Did they forget to clock out? · ' : '') + coName(p.m.company_id) + ' · ' + (p.mode === 'run' ? 'working since ' + hhmm(p.since) : p.mode === 'brk' ? 'on break ' + Math.floor(p.seg / 60) + 'm' : 'paused ' + Math.floor(p.seg / 60) + 'm');
+      const sub = p.mode === 'off' ? 'Not clocked in' : (p.long ? 'Clocked in over 10 hours ago. Did they forget to clock out? · ' : '') + coName(p.m.company_id) + ' · ' + (p.mode === 'run' ? 'working since ' + hhmm(p.since) : p.mode === 'brk' ? 'on break ' + Math.floor(p.seg / 60) + 'm' : 'paused ' + Math.floor(p.seg / 60) + 'm') + (p.viaCode ? ' · via /tracker' + (p.quiet ? ', last heard from ' + hhmm(p.seen) : '') : '');
       return '<div class="row' + (p.long ? ' long' : '') + '"><span class="av">' + esc(initials(p.m.name)) + '</span><span class="n"><b>' + esc(p.m.name) + '</b><small>' + esc(sub) + '</small></span>' +
         '<span class="v">' + (p.mode === 'off' ? '' : '<span class="num">' + clock(p.work) + '</span><small>') + pill[p.mode] + (p.mode === 'off' ? '' : '</small>') + '</span></div>';
     }).join('');
@@ -580,6 +584,15 @@
   // ---------- start ----------
   (async () => {
     if (linkError) { show('vLogin'); $('loginErr').textContent = 'That link has expired or was already used. Ask Amr for a new one.'; history.replaceState(null, '', location.pathname); return; }
+    if (tokenHash && (tokenType === 'invite' || tokenType === 'recovery')) {
+      history.replaceState(null, '', location.pathname);
+      const { data, error } = await db.auth.verifyOtp({ token_hash: tokenHash, type: tokenType });
+      if (error || !data.session) { show('vLogin'); $('loginErr').textContent = 'That link has expired or was already used. Ask Amr for a new one.'; return; }
+      const nm = data.session.user.user_metadata && data.session.user.user_metadata.name;
+      $('pwTitle').textContent = tokenType === 'invite' ? 'Welcome' + (nm ? ', ' + nm.split(' ')[0] : '') : 'Choose a new password';
+      show('vSetPw'); $('pw1').focus();
+      return;
+    }
     const { data: { session } } = await db.auth.getSession();
     if (session && (linkType === 'invite' || linkType === 'recovery')) {
       history.replaceState(null, '', location.pathname);
