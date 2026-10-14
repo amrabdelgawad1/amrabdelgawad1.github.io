@@ -127,6 +127,54 @@
   .split .brow{ grid-template-columns:minmax(0,1fr) auto; }
   .split .brow .pbar{ grid-column:1 / -1; grid-row:2; }
 
+  /* Payslip overlay */
+  .slip-overlay{ position:fixed; inset:0; z-index:90; background:rgba(4,6,11,.88); backdrop-filter:blur(6px); display:flex; flex-direction:column; }
+  .slip-bar{ display:flex; align-items:center; gap:10px; padding:14px max(16px, 3vw); border-bottom:1px solid var(--border2); background:var(--bg2); flex-wrap:wrap; }
+  .slip-bar strong{ font-family:var(--font-display); font-weight:400; font-size:20px; margin-right:6px; }
+  .slip-bar .slip-note{ flex:1; min-width:200px; padding:9px 12px; font-size:14px; }
+  .slip-stage{ flex:1; overflow:auto; padding:28px 16px 60px; }
+  .slip-fit{ margin:0 auto; transform-origin:top left; }
+
+  /* Payslip sheet (also what goes into the PDF) */
+  .slip{ width:210mm; min-height:274mm; padding:10mm 18mm 6mm; background:#fff; color:#0C0F1A; font-family:Inter, sans-serif; display:flex; flex-direction:column; position:relative; line-height:1.45; box-shadow:0 30px 80px -20px rgba(0,0,0,.6); }
+  .slip *{ box-sizing:border-box; }
+  .slip .band{ position:absolute; top:0; left:0; right:0; height:6px; background:linear-gradient(90deg, #3B7BFF, #6d4bff); }
+  .slip .top{ display:flex; justify-content:space-between; align-items:flex-start; gap:24px; margin-top:3mm; }
+  .slip .brand{ font-family:"DM Serif Display", serif; font-size:24px; line-height:1.05; }
+  .slip .brand em{ display:block; font-style:normal; font-family:Inter, sans-serif; font-size:12px; font-weight:600; letter-spacing:.32em; text-transform:uppercase; color:#3B7BFF; margin-top:6px; }
+  .slip .brand small{ display:block; font-family:Inter, sans-serif; font-size:11px; color:#5A6A84; letter-spacing:.04em; margin-top:5px; }
+  .slip .doc{ text-align:right; }
+  .slip .doc h1{ margin:0; font-family:"DM Serif Display", serif; font-weight:400; font-size:36px; line-height:1; color:#0C0F1A; }
+  .slip .doc p{ margin:6px 0 0; font-size:12px; color:#5A6A84; }
+  .slip .doc b{ color:#0C0F1A; font-weight:600; }
+  .slip .meta{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin:22px 0 18px; }
+  .slip .box{ background:#F5F7FB; border:1px solid #E3E8F1; border-radius:10px; padding:12px 14px; }
+  .slip .box p{ margin:0; font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:#5A6A84; }
+  .slip .box strong{ display:block; margin-top:5px; font-size:14px; font-weight:600; color:#0C0F1A; }
+  .slip .box span{ display:block; font-size:12px; color:#5A6A84; margin-top:2px; }
+  .slip table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .slip th{ text-align:left; font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:#5A6A84; padding:0 10px 9px; border-bottom:1.5px solid #0C0F1A; }
+  .slip td{ padding:5px 10px; border-bottom:1px solid #E3E8F1; color:#0C0F1A; line-height:1.35; }
+  .slip tr{ page-break-inside:avoid; }
+  .slip tbody tr:nth-child(even) td{ background:#FAFBFD; }
+  .slip .r{ text-align:right; }
+  .slip .mono{ font-family:"JetBrains Mono", monospace; font-size:12px; }
+  .slip td b{ font-weight:600; }
+  .slip .bottom{ display:grid; grid-template-columns:1fr 260px; gap:24px; margin-top:22px; align-items:start; page-break-inside:avoid; }
+  .slip .note{ font-size:12px; color:#5A6A84; line-height:1.6; }
+  .slip .note b{ color:#0C0F1A; font-weight:600; }
+  .slip .note .custom{ display:block; margin-top:8px; color:#0C0F1A; }
+  .slip .totals{ border:1px solid #E3E8F1; border-radius:10px; overflow:hidden; }
+  .slip .totals div{ display:flex; justify-content:space-between; padding:9px 14px; font-size:12.5px; border-bottom:1px solid #E3E8F1; color:#0C0F1A; }
+  .slip .totals div:last-child{ border-bottom:0; }
+  .slip .totals .grand{ background:#0C0F1A; color:#fff; font-size:15px; font-weight:600; padding:13px 14px; }
+  .slip .totals .grand .mono{ font-size:16px; }
+  .slip .stamp{ display:inline-flex; align-items:center; gap:8px; margin-top:14px; border:1.5px solid #0E9F6E; color:#0E9F6E; border-radius:999px; padding:6px 14px; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .slip .stamp.due{ border-color:#C77C02; color:#C77C02; }
+  .slip .stamp i{ width:7px; height:7px; border-radius:50%; background:currentColor; }
+  .slip .foot{ margin-top:auto; padding-top:18px; }
+  .slip .foot div{ display:flex; justify-content:space-between; font-size:10.5px; color:#5A6A84; border-top:1px solid #E3E8F1; padding-top:10px; }
+
   /* Companies and codes */
   .companies-card{ margin-top:24px; }
   .co-help{ color:var(--light); font-size:14px; margin:-8px 0 16px; max-width:640px; }
@@ -175,7 +223,7 @@
   .del:hover{ color:#ff8a8a; border-color:rgba(255,107,107,.35); background:rgba(255,107,107,.07); }
   .del svg{ width:16px; height:16px; }
   .empty{ text-align:center; color:var(--muted); padding:30px 0; }
-  .toast{ position:fixed; left:50%; bottom:28px; transform:translate(-50%, 20px); opacity:0; pointer-events:none; background:var(--bg4); border:1px solid var(--border2); color:var(--text); padding:12px 18px; border-radius:999px; font-size:14px; transition:opacity .3s, transform .3s; z-index:80; display:flex; gap:12px; align-items:center; max-width:calc(100vw - 32px); }
+  .toast{ position:fixed; left:50%; bottom:28px; transform:translate(-50%, 20px); opacity:0; pointer-events:none; background:var(--bg4); border:1px solid var(--border2); color:var(--text); padding:12px 18px; border-radius:999px; font-size:14px; transition:opacity .3s, transform .3s; z-index:100; display:flex; gap:12px; align-items:center; max-width:calc(100vw - 32px); }
   .toast.show{ opacity:1; transform:translate(-50%, 0); pointer-events:auto; }
   .toast button{ background:none; border:0; color:var(--accent2); font:600 14px var(--font-body); cursor:pointer; }
 
@@ -449,6 +497,7 @@
         <button class="btn btn-ghost btn-sm" data-bulk="paid">Mark paid</button>
         <button class="btn btn-ghost btn-sm" data-bulk="unpaid">Mark unpaid</button>
         <select class="co" id="bulkCo" aria-label="Set company for selected"></select>
+        <button class="btn btn-primary btn-sm" data-bulk="payslip">Create payslip</button>
         <button class="btn btn-ghost btn-sm" data-bulk="clear">Clear</button>
       </div>
       <div style="overflow-x:auto;">
@@ -474,6 +523,17 @@
   </div>
 </main>
 
+<!-- Payslip -->
+<div class="slip-overlay" id="slipOverlay" hidden>
+  <div class="slip-bar">
+    <strong>Payslip</strong>
+    <input class="field slip-note" id="slipNote" maxlength="160" placeholder="Optional note, like: Paid via Vodafone Cash" aria-label="Note on the payslip" />
+    <button class="btn btn-ghost btn-sm" id="slipClose">Close</button>
+    <button class="btn btn-primary btn-sm" id="slipDownload">Download PDF</button>
+  </div>
+  <div class="slip-stage" id="slipStage"><div class="slip-fit" id="slipFit"><div class="slip" id="slip"></div></div></div>
+</div>
+
 <div class="toast" id="toast"><span id="toastMsg"></span><button id="undo">Undo</button></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -489,7 +549,7 @@
   }
   const db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
 
-  let log = [], companies = [], rate = 2.5, billRate = 6;
+  let log = [], companies = [], rate = 2.5, billRate = 6, payslipCounter = 0;
   let range = 'week', view = 'hours', lastDeleted = null, toastTimer = null;
   const selected = new Set();
 
@@ -551,6 +611,7 @@
       const v = parseFloat(s.value); if (isNaN(v)) return;
       if (s.key === 'hourly_rate') rate = v;
       if (s.key === 'bill_rate') billRate = v;
+      if (s.key === 'payslip_counter') payslipCounter = v;
     });
     $('rate').value = rate; $('payRate2').value = rate; $('billRate').value = billRate;
 
@@ -901,6 +962,119 @@
     draw($('byPerson'), group(r => [nameKey(r.name), r.name]), (a, b) => b.secs - a.secs, empty);
   }
 
+  // ---------- payslip ----------
+  const escHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th','st','nd','rd'][n % 10] || 'th');
+  const monthName = d => d.toLocaleDateString('en-US', { month:'long' });
+  const asDate = v => v instanceof Date ? v : new Date(v.length === 10 ? v + 'T00:00' : v);
+  const longDate = v => { const d = asDate(v); return ordinal(d.getDate()) + ' of ' + monthName(d) + ', ' + d.getFullYear(); };
+  const dayLine = v => { const d = asDate(v); return '<b>' + d.toLocaleDateString('en-US', { weekday:'long' }) + '</b> ' + longDate(d); };
+  function periodText(a, b){
+    const x = asDate(a), y = asDate(b);
+    if (a === b) return longDate(x);
+    if (x.getFullYear() === y.getFullYear() && x.getMonth() === y.getMonth()) return ordinal(x.getDate()) + ' – ' + ordinal(y.getDate()) + ' of ' + monthName(y) + ', ' + y.getFullYear();
+    if (x.getFullYear() === y.getFullYear()) return ordinal(x.getDate()) + ' of ' + monthName(x) + ' – ' + longDate(y);
+    return longDate(x) + ' – ' + longDate(y);
+  }
+
+  let slip = null;
+  function openPayslip(ids){
+    const rows = log.filter(r => ids.includes(r.id)).sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+    if (!rows.length) return;
+    if (new Set(rows.map(r => nameKey(r.name))).size > 1) { toast('Pick shifts for one person to make a payslip.', false); return; }
+    slip = { rows, number: 'PS-' + new Date().getFullYear() + '-' + String(payslipCounter + 1).padStart(4, '0'), counted:false };
+    $('slipNote').value = '';
+    drawPayslip();
+    $('slipOverlay').hidden = false; document.body.style.overflow = 'hidden';
+    fitPayslip();
+  }
+  function drawPayslip(){
+    const { rows, number } = slip;
+    const secs = rows.reduce((a,r) => a + r.work, 0), paidSecs = rows.filter(r => r.paid).reduce((a,r) => a + r.work, 0);
+    const total = pay(secs), paidAmt = pay(paidSecs), due = Math.round((total - paidAmt) * 100) / 100;
+    const allPaid = rows.every(r => r.paid), nonePaid = rows.every(r => !r.paid);
+    // Each line rounds to the cent; the last line absorbs the leftover so lines add up to the total.
+    const amts = rows.map(r => pay(r.work));
+    amts[amts.length - 1] = Math.round((total - amts.slice(0, -1).reduce((a,b) => a + b, 0)) * 100) / 100;
+    const lastPaid = rows.filter(r => r.paidAt).map(r => r.paidAt).sort().pop();
+    const stamp = allPaid ? '<div class="stamp"><i></i>Paid on ' + longDate(lastPaid || new Date()) + '</div>'
+      : nonePaid ? '<div class="stamp due"><i></i>Amount due</div>'
+      : '<div class="stamp due"><i></i>Partly paid</div>';
+    const grand = allPaid ? ['Total paid', total] : ['Amount due', nonePaid ? total : due];
+    const note = $('slipNote').value.trim();
+    $('slip').innerHTML =
+      '<div class="band"></div>' +
+      '<div class="top"><div class="brand">Amr Abdelgawad<em>Talents</em><small>amrabdelgawad.site</small></div>' +
+      '<div class="doc"><h1>Payslip</h1><p>No. <b>' + number + '</b></p><p>Issued <b>' + longDate(new Date()) + '</b></p></div></div>' +
+      '<div class="meta">' +
+        '<div class="box"><p>Paid to</p><strong>' + escHtml(rows[0].name) + '</strong><span>Team member</span></div>' +
+        '<div class="box"><p>Pay period</p><strong>' + periodText(rows[0].date, rows[rows.length - 1].date) + '</strong><span>' + rows.length + ' shift' + (rows.length === 1 ? '' : 's') + '</span></div>' +
+        '<div class="box"><p>Worked under</p><strong>Amr Abdelgawad Talents</strong><span>Rate ' + usd(rate) + ' / hour</span></div>' +
+      '</div>' +
+      '<table><thead><tr><th>Date</th><th class="r">Hours</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>' +
+      rows.map((r, i) => '<tr><td>' + dayLine(r.date) + '</td><td class="r mono">' + hm(r.work) + '</td><td class="r mono">' + usd(rate) + '</td><td class="r mono">' + usd(amts[i]) + '</td></tr>').join('') +
+      '</tbody></table>' +
+      '<div class="bottom"><div class="note"><b>Breaks aren’t paid.</b> Amounts are worked hours × hourly rate, rounded to the cent.<br>Questions about this payslip? Reach out to Amr directly.' +
+        (note ? '<span class="custom"><b>Note:</b> ' + escHtml(note) + '</span>' : '') + stamp + '</div>' +
+        '<div class="totals"><div><span>Total hours</span><span class="mono">' + hm(secs) + '</span></div>' +
+        '<div><span>Hourly rate</span><span class="mono">' + usd(rate) + '</span></div>' +
+        (!allPaid && !nonePaid ? '<div><span>Already paid</span><span class="mono">' + usd(paidAmt) + '</span></div>' : '') +
+        '<div class="grand"><span>' + grand[0] + '</span><span class="mono">' + usd(grand[1]) + '</span></div></div></div>' +
+      '<div class="foot"><div><span>Amr Abdelgawad Talents · amrabdelgawad.site</span><span>' + number + '</span></div></div>';
+  }
+  function fitPayslip(){
+    if ($('slipOverlay').hidden) return;
+    const el = $('slip'), fit = $('slipFit');
+    const w = el.offsetWidth, h = el.offsetHeight, avail = $('slipStage').clientWidth - 32;
+    const s = Math.min(1, avail / w);
+    el.style.transform = 'scale(' + s + ')'; el.style.transformOrigin = 'top left';
+    fit.style.width = (w * s) + 'px'; fit.style.height = (h * s) + 'px';
+  }
+  window.addEventListener('resize', fitPayslip);
+  $('slipNote').addEventListener('input', () => { drawPayslip(); fitPayslip(); });
+  function closePayslip(){ $('slipOverlay').hidden = true; document.body.style.overflow = ''; slip = null; }
+  $('slipClose').addEventListener('click', closePayslip);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('slipOverlay').hidden) closePayslip(); });
+
+  let pdfLib = null;
+  function loadPdfLib(){
+    if (pdfLib) return pdfLib;
+    pdfLib = new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      s.onload = () => res(window.html2pdf); s.onerror = () => { pdfLib = null; rej(new Error('load')); };
+      document.head.appendChild(s);
+    });
+    return pdfLib;
+  }
+  $('slipDownload').addEventListener('click', async () => {
+    if (!slip) return;
+    const btn = $('slipDownload'); btn.setAttribute('aria-busy', 'true'); btn.textContent = 'Preparing…';
+    try {
+      const html2pdf = await loadPdfLib();
+      await document.fonts.ready;
+      const clone = $('slip').cloneNode(true);
+      clone.style.transform = 'none'; clone.style.boxShadow = 'none';
+      const first = slip.rows[0], last = slip.rows[slip.rows.length - 1];
+      const file = 'Payslip-' + first.name.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + first.date + (first.date === last.date ? '' : '-to-' + last.date) + '.pdf';
+      await html2pdf().set({
+        margin: [10, 0, 10, 0], filename: file,
+        image: { type:'jpeg', quality:0.96 },
+        html2canvas: { scale:2, useCORS:true, backgroundColor:'#ffffff' },
+        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
+        pagebreak: { mode:['css', 'legacy'], avoid:['tr', '.bottom'] }
+      }).from(clone).save();
+      if (!slip.counted) {
+        slip.counted = true; payslipCounter += 1;
+        await db.from('tracker_settings').upsert({ key:'payslip_counter', value:String(payslipCounter) });
+      }
+      toast('Payslip downloaded', false);
+    } catch (e) {
+      toast("Couldn't make the PDF. Check your connection and try again.", false);
+    }
+    btn.removeAttribute('aria-busy'); btn.textContent = 'Download PDF';
+  });
+
   // ---------- bulk ----------
   function updateBulk(rows){
     const n = selected.size;
@@ -922,6 +1096,7 @@
     const b = e.target.closest('[data-bulk]'); if (!b) return;
     const ids = [...selected];
     if (b.dataset.bulk === 'clear') { selected.clear(); render(); return; }
+    if (b.dataset.bulk === 'payslip') { openPayslip(ids); return; }
     const paid = b.dataset.bulk === 'paid';
     b.setAttribute('aria-busy', 'true');
     const ok = await updateShifts(ids, { paid, paid_at: paid ? new Date().toISOString() : null });
