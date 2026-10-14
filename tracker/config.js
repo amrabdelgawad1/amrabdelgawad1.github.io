@@ -2,6 +2,6 @@
 // Both values are public by design (Supabase > Project Settings > API).
 // The database rules in supabase/tracker-setup.sql are what keep the history private.
 window.TRACKER_CONFIG = {
-  supabaseUrl: 'PASTE_PROJECT_URL_HERE',
-  supabaseKey: 'PASTE_PUBLISHABLE_OR_ANON_KEY_HERE'
+  supabaseUrl: 'https://ztlpgyomjuzmjmuifbbd.supabase.co',
+  supabaseKey: 'sb_publishable_vxm-0NApjcfUkPhJ0XE8CQ_5hr3x9M-'
 };
