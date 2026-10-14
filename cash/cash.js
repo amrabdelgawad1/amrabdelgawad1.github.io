@@ -271,6 +271,8 @@
     render();
   }
   $('view').addEventListener('click', e => { const b = e.target.closest('button'); if (b) switchView(b.dataset.v); });
+  // The app's menu switches sections by changing the address
+  window.addEventListener('hashchange', () => { const v = location.hash.slice(1); if (VIEWS.includes(v) && v !== view && !$('dashView').hidden) switchView(v); });
 
   // ---------- render ----------
   function render(){

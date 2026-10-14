@@ -104,3 +104,8 @@ html .team td.c-status .status.client{ margin-top:4px; }
 @media (min-width:641px) and (max-width:1180px){ html .team table.log th:nth-child(5), html .team table.log td.c-brk{ display:none; } }
 html .team .co{ max-width:150px; }
 html .team table.log td, html .team table.log th{ padding-left:8px; padding-right:8px; }
+
+/* Inside the app: the app's menu replaces this page's header and tabs */
+html.embed .topbar, html.embed #view, html.embed #pageTitle{ display:none !important; }
+html.embed .page{ padding-top:16px; }
+html.embed .head{ margin-bottom:12px; }

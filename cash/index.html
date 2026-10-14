@@ -494,7 +494,15 @@
     table.log.mylist td.c-hrs{ grid-row:3; }
   }
 </style>
-<link rel="stylesheet" href="look.css?v=4">
+<link rel="stylesheet" href="look.css?v=5">
+<script>
+  // Inside the app: hide this page's own header and tabs. On the live site, /cash now opens the app.
+  (function(){
+    var embed = /(^|[?&])embed=1/.test(location.search);
+    if (embed) document.documentElement.classList.add('embed');
+    else if (location.hostname === 'amrabdelgawad.site') location.replace('../app/' + (location.hash || '#overview'));
+  })();
+</script>
 </head>
 <body>
 
@@ -998,6 +1006,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="../tracker/config.js"></script>
 <script src="team.js?v=3"></script>
-<script src="cash.js?v=6"></script>
+<script src="cash.js?v=7"></script>
 </body>
 </html>
