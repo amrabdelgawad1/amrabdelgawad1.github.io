@@ -127,6 +127,17 @@
   .split .brow{ grid-template-columns:minmax(0,1fr) auto; }
   .split .brow .pbar{ grid-column:1 / -1; grid-row:2; }
 
+  /* Companies and codes */
+  .companies-card{ margin-top:24px; }
+  .co-help{ color:var(--light); font-size:14px; margin:-8px 0 16px; max-width:640px; }
+  .co-row{ display:flex; align-items:center; gap:12px; padding:12px 0; flex-wrap:wrap; }
+  .co-row + .co-row{ border-top:1px solid var(--border); }
+  .co-row .n{ font-weight:500; flex:1; min-width:140px; }
+  .pill{ font-size:12px; font-weight:600; border-radius:999px; padding:4px 10px; border:1px solid; white-space:nowrap; }
+  .pill.on{ color:var(--green); border-color:rgba(16,185,129,.35); background:rgba(16,185,129,.08); }
+  .pill.off{ color:var(--muted); border-color:var(--border2); }
+  .co-err{ flex-basis:100%; color:#ff7a7a; font-size:13px; }
+
   /* Add shift */
   .add{ padding:24px 28px; margin-bottom:24px; animation:up .5s cubic-bezier(.16,1,.3,1); }
   .add-grid{ display:grid; grid-template-columns:1.4fr 1fr .6fr .6fr .6fr 1.2fr; gap:12px; align-items:end; }
@@ -450,6 +461,15 @@
         </table>
       </div>
     </section>
+
+    <section class="t-card history companies-card">
+      <div class="card-title">
+        <h2>Companies and codes</h2>
+        <button class="btn btn-ghost btn-sm" id="coAdd">+ Add company</button>
+      </div>
+      <p class="co-help">Your team types a company's code on the tracker, and their shifts are logged under that company automatically. Codes are stored scrambled, so even you can't read them back. To change one, set a new code.</p>
+      <div id="coList"></div>
+    </section>
     </div>
   </div>
 </main>
@@ -544,6 +564,7 @@
     log = all.map(toRow);
     fillCompanySelects();
     render();
+    loadCodeStatus();
   }
   function showNotice(msg){ $('notice').textContent = msg; $('notice').hidden = false; }
   function clearNotice(){ $('notice').hidden = true; }
@@ -584,9 +605,46 @@
     const { data, error } = await db.from('companies').insert({ name }).select().single();
     if (error) { showNotice("Couldn't add that company. Try again."); return null; }
     companies.push(data); companies.sort((a,b) => a.name.localeCompare(b.name));
-    fillCompanySelects();
+    fillCompanySelects(); renderCompanies();
     return data.id;
   }
+
+  // ---------- company codes ----------
+  const codeStatus = new Map();
+  async function loadCodeStatus(){
+    const { data, error } = await db.rpc('company_code_status');
+    if (!error) { codeStatus.clear(); data.forEach(r => codeStatus.set(r.company_id, r.has_code)); }
+    renderCompanies();
+  }
+  function renderCompanies(){
+    const list = $('coList'); list.innerHTML = '';
+    if (!companies.length) { list.innerHTML = '<p class="empty">No companies yet.</p>'; return; }
+    companies.forEach(c => {
+      const has = !!codeStatus.get(c.id);
+      const row = document.createElement('div'); row.className = 'co-row';
+      row.innerHTML = '<span class="n"></span><span class="pill"></span><button class="btn btn-ghost btn-sm set"></button><button class="btn btn-ghost btn-sm rm">Remove code</button><span class="co-err"></span>';
+      row.querySelector('.n').textContent = c.name;
+      const pill = row.querySelector('.pill'); pill.className = 'pill ' + (has ? 'on' : 'off'); pill.textContent = has ? 'Code set' : 'No code';
+      row.querySelector('.set').textContent = has ? 'Change code' : 'Set code';
+      row.querySelector('.rm').hidden = !has;
+      const err = row.querySelector('.co-err');
+      row.querySelector('.set').addEventListener('click', async () => {
+        const code = (prompt('Code for ' + c.name + ' (at least 4 characters, capitals don’t matter)') || '').trim();
+        if (!code) return;
+        const { error } = await db.rpc('set_company_code', { p_company_id: c.id, p_code: code });
+        if (error) { err.textContent = /already uses/i.test(error.message) ? 'Another company already uses that code. Pick a different one.' : /4 characters/.test(error.message) ? 'Codes need at least 4 characters.' : "Couldn't save the code. Try again."; return; }
+        codeStatus.set(c.id, true); renderCompanies(); toast('Code saved for ' + c.name, false);
+      });
+      row.querySelector('.rm').addEventListener('click', async () => {
+        if (!confirm('Remove the code for ' + c.name + '? Your team won’t be able to log shifts for it until you set a new one.')) return;
+        const { error } = await db.rpc('set_company_code', { p_company_id: c.id, p_code: '' });
+        if (error) { err.textContent = "Couldn't remove the code. Try again."; return; }
+        codeStatus.set(c.id, false); renderCompanies(); toast('Code removed for ' + c.name, false);
+      });
+      list.appendChild(row);
+    });
+  }
+  $('coAdd').addEventListener('click', addCompany);
 
   // ---------- filters ----------
   function inRange(r){

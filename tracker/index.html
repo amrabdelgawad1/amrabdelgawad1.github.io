@@ -22,6 +22,7 @@
   .gate input:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-dim); }
   .gate .btn{ width:100%; }
   .gate .form-error{ text-align:center; margin-top:0; }
+  .gate input{ letter-spacing:.06em; }
   .btn[aria-busy="true"]{ opacity:.6; pointer-events:none; }
   .foot-link{ text-align:center; font-size:13px; color:var(--muted); margin-top:28px; }
   .foot-link button{ background:none; border:0; color:var(--light); font:inherit; cursor:pointer; border-bottom:1px solid var(--border2); padding:0 0 1px; }
@@ -140,10 +141,10 @@
     <!-- Team code gate -->
     <section class="t-card gate" id="gate" hidden>
       <div class="lock-badge"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
-      <h2>Enter team code</h2>
-      <p class="sub">Ask Amr for the code. You only need to enter it once on this device.</p>
+      <h2>Enter your code</h2>
+      <p class="sub">Type the code Amr gave you. You only need to do this once on this device.</p>
       <form id="gateForm" novalidate>
-        <input id="code" type="password" autocomplete="off" aria-label="Team code" />
+        <input id="code" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Company code" />
         <p class="form-error" id="gateErr"></p>
         <button class="btn btn-primary" type="submit" id="gateBtn">Continue <span class="btn-arrow">&rarr;</span></button>
       </form>
@@ -207,7 +208,8 @@
       <p class="saved-note">Your shift was sent to Amr. You can close this page.</p>
     </section>
 
-    <p class="foot-link"><button type="button" id="forget">Use a different team code</button></p>
+    <p class="foot-link"><button type="button" id="switchCo">Use a different code</button></p>
+
     </div>
   </div>
 </main>
@@ -226,7 +228,7 @@
   }
   const db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, { auth:{ persistSession:false } });
 
-  const CODE_KEY = 'tracker-team-code';
+  const CODE_KEY = 'tracker-company-code';
   const SHIFT_KEY = 'tracker-active-shift';
   const store = {
     get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
@@ -243,7 +245,9 @@
   const GOAL = 8*3600, CIRC = 326.7;
 
   // ---------- team code gate ----------
+  // The page never shows company names; the database files the shift under the code's company.
   let teamCode = store.get(CODE_KEY);
+  store.del('tracker-company-name');
 
   function showGate(msg){
     $('app').hidden = true; $('gate').hidden = false;
@@ -251,21 +255,22 @@
     $('code').value = ''; $('code').focus();
   }
   function showApp(){ $('gate').hidden = true; $('app').hidden = false; }
+  function setCompany(code){ teamCode = code; store.set(CODE_KEY, code); }
 
   $('gateForm').addEventListener('submit', async e => {
     e.preventDefault();
     const code = $('code').value.trim();
-    if (!code) { $('gateErr').textContent = 'Enter the team code.'; return; }
+    if (!code) { $('gateErr').textContent = 'Enter the company code.'; return; }
     $('gateBtn').setAttribute('aria-busy', 'true'); $('gateErr').textContent = '';
     const { data, error } = await db.rpc('check_team_code', { p_code: code });
     $('gateBtn').removeAttribute('aria-busy');
     if (error) { $('gateErr').textContent = "Couldn't reach the server. Check your connection and try again."; return; }
     if (!data) { $('gateErr').textContent = "That code isn't right. Check it with Amr."; return; }
-    teamCode = code; store.set(CODE_KEY, code); showApp();
+    setCompany(code); showApp();
   });
   $('code').addEventListener('input', () => $('gateErr').textContent = '');
-  $('forget').addEventListener('click', () => {
-    if (mode !== 'off') { alert('Finish your current shift first.'); return; }
+  $('switchCo').addEventListener('click', () => {
+    if (mode !== 'off') { alert('Finish your current shift first, then enter a different code.'); return; }
     store.del(CODE_KEY); teamCode = null; showGate();
   });
 
@@ -352,7 +357,7 @@
         ? 'The team code changed. Enter the new code, then press Try again. Your shift is kept.'
         : "Couldn't save your shift. Check your connection and press Try again. Your shift is kept.";
       $('saveErr').hidden = false;
-      if (badCode) { store.del(CODE_KEY); $('retry').textContent = 'Enter new code'; }
+      if (badCode) { store.del(CODE_KEY); $('saveErrMsg').textContent = 'The company code changed. Get the new code from Amr, then press Enter new code. Your shift is kept.'; $('retry').textContent = 'Enter new code'; }
       persist();
       return;
     }
@@ -371,11 +376,11 @@
 
   $('retry').addEventListener('click', async () => {
     if (!store.get(CODE_KEY)) {
-      const code = prompt('Enter the new team code');
+      const code = prompt('Enter the new company code');
       if (!code) return;
       const { data } = await db.rpc('check_team_code', { p_code: code.trim() });
       if (!data) { $('saveErrMsg').textContent = "That code isn't right. Check it with Amr."; return; }
-      teamCode = code.trim(); store.set(CODE_KEY, teamCode);
+      setCompany(code.trim());
       pending.p_code = teamCode; $('retry').textContent = 'Try again';
     }
     finish();
