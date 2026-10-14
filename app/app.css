@@ -173,3 +173,11 @@ img.logo{ width:64px; height:64px; border-radius:16px; display:block; margin:0 a
 /* update bar */
 .update{ position:fixed; z-index:45; left:50%; transform:translateX(-50%); bottom:max(16px, env(safe-area-inset-bottom)); width:min(460px, calc(100vw - 24px)); display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 10px 10px 16px; border-radius:999px; background:var(--text); color:#fff; font-size:14px; box-shadow:0 10px 30px rgba(16,24,40,.25); }
 .update .btn{ flex-shrink:0; }
+
+/* people and requests: name on one line, details under it */
+.person .n{ flex:1; min-width:0; }
+.person .n b{ display:block; font-weight:600; font-size:14.5px; }
+.person .n small{ display:block; color:var(--muted); font-size:12.5px; margin-top:1px; overflow-wrap:anywhere; }
+.person .rq-h{ white-space:nowrap; align-self:flex-start; }
+.person .head{ align-items:flex-start; }
+.person .head .pill{ flex-shrink:0; }
