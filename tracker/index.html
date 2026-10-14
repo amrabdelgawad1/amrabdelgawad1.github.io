@@ -317,7 +317,7 @@
     const k = b.dataset.k;
     if (k === 'off') return finish();
     if (mode === 'off' && !valid()) return;
-    if (mode === 'off') $('saved').hidden = true;
+    if (mode === 'off') { $('saved').hidden = true; store.set('tracker-name', $('nm').value.trim()); }
     setMode(k);
   }));
 
@@ -410,6 +410,7 @@
 
   // ---------- start ----------
   $('dt').value = iso(new Date());
+  $('nm').value = store.get('tracker-name') || '';
   document.querySelector('[data-k="pause"]').setAttribute('aria-disabled', 'true');
   const resumed = restore();
   draw();
