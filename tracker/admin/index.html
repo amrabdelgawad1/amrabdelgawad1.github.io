@@ -112,6 +112,17 @@
   .rates .per-hour strong{ display:block; font:600 26px "JetBrains Mono", monospace; color:var(--green); padding:8px 0 6px; }
   .rate-note{ flex-basis:100%; color:var(--muted); font-size:12px; }
   .profit-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; }
+  .rate-table{ border:1px solid var(--border2); border-radius:var(--radius); overflow:hidden; margin-bottom:18px; }
+  .rt-row{ display:grid; grid-template-columns:minmax(0,1.4fr) 1fr 1fr 1fr; gap:12px; align-items:center; padding:10px 16px; }
+  .rt-row + .rt-row, #rateRows .rt-row{ border-top:1px solid var(--border); }
+  .rt-head{ font-size:12px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); background:rgba(7,9,15,.5); }
+  .rt-row .n{ font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rt-row .rate-input{ max-width:130px; }
+  .rt-row .rate-input input{ font-size:16px; padding:8px 0; }
+  .rt-row .num{ font-family:"JetBrains Mono", monospace; font-weight:600; }
+  .rt-row .keep{ color:var(--green); }
+  .rt-row .keep.neg{ color:#ff8a8a; }
+  .rt-row .missing{ color:var(--gold); font-size:12.5px; font-family:var(--font-body); font-weight:500; }
   .money .cost{ color:var(--light); }
   .money.profit-big{ border-color:rgba(16,185,129,.4); background:rgba(16,185,129,.07); }
   .money.profit-big strong{ color:var(--green); }
@@ -254,7 +265,9 @@
     .pay-grid{ grid-template-columns:1fr; }
     .head-actions{ width:100%; }
     .view-seg{ flex:1; }
-    .rates{ display:grid; grid-template-columns:1fr auto 1fr; gap:10px; }
+    .rt-row{ grid-template-columns:minmax(0,1fr) auto auto; padding:10px 12px; }
+    .rt-row > :nth-child(3){ display:none; }
+    .rates{ display:grid; grid-template-columns:1fr; gap:10px; }
     .rates .rate{ width:auto; min-width:0; grid-column:auto; max-width:none; }
     .rates .op{ padding-bottom:12px; }
     .tools .sel{ flex:1 1 calc(50% - 5px); }
@@ -415,22 +428,17 @@
 
     <!-- Profit view -->
     <div id="profitView" hidden>
+      <div class="notice" id="profitWarn" hidden></div>
       <section class="t-card pay profit">
         <div class="card-title"><h2>Profit</h2><span id="profitLabel"></span></div>
+        <div class="rate-table">
+          <div class="rt-row rt-head"><span>Company</span><span>You get / hour</span><span>You pay / hour</span><span>You keep / hour</span></div>
+          <div id="rateRows"></div>
+        </div>
         <div class="rates">
           <div class="rate">
-            <span class="label">You get per hour</span>
-            <div class="rate-input"><span>$</span><input id="billRate" type="number" min="0" step="0.25" value="6" aria-label="Rate you get per hour in dollars" /></div>
-          </div>
-          <span class="op" aria-hidden="true">&minus;</span>
-          <div class="rate">
-            <span class="label">You pay per hour</span>
+            <span class="label">You pay your team per hour</span>
             <div class="rate-input"><span>$</span><input id="payRate2" type="number" min="0" step="0.25" value="2.5" aria-label="Rate you pay per hour in dollars" /></div>
-          </div>
-          <span class="op" aria-hidden="true">=</span>
-          <div class="rate per-hour">
-            <span class="label">Profit per hour</span>
-            <strong id="pPerHour">$3.50</strong>
           </div>
           <small class="rate-note" id="billNote">Rates are saved for next time</small>
         </div>
@@ -549,7 +557,7 @@
   }
   const db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
 
-  let log = [], companies = [], rate = 2.5, billRate = 6, payslipCounter = 0;
+  let log = [], companies = [], rate = 2.5, payslipCounter = 0;
   let range = 'week', view = 'hours', lastDeleted = null, toastTimer = null;
   const selected = new Set();
 
@@ -610,10 +618,9 @@
     (st.data || []).forEach(s => {
       const v = parseFloat(s.value); if (isNaN(v)) return;
       if (s.key === 'hourly_rate') rate = v;
-      if (s.key === 'bill_rate') billRate = v;
       if (s.key === 'payslip_counter') payslipCounter = v;
     });
-    $('rate').value = rate; $('payRate2').value = rate; $('billRate').value = billRate;
+    $('rate').value = rate; $('payRate2').value = rate;
 
     const all = [];
     for (let from = 0; ; from += 1000) {
@@ -642,28 +649,30 @@
   }
 
   // ---------- companies ----------
-  function companyOptions(sel, { all, unassigned, add, current }){
+  function companyOptions(sel, { all, pick, add, current }){
     sel.innerHTML = '';
-    const opt = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); };
+    const opt = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); return o; };
     if (all) opt('', all);
-    if (unassigned) opt('none', unassigned);
+    if (pick) { const o = opt('', pick); o.disabled = true; }
     companies.forEach(c => opt(String(c.id), c.name));
     if (add) opt('add', '+ Add company…');
     if (current !== undefined) sel.value = current;
   }
   function fillCompanySelects(){
     const cur = $('company').value;
-    companyOptions($('company'), { all:'All companies', unassigned:'No company', current:cur });
+    companyOptions($('company'), { all:'All companies', current:cur });
     if ($('company').value !== cur) $('company').value = '';
-    companyOptions($('aCo'), { unassigned:'No company', add:true, current: companies.length ? String(companies[0].id) : 'none' });
-    companyOptions($('bulkCo'), { all:'Set company…', unassigned:'No company', add:true, current:'' });
+    const aCur = $('aCo').value;
+    companyOptions($('aCo'), { add:true, current: companies.some(c => String(c.id) === aCur) ? aCur : (companies.length ? String(companies[0].id) : '') });
+    companyOptions($('bulkCo'), { all:'Set company…', add:true, current:'' });
   }
   async function addCompany(){
     const name = (prompt('New company name') || '').trim();
     if (!name) return null;
     const existing = companies.find(c => c.name.toLowerCase() === name.toLowerCase());
     if (existing) return existing.id;
-    const { data, error } = await db.from('companies').insert({ name }).select().single();
+    const r = parseFloat((prompt('What does ' + name + ' pay you per hour? (in $, like 6)') || '').replace('$', ''));
+    const { data, error } = await db.from('companies').insert({ name, bill_rate: isNaN(r) || r < 0 ? null : r }).select().single();
     if (error) { showNotice("Couldn't add that company. Try again."); return null; }
     companies.push(data); companies.sort((a,b) => a.name.localeCompare(b.name));
     fillCompanySelects(); renderCompanies();
@@ -788,12 +797,6 @@
   }
   $('rate').addEventListener('input', () => onPayRate($('rate'), $('rateNote')));
   $('payRate2').addEventListener('input', () => onPayRate($('payRate2'), $('billNote')));
-  $('billRate').addEventListener('input', () => {
-    const v = parseFloat($('billRate').value);
-    if (isNaN(v) || v < 0) { $('billNote').textContent = 'Enter a rate like 6'; return; }
-    billRate = v; render();
-    saveSetting('bill_rate', v, $('billNote'), 'Rates are saved for next time');
-  });
 
   // ---------- view switch ----------
   $('view').addEventListener('click', e => {
@@ -894,12 +897,12 @@
       tr.querySelector('.c-amt').textContent = usd(pay(r.work));
 
       const co = tr.querySelector('.co');
-      companyOptions(co, { unassigned:'No company', add:true, current: r.companyId ? String(r.companyId) : 'none' });
+      companyOptions(co, { pick: r.companyId ? null : 'Pick a company', add:true, current: r.companyId ? String(r.companyId) : '' });
       co.classList.toggle('none', !r.companyId);
       co.addEventListener('change', async () => {
         let v = co.value;
-        if (v === 'add') { const id = await addCompany(); if (!id) { co.value = r.companyId ? String(r.companyId) : 'none'; return; } v = String(id); }
-        const ok = await updateShifts([r.id], { company_id: v === 'none' ? null : Number(v) });
+        if (v === 'add') { const id = await addCompany(); if (!id) { co.value = r.companyId ? String(r.companyId) : ''; return; } v = String(id); }
+        const ok = await updateShifts([r.id], { company_id: Number(v) });
         if (ok) render();
       });
 
@@ -920,46 +923,88 @@
   }
 
   // ---------- profit ----------
-  const money = (secs, perHour) => Math.round(secs / 3600 * perHour * 100) / 100;
-  function renderProfit(){
-    const rows = visible(true);
-    const margin = billRate - rate;
+  // Each company pays you its own rate (companies.bill_rate); the team rate is the same everywhere.
+  const billFor = r => { const c = companies.find(x => x.id === r.companyId); return c && c.bill_rate != null ? Number(c.bill_rate) : null; };
+  const billTimers = {};
+  function renderRates(){
+    const box = $('rateRows'); box.innerHTML = '';
+    companies.forEach(c => {
+      const row = document.createElement('div'); row.className = 'rt-row';
+      row.innerHTML = '<span class="n"></span><div class="rate-input"><span>$</span><input type="number" min="0" step="0.25" /></div><span class="num pay"></span><span class="num keep"></span>';
+      row.querySelector('.n').textContent = c.name;
+      const inp = row.querySelector('input'); inp.value = c.bill_rate != null ? Number(c.bill_rate) : '';
+      inp.setAttribute('aria-label', 'What ' + c.name + ' pays you per hour');
+      const keep = row.querySelector('.keep');
+      const show = () => {
+        row.querySelector('.pay').textContent = usd(rate);
+        if (c.bill_rate == null) { keep.innerHTML = '<span class="missing">Set a rate</span>'; return; }
+        const k = Number(c.bill_rate) - rate; keep.textContent = usd(k); keep.classList.toggle('neg', k < 0);
+      };
+      show();
+      inp.addEventListener('input', () => {
+        const v = parseFloat(inp.value);
+        if (isNaN(v) || v < 0) { $('billNote').textContent = 'Enter a rate like 6'; return; }
+        c.bill_rate = v; show(); renderProfit(true); // keep this box, so typing isn't interrupted
+        $('billNote').textContent = 'Saving…';
+        clearTimeout(billTimers[c.id]);
+        billTimers[c.id] = setTimeout(async () => {
+          const { error } = await db.from('companies').update({ bill_rate: v }).eq('id', c.id);
+          $('billNote').textContent = error ? "Couldn't save that rate" : 'Rates are saved for next time';
+        }, 600);
+      });
+      box.appendChild(row);
+    });
+  }
+
+  function renderProfit(keepRateBoxes){
+    if (!keepRateBoxes || !$('rateRows').children.length) renderRates();
+    const all = visible(true);
+    const rows = all.filter(r => billFor(r) != null);
+    const skipped = all.filter(r => billFor(r) == null);
     const secs = rows.reduce((a,r) => a + r.work, 0);
-    $('pPerHour').textContent = usd(margin);
-    $('pPerHour').style.color = margin < 0 ? '#ff8a8a' : '';
+    const rev = rows.reduce((a,r) => a + r.work / 3600 * billFor(r), 0);
+    const cost = secs / 3600 * rate;
     $('profitLabel').textContent = rangeLabel();
     $('pHours').textContent = hm(secs);
     $('pShifts').textContent = rows.length + ' shift' + (rows.length === 1 ? '' : 's');
-    $('pRevenue').textContent = usd(money(secs, billRate)); $('pRevenueSub').textContent = 'at ' + usd(billRate) + '/hour';
-    $('pCost').textContent = usd(money(secs, rate));       $('pCostSub').textContent = 'at ' + usd(rate) + '/hour';
-    $('pProfit').textContent = usd(money(secs, margin));
-    $('pMargin').textContent = billRate > 0 ? Math.round(margin / billRate * 100) + '% of what you get' : '';
+    $('pRevenue').textContent = usd(rev); $('pRevenueSub').textContent = 'at each company’s rate';
+    $('pCost').textContent = usd(cost);  $('pCostSub').textContent = 'at ' + usd(rate) + '/hour';
+    $('pProfit').textContent = usd(rev - cost);
+    $('pMargin').textContent = rev > 0 ? Math.round((rev - cost) / rev * 100) + '% of what you get' : '';
+    const warn = $('profitWarn');
+    if (skipped.length) {
+      warn.textContent = skipped.length + ' shift' + (skipped.length === 1 ? '' : 's') + ' (' + hm(skipped.reduce((a,r) => a + r.work, 0)) + ') aren’t counted yet because ' + (skipped.length === 1 ? 'it has' : 'they have') + ' no company or the company has no rate. Pick a company for them in History.';
+      warn.hidden = false;
+    } else warn.hidden = true;
 
     const group = keyFn => {
       const m = new Map();
-      rows.forEach(r => { const [k, label] = keyFn(r); if (!m.has(k)) m.set(k, { label, secs:0, n:0 }); const g = m.get(k); g.secs += r.work; g.n++; });
+      rows.forEach(r => {
+        const [k, label] = keyFn(r);
+        if (!m.has(k)) m.set(k, { label, secs:0, rev:0 });
+        const g = m.get(k); g.secs += r.work; g.rev += r.work / 3600 * billFor(r);
+      });
       return m;
     };
-    const draw = (el, map, sortFn, emptyMsg) => {
-      const list = [...map.values()].sort(sortFn);
-      const max = Math.max(1, ...list.map(g => g.secs));
+    const draw = (el, map, sortFn) => {
+      const list = [...map.values()].map(g => Object.assign(g, { cost: g.secs / 3600 * rate })).sort(sortFn);
+      const max = Math.max(1, ...list.map(g => g.rev - g.cost));
       el.innerHTML = '';
-      if (!list.length) { el.innerHTML = '<p class="empty">' + emptyMsg + '</p>'; return; }
+      if (!list.length) { el.innerHTML = '<p class="empty">No shifts match these filters.</p>'; return; }
       list.forEach(g => {
         const d = document.createElement('div'); d.className = 'brow';
         d.innerHTML = '<span class="bname"></span><div class="pbar"><i></i></div><div class="bnums"><span class="t"></span><small class="s"></small></div>';
-        const nm = d.querySelector('.bname'); nm.textContent = g.label || 'No company'; nm.classList.toggle('none', !g.label);
-        d.querySelector('.t').textContent = usd(money(g.secs, margin));
-        d.querySelector('.s').textContent = hm(g.secs) + ' · ' + usd(money(g.secs, billRate)) + ' in, ' + usd(money(g.secs, rate)) + ' out';
+        d.querySelector('.bname').textContent = g.label;
+        d.querySelector('.t').textContent = usd(g.rev - g.cost);
+        d.querySelector('.s').textContent = hm(g.secs) + ' · ' + usd(g.rev) + ' in, ' + usd(g.cost) + ' out';
         el.appendChild(d);
-        requestAnimationFrame(() => requestAnimationFrame(() => { d.querySelector('.pbar i').style.width = (g.secs / max * 100) + '%'; }));
+        requestAnimationFrame(() => requestAnimationFrame(() => { d.querySelector('.pbar i').style.width = (Math.max(0, g.rev - g.cost) / max * 100) + '%'; }));
       });
     };
-    const empty = 'No shifts match these filters.';
     draw($('byMonth'), group(r => [r.date.slice(0, 7), new Date(r.date.slice(0, 7) + '-01T00:00').toLocaleDateString('en-US', { month:'long', year:'numeric' })]),
-      (a, b) => 0, empty); // rows are newest first, so months already are
-    draw($('byCompany'), group(r => [r.companyId || 0, companyName(r.companyId)]), (a, b) => b.secs - a.secs, empty);
-    draw($('byPerson'), group(r => [nameKey(r.name), r.name]), (a, b) => b.secs - a.secs, empty);
+      () => 0); // rows are newest first, so months already are
+    draw($('byCompany'), group(r => [r.companyId, companyName(r.companyId)]), (a, b) => (b.rev - b.cost) - (a.rev - a.cost));
+    draw($('byPerson'), group(r => [nameKey(r.name), r.name]), (a, b) => (b.rev - b.cost) - (a.rev - a.cost));
   }
 
   // ---------- payslip ----------
@@ -1107,7 +1152,7 @@
     let v = $('bulkCo').value; if (!v) return;
     if (v === 'add') { const id = await addCompany(); if (!id) { $('bulkCo').value = ''; return; } v = String(id); }
     const ids = [...selected];
-    const ok = await updateShifts(ids, { company_id: v === 'none' ? null : Number(v) });
+    const ok = await updateShifts(ids, { company_id: Number(v) });
     $('bulkCo').value = '';
     if (ok) { selected.clear(); render(); toast('Updated company for ' + ids.length + ' shift' + (ids.length === 1 ? '' : 's'), false); }
   });
@@ -1121,7 +1166,7 @@
   $('aCo').addEventListener('change', async () => {
     if ($('aCo').value !== 'add') return;
     const id = await addCompany();
-    $('aCo').value = id ? String(id) : 'none';
+    $('aCo').value = id ? String(id) : (companies.length ? String(companies[0].id) : '');
   });
   ['aName','aDate','aH','aM','aB'].forEach(id => $(id).addEventListener('input', () => $('addErr').textContent = ''));
   $('addForm').addEventListener('submit', async e => {
@@ -1135,10 +1180,11 @@
     if (secs <= 0 || secs > 86400) { $('addErr').textContent = 'Enter how long they worked.'; return; }
     const match = log.find(r => nameKey(r.name) === nameKey(name)); if (match) name = match.name; // keep one spelling per person
     const co = $('aCo').value, paid = $('aPaid').checked;
+    if (!co || co === 'add') { $('addErr').textContent = 'Pick the company they worked for.'; return; }
     $('addSave').setAttribute('aria-busy', 'true');
     const { data, error } = await db.from('shifts').insert({
       name, shift_date: $('aDate').value, work_seconds: secs, break_seconds: bm * 60,
-      company_id: co === 'none' || co === 'add' ? null : Number(co),
+      company_id: Number(co),
       paid, paid_at: paid ? new Date().toISOString() : null, source: 'manual'
     }).select().single();
     $('addSave').removeAttribute('aria-busy');
