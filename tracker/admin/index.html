@@ -432,15 +432,15 @@
       <section class="t-card pay profit">
         <div class="card-title"><h2>Profit</h2><span id="profitLabel"></span></div>
         <div class="rate-table">
-          <div class="rt-row rt-head"><span>Company</span><span>You get / hour</span><span>You pay / hour</span><span>You keep / hour</span></div>
+          <div class="rt-row rt-head"><span>Rates for new shifts</span><span>You get / hour</span><span>You pay / hour</span><span>You keep / hour</span></div>
           <div id="rateRows"></div>
         </div>
         <div class="rates">
           <div class="rate">
-            <span class="label">You pay your team per hour</span>
+            <span class="label">You pay your team per hour (new shifts)</span>
             <div class="rate-input"><span>$</span><input id="payRate2" type="number" min="0" step="0.25" value="2.5" aria-label="Rate you pay per hour in dollars" /></div>
           </div>
-          <small class="rate-note" id="billNote">Rates are saved for next time</small>
+          <small class="rate-note" id="billNote">Changing a rate only affects shifts logged from now on. Past shifts keep the rates they were logged at.</small>
         </div>
         <div class="profit-grid">
           <div class="money"><p>Hours worked</p><strong id="pHours">0h 00m</strong><small id="pShifts">0 shifts</small></div>
@@ -480,9 +480,9 @@
       <div class="card-title"><h2>Pay</h2><span id="payLabel">Worked hours &times; rate (breaks not paid)</span></div>
       <div class="pay-grid">
         <div class="rate">
-          <span class="label">Hourly rate</span>
+          <span class="label">Pay rate for new shifts</span>
           <div class="rate-input"><span>$</span><input id="rate" type="number" min="0" step="0.25" value="2.5" aria-label="Hourly rate in dollars" /></div>
-          <small id="rateNote">Saved for next time</small>
+          <small id="rateNote">Past shifts keep their rate</small>
         </div>
         <div class="money"><p>Total earned</p><strong id="mTotal">$0.00</strong><small id="hTotal">0h 00m</small></div>
         <div class="money paid"><p>Paid</p><strong id="mPaid">$0.00</strong><small id="hPaid">0h 00m</small></div>
@@ -505,6 +505,8 @@
         <button class="btn btn-ghost btn-sm" data-bulk="paid">Mark paid</button>
         <button class="btn btn-ghost btn-sm" data-bulk="unpaid">Mark unpaid</button>
         <select class="co" id="bulkCo" aria-label="Set company for selected"></select>
+        <button class="btn btn-ghost btn-sm" data-bulk="payrate">Change pay rate</button>
+        <button class="btn btn-ghost btn-sm" data-bulk="billrate">Change company rate</button>
         <button class="btn btn-primary btn-sm" data-bulk="payslip">Create payslip</button>
         <button class="btn btn-ghost btn-sm" data-bulk="clear">Clear</button>
       </div>
@@ -563,7 +565,6 @@
 
   const hm = s => Math.floor(s/3600)+'h '+String(Math.floor(s%3600/60)).padStart(2,'0')+'m';
   const usd = n => '$' + (Math.round(n * 100) / 100).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
-  const pay = secs => Math.round(secs / 3600 * rate * 100) / 100;
   const initials = n => n.split(/\s+/).filter(Boolean).map(p => p[0]).slice(0,2).join('').toUpperCase();
   const fmtDate = d => new Date(d+'T00:00').toLocaleDateString('en-US',{ weekday:'short', month:'short', day:'numeric' });
   const iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -602,6 +603,9 @@
     id: x.id, name: x.name.trim(), date: x.shift_date, work: x.work_seconds, brk: x.break_seconds,
     startedAt: x.started_at, endedAt: x.ended_at, companyId: x.company_id,
     paid: x.paid, paidAt: x.paid_at, source: x.source, createdAt: x.created_at,
+    // Rates are locked onto each shift when it's logged, so later rate changes don't rewrite history.
+    payRate: x.pay_rate != null ? Number(x.pay_rate) : rate,
+    billRate: x.bill_rate != null ? Number(x.bill_rate) : null,
     clocked: x.started_at && x.ended_at ? hhmmIso(x.started_at) + ' – ' + hhmmIso(x.ended_at) : 'Added by hand',
     fresh: x.source === 'tracker' && Date.now() - new Date(x.created_at).getTime() < 24*3600*1000
   });
@@ -643,10 +647,17 @@
     clearNotice();
     log.forEach(r => { if (ids.includes(r.id)) {
       if ('paid' in patch) { r.paid = patch.paid; r.paidAt = patch.paid_at; }
-      if ('company_id' in patch) r.companyId = patch.company_id;
+      if ('company_id' in patch && patch.company_id !== r.companyId) {
+        r.companyId = patch.company_id;
+        const c = companies.find(x => x.id === r.companyId); r.billRate = c && c.bill_rate != null ? Number(c.bill_rate) : null; // same as the database trigger
+      }
+      if ('pay_rate' in patch) r.payRate = patch.pay_rate;
+      if ('bill_rate' in patch) r.billRate = patch.bill_rate;
     }});
     return true;
   }
+  // What the team earns for a set of shifts, each at its own locked rate
+  const earned = list => list.reduce((a, r) => a + r.work / 3600 * r.payRate, 0);
 
   // ---------- companies ----------
   function companyOptions(sel, { all, pick, add, current }){
@@ -793,7 +804,7 @@
     if ($('rate') !== input) $('rate').value = v;
     if ($('payRate2') !== input) $('payRate2').value = v;
     render();
-    saveSetting('hourly_rate', v, note, note === $('rateNote') ? 'Saved for next time' : 'Rates are saved for next time');
+    saveSetting('hourly_rate', v, note, note === $('rateNote') ? 'Saved. Applies to new shifts only' : 'Saved. New rates apply to new shifts only');
   }
   $('rate').addEventListener('input', () => onPayRate($('rate'), $('rateNote')));
   $('payRate2').addEventListener('input', () => onPayRate($('payRate2'), $('billNote')));
@@ -832,9 +843,9 @@
     $('sW').textContent = hm(tw);
     $('sB').textContent = hm(tb);
     $('sA').textContent = rows.length ? hm(tw / rows.length) : '0h 00m';
-    $('mTotal').textContent = usd(pay(tw)); $('hTotal').textContent = hm(tw);
-    $('mPaid').textContent = usd(pay(pw)); $('hPaid').textContent = hm(pw);
-    $('mOwed').textContent = usd(pay(ow)); $('hOwed').textContent = hm(ow);
+    $('mTotal').textContent = usd(earned(rows)); $('hTotal').textContent = hm(tw);
+    $('mPaid').textContent = usd(earned(paidRows)); $('hPaid').textContent = hm(pw);
+    $('mOwed').textContent = usd(earned(owedRows)); $('hOwed').textContent = hm(ow);
     $('rangeLabel').textContent = rangeLabel();
     $('payLabel').textContent = rangeLabel() + ' · worked hours × rate (breaks not paid)';
     $('histCount').textContent = rows.length + ' shift' + (rows.length === 1 ? '' : 's');
@@ -843,9 +854,9 @@
     const per = new Map();
     rows.forEach(r => {
       const k = nameKey(r.name);
-      if (!per.has(k)) per.set(k, { name:r.name, p:0, u:0, n:0 });
+      if (!per.has(k)) per.set(k, { name:r.name, p:0, u:0, n:0, owe:0 });
       const v = per.get(k); v.n++;
-      if (r.paid) v.p += r.work; else v.u += r.work;
+      if (r.paid) v.p += r.work; else { v.u += r.work; v.owe += r.work / 3600 * r.payRate; }
     });
     const list = [...per.values()].sort((a,b) => (b.p + b.u) - (a.p + a.u));
     const max = Math.max(1, ...list.map(v => v.p + v.u));
@@ -858,7 +869,7 @@
       d.querySelector('.n').textContent = v.name;
       const t = d.querySelector('.t');
       t.textContent = hm(v.p + v.u) + ' · ';
-      const owe = document.createElement('span'); owe.className = 'owe'; owe.textContent = usd(pay(v.u)) + ' owed'; t.appendChild(owe);
+      const owe = document.createElement('span'); owe.className = 'owe'; owe.textContent = usd(v.owe) + ' owed'; t.appendChild(owe);
       d.querySelector('.s').textContent = v.n + ' shift' + (v.n === 1 ? '' : 's') + ' · ' + hm(v.p) + ' paid';
       pl.appendChild(d);
       requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -894,7 +905,8 @@
       tr.querySelector('.ck').textContent = r.clocked;
       tr.querySelector('.c-work').textContent = hm(r.work);
       tr.querySelector('.c-brk').textContent = hm(r.brk);
-      tr.querySelector('.c-amt').textContent = usd(pay(r.work));
+      tr.querySelector('.c-amt').textContent = usd(earned([r]));
+      if (r.payRate !== rate) tr.querySelector('.c-amt').title = 'At ' + usd(r.payRate) + '/hour';
 
       const co = tr.querySelector('.co');
       companyOptions(co, { pick: r.companyId ? null : 'Pick a company', add:true, current: r.companyId ? String(r.companyId) : '' });
@@ -924,7 +936,8 @@
 
   // ---------- profit ----------
   // Each company pays you its own rate (companies.bill_rate); the team rate is the same everywhere.
-  const billFor = r => { const c = companies.find(x => x.id === r.companyId); return c && c.bill_rate != null ? Number(c.bill_rate) : null; };
+  // Revenue uses the company rate locked onto each shift; the boxes below set the rate for new shifts.
+  const billFor = r => r.billRate;
   const billTimers = {};
   function renderRates(){
     const box = $('rateRows'); box.innerHTML = '';
@@ -949,7 +962,7 @@
         clearTimeout(billTimers[c.id]);
         billTimers[c.id] = setTimeout(async () => {
           const { error } = await db.from('companies').update({ bill_rate: v }).eq('id', c.id);
-          $('billNote').textContent = error ? "Couldn't save that rate" : 'Rates are saved for next time';
+          $('billNote').textContent = error ? "Couldn't save that rate" : 'Saved. New rates apply to new shifts only';
         }, 600);
       });
       box.appendChild(row);
@@ -963,17 +976,17 @@
     const skipped = all.filter(r => billFor(r) == null);
     const secs = rows.reduce((a,r) => a + r.work, 0);
     const rev = rows.reduce((a,r) => a + r.work / 3600 * billFor(r), 0);
-    const cost = secs / 3600 * rate;
+    const cost = earned(rows);
     $('profitLabel').textContent = rangeLabel();
     $('pHours').textContent = hm(secs);
     $('pShifts').textContent = rows.length + ' shift' + (rows.length === 1 ? '' : 's');
-    $('pRevenue').textContent = usd(rev); $('pRevenueSub').textContent = 'at each company’s rate';
-    $('pCost').textContent = usd(cost);  $('pCostSub').textContent = 'at ' + usd(rate) + '/hour';
+    $('pRevenue').textContent = usd(rev); $('pRevenueSub').textContent = 'at each shift’s company rate';
+    $('pCost').textContent = usd(cost);  $('pCostSub').textContent = 'at each shift’s pay rate';
     $('pProfit').textContent = usd(rev - cost);
     $('pMargin').textContent = rev > 0 ? Math.round((rev - cost) / rev * 100) + '% of what you get' : '';
     const warn = $('profitWarn');
     if (skipped.length) {
-      warn.textContent = skipped.length + ' shift' + (skipped.length === 1 ? '' : 's') + ' (' + hm(skipped.reduce((a,r) => a + r.work, 0)) + ') aren’t counted yet because ' + (skipped.length === 1 ? 'it has' : 'they have') + ' no company or the company has no rate. Pick a company for them in History.';
+      warn.textContent = skipped.length + ' shift' + (skipped.length === 1 ? '' : 's') + ' (' + hm(skipped.reduce((a,r) => a + r.work, 0)) + ') aren’t counted because ' + (skipped.length === 1 ? 'its company had' : 'their company had') + ' no rate when ' + (skipped.length === 1 ? 'it was' : 'they were') + ' logged. Select ' + (skipped.length === 1 ? 'it' : 'them') + ' in History and use Change company rate.';
       warn.hidden = false;
     } else warn.hidden = true;
 
@@ -981,13 +994,13 @@
       const m = new Map();
       rows.forEach(r => {
         const [k, label] = keyFn(r);
-        if (!m.has(k)) m.set(k, { label, secs:0, rev:0 });
-        const g = m.get(k); g.secs += r.work; g.rev += r.work / 3600 * billFor(r);
+        if (!m.has(k)) m.set(k, { label, secs:0, rev:0, cost:0 });
+        const g = m.get(k); g.secs += r.work; g.rev += r.work / 3600 * billFor(r); g.cost += r.work / 3600 * r.payRate;
       });
       return m;
     };
     const draw = (el, map, sortFn) => {
-      const list = [...map.values()].map(g => Object.assign(g, { cost: g.secs / 3600 * rate })).sort(sortFn);
+      const list = [...map.values()].sort(sortFn);
       const max = Math.max(1, ...list.map(g => g.rev - g.cost));
       el.innerHTML = '';
       if (!list.length) { el.innerHTML = '<p class="empty">No shifts match these filters.</p>'; return; }
@@ -1035,11 +1048,14 @@
   }
   function drawPayslip(){
     const { rows, number } = slip;
-    const secs = rows.reduce((a,r) => a + r.work, 0), paidSecs = rows.filter(r => r.paid).reduce((a,r) => a + r.work, 0);
-    const total = pay(secs), paidAmt = pay(paidSecs), due = Math.round((total - paidAmt) * 100) / 100;
+    const secs = rows.reduce((a,r) => a + r.work, 0);
+    const cents = n => Math.round(n * 100) / 100;
+    const total = cents(earned(rows)), paidAmt = cents(earned(rows.filter(r => r.paid))), due = cents(total - paidAmt);
+    const rates = [...new Set(rows.map(r => r.payRate))], oneRate = rates.length === 1;
+    const rateText = oneRate ? 'Rate ' + usd(rates[0]) + ' / hour' : 'Rates ' + usd(Math.min(...rates)) + '–' + usd(Math.max(...rates)) + ' / hour';
     const allPaid = rows.every(r => r.paid), nonePaid = rows.every(r => !r.paid);
     // Each line rounds to the cent; the last line absorbs the leftover so lines add up to the total.
-    const amts = rows.map(r => pay(r.work));
+    const amts = rows.map(r => cents(earned([r])));
     amts[amts.length - 1] = Math.round((total - amts.slice(0, -1).reduce((a,b) => a + b, 0)) * 100) / 100;
     const lastPaid = rows.filter(r => r.paidAt).map(r => r.paidAt).sort().pop();
     const stamp = allPaid ? '<div class="stamp"><i></i>Paid on ' + longDate(lastPaid || new Date()) + '</div>'
@@ -1054,15 +1070,15 @@
       '<div class="meta">' +
         '<div class="box"><p>Paid to</p><strong>' + escHtml(rows[0].name) + '</strong><span>Team member</span></div>' +
         '<div class="box"><p>Pay period</p><strong>' + periodText(rows[0].date, rows[rows.length - 1].date) + '</strong><span>' + rows.length + ' shift' + (rows.length === 1 ? '' : 's') + '</span></div>' +
-        '<div class="box"><p>Worked under</p><strong>Amr Abdelgawad Talents</strong><span>Rate ' + usd(rate) + ' / hour</span></div>' +
+        '<div class="box"><p>Worked under</p><strong>Amr Abdelgawad Talents</strong><span>' + rateText + '</span></div>' +
       '</div>' +
       '<table><thead><tr><th>Date</th><th class="r">Hours</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>' +
-      rows.map((r, i) => '<tr><td>' + dayLine(r.date) + '</td><td class="r mono">' + hm(r.work) + '</td><td class="r mono">' + usd(rate) + '</td><td class="r mono">' + usd(amts[i]) + '</td></tr>').join('') +
+      rows.map((r, i) => '<tr><td>' + dayLine(r.date) + '</td><td class="r mono">' + hm(r.work) + '</td><td class="r mono">' + usd(r.payRate) + '</td><td class="r mono">' + usd(amts[i]) + '</td></tr>').join('') +
       '</tbody></table>' +
       '<div class="bottom"><div class="note"><b>Breaks aren’t paid.</b> Amounts are worked hours × hourly rate, rounded to the cent.<br>Questions about this payslip? Reach out to Amr directly.' +
         (note ? '<span class="custom"><b>Note:</b> ' + escHtml(note) + '</span>' : '') + stamp + '</div>' +
         '<div class="totals"><div><span>Total hours</span><span class="mono">' + hm(secs) + '</span></div>' +
-        '<div><span>Hourly rate</span><span class="mono">' + usd(rate) + '</span></div>' +
+        (oneRate ? '<div><span>Hourly rate</span><span class="mono">' + usd(rates[0]) + '</span></div>' : '') +
         (!allPaid && !nonePaid ? '<div><span>Already paid</span><span class="mono">' + usd(paidAmt) + '</span></div>' : '') +
         '<div class="grand"><span>' + grand[0] + '</span><span class="mono">' + usd(grand[1]) + '</span></div></div></div>' +
       '<div class="foot"><div><span>Amr Abdelgawad Talents · amrabdelgawad.site</span><span>' + number + '</span></div></div>';
@@ -1125,7 +1141,7 @@
     const n = selected.size;
     $('bulk').hidden = n === 0;
     if (n) {
-      const owe = pay(log.filter(r => selected.has(r.id) && !r.paid).reduce((a,r) => a + r.work, 0));
+      const owe = earned(log.filter(r => selected.has(r.id) && !r.paid));
       $('bulkN').textContent = n + ' selected' + (owe ? ' · ' + usd(owe) + ' unpaid' : '');
     }
     const all = $('selAll');
@@ -1142,6 +1158,16 @@
     const ids = [...selected];
     if (b.dataset.bulk === 'clear') { selected.clear(); render(); return; }
     if (b.dataset.bulk === 'payslip') { openPayslip(ids); return; }
+    if (b.dataset.bulk === 'payrate' || b.dataset.bulk === 'billrate') {
+      const isPay = b.dataset.bulk === 'payrate';
+      const ans = prompt((isPay ? 'New pay rate (what you pay them per hour)' : 'New company rate (what the company pays you per hour)') + ' for the ' + ids.length + ' selected shift' + (ids.length === 1 ? '' : 's') + ', in $:');
+      if (ans === null) return;
+      const v = parseFloat(ans.replace('$', ''));
+      if (isNaN(v) || v < 0) { toast('Enter a rate like 2.5', false); return; }
+      const ok = await updateShifts(ids, isPay ? { pay_rate: v } : { bill_rate: v });
+      if (ok) { selected.clear(); render(); toast((isPay ? 'Pay rate' : 'Company rate') + ' set to ' + usd(v) + '/hour on ' + ids.length + ' shift' + (ids.length === 1 ? '' : 's'), false); }
+      return;
+    }
     const paid = b.dataset.bulk === 'paid';
     b.setAttribute('aria-busy', 'true');
     const ok = await updateShifts(ids, { paid, paid_at: paid ? new Date().toISOString() : null });
@@ -1216,7 +1242,8 @@
     const { data, error } = await db.from('shifts').insert({
       name: r.name, shift_date: r.date, work_seconds: r.work, break_seconds: r.brk,
       started_at: r.startedAt, ended_at: r.endedAt, company_id: r.companyId,
-      paid: r.paid, paid_at: r.paidAt, source: r.source, created_at: r.createdAt
+      paid: r.paid, paid_at: r.paidAt, source: r.source, created_at: r.createdAt,
+      pay_rate: r.payRate, bill_rate: r.billRate
     }).select().single();
     if (error) { showNotice("Couldn't restore that shift."); return; }
     log.splice(i, 0, toRow(data)); render();
@@ -1228,7 +1255,7 @@
     const lines = [['Name','Shift date','Worked (hours)','Break (hours)','Company','Status','Amount (USD)','Clock in','Clock out'].map(esc).join(',')];
     visible().forEach(r => lines.push([
       r.name, r.date, (r.work/3600).toFixed(2), (r.brk/3600).toFixed(2), companyName(r.companyId),
-      r.paid ? 'Paid' : 'Unpaid', pay(r.work).toFixed(2),
+      r.paid ? 'Paid' : 'Unpaid', earned([r]).toFixed(2),
       r.startedAt ? hhmmIso(r.startedAt) : '', r.endedAt ? hhmmIso(r.endedAt) : ''
     ].map(esc).join(',')));
     const a = document.createElement('a');
