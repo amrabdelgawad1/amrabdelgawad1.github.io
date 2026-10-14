@@ -75,8 +75,17 @@
   const toEntry = x => ({
     id: x.id, kind: x.kind, date: x.entry_date, title: x.title, party: x.party || '', category: x.category || 'Other',
     hours: x.hours != null ? Number(x.hours) : null, rate: x.rate != null ? Number(x.rate) : null,
-    amount: Number(x.amount), settled: x.settled, settledAt: x.settled_at, recurring: x.recurring, note: x.note || '', createdAt: x.created_at
+    amount: Number(x.amount), settled: x.settled, settledAt: x.settled_at, recurring: x.recurring, note: x.note || '', createdAt: x.created_at,
+    periodStart: x.period_start || null, periodEnd: x.period_end || null
   });
+  // Project pay period, like "Sep 28 – Oct 9 · 12 days"
+  const periodText = e => {
+    const a = new Date(e.periodStart + 'T00:00'), b = new Date(e.periodEnd + 'T00:00');
+    const f = d => d.toLocaleDateString('en-US', { month:'short', day:'numeric', year: a.getFullYear() !== b.getFullYear() ? 'numeric' : undefined });
+    const days = Math.round((b - a) / 86400000) + 1;
+    return (e.periodStart === e.periodEnd ? f(a) : f(a) + ' – ' + f(b)) + ' · ' + plural(days, 'day');
+  };
+  const detailText = e => e.periodStart ? periodText(e) : e.hours != null && e.rate != null ? hrs(e.hours) + ' × ' + usd(e.rate) : '';
   const toShift = x => ({
     id: x.id, name: x.name.trim(), date: x.shift_date, work: x.work_seconds, brk: x.break_seconds || 0,
     startedAt: x.started_at, endedAt: x.ended_at, companyId: x.company_id, source: x.source, createdAt: x.created_at,
@@ -493,7 +502,7 @@
       if (e.recurring) { const r = document.createElement('span'); r.className = 'rep'; r.textContent = (sub ? ' · ' : '') + 'Monthly'; tr.querySelector('.party').appendChild(r); }
       tr.querySelector('.c-date').textContent = fmtDate(e.date);
       tr.querySelector('.c-cat').textContent = e.category;
-      tr.querySelector('.c-hrs').textContent = e.hours != null && e.rate != null ? hrs(e.hours) + ' × ' + usd(e.rate) : '';
+      tr.querySelector('.c-hrs').textContent = detailText(e);
       tr.querySelector('.c-amt').textContent = usd(e.amount);
       const st = tr.querySelector('.status');
       st.classList.add(e.settled ? 'done' : 'open');
@@ -580,9 +589,19 @@
     fMode = m;
     document.querySelectorAll('#fMode button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
     document.querySelectorAll('.hourly').forEach(el => el.hidden = m !== 'hourly');
+    document.querySelectorAll('.project').forEach(el => el.hidden = m !== 'project');
     $('fAmount').readOnly = m === 'hourly';
+    $('fDateLabel').textContent = m === 'project' ? 'Counts on (month it goes in)' : 'Date';
+    $('fCat').placeholder = m === 'project' ? 'Project' : fKind === 'income' ? 'Salary' : 'Subscriptions';
+    if (m === 'project') syncProjectDate();
     if (m === 'hourly') calcAmount();
   }
+  // The project counts on its end date unless you pick another date (like the day you got paid)
+  let dateTouched = false;
+  function syncProjectDate(){ if (fMode === 'project' && !dateTouched && $('fTo').value) $('fDate').value = $('fTo').value; }
+  $('fDate').addEventListener('input', () => { dateTouched = true; });
+  $('fTo').addEventListener('change', syncProjectDate);
+  $('fFrom').addEventListener('change', () => { if (!$('fTo').value || $('fTo').value < $('fFrom').value) { $('fTo').value = $('fFrom').value; syncProjectDate(); } });
   function calcAmount(){
     const h = parseFloat($('fHours').value), r = parseFloat($('fRate').value);
     $('fAmount').value = !isNaN(h) && !isNaN(r) ? cents(h * r).toFixed(2) : '';
@@ -594,7 +613,7 @@
   });
   $('fMode').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setMode(b.dataset.m); });
   ['fHours','fRate'].forEach(id => $(id).addEventListener('input', calcAmount));
-  ['fTitle','fParty','fDate','fCat','fHours','fRate','fAmount'].forEach(id => $(id).addEventListener('input', () => $('addErr').textContent = ''));
+  ['fTitle','fParty','fDate','fCat','fHours','fRate','fAmount','fFrom','fTo'].forEach(id => $(id).addEventListener('input', () => $('addErr').textContent = ''));
 
   function defaultDate(){ return month === 'all' || month === thisMonth() ? iso(new Date()) : month + '-01'; }
   function openForm(kind, e){
@@ -608,11 +627,14 @@
     $('fCat').value = e ? e.category : '';
     $('fHours').value = e && e.hours != null ? e.hours : '';
     $('fRate').value = e && e.rate != null ? e.rate : '';
+    $('fFrom').value = e && e.periodStart ? e.periodStart : '';
+    $('fTo').value = e && e.periodEnd ? e.periodEnd : '';
+    dateTouched = !!e;
     $('fAmount').value = e ? e.amount.toFixed(2) : '';
     $('fNote').value = e ? e.note : '';
     $('fSettled').checked = e ? e.settled : kind === 'expense';
     $('fRecurring').checked = e ? e.recurring : false;
-    setMode(e && e.hours != null && e.rate != null ? 'hourly' : 'fixed');
+    setMode(e && e.periodStart ? 'project' : e && e.hours != null && e.rate != null ? 'hourly' : 'fixed');
     $('addErr').textContent = '';
     $('addSave').textContent = e ? 'Save changes' : 'Save';
     $('addBox').hidden = false;
@@ -631,11 +653,16 @@
     const err = m => { $('addErr').textContent = m; };
     const title = $('fTitle').value.trim().replace(/\s+/g, ' ');
     const party = $('fParty').value.trim().replace(/\s+/g, ' ');
-    const category = $('fCat').value.trim().replace(/\s+/g, ' ') || 'Other';
+    const category = $('fCat').value.trim().replace(/\s+/g, ' ') || (fMode === 'project' ? 'Project' : 'Other');
     const date = $('fDate').value;
     if (!title) return err(fKind === 'income' ? 'Say what the money was for, like "October salary".' : 'Say what you paid for, like "Claude Max".');
     if (!date) return err('Pick the date.');
-    let hours = null, rate = null, amount;
+    let hours = null, rate = null, amount, from = null, to = null;
+    if (fMode === 'project') {
+      from = $('fFrom').value; to = $('fTo').value;
+      if (!from || !to) return err('Pick when the project started and ended.');
+      if (to < from) return err('The project ends before it starts. Check the dates.');
+    }
     if (fMode === 'hourly') {
       hours = parseFloat($('fHours').value); rate = parseFloat($('fRate').value);
       if (isNaN(hours) || hours <= 0) return err('Enter how many hours you worked.');
@@ -653,6 +680,7 @@
       hours, rate, amount: cents(amount), settled, recurring: $('fRecurring').checked, note: $('fNote').value.trim() || null
     };
     if (!editing || settled !== editing.settled) row.settled_at = settled ? new Date().toISOString() : null;
+    if (from || (editing && editing.periodStart)) { row.period_start = from; row.period_end = to; }
     $('addSave').setAttribute('aria-busy', 'true');
     const q = editing ? db.from('cash_entries').update(row).eq('id', editing.id).select().single() : db.from('cash_entries').insert(row).select().single();
     const { data, error } = await q;
@@ -701,7 +729,8 @@
       const e = d.entry;
       const { data, error } = await db.from('cash_entries').insert({
         kind: e.kind, entry_date: e.date, title: e.title, party: e.party || null, category: e.category, hours: e.hours, rate: e.rate,
-        amount: e.amount, settled: e.settled, settled_at: e.settledAt, recurring: e.recurring, note: e.note || null, created_at: e.createdAt
+        amount: e.amount, settled: e.settled, settled_at: e.settledAt, recurring: e.recurring, note: e.note || null, created_at: e.createdAt,
+        ...(e.periodStart ? { period_start: e.periodStart, period_end: e.periodEnd } : {})
       }).select().single();
       if (error) return showNotice("Couldn't restore that entry.");
       entries.push(toEntry(data));
@@ -762,7 +791,7 @@
     }).join('');
     const crewRows = crew.map(g => '<tr><td><b>' + escHtml(g.name) + '</b></td><td>' + escHtml([...g.cos].filter(Boolean).join(', ')) + '</td><td class="r mono">' + hm(g.secs) + '</td><td class="r mono">' + usd(g.profit) + '</td></tr>').join('');
     const incRows = inc.map(e => '<tr><td>' + shortDay(e.date) + '</td><td><b>' + escHtml(e.title) + '</b>' + (e.party ? '<small>' + escHtml(e.party) + '</small>' : '') + '</td>' +
-      '<td class="r mono">' + (e.hours != null && e.rate != null ? hrs(e.hours) + ' × ' + usd(e.rate) : '') + '</td>' +
+      '<td class="r mono">' + detailText(e) + '</td>' +
       '<td>' + status(e.settled, 'Received', 'Not received') + '</td><td class="r mono">' + usd(e.amount) + '</td></tr>').join('');
     const expRows = exp.map(e => '<tr><td>' + shortDay(e.date) + '</td><td><b>' + escHtml(e.title) + '</b>' + (e.party ? '<small>' + escHtml(e.party) + '</small>' : '') + '</td>' +
       '<td>' + escHtml(e.category) + '</td><td>' + status(e.settled, 'Paid', 'Unpaid') + '</td><td class="r mono neg-amt">−' + usd(e.amount) + '</td></tr>').join('');
@@ -781,7 +810,7 @@
       '<p class="summary">' + summary + '</p>' +
       section('Your own work', usd(t.ownAmt), '<th>Company</th><th class="r">Hours</th><th class="r">Rate</th><th>Status</th><th class="r">Amount</th>', mineRows, 'You didn’t log any hours this month.') +
       section('Profit from your team', usd(t.team), '<th>Team member</th><th>Worked for</th><th class="r">Hours</th><th class="r">Your profit</th>', crewRows, 'No team hours this month.') +
-      section('Other income', usd(t.income), '<th>Date</th><th>Description</th><th class="r">Hours</th><th>Status</th><th class="r">Amount</th>', incRows, 'No other income this month.') +
+      section('Other income', usd(t.income), '<th>Date</th><th>Description</th><th class="r">Hours or period</th><th>Status</th><th class="r">Amount</th>', incRows, 'No other income this month.') +
       section('Expenses', '−' + usd(t.expense), '<th>Date</th><th>Description</th><th>Category</th><th>Status</th><th class="r">Amount</th>', expRows, 'No expenses this month.') +
       '<div class="bottom"><div class="note"><b>How this is worked out.</b> Your own work is your hours × each company’s rate, with nothing taken out. Team profit is what each company pays per hour minus what the team is paid, at the rates locked onto each shift. Other income and expenses are what you logged for ' + label + '.' +
         (note ? '<span class="custom"><b>Note:</b> ' + escHtml(note) + '</span>' : '') + '</div>' +

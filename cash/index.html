@@ -546,12 +546,15 @@
           <div class="seg" id="fMode">
             <button type="button" data-m="fixed" class="on">Fixed amount</button>
             <button type="button" data-m="hourly">Hours &times; rate</button>
+            <button type="button" data-m="project">Project period</button>
           </div>
         </div>
         <div class="fgrid">
           <label class="s3"><span class="label">What for</span><input class="field" id="fTitle" maxlength="120" autocomplete="off" /></label>
           <label class="s3"><span class="label" id="fPartyLabel">From</span><input class="field" id="fParty" list="partyList" maxlength="80" autocomplete="off" /></label>
-          <label class="s2"><span class="label">Date</span><input class="field" id="fDate" type="date" /></label>
+          <label class="s2 project"><span class="label">Project from</span><input class="field" id="fFrom" type="date" /></label>
+          <label class="s2 project"><span class="label">Project to</span><input class="field" id="fTo" type="date" /></label>
+          <label class="s2"><span class="label" id="fDateLabel">Date</span><input class="field" id="fDate" type="date" /></label>
           <label class="s2"><span class="label">Category</span><input class="field" id="fCat" list="catList" maxlength="40" autocomplete="off" /></label>
           <label class="hourly"><span class="label">Hours</span><input class="field" id="fHours" type="number" min="0" step="0.25" placeholder="10" /></label>
           <label class="hourly"><span class="label">Rate $/h</span><input class="field" id="fRate" type="number" min="0" step="0.25" placeholder="15" /></label>
@@ -856,7 +859,7 @@
         <div class="card-title"><h2 id="listTitle">Income</h2><span id="listSum"></span></div>
         <div style="overflow-x:auto;">
           <table class="log clist" id="logTable">
-            <thead><tr><th>What</th><th>Date</th><th>Category</th><th class="c-hrs">Hours</th><th class="r">Amount</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>What</th><th>Date</th><th>Category</th><th class="c-hrs">Details</th><th class="r">Amount</th><th>Status</th><th></th></tr></thead>
             <tbody id="rows"></tbody>
           </table>
         </div>
@@ -896,6 +899,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="../tracker/config.js"></script>
 <script src="team.js?v=1"></script>
-<script src="cash.js?v=1"></script>
+<script src="cash.js?v=2"></script>
 </body>
 </html>
