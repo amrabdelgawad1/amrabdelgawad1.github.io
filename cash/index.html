@@ -399,6 +399,18 @@
   .link-btn{ background:none; border:0; color:var(--light); font:inherit; cursor:pointer; border-bottom:1px solid var(--border2); padding:0 0 1px; }
   .lump{ grid-template-columns:1.4fr 1.4fr .9fr 1fr auto; }
   .lump-help{ grid-column:1 / -1; color:var(--light); font-size:14px; }
+  .mfa-card .card-title span.warn{ color:var(--gold); }
+  .fac{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); }
+  .fac:last-child{ border-bottom:0; }
+  .fac-n b{ display:block; font-weight:600; }
+  .fac-n small{ color:var(--muted); font-size:12.5px; }
+  .fac .btn[disabled]{ opacity:.45; }
+  #mfaList{ margin-bottom:14px; }
+  #mfaAddForm{ display:grid; gap:12px; max-width:420px; margin-top:4px; }
+  #mfaAddForm .qr{ margin:0; }
+  .mfa-help{ color:var(--muted); font-size:13px; margin-top:8px; }
+  .mfa-actions{ display:flex; gap:10px; }
+  .c-status .status.client{ margin-top:6px; }
   .list-actions{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
 
   /* My time */
@@ -482,7 +494,7 @@
     table.log.mylist td.c-hrs{ grid-row:3; }
   }
 </style>
-<link rel="stylesheet" href="look.css?v=1">
+<link rel="stylesheet" href="look.css?v=4">
 </head>
 <body>
 
@@ -519,6 +531,7 @@
         <p class="secret">Can’t scan it? In the app, choose “Enter a setup key” and type <code id="mfaSecret"></code></p>
       </div>
       <form id="mfaForm" novalidate>
+        <label id="mfaWhichWrap" hidden><span class="label">Which app are you using?</span><select class="field" id="mfaWhich"></select></label>
         <label><span class="label">6-digit code</span><input class="field code-in" id="mfaCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" /></label>
         <p class="login-err" id="mfaErr"></p>
         <button class="btn btn-primary" type="submit" id="mfaBtn">Verify <span class="btn-arrow">&rarr;</span></button>
@@ -608,6 +621,7 @@
           <div class="checks">
             <label class="check"><input type="checkbox" id="fSettled" /> <span id="fSettledLabel">Already received</span></label>
             <label class="check"><input type="checkbox" id="fRecurring" /> Repeats every month</label>
+            <label class="check" id="fSpreadWrap" hidden><input type="checkbox" id="fSpread" /> Split across months by days</label>
           </div>
           <span class="add-err" id="addErr"></span>
           <div style="display:flex; gap:10px;">
@@ -649,6 +663,25 @@
         <div class="card-title"><h2>Month by month</h2><span>Click a month to open it</span></div>
         <div class="mrow mhead"><span>Month</span><span>Own work</span><span>Team</span><span>Income</span><span>Expenses</span><span>Net</span></div>
         <div id="months"></div>
+      </section>
+
+      <section class="t-card block mfa-card">
+        <div class="card-title"><h2>Two-step sign-in</h2><span id="mfaCount"></span></div>
+        <div id="mfaList"></div>
+        <button type="button" class="btn btn-outline btn-sm" id="mfaAddBtn">Add a backup authenticator</button>
+        <form id="mfaAddForm" hidden novalidate>
+          <div id="mfaAddStep1">
+            <label><span class="label">Name it</span><input class="field" id="mfaName" maxlength="40" placeholder="Laptop password manager" autocomplete="off" /></label>
+            <p class="mfa-help">Use a different device from your phone, like the password manager on your laptop (1Password, Bitwarden, or Apple Passwords can all hold these codes).</p>
+          </div>
+          <div id="mfaAddStep2" hidden>
+            <div class="qr" id="mfaAddQr"></div>
+            <p class="secret">Can’t scan it? Choose “Enter a setup key” and type <code id="mfaAddSecret"></code></p>
+            <label><span class="label">6-digit code from the new app</span><input class="field code-in" id="mfaAddCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" /></label>
+          </div>
+          <p class="add-err" id="mfaAddErr"></p>
+          <div class="mfa-actions"><button type="button" class="btn btn-ghost btn-sm" id="mfaAddCancel">Cancel</button><button type="submit" class="btn btn-primary btn-sm" id="mfaAddGo">Continue</button></div>
+        </form>
       </section>
 
       <section class="t-card block backup-card">
@@ -703,7 +736,7 @@
           </div>
         </div>
         <form class="mgrid lump" id="lumpForm" hidden novalidate>
-          <p class="lump-help">A company paid you in one transfer? Enter it here and the oldest unpaid shifts at that company are marked paid, up to the amount.</p>
+          <p class="lump-help">A company paid you in one transfer? Enter it here and the oldest unpaid shifts at that company, yours and your team's, are marked as paid by them, up to the amount.</p>
           <label class="wide"><span class="label">Company</span><select class="field" id="lCo"></select></label>
           <label><span class="label">Amount</span><span class="amt"><select class="field cur" id="lCur" aria-label="Currency"><option value="USD">$ USD</option><option value="EGP">EGP</option></select><input class="field" id="lAmt" type="number" min="0" step="0.01" placeholder="300" /></span></label>
           <label id="lFxWrap" hidden><span class="label">EGP per $1</span><input class="field" id="lFx" type="number" min="0" step="0.01" placeholder="48.50" /></label>
@@ -888,6 +921,8 @@
         <strong id="tm-bulkN"></strong>
         <button class="btn btn-ghost btn-sm" data-bulk="paid">Mark paid</button>
         <button class="btn btn-ghost btn-sm" data-bulk="unpaid">Mark unpaid</button>
+        <button class="btn btn-ghost btn-sm" data-bulk="cpaid">Company paid you</button>
+        <button class="btn btn-ghost btn-sm" data-bulk="cunpaid">Company hasn't paid</button>
         <select class="co" id="tm-bulkCo" aria-label="Set company for selected"></select>
         <button class="btn btn-ghost btn-sm" data-bulk="payrate">Change pay rate</button>
         <button class="btn btn-ghost btn-sm" data-bulk="billrate">Change company rate</button>
@@ -962,7 +997,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="../tracker/config.js"></script>
-<script src="team.js?v=2"></script>
-<script src="cash.js?v=5"></script>
+<script src="team.js?v=3"></script>
+<script src="cash.js?v=6"></script>
 </body>
 </html>

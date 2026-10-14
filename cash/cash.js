@@ -59,6 +59,11 @@
     $('mfaErr').textContent = ''; $('mfaCode').value = '';
     if (verified) {
       mfaFactor = verified.id;
+      // More than one app set up: ask which one you're using
+      const apps = ((f && f.totp) || []).filter(x => x.status === 'verified');
+      $('mfaWhichWrap').hidden = apps.length < 2;
+      $('mfaWhich').innerHTML = '';
+      apps.forEach(x => { const o = document.createElement('option'); o.value = x.id; o.textContent = factorName(x); $('mfaWhich').appendChild(o); });
       $('mfaSetup').hidden = true;
       $('mfaTitle').textContent = 'Enter your code';
       $('mfaSub').textContent = 'Open your authenticator app and type the 6-digit code for Cash. This device stays verified until you sign out.';
@@ -88,6 +93,7 @@
     const code = $('mfaCode').value.replace(/\D/g, '');
     if (code.length !== 6) { $('mfaErr').textContent = 'Enter the 6-digit code from your app.'; return; }
     $('mfaBtn').setAttribute('aria-busy', 'true');
+    if (!$('mfaWhichWrap').hidden) mfaFactor = $('mfaWhich').value;
     const { error } = await db.auth.mfa.challengeAndVerify({ factorId: mfaFactor, code });
     $('mfaBtn').removeAttribute('aria-busy');
     if (error) { $('mfaErr').textContent = "That code didn't work. Codes change every 30 seconds, so try the one showing now."; $('mfaCode').select(); return; }
@@ -121,7 +127,7 @@
     hours: x.hours != null ? Number(x.hours) : null, rate: x.rate != null ? Number(x.rate) : null,
     amount: Number(x.amount), settled: x.settled, settledAt: x.settled_at, recurring: x.recurring, note: x.note || '', createdAt: x.created_at,
     periodStart: x.period_start || null, periodEnd: x.period_end || null,
-    currency: x.currency || 'USD', fxRate: x.fx_rate != null ? Number(x.fx_rate) : null
+    currency: x.currency || 'USD', fxRate: x.fx_rate != null ? Number(x.fx_rate) : null, spread: !!x.spread
   });
   // Money in pounds is converted at the rate saved with the entry
   const usdOf = e => e.currency === 'EGP' ? (e.fxRate ? e.amount / e.fxRate : 0) : e.amount;
@@ -136,10 +142,20 @@
     return (e.periodStart === e.periodEnd ? f(a) : f(a) + ' – ' + f(b)) + ' · ' + plural(days, 'day');
   };
   const detailText = e => e.periodStart ? periodText(e) : e.hours != null && e.rate != null ? hrs(e.hours) + ' × ' + inCur(e.rate, e.currency) : '';
+  // A spread project counts day by day: each month gets its share of the project's days
+  const dayList = e => { const out = []; for (let d = new Date(e.periodStart + 'T00:00'), end = new Date(e.periodEnd + 'T00:00'); d <= end; d.setDate(d.getDate() + 1)) out.push(iso(d)); return out; };
+  const shareOf = (e, inP) => { if (!(e.spread && e.periodStart)) return inP(e.date) ? 1 : 0; const days = dayList(e); return days.filter(inP).length / days.length; };
+  // The part of an entry inside a period: same fields, amount scaled, src points at the real entry
+  const partsIn = (list, inP) => list.map(e => [e, shareOf(e, inP)]).filter(([, f]) => f > 0)
+    .map(([e, f]) => f === 1 ? e : Object.assign({}, e, { amount: e.amount * f, part: f, src: e }));
+  const partNote = e => e.part ? Math.round(e.part * dayList(e).length) + ' of ' + plural(dayList(e).length, 'day') + ' here, of ' + money(e.src) : '';
+  const entryMonths = e => e.spread && e.periodStart ? [...new Set(dayList(e).map(d => d.slice(0, 7)))] : [e.date.slice(0, 7)];
   const toShift = x => ({
     id: x.id, name: x.name.trim(), date: x.shift_date, work: x.work_seconds, brk: x.break_seconds || 0,
     startedAt: x.started_at, endedAt: x.ended_at, companyId: x.company_id, source: x.source, createdAt: x.created_at,
     owner: !!x.owner, paid: !!x.paid, paidAt: x.paid_at, paidFx: x.paid_fx != null ? Number(x.paid_fx) : null,
+    // Team shifts: "paid" is you paying them; clientPaid is the company paying you for their hours
+    clientPaid: !!x.client_paid, clientPaidAt: x.client_paid_at, clientFx: x.client_fx != null ? Number(x.client_fx) : null,
     // Your own hours never cost team pay
     payRate: x.owner ? 0 : Number(x.pay_rate), billRate: x.bill_rate != null ? Number(x.bill_rate) : null
   });
@@ -169,6 +185,7 @@
     switchView(view);
     loadFx();
     checkBackup();
+    renderFactors();
   }
   function showNotice(msg){ $('notice').textContent = msg; $('notice').hidden = false; }
   function clearNotice(){ $('notice').hidden = true; }
@@ -181,24 +198,26 @@
   function totals(inP){
     const sh = shifts.filter(s => inP(s.date)), counted = sh.filter(s => s.billRate != null);
     const own = counted.filter(s => s.owner), crew = counted.filter(s => !s.owner);
-    const en = entries.filter(e => inP(e.date));
+    const en = partsIn(entries, inP);
     const inc = en.filter(e => e.kind === 'income'), exp = en.filter(e => e.kind === 'expense');
     const sum = (l, f) => l.reduce((a, x) => a + f(x), 0);
     const ownAmt = sum(own, shiftValue), teamAmt = sum(crew, shiftProfit), income = sum(inc, usdOf), expense = sum(exp, usdOf);
     const ownDue = sum(own.filter(s => !s.paid), shiftValue);
+    const crewDue = sum(crew.filter(s => !s.clientPaid), shiftValue); // companies still owe you for team hours
     return {
       own, crew, skipped: sh.filter(s => s.billRate == null), inc, exp,
       ownAmt, team: teamAmt, income, expense, net: ownAmt + teamAmt + income - expense,
-      ownSecs: sum(own, s => s.work), teamSecs: sum(crew, s => s.work), ownDue,
-      toReceive: ownDue + sum(inc.filter(e => !e.settled), usdOf), toPay: sum(exp.filter(e => !e.settled), usdOf)
+      ownSecs: sum(own, s => s.work), teamSecs: sum(crew, s => s.work), ownDue, crewDue,
+      toReceive: ownDue + crewDue + sum(inc.filter(e => !e.settled), usdOf), toPay: sum(exp.filter(e => !e.settled), usdOf)
     };
   }
   function byPerson(list){
     const m = new Map();
     list.forEach(s => {
       const k = key(s.name);
-      if (!m.has(k)) m.set(k, { name:s.name, secs:0, profit:0, cos:new Set() });
+      if (!m.has(k)) m.set(k, { name:s.name, secs:0, profit:0, cos:new Set(), due:0 });
       const g = m.get(k); g.secs += s.work; g.profit += shiftProfit(s); g.cos.add(companyName(s.companyId));
+      if (!s.clientPaid) g.due += shiftValue(s);
     });
     return [...m.values()].sort((a, b) => b.profit - a.profit);
   }
@@ -213,7 +232,7 @@
 
   // ---------- period ----------
   function fillMonths(){
-    const all = [...entries.map(e => e.date), ...shifts.map(s => s.date)].map(d => d.slice(0, 7));
+    const all = [...entries.flatMap(entryMonths), ...shifts.map(s => s.date.slice(0, 7))];
     const lo = all.reduce((a, b) => b < a ? b : a, thisMonth()), hi = all.reduce((a, b) => b > a ? b : a, thisMonth());
     const sel = $('month'); sel.innerHTML = '';
     const opt = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); };
@@ -300,7 +319,7 @@
 
     // Where it came from: your own work, each team member, then each income source
     const inRows = byCompany(t.own).map(g => ({ label:g.name, tag:'You', me:true, sub:hm(g.secs) + (g.due ? ' · ' + usd(g.due) + ' not paid yet' : ' · paid'), amt:g.amt, go:'mytime' }));
-    byPerson(t.crew).forEach(g => inRows.push({ label:g.name, tag:'Team', sub:hm(g.secs) + ' · ' + [...g.cos].filter(Boolean).join(', '), amt:g.profit, go:'team' }));
+    byPerson(t.crew).forEach(g => inRows.push({ label:g.name, tag:'Team', sub:hm(g.secs) + ' · ' + [...g.cos].filter(Boolean).join(', ') + (g.due ? ' · company owes ' + usd(g.due) : ''), amt:g.profit, go:'team' }));
     const src = new Map();
     t.inc.forEach(e => {
       const k = key(e.party || e.title);
@@ -359,7 +378,7 @@
   }
 
   function renderMonths(){
-    const set = new Set([...entries.map(e => e.date.slice(0, 7)), ...shifts.map(s => s.date.slice(0, 7))]);
+    const set = new Set([...entries.flatMap(entryMonths), ...shifts.map(s => s.date.slice(0, 7))]);
     const list = [...set].sort().reverse();
     const box = $('months'); box.innerHTML = '';
     if (!list.length) { box.innerHTML = '<p class="empty">No history yet.</p>'; return; }
@@ -567,7 +586,7 @@
     if (cur === 'EGP' && !(rate > 0)) return err('Enter how many pounds one dollar was, like 48.5.');
     if (!date) return err('Pick the day you were paid.');
     const usdAmt = cur === 'EGP' ? amt / rate : amt;
-    const open = shifts.filter(sh => sh.owner && !sh.paid && sh.companyId === co && sh.billRate != null)
+    const open = shifts.filter(sh => (sh.owner ? !sh.paid : !sh.clientPaid) && sh.companyId === co && sh.billRate != null)
       .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.id - b.id);
     if (!open.length) return err('Nothing is unpaid at ' + companyName(co) + '.');
     const pick = []; let left = usdAmt;
@@ -576,14 +595,18 @@
     const covered = pick.reduce((a, sh) => a + shiftValue(sh), 0);
     left = cents(left);
     const range = pick.length === 1 ? dayDate(pick[0].date) : dayDate(pick[0].date) + ' to ' + dayDate(pick[pick.length - 1].date);
-    if (!confirm('Mark ' + plural(pick.length, 'shift') + ' at ' + companyName(co) + ' as paid?\n\n' + range + ' · ' + usd(covered) +
+    const mine = pick.filter(sh => sh.owner), theirs = pick.filter(sh => !sh.owner);
+    const what = [mine.length ? plural(mine.length, 'of your shifts').replace('of your shiftss', 'of your shifts') : '', theirs.length ? plural(theirs.length, 'team shift') : ''].filter(Boolean).join(' and ');
+    if (!confirm('Mark ' + what + ' at ' + companyName(co) + ' as paid by them?\n\n' + range + ' · ' + usd(covered) +
       (left >= 0.01 ? '\n\n' + usd(left) + ' is left over. It isn’t enough for the next unpaid shift, so that one stays unpaid.' : ''))) return;
-    const patch = { paid: true, paid_at: new Date(date + 'T12:00:00').toISOString(), paid_fx: rate || fx.rate || null };
+    const at = new Date(date + 'T12:00:00').toISOString(), fxDay = rate || fx.rate || null;
     $('lSave').setAttribute('aria-busy', 'true');
-    const { error } = await db.from('shifts').update(patch).in('id', pick.map(sh => sh.id));
+    const r1 = mine.length ? await db.from('shifts').update({ paid: true, paid_at: at, paid_fx: fxDay }).in('id', mine.map(sh => sh.id)) : {};
+    const r2 = theirs.length && !r1.error ? await db.from('shifts').update({ client_paid: true, client_paid_at: at, client_fx: fxDay }).in('id', theirs.map(sh => sh.id)) : {};
     $('lSave').removeAttribute('aria-busy');
-    if (error) return err("Couldn't save that. Try again.");
-    pick.forEach(sh => { sh.paid = true; sh.paidAt = patch.paid_at; sh.paidFx = patch.paid_fx; });
+    if (r1.error || r2.error) { await fetchShifts(); render(); return err("Couldn't save all of that. Check the shifts and try again."); }
+    mine.forEach(sh => { sh.paid = true; sh.paidAt = at; sh.paidFx = fxDay; });
+    theirs.forEach(sh => { sh.clientPaid = true; sh.clientPaidAt = at; sh.clientFx = fxDay; });
     $('lAmt').value = ''; $('lumpForm').hidden = true;
     render();
     toast('Marked ' + plural(pick.length, 'shift') + ' as paid' + (left >= 0.01 ? ' · ' + usd(left) + ' left over' : ''), false);
@@ -591,7 +614,7 @@
 
   // ---------- income / expense list ----------
   function renderList(kind){
-    const rows = entries.filter(e => e.kind === kind && inPeriod(e.date)).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id);
+    const rows = partsIn(entries.filter(e => e.kind === kind), inPeriod).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id);
     $('logTable').classList.toggle('is-expense', kind === 'expense');
     $('listTitle').textContent = kind === 'income' ? 'Income' : 'Expenses';
     const total = rows.reduce((a, e) => a + usdOf(e), 0), open = rows.filter(e => !e.settled).reduce((a, e) => a + usdOf(e), 0);
@@ -601,6 +624,7 @@
     const body = $('rows'); body.innerHTML = '';
     if (!rows.length) body.innerHTML = '<tr><td colspan="7" class="empty">' + (kind === 'income' ? 'No income logged for this period. Your hours and team profit are counted on their own tabs.' : 'No expenses logged for this period.') + '</td></tr>';
     rows.forEach(e => {
+      const src = e.src || e;
       const tr = document.createElement('tr');
       tr.innerHTML =
         '<td class="c-what"><span class="what"></span><span class="sub-line party"></span></td>' +
@@ -611,7 +635,7 @@
         '<td class="c-status"><button class="status"><i></i><span></span></button></td>' +
         '<td class="c-act"><div class="acts"><button class="icon-btn edit" aria-label="Edit">' + PEN + '</button><button class="icon-btn del" aria-label="Delete">' + TRASH + '</button></div></td>';
       tr.querySelector('.what').textContent = e.title;
-      const sub = [e.party, e.note].filter(Boolean).join(' · ');
+      const sub = [e.party, e.note, partNote(e)].filter(Boolean).join(' · ');
       tr.querySelector('.party').textContent = sub;
       if (e.recurring) { const r = document.createElement('span'); r.className = 'rep'; r.textContent = (sub ? ' · ' : '') + 'Monthly'; tr.querySelector('.party').appendChild(r); }
       tr.querySelector('.c-date').textContent = fmtDate(e.date);
@@ -623,13 +647,13 @@
       st.querySelector('span').textContent = e.settled ? DONE[kind] : OPEN[kind];
       st.title = e.settled && e.settledAt ? DONE[kind] + ' ' + new Date(e.settledAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : 'Click to mark as ' + DONE[kind].toLowerCase();
       st.addEventListener('click', async () => {
-        const settled = !e.settled, patch = { settled, settled_at: settled ? new Date().toISOString() : null };
-        const { error } = await db.from('cash_entries').update(patch).eq('id', e.id);
+        const settled = !src.settled, patch = { settled, settled_at: settled ? new Date().toISOString() : null };
+        const { error } = await db.from('cash_entries').update(patch).eq('id', src.id);
         if (error) return showNotice("Couldn't save that change. Try again.");
-        clearNotice(); e.settled = settled; e.settledAt = patch.settled_at; render();
+        clearNotice(); src.settled = settled; src.settledAt = patch.settled_at; render();
       });
-      tr.querySelector('.edit').addEventListener('click', () => openForm(e.kind, e));
-      tr.querySelector('.del').addEventListener('click', () => remove(e));
+      tr.querySelector('.edit').addEventListener('click', () => openForm(src.kind, src));
+      tr.querySelector('.del').addEventListener('click', () => remove(src));
       body.appendChild(tr);
     });
   }
@@ -707,6 +731,7 @@
     document.querySelectorAll('.project').forEach(el => el.hidden = m !== 'project');
     $('fAmount').readOnly = m === 'hourly';
     $('fDateLabel').textContent = m === 'project' ? 'Counts on (month it goes in)' : 'Date';
+    $('fSpreadWrap').hidden = m !== 'project';
     $('fCat').placeholder = m === 'project' ? 'Project' : fKind === 'income' ? 'Salary' : 'Subscriptions';
     if (m === 'project') syncProjectDate();
     if (m === 'hourly') calcAmount();
@@ -779,6 +804,7 @@
     $('fNote').value = e ? e.note : '';
     $('fSettled').checked = e ? e.settled : kind === 'expense';
     $('fRecurring').checked = e ? e.recurring : false;
+    $('fSpread').checked = e ? !!e.spread : false;
     setMode(e && e.periodStart ? 'project' : e && e.hours != null && e.rate != null ? 'hourly' : 'fixed');
     $('addErr').textContent = '';
     $('addSave').textContent = e ? 'Save changes' : 'Save';
@@ -828,6 +854,7 @@
     };
     if (!editing || settled !== editing.settled) row.settled_at = settled ? new Date().toISOString() : null;
     if (from || (editing && editing.periodStart)) { row.period_start = from; row.period_end = to; }
+    if (fMode === 'project' || (editing && editing.spread)) row.spread = fMode === 'project' && $('fSpread').checked;
     $('addSave').setAttribute('aria-busy', 'true');
     const q = editing ? db.from('cash_entries').update(row).eq('id', editing.id).select().single() : db.from('cash_entries').insert(row).select().single();
     const { data, error } = await q;
@@ -893,6 +920,77 @@
       shifts.push(toShift(data));
     }
     render();
+  });
+
+  // ---------- two-step sign-in: your apps ----------
+  // A second app (say a laptop password manager) means losing your phone doesn't lock you out.
+  const factorName = f => /^Cash \d+$/.test(f.friendly_name || '') || !f.friendly_name ? 'Authenticator app' : f.friendly_name;
+  let addingFactor = null;
+  async function renderFactors(){
+    const { data, error } = await db.auth.mfa.listFactors();
+    if (error) return;
+    const list = ((data && data.totp) || []).filter(f => f.status === 'verified');
+    const box = $('mfaList'); box.innerHTML = '';
+    list.forEach(f => {
+      const row = document.createElement('div'); row.className = 'fac';
+      row.innerHTML = '<span class="fac-n"><b></b><small></small></span><button type="button" class="btn btn-ghost btn-sm">Remove</button>';
+      row.querySelector('b').textContent = factorName(f);
+      row.querySelector('small').textContent = 'Added ' + new Date(f.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+      const rm = row.querySelector('button');
+      rm.disabled = list.length < 2;
+      rm.title = list.length < 2 ? 'Add another app first, or you’d have no way to sign in' : '';
+      rm.addEventListener('click', async () => {
+        if (!confirm('Remove “' + factorName(f) + '”? Its codes will stop working for Cash.')) return;
+        const { error } = await db.auth.mfa.unenroll({ factorId: f.id });
+        if (error) { toast("Couldn't remove it. Try again.", false); return; }
+        renderFactors(); toast('Removed ' + factorName(f), false);
+      });
+      box.appendChild(row);
+    });
+    $('mfaCount').textContent = list.length < 2 ? 'Only one app can sign you in. Add a backup so losing your phone doesn’t lock you out.' : plural(list.length, 'app') + ' can sign you in';
+    $('mfaCount').classList.toggle('warn', list.length < 2);
+  }
+  function resetAdd(){
+    addingFactor = null;
+    $('mfaAddForm').hidden = true; $('mfaAddBtn').hidden = false;
+    $('mfaAddStep1').hidden = false; $('mfaAddStep2').hidden = true;
+    $('mfaName').value = ''; $('mfaAddCode').value = ''; $('mfaAddErr').textContent = '';
+    $('mfaAddGo').textContent = 'Continue';
+  }
+  $('mfaAddBtn').addEventListener('click', () => { $('mfaAddForm').hidden = false; $('mfaAddBtn').hidden = true; $('mfaName').focus(); });
+  $('mfaAddCancel').addEventListener('click', async () => {
+    if (addingFactor) await db.auth.mfa.unenroll({ factorId: addingFactor }); // drop the half-made one
+    resetAdd();
+  });
+  ['mfaName', 'mfaAddCode'].forEach(id => $(id).addEventListener('input', () => $('mfaAddErr').textContent = ''));
+  $('mfaAddForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const err = m => { $('mfaAddErr').textContent = m; };
+    $('mfaAddGo').setAttribute('aria-busy', 'true');
+    try {
+      if (!addingFactor) {
+        const name = $('mfaName').value.trim().replace(/\s+/g, ' ');
+        if (name.length < 2) return err('Give it a name you’ll recognise, like “Laptop password manager”.');
+        const { data: f } = await db.auth.mfa.listFactors();
+        if (((f && f.all) || []).some(x => (x.friendly_name || '').toLowerCase() === name.toLowerCase())) return err('You already have one called that. Pick another name.');
+        const { data, error } = await db.auth.mfa.enroll({ factorType:'totp', friendlyName:name });
+        if (error) return err("Couldn't start the setup. Refresh the page and try again.");
+        addingFactor = data.id;
+        $('mfaAddQr').innerHTML = '';
+        const img = document.createElement('img'); img.src = data.totp.qr_code; img.alt = 'QR code for your backup authenticator';
+        $('mfaAddQr').appendChild(img);
+        $('mfaAddSecret').textContent = data.totp.secret;
+        $('mfaAddStep1').hidden = true; $('mfaAddStep2').hidden = false;
+        $('mfaAddGo').textContent = 'Verify';
+        $('mfaAddCode').focus();
+      } else {
+        const code = $('mfaAddCode').value.replace(/\D/g, '');
+        if (code.length !== 6) return err('Enter the 6-digit code the new app shows.');
+        const { error } = await db.auth.mfa.challengeAndVerify({ factorId: addingFactor, code });
+        if (error) return err("That code didn't work. Codes change every 30 seconds, so try the one showing now.");
+        resetAdd(); renderFactors(); toast('Backup authenticator added', false);
+      }
+    } finally { $('mfaAddGo').removeAttribute('aria-busy'); }
   });
 
   // ---------- backup ----------
@@ -970,7 +1068,7 @@
         '<td>' + (g.due <= 0 ? '<span class="ok">Paid</span>' : g.due < g.amt ? '<span class="due">' + usd(g.due) + ' not paid</span>' : '<span class="due">Not paid</span>') + '</td><td class="r mono">' + usd(g.amt) + '</td></tr>';
     }).join('');
     const crewRows = crew.map(g => '<tr><td><b>' + escHtml(g.name) + '</b></td><td>' + escHtml([...g.cos].filter(Boolean).join(', ')) + '</td><td class="r mono">' + hm(g.secs) + '</td><td class="r mono">' + usd(g.profit) + '</td></tr>').join('');
-    const incRows = inc.map(e => '<tr><td>' + shortDay(e.date) + '</td><td><b>' + escHtml(e.title) + '</b>' + (e.party ? '<small>' + escHtml(e.party) + '</small>' : '') + '</td>' +
+    const incRows = inc.map(e => '<tr><td>' + shortDay(e.date) + '</td><td><b>' + escHtml(e.title) + '</b>' + (e.party || e.part ? '<small>' + escHtml([e.party, partNote(e)].filter(Boolean).join(' · ')) + '</small>' : '') + '</td>' +
       '<td class="r mono">' + detailText(e) + '</td>' +
       '<td>' + status(e.settled, 'Received', 'Not received') + '</td><td class="r mono">' + money(e) + '</td></tr>').join('');
     const expRows = exp.map(e => '<tr><td>' + shortDay(e.date) + '</td><td><b>' + escHtml(e.title) + '</b>' + (e.party ? '<small>' + escHtml(e.party) + '</small>' : '') + '</td>' +

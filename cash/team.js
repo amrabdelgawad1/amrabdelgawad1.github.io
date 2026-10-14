@@ -32,6 +32,8 @@ window.CashTeam = function(db){
     id: x.id, name: x.name.trim(), date: x.shift_date, work: x.work_seconds, brk: x.break_seconds,
     startedAt: x.started_at, endedAt: x.ended_at, companyId: x.company_id,
     paid: x.paid, paidAt: x.paid_at, paidFx: x.paid_fx != null ? Number(x.paid_fx) : null, source: x.source, createdAt: x.created_at,
+    // Whether the company has paid you for these hours (separate from you paying the team member)
+    clientPaid: !!x.client_paid, clientPaidAt: x.client_paid_at, clientFx: x.client_fx != null ? Number(x.client_fx) : null,
     // Rates are locked onto each shift when it's logged, so later rate changes don't rewrite history.
     payRate: x.pay_rate != null ? Number(x.pay_rate) : rate,
     billRate: x.bill_rate != null ? Number(x.bill_rate) : null,
@@ -73,11 +75,13 @@ window.CashTeam = function(db){
 
   async function updateShifts(ids, patch){
     if ('paid' in patch) patch = Object.assign({}, patch, { paid_fx: patch.paid ? fxNow() : null });
+    if ('client_paid' in patch) patch = Object.assign({}, patch, { client_paid_at: patch.client_paid ? new Date().toISOString() : null, client_fx: patch.client_paid ? fxNow() : null });
     const { error } = await db.from('shifts').update(patch).in('id', ids);
     if (error) { showNotice("Couldn't save that change. Try again."); return false; }
     clearNotice();
     log.forEach(r => { if (ids.includes(r.id)) {
       if ('paid' in patch) { r.paid = patch.paid; r.paidAt = patch.paid_at; r.paidFx = patch.paid_fx; }
+      if ('client_paid' in patch) { r.clientPaid = patch.client_paid; r.clientPaidAt = patch.client_paid_at; r.clientFx = patch.client_fx; }
       if ('company_id' in patch && patch.company_id !== r.companyId) {
         r.companyId = patch.company_id;
         const c = companies.find(x => x.id === r.companyId); r.billRate = c && c.bill_rate != null ? Number(c.bill_rate) : null; // same as the database trigger
@@ -324,7 +328,7 @@ window.CashTeam = function(db){
         '<td class="c-brk num b"></td>' +
         '<td class="c-co"><select class="co" aria-label="Company"></select></td>' +
         '<td class="c-amt num"></td>' +
-        '<td class="c-status"><button class="status"><i></i><span></span></button></td>' +
+        '<td class="c-status"><button class="status team"><i></i><span></span></button><button class="status client"><i></i><span></span></button></td>' +
         '<td class="c-del" style="text-align:right"><button class="del" aria-label="Delete shift"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></td>';
       const cb = tr.querySelector('.c-sel input');
       cb.checked = selected.has(r.id);
@@ -349,12 +353,21 @@ window.CashTeam = function(db){
         if (ok) render();
       });
 
-      const st = tr.querySelector('.status');
+      const st = tr.querySelector('.status.team');
       st.classList.add(r.paid ? 'paid' : 'unpaid');
       st.querySelector('span').textContent = r.paid ? 'Paid' : 'Unpaid';
       st.title = r.paid && r.paidAt ? 'Marked paid ' + new Date(r.paidAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : 'Click to mark as paid';
       st.addEventListener('click', async () => {
         const ok = await updateShifts([r.id], { paid: !r.paid, paid_at: r.paid ? null : new Date().toISOString() });
+        if (ok) render();
+      });
+      // Second pill: has the company paid you for these hours?
+      const cp = tr.querySelector('.status.client');
+      cp.classList.add(r.clientPaid ? 'paid' : 'unpaid');
+      cp.querySelector('span').textContent = r.clientPaid ? 'Company paid' : 'Company owes';
+      cp.title = r.clientPaid && r.clientPaidAt ? 'The company paid you ' + new Date(r.clientPaidAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : 'Click when the company pays you for these hours';
+      cp.addEventListener('click', async () => {
+        const ok = await updateShifts([r.id], { client_paid: !r.clientPaid });
         if (ok) render();
       });
 
@@ -608,6 +621,12 @@ window.CashTeam = function(db){
       if (ok) { selected.clear(); render(); toast((isPay ? 'Pay rate' : 'Company rate') + ' set to ' + usd(v) + '/hour on ' + ids.length + ' shift' + (ids.length === 1 ? '' : 's'), false); }
       return;
     }
+    if (b.dataset.bulk === 'cpaid' || b.dataset.bulk === 'cunpaid') {
+      const cpaid = b.dataset.bulk === 'cpaid';
+      const ok = await updateShifts(ids, { client_paid: cpaid });
+      if (ok) { selected.clear(); render(); toast((cpaid ? 'Company paid you for ' : 'Company still owes for ') + ids.length + ' shift' + (ids.length === 1 ? '' : 's'), false); }
+      return;
+    }
     const paid = b.dataset.bulk === 'paid';
     b.setAttribute('aria-busy', 'true');
     const ok = await updateShifts(ids, { paid, paid_at: paid ? new Date().toISOString() : null });
@@ -682,7 +701,7 @@ window.CashTeam = function(db){
     const { data, error } = await db.from('shifts').insert({
       name: r.name, shift_date: r.date, work_seconds: r.work, break_seconds: r.brk,
       started_at: r.startedAt, ended_at: r.endedAt, company_id: r.companyId,
-      paid: r.paid, paid_at: r.paidAt, source: r.source, created_at: r.createdAt,
+      paid: r.paid, paid_at: r.paidAt, paid_fx: r.paidFx, client_paid: r.clientPaid, client_paid_at: r.clientPaidAt, client_fx: r.clientFx, source: r.source, created_at: r.createdAt,
       pay_rate: r.payRate, bill_rate: r.billRate
     }).select().single();
     if (error) { showNotice("Couldn't restore that shift."); return; }
@@ -692,10 +711,10 @@ window.CashTeam = function(db){
   // ---------- CSV export ----------
   $('export').addEventListener('click', () => {
     const esc = v => { let s = String(v); if (/^[=+\-@]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
-    const lines = [['Name','Shift date','Worked (hours)','Break (hours)','Company','Status','Amount (USD)','Clock in','Clock out'].map(esc).join(',')];
+    const lines = [['Name','Shift date','Worked (hours)','Break (hours)','Company','Status','Company paid you','Amount (USD)','Clock in','Clock out'].map(esc).join(',')];
     visible().forEach(r => lines.push([
       r.name, r.date, (r.work/3600).toFixed(2), (r.brk/3600).toFixed(2), companyName(r.companyId),
-      r.paid ? 'Paid' : 'Unpaid', earned([r]).toFixed(2),
+      r.paid ? 'Paid' : 'Unpaid', r.clientPaid ? 'Yes' : 'No', earned([r]).toFixed(2),
       r.startedAt ? hhmmIso(r.startedAt) : '', r.endedAt ? hhmmIso(r.endedAt) : ''
     ].map(esc).join(',')));
     const a = document.createElement('a');

@@ -87,3 +87,20 @@ html .toast button{ color:var(--accent2); }
 html button.crow.go{ width:100%; border:0; background:transparent; color:inherit; font:inherit; text-align:left; cursor:pointer; padding-left:8px; padding-right:8px; margin:0 -8px; width:calc(100% + 16px); border-radius:8px; }
 html button.crow.go:hover{ background:var(--sunk); }
 html button.crow.go + .crow, html .crow + button.crow.go{ border-top:1px solid var(--border); }
+
+/* Leftovers from the dark theme */
+html .field, html .sel, html .co, html input[type="date"]{ color-scheme:light; }
+html .login-err, html .range-err, html .co-err, html .add-err{ color:var(--red); }
+html .money.net.neg strong, html .mrow .net.neg{ color:var(--red); }
+html .money.net.neg{ background:color-mix(in srgb, var(--red) 6%, var(--bg2)); border-color:color-mix(in srgb, var(--red) 30%, transparent); }
+html .del:hover{ color:var(--red); border-color:color-mix(in srgb, var(--red) 35%, transparent); background:color-mix(in srgb, var(--red) 6%, var(--bg2)); }
+html .rates .op, html .rates .per-hour strong, html .secret code{ font-family:"Inter", system-ui, sans-serif; font-feature-settings:"tnum" 1; }
+html .code-in{ font-family:"Inter", system-ui, sans-serif !important; font-feature-settings:"tnum" 1; }
+html table.log tbody tr.sel-row{ background:var(--accent-dim); }
+html .status:hover{ transform:none; }
+html .team .c-status .status{ padding:4px 10px; font-size:12px; }
+html .team td.c-status .status{ display:flex; width:max-content; }
+html .team td.c-status .status.client{ margin-top:4px; }
+@media (min-width:641px) and (max-width:1180px){ html .team table.log th:nth-child(5), html .team table.log td.c-brk{ display:none; } }
+html .team .co{ max-width:150px; }
+html .team table.log td, html .team table.log th{ padding-left:8px; padding-right:8px; }

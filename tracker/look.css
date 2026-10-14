@@ -56,3 +56,4 @@ html .save-error{ background:color-mix(in srgb, var(--red) 7%, var(--bg2)); bord
 html .saved-check{ color:var(--green); background:color-mix(in srgb, var(--green) 10%, var(--bg2)); border-color:color-mix(in srgb, var(--green) 35%, transparent); }
 html .saved-sub{ color:var(--light); }
 html .saved-note{ color:var(--muted); }
+html .gate input{ font-family:"Inter", system-ui, sans-serif; font-feature-settings:"tnum" 1; }
