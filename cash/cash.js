@@ -76,8 +76,14 @@
     id: x.id, kind: x.kind, date: x.entry_date, title: x.title, party: x.party || '', category: x.category || 'Other',
     hours: x.hours != null ? Number(x.hours) : null, rate: x.rate != null ? Number(x.rate) : null,
     amount: Number(x.amount), settled: x.settled, settledAt: x.settled_at, recurring: x.recurring, note: x.note || '', createdAt: x.created_at,
-    periodStart: x.period_start || null, periodEnd: x.period_end || null
+    periodStart: x.period_start || null, periodEnd: x.period_end || null,
+    currency: x.currency || 'USD', fxRate: x.fx_rate != null ? Number(x.fx_rate) : null
   });
+  // Money in pounds is converted at the rate saved with the entry
+  const usdOf = e => e.currency === 'EGP' ? (e.fxRate ? e.amount / e.fxRate : 0) : e.amount;
+  const egp = n => 'EGP ' + (Math.round(n * 100) / 100).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  const inCur = (n, cur) => cur === 'EGP' ? egp(n) : usd(n);
+  const money = e => e.currency === 'EGP' ? egp(e.amount) + ' · ' + usd(usdOf(e)) : usd(e.amount);
   // Project pay period, like "Sep 28 – Oct 9 · 12 days"
   const periodText = e => {
     const a = new Date(e.periodStart + 'T00:00'), b = new Date(e.periodEnd + 'T00:00');
@@ -85,7 +91,7 @@
     const days = Math.round((b - a) / 86400000) + 1;
     return (e.periodStart === e.periodEnd ? f(a) : f(a) + ' – ' + f(b)) + ' · ' + plural(days, 'day');
   };
-  const detailText = e => e.periodStart ? periodText(e) : e.hours != null && e.rate != null ? hrs(e.hours) + ' × ' + usd(e.rate) : '';
+  const detailText = e => e.periodStart ? periodText(e) : e.hours != null && e.rate != null ? hrs(e.hours) + ' × ' + inCur(e.rate, e.currency) : '';
   const toShift = x => ({
     id: x.id, name: x.name.trim(), date: x.shift_date, work: x.work_seconds, brk: x.break_seconds || 0,
     startedAt: x.started_at, endedAt: x.ended_at, companyId: x.company_id, source: x.source, createdAt: x.created_at,
@@ -117,6 +123,8 @@
     if (en.error) return showNotice(/cash_entries/.test(en.error.message || '') ? 'The finance table isn’t set up yet. Run supabase/cash-setup.sql in the Supabase SQL Editor, then refresh.' : "Couldn't load your finances. Refresh the page to try again.");
     entries = en.data.map(toEntry);
     switchView(view);
+    loadFx();
+    checkBackup();
   }
   function showNotice(msg){ $('notice').textContent = msg; $('notice').hidden = false; }
   function clearNotice(){ $('notice').hidden = true; }
@@ -132,13 +140,13 @@
     const en = entries.filter(e => inP(e.date));
     const inc = en.filter(e => e.kind === 'income'), exp = en.filter(e => e.kind === 'expense');
     const sum = (l, f) => l.reduce((a, x) => a + f(x), 0);
-    const ownAmt = sum(own, shiftValue), teamAmt = sum(crew, shiftProfit), income = sum(inc, e => e.amount), expense = sum(exp, e => e.amount);
+    const ownAmt = sum(own, shiftValue), teamAmt = sum(crew, shiftProfit), income = sum(inc, usdOf), expense = sum(exp, usdOf);
     const ownDue = sum(own.filter(s => !s.paid), shiftValue);
     return {
       own, crew, skipped: sh.filter(s => s.billRate == null), inc, exp,
       ownAmt, team: teamAmt, income, expense, net: ownAmt + teamAmt + income - expense,
       ownSecs: sum(own, s => s.work), teamSecs: sum(crew, s => s.work), ownDue,
-      toReceive: ownDue + sum(inc.filter(e => !e.settled), e => e.amount), toPay: sum(exp.filter(e => !e.settled), e => e.amount)
+      toReceive: ownDue + sum(inc.filter(e => !e.settled), usdOf), toPay: sum(exp.filter(e => !e.settled), usdOf)
     };
   }
   function byPerson(list){
@@ -232,6 +240,7 @@
     $('tNetBox').classList.toggle('neg', t.net < 0);
     const gross = t.ownAmt + t.team + t.income;
     $('tNetSub').textContent = gross > 0 ? Math.round(t.net / gross * 100) + '% of what came in' : '';
+    lastNet = t.net; renderNetEgp();
 
     const p = [];
     if (t.toReceive > 0) p.push('Still to receive <b>' + usd(t.toReceive) + '</b>');
@@ -252,7 +261,7 @@
     t.inc.forEach(e => {
       const k = key(e.party || e.title);
       if (!src.has(k)) src.set(k, { label:e.party || e.title, titles:new Set(), amt:0, open:0 });
-      const g = src.get(k); g.amt += e.amount; g.titles.add(e.title); if (!e.settled) g.open += e.amount;
+      const g = src.get(k); g.amt += usdOf(e); g.titles.add(e.title); if (!e.settled) g.open += usdOf(e);
     });
     [...src.values()].sort((a, b) => b.amt - a.amt).forEach(g => inRows.push({
       label:g.label, sub:[...g.titles].slice(0, 3).join(', ') + (g.open ? ' · ' + usd(g.open) + ' not received' : ''), amt:g.amt
@@ -263,11 +272,16 @@
     t.exp.forEach(e => {
       const k = key(e.category);
       if (!cat.has(k)) cat.set(k, { label:e.category, titles:new Set(), amt:0 });
-      const g = cat.get(k); g.amt += e.amount; g.titles.add(e.title);
+      const g = cat.get(k); g.amt += usdOf(e); g.titles.add(e.title);
     });
     drawBars($('wentTo'), [...cat.values()].sort((a, b) => b.amt - a.amt).map(g => ({ label:g.label, sub:[...g.titles].slice(0, 3).join(', '), amt:g.amt })), 'out', 'No expenses for this period.');
 
     renderMonths();
+  }
+
+  let lastNet = null;
+  function renderNetEgp(){
+    $('tNetEgp').textContent = fx.rate && lastNet != null ? '≈ ' + egp(lastNet * fx.rate) + ' at ' + fx.rate + ' per $' : '';
   }
 
   function drawBars(el, list, cls, emptyText){
@@ -480,7 +494,7 @@
     const rows = entries.filter(e => e.kind === kind && inPeriod(e.date)).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id);
     $('logTable').classList.toggle('is-expense', kind === 'expense');
     $('listTitle').textContent = kind === 'income' ? 'Income' : 'Expenses';
-    const total = rows.reduce((a, e) => a + e.amount, 0), open = rows.filter(e => !e.settled).reduce((a, e) => a + e.amount, 0);
+    const total = rows.reduce((a, e) => a + usdOf(e), 0), open = rows.filter(e => !e.settled).reduce((a, e) => a + usdOf(e), 0);
     $('listSum').textContent = (month === 'all' ? 'All time' : monthLabel(month)) + ' · ' + usd(total) + (open ? ' · ' + usd(open) + ' ' + OPEN[kind].toLowerCase() : '');
     renderRecurring(kind);
 
@@ -503,7 +517,7 @@
       tr.querySelector('.c-date').textContent = fmtDate(e.date);
       tr.querySelector('.c-cat').textContent = e.category;
       tr.querySelector('.c-hrs').textContent = detailText(e);
-      tr.querySelector('.c-amt').textContent = usd(e.amount);
+      tr.querySelector('.c-amt').textContent = money(e);
       const st = tr.querySelector('.status');
       st.classList.add(e.settled ? 'done' : 'open');
       st.querySelector('span').textContent = e.settled ? DONE[kind] : OPEN[kind];
@@ -539,7 +553,7 @@
     box.hidden = !missingRecurring.length;
     if (missingRecurring.length) {
       $('recurText').textContent = plural(missingRecurring.length, 'monthly ' + (kind === 'income' ? 'income' : 'expense')) + ' not logged for ' + monthLabel(month) + ' yet: ' +
-        missingRecurring.map(e => retitle(e.title, month) + ' (' + usd(e.amount) + ')').join(', ') + '.';
+        missingRecurring.map(e => retitle(e.title, month) + ' (' + inCur(e.amount, e.currency) + ')').join(', ') + '.';
     }
   }
   $('recurAdd').addEventListener('click', async () => {
@@ -548,6 +562,7 @@
     const rows = missingRecurring.map(e => ({
       kind: e.kind, entry_date: month + '-' + String(Math.min(Number(e.date.slice(8, 10)), last)).padStart(2, '0'),
       title: retitle(e.title, month), party: e.party || null, category: e.category, hours: e.hours, rate: e.rate, amount: e.amount,
+      currency: e.currency, fx_rate: e.currency === 'EGP' ? (fx.rate || e.fxRate) : null,
       // Subscriptions usually charge on their own; income still needs to arrive
       settled: e.kind === 'expense', settled_at: e.kind === 'expense' ? new Date().toISOString() : null,
       recurring: true, note: e.note || null
@@ -595,7 +610,33 @@
     $('fCat').placeholder = m === 'project' ? 'Project' : fKind === 'income' ? 'Salary' : 'Subscriptions';
     if (m === 'project') syncProjectDate();
     if (m === 'hourly') calcAmount();
+    showFx();
   }
+  // ---- currency ----
+  // Today's rate comes from a free public feed; if that's down, the last rate you used.
+  const fx = { rate:null, live:false };
+  async function loadFx(){
+    try {
+      const r = await fetch('https://open.er-api.com/v6/latest/USD');
+      const j = await r.json();
+      if (j && j.rates && j.rates.EGP) { fx.rate = Math.round(j.rates.EGP * 100) / 100; fx.live = true; }
+    } catch(e){}
+    if (!fx.rate) {
+      const { data } = await db.from('tracker_settings').select('*').eq('key', 'egp_rate');
+      const v = parseFloat(((data || [])[0] || {}).value); if (!isNaN(v)) fx.rate = v;
+    }
+    renderNetEgp();
+  }
+  function showFx(){
+    const isEgp = $('fCur').value === 'EGP';
+    $('fxWrap').hidden = !isEgp;
+    $('fRateLabel').textContent = 'Rate ' + (isEgp ? 'EGP' : '$') + '/h';
+    if (isEgp && !$('fFx').value && fx.rate) $('fFx').value = fx.rate;
+    const a = parseFloat($('fAmount').value), r = parseFloat($('fFx').value);
+    $('fFxHint').textContent = isEgp ? (!isNaN(a) && r > 0 ? '≈ ' + usd(a / r) : (fx.live ? 'Today’s rate' : '')) : '';
+  }
+  $('fCur').addEventListener('change', showFx);
+  ['fFx','fAmount','fHours','fRate'].forEach(id => $(id).addEventListener('input', showFx));
   // The project counts on its end date unless you pick another date (like the day you got paid)
   let dateTouched = false;
   function syncProjectDate(){ if (fMode === 'project' && !dateTouched && $('fTo').value) $('fDate').value = $('fTo').value; }
@@ -631,6 +672,8 @@
     $('fTo').value = e && e.periodEnd ? e.periodEnd : '';
     dateTouched = !!e;
     $('fAmount').value = e ? e.amount.toFixed(2) : '';
+    $('fCur').value = e ? e.currency : (store.get('cash-last-currency') || 'USD');
+    $('fFx').value = e && e.fxRate ? e.fxRate : (fx.rate || '');
     $('fNote').value = e ? e.note : '';
     $('fSettled').checked = e ? e.settled : kind === 'expense';
     $('fRecurring').checked = e ? e.recurring : false;
@@ -663,6 +706,8 @@
       if (!from || !to) return err('Pick when the project started and ended.');
       if (to < from) return err('The project ends before it starts. Check the dates.');
     }
+    const currency = $('fCur').value, fxRate = currency === 'EGP' ? parseFloat($('fFx').value) : null;
+    if (currency === 'EGP' && !(fxRate > 0)) return err('Enter how many pounds one dollar is, like 48.5.');
     if (fMode === 'hourly') {
       hours = parseFloat($('fHours').value); rate = parseFloat($('fRate').value);
       if (isNaN(hours) || hours <= 0) return err('Enter how many hours you worked.');
@@ -677,7 +722,7 @@
     const settled = $('fSettled').checked;
     const row = {
       kind: fKind, entry_date: date, title, party: party ? (match ? match.party : party) : null, category,
-      hours, rate, amount: cents(amount), settled, recurring: $('fRecurring').checked, note: $('fNote').value.trim() || null
+      hours, rate, amount: cents(amount), currency, fx_rate: fxRate, settled, recurring: $('fRecurring').checked, note: $('fNote').value.trim() || null
     };
     if (!editing || settled !== editing.settled) row.settled_at = settled ? new Date().toISOString() : null;
     if (from || (editing && editing.periodStart)) { row.period_start = from; row.period_end = to; }
@@ -687,13 +732,15 @@
     $('addSave').removeAttribute('aria-busy');
     if (error) return err("Couldn't save that. Try again.");
     const saved = toEntry(data);
+    store.set('cash-last-currency', currency);
+    if (currency === 'EGP') { fx.rate = fxRate; db.from('tracker_settings').upsert({ key:'egp_rate', value:String(fxRate) }).then(() => {}); }
     if (editing) entries[entries.indexOf(editing)] = saved; else entries.push(saved);
     const wasEdit = !!editing;
     if (wasEdit) closeForm();
     else { $('fTitle').value = ''; $('fHours').value = ''; $('fAmount').value = ''; $('fNote').value = ''; $('fRecurring').checked = false; }
     if (month !== 'all' && saved.date.slice(0, 7) !== month) month = saved.date.slice(0, 7);
     render();
-    toast((wasEdit ? 'Updated ' : 'Added ') + saved.title + ' · ' + usd(saved.amount), false);
+    toast((wasEdit ? 'Updated ' : 'Added ') + saved.title + ' · ' + money(saved), false);
   });
 
   // ---------- delete with undo ----------
@@ -729,7 +776,7 @@
       const e = d.entry;
       const { data, error } = await db.from('cash_entries').insert({
         kind: e.kind, entry_date: e.date, title: e.title, party: e.party || null, category: e.category, hours: e.hours, rate: e.rate,
-        amount: e.amount, settled: e.settled, settled_at: e.settledAt, recurring: e.recurring, note: e.note || null, created_at: e.createdAt,
+        amount: e.amount, currency: e.currency, fx_rate: e.fxRate, settled: e.settled, settled_at: e.settledAt, recurring: e.recurring, note: e.note || null, created_at: e.createdAt,
         ...(e.periodStart ? { period_start: e.periodStart, period_end: e.periodEnd } : {})
       }).select().single();
       if (error) return showNotice("Couldn't restore that entry.");
@@ -746,6 +793,38 @@
     }
     render();
   });
+
+  // ---------- backup ----------
+  // One JSON file with every table this page uses. Company codes stay out: they're stored scrambled and can't be read.
+  async function checkBackup(){
+    const { data } = await db.from('tracker_settings').select('*').eq('key', 'last_backup');
+    showBackupAge(((data || [])[0] || {}).value || null);
+  }
+  function showBackupAge(last){
+    const days = last ? Math.floor((Date.now() - new Date(last).getTime()) / 86400000) : null;
+    $('backupAge').textContent = last ? (days === 0 ? 'Last backup: today' : 'Last backup: ' + plural(days, 'day') + ' ago') : 'No backup yet';
+    $('backupNudge').hidden = !(days == null || days >= 30);
+  }
+  document.querySelectorAll('[data-backup]').forEach(btn => btn.addEventListener('click', async () => {
+    btn.setAttribute('aria-busy', 'true');
+    const out = { from:'amrabdelgawad.site/cash', made_at:new Date().toISOString(), tables:{} };
+    const parts = [['cash_entries', () => fetchAll('cash_entries', '*', 'entry_date')], ['shifts', () => fetchAll('shifts', '*', 'shift_date')],
+      ['companies', () => db.from('companies').select('*')], ['tracker_settings', () => db.from('tracker_settings').select('*')]];
+    for (const [name, get] of parts) {
+      const r = await get();
+      if (r.error) { btn.removeAttribute('aria-busy'); toast("Couldn't make the backup. Try again.", false); return; }
+      out.tables[name] = r.data;
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 2)], { type:'application/json' }));
+    a.download = 'cash-backup-' + iso(new Date()) + '.json';
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    const now = new Date().toISOString();
+    await db.from('tracker_settings').upsert({ key:'last_backup', value:now });
+    showBackupAge(now);
+    btn.removeAttribute('aria-busy');
+    toast('Backup downloaded', false);
+  }));
 
   // ---------- monthly statement ----------
   const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th','st','nd','rd'][n % 10] || 'th');
@@ -772,7 +851,7 @@
     const bits = mine.map(g => '<b>' + usd(g.amt) + '</b> for your work at ' + escHtml(g.name));
     crew.forEach(g => bits.push('<b>' + usd(g.profit) + '</b> from ' + escHtml(g.name)));
     const src = new Map();
-    inc.forEach(e => { const k = key(e.party || e.title); if (!src.has(k)) src.set(k, { e, amt:0 }); src.get(k).amt += e.amount; });
+    inc.forEach(e => { const k = key(e.party || e.title); if (!src.has(k)) src.set(k, { e, amt:0 }); src.get(k).amt += usdOf(e); });
     [...src.values()].sort((a, b) => b.amt - a.amt).forEach(({ e, amt }) => bits.push('<b>' + usd(amt) + '</b> ' + (e.party ? 'from ' + escHtml(e.party) : 'for ' + escHtml(e.title))));
     let summary = bits.length ? 'This month you made ' + listJoin(bits) + '. ' : 'Nothing came in this month. ';
     summary += exp.length ? 'Your expenses were <b>' + usd(t.expense) + '</b>, so your total profit for ' + label + ' is <b>' + usd(t.net) + '</b>.'
@@ -792,9 +871,9 @@
     const crewRows = crew.map(g => '<tr><td><b>' + escHtml(g.name) + '</b></td><td>' + escHtml([...g.cos].filter(Boolean).join(', ')) + '</td><td class="r mono">' + hm(g.secs) + '</td><td class="r mono">' + usd(g.profit) + '</td></tr>').join('');
     const incRows = inc.map(e => '<tr><td>' + shortDay(e.date) + '</td><td><b>' + escHtml(e.title) + '</b>' + (e.party ? '<small>' + escHtml(e.party) + '</small>' : '') + '</td>' +
       '<td class="r mono">' + detailText(e) + '</td>' +
-      '<td>' + status(e.settled, 'Received', 'Not received') + '</td><td class="r mono">' + usd(e.amount) + '</td></tr>').join('');
+      '<td>' + status(e.settled, 'Received', 'Not received') + '</td><td class="r mono">' + money(e) + '</td></tr>').join('');
     const expRows = exp.map(e => '<tr><td>' + shortDay(e.date) + '</td><td><b>' + escHtml(e.title) + '</b>' + (e.party ? '<small>' + escHtml(e.party) + '</small>' : '') + '</td>' +
-      '<td>' + escHtml(e.category) + '</td><td>' + status(e.settled, 'Paid', 'Unpaid') + '</td><td class="r mono neg-amt">−' + usd(e.amount) + '</td></tr>').join('');
+      '<td>' + escHtml(e.category) + '</td><td>' + status(e.settled, 'Paid', 'Unpaid') + '</td><td class="r mono neg-amt">−' + money(e) + '</td></tr>').join('');
 
     const note = $('slipNote').value.trim();
     const number = 'ST-' + m;

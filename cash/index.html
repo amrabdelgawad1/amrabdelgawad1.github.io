@@ -381,6 +381,14 @@
   .icon-btn.del:hover{ color:#ff8a8a; border-color:rgba(255,107,107,.35); background:rgba(255,107,107,.07); }
   .icon-btn svg{ width:16px; height:16px; }
   .rep{ color:var(--accent2); font-size:12px; }
+  .amt{ display:flex; gap:8px; }
+  .amt .cur{ width:96px; flex-shrink:0; padding-left:10px; padding-right:6px; }
+  .fx-hint{ font-style:normal; text-transform:none; letter-spacing:0; color:var(--green); font-weight:500; margin-left:4px; }
+  .backup-card{ display:flex; justify-content:space-between; align-items:center; gap:24px; flex-wrap:wrap; }
+  .backup-card h2{ font-size:24px; margin-bottom:6px; }
+  .backup-card p{ color:var(--light); font-size:14.5px; max-width:620px; }
+  .backup-side{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  .backup-side small{ color:var(--muted); font-size:12.5px; }
   .list-actions{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
 
   /* My time */
@@ -557,8 +565,9 @@
           <label class="s2"><span class="label" id="fDateLabel">Date</span><input class="field" id="fDate" type="date" /></label>
           <label class="s2"><span class="label">Category</span><input class="field" id="fCat" list="catList" maxlength="40" autocomplete="off" /></label>
           <label class="hourly"><span class="label">Hours</span><input class="field" id="fHours" type="number" min="0" step="0.25" placeholder="10" /></label>
-          <label class="hourly"><span class="label">Rate $/h</span><input class="field" id="fRate" type="number" min="0" step="0.25" placeholder="15" /></label>
-          <label class="s2"><span class="label">Amount $</span><input class="field" id="fAmount" type="number" min="0" step="0.01" placeholder="0.00" /></label>
+          <label class="hourly"><span class="label" id="fRateLabel">Rate $/h</span><input class="field" id="fRate" type="number" min="0" step="0.25" placeholder="15" /></label>
+          <label class="s2"><span class="label">Amount</span><span class="amt"><select class="field cur" id="fCur" aria-label="Currency"><option value="USD">$ USD</option><option value="EGP">EGP</option></select><input class="field" id="fAmount" type="number" min="0" step="0.01" placeholder="0.00" /></span></label>
+          <label class="s2" id="fxWrap" hidden><span class="label">EGP per $1 <em class="fx-hint" id="fFxHint"></em></span><input class="field" id="fFx" type="number" min="0" step="0.01" placeholder="48.50" /></label>
           <label class="s6"><span class="label">Note (optional)</span><input class="field" id="fNote" maxlength="300" autocomplete="off" /></label>
         </div>
         <datalist id="partyList"></datalist>
@@ -579,6 +588,7 @@
 
     <!-- Overview -->
     <div id="overviewView">
+      <div class="notice soft" id="backupNudge" hidden><span>It’s been a while since your last backup. Download a copy and keep it somewhere safe, like Google Drive.</span><button class="btn btn-ghost btn-sm" data-backup>Download backup</button></div>
       <div class="notice" id="teamWarn" hidden></div>
       <section class="t-card block">
         <div class="card-title"><h2>Profit</h2><span id="periodLabel"></span></div>
@@ -587,7 +597,7 @@
           <div class="money in"><p>From your team</p><strong id="tTeam">$0.00</strong><small id="tTeamSub"></small></div>
           <div class="money in"><p>Other income</p><strong id="tIncome">$0.00</strong><small id="tIncomeSub"></small></div>
           <div class="money out"><p>Expenses</p><strong id="tExpense">$0.00</strong><small id="tExpenseSub"></small></div>
-          <div class="money net" id="tNetBox"><p>Net profit</p><strong id="tNet">$0.00</strong><small id="tNetSub"></small></div>
+          <div class="money net" id="tNetBox"><p>Net profit</p><strong id="tNet">$0.00</strong><small id="tNetSub"></small><small id="tNetEgp"></small></div>
         </div>
         <div class="pending" id="pending"></div>
       </section>
@@ -607,6 +617,17 @@
         <div class="card-title"><h2>Month by month</h2><span>Click a month to open it</span></div>
         <div class="mrow mhead"><span>Month</span><span>Own work</span><span>Team</span><span>Income</span><span>Expenses</span><span>Net</span></div>
         <div id="months"></div>
+      </section>
+
+      <section class="t-card block backup-card">
+        <div>
+          <h2>Backup</h2>
+          <p>One file with everything: your hours, team shifts, income, expenses, companies and rates. Download it every month or so and keep it somewhere safe, like Google Drive. If anything is ever lost, it can be put back from this file.</p>
+        </div>
+        <div class="backup-side">
+          <button class="btn btn-outline btn-sm" data-backup>Download backup</button>
+          <small id="backupAge"></small>
+        </div>
       </section>
     </div>
 
@@ -899,6 +920,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="../tracker/config.js"></script>
 <script src="team.js?v=1"></script>
-<script src="cash.js?v=2"></script>
+<script src="cash.js?v=3"></script>
 </body>
 </html>
