@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Cash</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../style.css?v=7">
+<style>
+  [hidden]{ display:none !important; }
+  .btn[aria-busy="true"]{ opacity:.6; pointer-events:none; }
+  .btn[disabled]{ opacity:.45; pointer-events:none; }
+  .notice{ padding:16px 20px; margin-bottom:20px; border-radius:var(--radius); border:1px solid rgba(255,107,107,.35); background:rgba(255,107,107,.07); color:#ffb0b0; font-size:14.5px; }
+  .notice.soft{ border-color:rgba(245,158,11,.35); background:rgba(245,158,11,.06); color:#f5d08a; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .notice.soft span{ flex:1; min-width:220px; }
+
+  .page{ position:relative; min-height:100vh; padding:56px 0 120px; overflow:hidden; }
+  .glow{ position:absolute; width:640px; height:640px; border-radius:50%; filter:blur(120px); pointer-events:none; }
+  .glow-a{ top:-260px; left:50%; transform:translateX(-50%); background:var(--green); opacity:.12; }
+  .glow-b{ bottom:-280px; left:-200px; background:#6d4bff; opacity:.1; }
+  .wrap{ position:relative; z-index:3; }
+
+  .t-card{ background:linear-gradient(160deg, var(--bg3), var(--bg2)); border:1px solid var(--border2); border-radius:var(--radius-lg); box-shadow:0 30px 80px -30px rgba(0,0,0,.6); }
+  .label{ display:block; font-size:12.5px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .field{ width:100%; background:var(--bg); border:1px solid var(--border2); border-radius:var(--radius-sm); color:var(--text); font:500 15px var(--font-body); padding:13px 14px; transition:border-color .25s, box-shadow .25s; color-scheme:dark; }
+  .field:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-dim); }
+  .field[readonly]{ color:var(--light); background:rgba(7,9,15,.5); }
+
+  /* Login */
+  .login{ max-width:420px; margin:9vh auto 0; padding:40px 36px; text-align:center; animation:up .7s cubic-bezier(.16,1,.3,1); }
+  @keyframes up{ from{ opacity:0; transform:translateY(16px); } to{ opacity:1; transform:none; } }
+  .lock-badge{ width:56px; height:56px; margin:0 auto 18px; border-radius:16px; display:grid; place-items:center; background:rgba(16,185,129,.1); border:1px solid var(--border2); color:var(--green); }
+  .login h1{ font-size:32px; margin-bottom:6px; }
+  .login .sub{ color:var(--light); font-size:15px; margin-bottom:28px; }
+  .login form{ text-align:left; display:grid; gap:16px; }
+  .login .btn{ width:100%; margin-top:6px; }
+  .login-err{ color:#ff7a7a; font-size:13.5px; min-height:18px; }
+  .login-foot{ font-size:12.5px; color:var(--muted); margin-top:20px; }
+
+  /* Dashboard */
+  .topbar{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:40px; flex-wrap:wrap; }
+  .topbar .brand{ font-size:21px; }
+  .who-pill{ display:flex; align-items:center; gap:12px; font-size:13.5px; color:var(--light); flex-wrap:wrap; }
+  .who-pill .me{ width:32px; height:32px; border-radius:50%; display:grid; place-items:center; background:var(--green); color:#fff; font-weight:700; font-size:12.5px; }
+  .who-pill a{ color:var(--light); text-decoration:none; font-weight:500; }
+  .who-pill a:hover{ color:var(--text); }
+  .head{ display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:20px; }
+  .head .section-heading{ margin-bottom:0; }
+  .head-actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .tools{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:20px; }
+  .tools .spacer{ flex:1; }
+  .seg{ display:inline-flex; padding:4px; border:1px solid var(--border2); border-radius:999px; background:rgba(7,9,15,.5); }
+  .seg button{ border:0; background:transparent; color:var(--light); font:600 13px var(--font-body); padding:8px 14px; border-radius:999px; cursor:pointer; transition:background .25s, color .25s; white-space:nowrap; }
+  .seg button.on{ background:var(--accent); color:#fff; }
+  .sel{ background:var(--bg); border:1px solid var(--border2); color:var(--text); border-radius:999px; padding:10px 16px; font:500 13.5px var(--font-body); color-scheme:dark; }
+  .period{ display:flex; align-items:center; gap:6px; }
+  .period .sel{ min-width:170px; text-align:center; }
+  .nav{ width:40px; height:40px; border-radius:50%; border:1px solid var(--border2); background:transparent; color:var(--light); cursor:pointer; display:grid; place-items:center; transition:border-color .2s, color .2s; }
+  .nav:hover{ border-color:var(--accent2); color:var(--text); }
+  .nav[disabled]{ opacity:.35; pointer-events:none; }
+
+  .card-title{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+  .card-title h2{ font-size:24px; }
+  .card-title span{ font-size:13px; color:var(--muted); }
+  .block{ padding:28px 32px; margin-bottom:24px; }
+
+  /* Totals */
+  .totals-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; }
+  .money{ background:rgba(7,9,15,.5); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; min-width:0; }
+  .money p{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; font-weight:600; }
+  .money strong{ display:block; font:600 26px "JetBrains Mono", monospace; margin-top:6px; white-space:nowrap; }
+  .money small{ display:block; color:var(--muted); font-size:12.5px; margin-top:2px; }
+  .money.in strong{ color:var(--green); }
+  .money.out strong{ color:#ff9a9a; }
+  .money.net{ border-color:rgba(16,185,129,.4); background:rgba(16,185,129,.07); }
+  .money.net strong{ color:var(--green); }
+  .money.net.neg{ border-color:rgba(255,107,107,.4); background:rgba(255,107,107,.07); }
+  .money.net.neg strong{ color:#ff8a8a; }
+  .pending{ display:flex; gap:18px; flex-wrap:wrap; margin-top:16px; font-size:13.5px; color:var(--light); }
+  .pending b{ font-family:"JetBrains Mono", monospace; font-weight:600; color:var(--gold); }
+
+  /* Breakdowns */
+  .split{ display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px; }
+  .split .block{ margin-bottom:0; }
+  .brow{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px 16px; align-items:center; padding:12px 0; }
+  .brow + .brow{ border-top:1px solid var(--border); }
+  .bname{ font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bname small{ display:block; color:var(--muted); font-size:12px; font-weight:400; overflow:hidden; text-overflow:ellipsis; }
+  .bnum{ text-align:right; font-family:"JetBrains Mono", monospace; font-size:14.5px; white-space:nowrap; }
+  .bnum.in{ color:var(--green); } .bnum.out{ color:#ff9a9a; }
+  .pbar{ grid-column:1 / -1; height:8px; border-radius:999px; background:var(--bg); border:1px solid var(--border); overflow:hidden; }
+  .pbar i{ display:block; height:100%; width:0; transition:width .9s cubic-bezier(.16,1,.3,1); background:var(--green); }
+  .pbar.out i{ background:#ff8a8a; }
+  .tag{ font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; border-radius:999px; padding:2px 7px; margin-left:8px; vertical-align:2px; border:1px solid var(--border2); color:var(--accent2); }
+  .empty{ text-align:center; color:var(--muted); padding:24px 0; }
+
+  /* Month by month */
+  .mrow{ display:grid; grid-template-columns:minmax(0,1.3fr) repeat(4, minmax(0,1fr)); gap:12px; align-items:center; padding:12px 14px; border-radius:var(--radius-sm); font-family:"JetBrains Mono", monospace; font-size:14px; }
+  .mrow > :first-child{ font-family:var(--font-body); font-weight:500; }
+  .mrow > :not(:first-child){ text-align:right; white-space:nowrap; }
+  .mhead{ font:600 12px var(--font-body); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  .mhead > :first-child{ font-weight:600; }
+  button.mrow{ width:100%; border:0; background:transparent; color:var(--text); cursor:pointer; text-align:left; transition:background .2s; }
+  button.mrow + button.mrow{ border-top:1px solid var(--border); border-radius:0; }
+  button.mrow:hover, button.mrow.on{ background:rgba(59,123,255,.06); }
+  .mrow .in{ color:var(--green); } .mrow .out{ color:#ff9a9a; } .mrow .net{ font-weight:600; color:var(--white); } .mrow .net.neg{ color:#ff8a8a; }
+
+  /* Add / edit */
+  .add{ padding:24px 28px; margin-bottom:24px; animation:up .5s cubic-bezier(.16,1,.3,1); }
+  .add-grid{ display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:12px; align-items:end; }
+  .add-grid .field{ padding:11px 12px; font-size:14.5px; }
+  .s2{ grid-column:span 2; } .s3{ grid-column:span 3; } .s6{ grid-column:1 / -1; }
+  .add-top{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:18px; }
+  .add-foot{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:16px; flex-wrap:wrap; }
+  .checks{ display:flex; gap:20px; flex-wrap:wrap; }
+  .check{ display:inline-flex; align-items:center; gap:10px; font-size:14px; color:var(--light); cursor:pointer; }
+  .check input{ width:18px; height:18px; accent-color:var(--green); }
+  .add-err{ color:#ff7a7a; font-size:13.5px; }
+
+  /* Entry list */
+  table.log{ width:100%; border-collapse:collapse; font-size:14.5px; }
+  table.log th{ text-align:left; font-size:12px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); padding:0 10px 12px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  table.log td{ padding:13px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  table.log tr:last-child td{ border-bottom:none; }
+  table.log tbody tr:hover{ background:rgba(59,123,255,.04); }
+  table.log .r{ text-align:right; }
+  .is-expense .c-hrs{ display:none; }
+  .what{ font-weight:500; }
+  .sub-line{ display:block; font-size:12px; color:var(--muted); margin-top:2px; font-weight:400; }
+  .num{ font-family:"JetBrains Mono", monospace; font-weight:500; white-space:nowrap; }
+  .num.in{ color:var(--green); } .num.out{ color:#ff9a9a; }
+  .muted{ color:var(--muted); }
+  .status{ display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:6px 12px; font:600 12.5px var(--font-body); cursor:pointer; border:1px solid; white-space:nowrap; transition:transform .2s, background .2s; background:transparent; }
+  .status:hover{ transform:translateY(-1px); }
+  .status.done{ color:var(--green); border-color:rgba(16,185,129,.35); background:rgba(16,185,129,.08); }
+  .status.open{ color:var(--gold); border-color:rgba(245,158,11,.35); background:rgba(245,158,11,.08); }
+  .status i{ width:7px; height:7px; border-radius:50%; background:currentColor; }
+  .acts{ display:flex; gap:2px; justify-content:flex-end; }
+  .icon-btn{ border:1px solid transparent; background:transparent; color:var(--muted); width:32px; height:32px; border-radius:8px; cursor:pointer; display:grid; place-items:center; transition:color .2s, border-color .2s, background .2s; }
+  .icon-btn:hover{ color:var(--text); border-color:var(--border2); background:rgba(255,255,255,.03); }
+  .icon-btn.del:hover{ color:#ff8a8a; border-color:rgba(255,107,107,.35); background:rgba(255,107,107,.07); }
+  .icon-btn svg{ width:16px; height:16px; }
+  .rep{ color:var(--accent2); font-size:12px; }
+
+  .toast{ position:fixed; left:50%; bottom:28px; transform:translate(-50%, 20px); opacity:0; pointer-events:none; background:var(--bg4); border:1px solid var(--border2); color:var(--text); padding:12px 18px; border-radius:999px; font-size:14px; transition:opacity .3s, transform .3s; z-index:100; display:flex; gap:12px; align-items:center; max-width:calc(100vw - 32px); }
+  .toast.show{ opacity:1; transform:translate(-50%, 0); pointer-events:auto; }
+  .toast button{ background:none; border:0; color:var(--accent2); font:600 14px var(--font-body); cursor:pointer; }
+
+  /* Statement overlay */
+  .slip-overlay{ position:fixed; inset:0; z-index:90; background:rgba(4,6,11,.88); backdrop-filter:blur(6px); display:flex; flex-direction:column; }
+  .slip-bar{ display:flex; align-items:center; gap:10px; padding:14px max(16px, 3vw); border-bottom:1px solid var(--border2); background:var(--bg2); flex-wrap:wrap; }
+  .slip-bar strong{ font-family:var(--font-display); font-weight:400; font-size:20px; margin-right:6px; }
+  .slip-bar .slip-note{ flex:1; min-width:200px; padding:9px 12px; font-size:14px; }
+  .slip-stage{ flex:1; overflow:auto; padding:28px 16px 60px; }
+  .slip-fit{ margin:0 auto; transform-origin:top left; }
+
+  /* Statement sheet (also what goes into the PDF) */
+  .slip{ width:210mm; min-height:274mm; padding:10mm 18mm 6mm; background:#fff; color:#0C0F1A; font-family:Inter, sans-serif; display:flex; flex-direction:column; position:relative; line-height:1.45; box-shadow:0 30px 80px -20px rgba(0,0,0,.6); }
+  .slip *{ box-sizing:border-box; }
+  .slip .band{ position:absolute; top:0; left:0; right:0; height:6px; background:linear-gradient(90deg, #0E9F6E, #3B7BFF); }
+  .slip .top{ display:flex; justify-content:space-between; align-items:flex-start; gap:24px; margin-top:3mm; }
+  .slip .brand{ font-family:"DM Serif Display", serif; font-size:24px; line-height:1.05; }
+  .slip .brand em{ display:block; font-style:normal; font-family:Inter, sans-serif; font-size:12px; font-weight:600; letter-spacing:.32em; text-transform:uppercase; color:#3B7BFF; margin-top:6px; }
+  .slip .brand small{ display:block; font-family:Inter, sans-serif; font-size:11px; color:#5A6A84; letter-spacing:.04em; margin-top:5px; }
+  .slip .doc{ text-align:right; }
+  .slip .doc h1{ margin:0; font-family:"DM Serif Display", serif; font-weight:400; font-size:34px; line-height:1; color:#0C0F1A; }
+  .slip .doc p{ margin:6px 0 0; font-size:12px; color:#5A6A84; }
+  .slip .doc b{ color:#0C0F1A; font-weight:600; }
+  .slip .meta{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin:22px 0 16px; }
+  .slip .box{ background:#F5F7FB; border:1px solid #E3E8F1; border-radius:10px; padding:12px 14px; }
+  .slip .box p{ margin:0; font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:#5A6A84; }
+  .slip .box strong{ display:block; margin-top:5px; font-size:14px; font-weight:600; color:#0C0F1A; }
+  .slip .box span{ display:block; font-size:12px; color:#5A6A84; margin-top:2px; }
+  .slip .box.hi{ background:#ECFDF5; border-color:#A7F3D0; }
+  .slip .box.hi strong{ color:#047857; font-family:"JetBrains Mono", monospace; font-size:16px; }
+  .slip .box.hi.neg{ background:#FEF2F2; border-color:#FECACA; }
+  .slip .box.hi.neg strong{ color:#B91C1C; }
+  .slip .summary{ font-size:13.5px; line-height:1.65; color:#26324A; margin:0 0 18px; padding:14px 16px; border-left:3px solid #0E9F6E; background:#FAFBFD; border-radius:0 10px 10px 0; page-break-inside:avoid; }
+  .slip .summary b{ color:#0C0F1A; font-weight:600; }
+  .slip h3{ margin:16px 0 8px; font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#0C0F1A; display:flex; justify-content:space-between; page-break-after:avoid; }
+  .slip h3 span{ font-family:"JetBrains Mono", monospace; letter-spacing:0; font-size:12px; }
+  .slip table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .slip th{ text-align:left; font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:#5A6A84; padding:0 10px 7px; border-bottom:1.5px solid #0C0F1A; }
+  .slip td{ padding:5px 10px; border-bottom:1px solid #E3E8F1; color:#0C0F1A; line-height:1.35; }
+  .slip td small{ display:block; color:#5A6A84; font-size:11px; }
+  .slip tr{ page-break-inside:avoid; }
+  .slip tbody tr:nth-child(even) td{ background:#FAFBFD; }
+  .slip .r{ text-align:right; }
+  .slip .mono{ font-family:"JetBrains Mono", monospace; font-size:12px; }
+  .slip .neg-amt{ color:#B91C1C; }
+  .slip .due{ color:#C77C02; font-weight:600; font-size:11px; }
+  .slip .ok{ color:#0E9F6E; font-weight:600; font-size:11px; }
+  .slip .none{ color:#5A6A84; font-size:12px; padding:6px 10px; }
+  .slip .bottom{ display:grid; grid-template-columns:1fr 280px; gap:24px; margin-top:22px; align-items:start; page-break-inside:avoid; }
+  .slip .note{ font-size:12px; color:#5A6A84; line-height:1.6; }
+  .slip .note b{ color:#0C0F1A; font-weight:600; }
+  .slip .note .custom{ display:block; margin-top:8px; color:#0C0F1A; }
+  .slip .totals{ border:1px solid #E3E8F1; border-radius:10px; overflow:hidden; }
+  .slip .totals div{ display:flex; justify-content:space-between; padding:9px 14px; font-size:12.5px; border-bottom:1px solid #E3E8F1; color:#0C0F1A; }
+  .slip .totals div:last-child{ border-bottom:0; }
+  .slip .totals .grand{ background:#0C0F1A; color:#fff; font-size:15px; font-weight:600; padding:13px 14px; }
+  .slip .totals .grand .mono{ font-size:16px; }
+  .slip .foot{ margin-top:auto; padding-top:18px; }
+  .slip .foot div{ display:flex; justify-content:space-between; font-size:10.5px; color:#5A6A84; border-top:1px solid #E3E8F1; padding-top:10px; }
+
+  @media (max-width:1000px){
+    .add-grid{ grid-template-columns:repeat(4, minmax(0,1fr)); }
+    .s3{ grid-column:span 2; }
+  }
+  @media (max-width:860px){
+    .totals-grid{ grid-template-columns:repeat(2,1fr); }
+    .split{ grid-template-columns:1fr; }
+    .tools .spacer{ display:none; }
+    .mrow{ grid-template-columns:minmax(0,1fr) auto auto; }
+    .mrow > :nth-child(2), .mrow > :nth-child(3){ display:none; }
+  }
+  @media (max-width:640px){
+    .login{ padding:32px 22px; }
+    .block, .add{ padding:22px 18px; }
+    .head-actions{ width:100%; }
+    .head-actions .seg{ width:100%; } .head-actions .seg button{ flex:1; padding:8px 4px; font-size:12.5px; }
+    .head-actions .btn{ flex:1; justify-content:center; }
+    .tools{ flex-direction:column; align-items:stretch; }
+    .period .sel{ flex:1; min-width:0; }
+    .totals-grid{ gap:10px; }
+    .money{ padding:14px; }
+    .money strong{ font-size:20px; }
+    .add-grid{ grid-template-columns:1fr 1fr; }
+    .s2, .s3{ grid-column:1 / -1; }
+    .add-grid .half{ grid-column:span 1; }
+    .mrow{ padding:12px 6px; font-size:13px; }
+    table.log thead{ display:none; }
+    table.log, table.log tbody{ display:block; }
+    table.log tbody tr{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 12px; padding:14px 0; border-bottom:1px solid var(--border); align-items:center; }
+    table.log tbody tr:last-child{ border-bottom:none; }
+    table.log td{ padding:0; border:0; min-width:0; }
+    td.c-what{ grid-column:1; grid-row:1; }
+    td.c-amt{ grid-column:2; grid-row:1; justify-self:end; }
+    td.c-date{ grid-column:1; grid-row:2; font-size:13px; }
+    td.c-status{ grid-column:2; grid-row:2; justify-self:end; }
+    td.c-cat{ grid-column:1; grid-row:3; font-size:13px; }
+    td.c-hrs{ grid-column:1; grid-row:4; font-size:13px; }
+    td.c-act{ grid-column:2; grid-row:3; justify-self:end; }
+    td.c-hrs:empty{ display:none; }
+    table.log td.empty{ grid-column:1 / -1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grain" aria-hidden="true"></div>
+
+<main class="page">
+  <div class="glow glow-a" aria-hidden="true"></div>
+  <div class="glow glow-b" aria-hidden="true"></div>
+
+  <!-- Login -->
+  <div class="container wrap" id="loginView">
+    <section class="t-card login">
+      <div class="lock-badge"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+      <h1>Cash</h1>
+      <p class="sub">Sign in to see your income, expenses and profit.</p>
+      <form id="loginForm" novalidate>
+        <label><span class="label">Email</span><input class="field" id="em" type="email" placeholder="you@amrabdelgawad.site" autocomplete="username" /></label>
+        <label><span class="label">Password</span><input class="field" id="pw" type="password" placeholder="••••••••" autocomplete="current-password" /></label>
+        <p class="login-err" id="loginErr"></p>
+        <button class="btn btn-primary" type="submit" id="loginBtn">Sign in <span class="btn-arrow">&rarr;</span></button>
+      </form>
+      <p class="login-foot">Only Amr's account can open this page.</p>
+    </section>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="container wrap" id="dashView" hidden>
+    <div class="topbar">
+      <span class="brand">Amr Abdelgawad</span>
+      <div class="who-pill">
+        <a href="../tracker/admin/">Team tracker &rarr;</a>
+        <span id="meEmail"></span>
+        <span class="me" id="meAv">A</span>
+        <button class="btn btn-ghost btn-sm" id="signOut">Sign out</button>
+      </div>
+    </div>
+
+    <div class="head">
+      <div>
+        <p class="eyebrow"><span class="dot-live"></span>Finances</p>
+        <h1 class="section-heading" id="pageTitle">Overview</h1>
+      </div>
+      <div class="head-actions">
+        <div class="seg" id="view">
+          <button data-v="overview" class="on">Overview</button>
+          <button data-v="income">Income</button>
+          <button data-v="expense">Expenses</button>
+        </div>
+        <button class="btn btn-primary btn-sm" id="addToggle">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          <span id="addLabel">Add entry</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="tools">
+      <div class="period">
+        <button class="nav" id="prevM" aria-label="Previous month"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <select class="sel" id="month" aria-label="Month"></select>
+        <button class="nav" id="nextM" aria-label="Next month"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+      <span class="spacer"></span>
+      <button class="btn btn-outline btn-sm" id="statementBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg>
+        Monthly statement
+      </button>
+    </div>
+
+    <div class="notice" id="notice" hidden></div>
+
+    <!-- Add / edit entry -->
+    <section class="t-card add" id="addBox" hidden>
+      <div class="card-title"><h2 id="formTitle">Add an entry</h2><span id="formHint"></span></div>
+      <form id="addForm" novalidate>
+        <div class="add-top">
+          <div class="seg" id="fKind">
+            <button type="button" data-k="income" class="on">Income</button>
+            <button type="button" data-k="expense">Expense</button>
+          </div>
+          <div class="seg" id="fMode">
+            <button type="button" data-m="fixed" class="on">Fixed amount</button>
+            <button type="button" data-m="hourly">Hours &times; rate</button>
+          </div>
+        </div>
+        <div class="add-grid">
+          <label class="s3"><span class="label">What for</span><input class="field" id="fTitle" maxlength="120" autocomplete="off" /></label>
+          <label class="s3"><span class="label" id="fPartyLabel">From</span><input class="field" id="fParty" list="partyList" maxlength="80" autocomplete="off" /></label>
+          <label class="s2"><span class="label">Date</span><input class="field" id="fDate" type="date" /></label>
+          <label class="s2"><span class="label">Category</span><input class="field" id="fCat" list="catList" maxlength="40" autocomplete="off" /></label>
+          <label class="half hourly"><span class="label">Hours</span><input class="field" id="fHours" type="number" min="0" step="0.25" placeholder="10" /></label>
+          <label class="half hourly"><span class="label">Rate $/h</span><input class="field" id="fRate" type="number" min="0" step="0.25" placeholder="15" /></label>
+          <label class="s2" id="amountWrap"><span class="label">Amount $</span><input class="field" id="fAmount" type="number" min="0" step="0.01" placeholder="0.00" /></label>
+          <label class="s6"><span class="label">Note (optional)</span><input class="field" id="fNote" maxlength="300" autocomplete="off" /></label>
+        </div>
+        <datalist id="partyList"></datalist>
+        <datalist id="catList"></datalist>
+        <div class="add-foot">
+          <div class="checks">
+            <label class="check"><input type="checkbox" id="fSettled" /> <span id="fSettledLabel">Already received</span></label>
+            <label class="check"><input type="checkbox" id="fRecurring" /> Repeats every month</label>
+          </div>
+          <span class="add-err" id="addErr"></span>
+          <div style="display:flex; gap:10px;">
+            <button type="button" class="btn btn-ghost btn-sm" id="addCancel">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm" id="addSave">Save</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- Overview -->
+    <div id="overviewView">
+      <div class="notice" id="teamWarn" hidden></div>
+      <section class="t-card block">
+        <div class="card-title"><h2>Profit</h2><span id="periodLabel"></span></div>
+        <div class="totals-grid">
+          <div class="money in"><p>From your team</p><strong id="tTeam">$0.00</strong><small id="tTeamSub"></small></div>
+          <div class="money in"><p>Your income</p><strong id="tIncome">$0.00</strong><small id="tIncomeSub"></small></div>
+          <div class="money out"><p>Expenses</p><strong id="tExpense">$0.00</strong><small id="tExpenseSub"></small></div>
+          <div class="money net" id="tNetBox"><p>Net profit</p><strong id="tNet">$0.00</strong><small id="tNetSub"></small></div>
+        </div>
+        <div class="pending" id="pending"></div>
+      </section>
+
+      <div class="split">
+        <section class="t-card block">
+          <div class="card-title"><h2>Where it came from</h2></div>
+          <div id="cameFrom"></div>
+        </section>
+        <section class="t-card block">
+          <div class="card-title"><h2>Where it went</h2></div>
+          <div id="wentTo"></div>
+        </section>
+      </div>
+
+      <section class="t-card block">
+        <div class="card-title"><h2>Month by month</h2><span>Click a month to open it</span></div>
+        <div class="mrow mhead"><span>Month</span><span>Team</span><span>Income</span><span>Expenses</span><span>Net</span></div>
+        <div id="months"></div>
+      </section>
+    </div>
+
+    <!-- Income / expense list -->
+    <div id="listView" hidden>
+      <div class="notice soft" id="recurBox" hidden><span id="recurText"></span><button class="btn btn-ghost btn-sm" id="recurAdd">Add them</button></div>
+      <section class="t-card block">
+        <div class="card-title"><h2 id="listTitle">Income</h2><span id="listSum"></span></div>
+        <div style="overflow-x:auto;">
+          <table class="log" id="logTable">
+            <thead><tr><th>What</th><th>Date</th><th>Category</th><th class="c-hrs">Hours</th><th class="r">Amount</th><th>Status</th><th></th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<!-- Monthly statement -->
+<div class="slip-overlay" id="slipOverlay" hidden>
+  <div class="slip-bar">
+    <strong>Statement</strong>
+    <input class="field slip-note" id="slipNote" maxlength="200" placeholder="Optional note on the statement" aria-label="Note on the statement" />
+    <button class="btn btn-ghost btn-sm" id="slipClose">Close</button>
+    <button class="btn btn-primary btn-sm" id="slipDownload">Download PDF</button>
+  </div>
+  <div class="slip-stage" id="slipStage"><div class="slip-fit" id="slipFit"><div class="slip" id="slip"></div></div></div>
+</div>
+
+<div class="toast" id="toast"><span id="toastMsg"></span><button id="undo">Undo</button></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="../tracker/config.js"></script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const cfg = window.TRACKER_CONFIG || {};
+  if (!/^https:\/\//.test(cfg.supabaseUrl || '') || !window.supabase) {
+    $('loginErr').textContent = 'Not connected yet: add the Supabase URL and key to tracker/config.js.';
+    $('loginBtn').setAttribute('aria-busy', 'true');
+    return;
+  }
+  const db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
+
+  const iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const thisMonth = () => iso(new Date()).slice(0, 7);
+  let entries = [], shifts = [], companies = [];
+  let view = 'overview', month = thisMonth(), lastDeleted = null, toastTimer = null;
+  let editing = null, fKind = 'income', fMode = 'fixed';
+
+  const cents = n => Math.round(n * 100) / 100;
+  const usd = n => (cents(n) < 0 ? '−' : '') + '$' + Math.abs(cents(n)).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  const hm = s => Math.floor(s/3600)+'h '+String(Math.floor(s%3600/60)).padStart(2,'0')+'m';
+  const hrs = h => (Math.round(h * 100) / 100) + 'h';
+  const fmtDate = d => new Date(d+'T00:00').toLocaleDateString('en-US',{ month:'short', day:'numeric', year:'numeric' });
+  const monthLabel = m => new Date(m+'-01T00:00').toLocaleDateString('en-US',{ month:'long', year:'numeric' });
+  const stepMonth = (m, n) => { const [y, mo] = m.split('-').map(Number); return iso(new Date(y, mo - 1 + n, 1)).slice(0, 7); };
+  const inPeriod = d => month === 'all' || d.slice(0, 7) === month;
+  const key = s => (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+  const companyName = id => (companies.find(c => c.id === id) || {}).name || '';
+  const escHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  const DONE = { income:'Received', expense:'Paid' }, OPEN = { income:'Not received', expense:'Unpaid' };
+  const CATS = { income:['Salary', 'Hourly work', 'Project', 'Client', 'Other'], expense:['Subscriptions', 'Software', 'Equipment', 'Team', 'Transport', 'Other'] };
+
+  // ---------- auth ----------
+  function showDash(email){
+    $('loginView').hidden = true; $('dashView').hidden = false;
+    $('meEmail').textContent = email; $('meAv').textContent = (email[0] || 'A').toUpperCase();
+    load();
+  }
+  function showLogin(){ $('dashView').hidden = true; $('loginView').hidden = false; entries = []; shifts = []; }
+
+  $('loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const em = $('em').value.trim(), pw = $('pw').value;
+    if (!em || !em.includes('@')) { $('loginErr').textContent = 'Enter your email address.'; return; }
+    if (!pw) { $('loginErr').textContent = 'Enter your password.'; return; }
+    $('loginBtn').setAttribute('aria-busy', 'true');
+    const { data, error } = await db.auth.signInWithPassword({ email: em, password: pw });
+    $('loginBtn').removeAttribute('aria-busy');
+    $('pw').value = '';
+    if (error) {
+      $('loginErr').textContent = /invalid/i.test(error.message) ? "That email and password don't match." : "Couldn't sign in. Check your connection and try again.";
+      return;
+    }
+    showDash(data.user.email);
+  });
+  ['em','pw'].forEach(id => $(id).addEventListener('input', () => $('loginErr').textContent = ''));
+  $('signOut').addEventListener('click', async () => { await db.auth.signOut(); showLogin(); });
+
+  // ---------- data ----------
+  const toEntry = x => ({
+    id: x.id, kind: x.kind, date: x.entry_date, title: x.title, party: x.party || '', category: x.category || 'Other',
+    hours: x.hours != null ? Number(x.hours) : null, rate: x.rate != null ? Number(x.rate) : null,
+    amount: Number(x.amount), settled: x.settled, settledAt: x.settled_at, recurring: x.recurring, note: x.note || '', createdAt: x.created_at
+  });
+  const toShift = x => ({
+    name: x.name.trim(), date: x.shift_date, work: x.work_seconds, companyId: x.company_id,
+    payRate: Number(x.pay_rate), billRate: x.bill_rate != null ? Number(x.bill_rate) : null
+  });
+  async function fetchAll(table, cols, dateCol){
+    const all = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await db.from(table).select(cols).order(dateCol, { ascending:false }).range(from, from + 999);
+      if (error) return { error };
+      all.push(...data);
+      if (data.length < 1000) break;
+    }
+    return { data: all };
+  }
+
+  async function load(){
+    $('notice').hidden = true;
+    const [en, sh, co] = await Promise.all([
+      fetchAll('cash_entries', '*', 'entry_date'),
+      fetchAll('shifts', 'name,shift_date,work_seconds,company_id,pay_rate,bill_rate', 'shift_date'),
+      db.from('companies').select('id,name')
+    ]);
+    if (en.error) return showNotice(/cash_entries/.test(en.error.message || '') ? 'The finance table isn’t set up yet. Run supabase/cash-setup.sql in the Supabase SQL Editor, then refresh.' : "Couldn't load your finances. Refresh the page to try again.");
+    entries = en.data.map(toEntry);
+    shifts = sh.error ? [] : sh.data.map(toShift);
+    companies = co.error ? [] : co.data;
+    if (sh.error) showNotice("Couldn't load team shifts, so team profit shows as $0. Refresh to try again.");
+    render();
+  }
+  function showNotice(msg){ $('notice').textContent = msg; $('notice').hidden = false; }
+  function clearNotice(){ $('notice').hidden = true; }
+
+  // ---------- money math ----------
+  // Team profit = what each company pays you minus what you pay the team, at the rates locked onto each shift.
+  const shiftProfit = s => s.work / 3600 * (s.billRate - s.payRate);
+  function totals(inP){
+    const sh = shifts.filter(s => inP(s.date)), counted = sh.filter(s => s.billRate != null);
+    const en = entries.filter(e => inP(e.date));
+    const inc = en.filter(e => e.kind === 'income'), exp = en.filter(e => e.kind === 'expense');
+    const sum = (l, f) => l.reduce((a, x) => a + f(x), 0);
+    const team = sum(counted, shiftProfit), income = sum(inc, e => e.amount), expense = sum(exp, e => e.amount);
+    return {
+      shifts: counted, skipped: sh.filter(s => s.billRate == null), inc, exp,
+      team, income, expense, net: team + income - expense, teamSecs: sum(counted, s => s.work),
+      toReceive: sum(inc.filter(e => !e.settled), e => e.amount), toPay: sum(exp.filter(e => !e.settled), e => e.amount)
+    };
+  }
+  function byPerson(list){
+    const m = new Map();
+    list.forEach(s => {
+      const k = key(s.name);
+      if (!m.has(k)) m.set(k, { name:s.name, secs:0, profit:0, cos:new Set() });
+      const g = m.get(k); g.secs += s.work; g.profit += shiftProfit(s); g.cos.add(companyName(s.companyId));
+    });
+    return [...m.values()].sort((a, b) => b.profit - a.profit);
+  }
+
+  // ---------- period ----------
+  function fillMonths(){
+    const all = [...entries.map(e => e.date), ...shifts.map(s => s.date)].map(d => d.slice(0, 7));
+    let lo = all.reduce((a, b) => b < a ? b : a, thisMonth()), hi = all.reduce((a, b) => b > a ? b : a, thisMonth());
+    const sel = $('month'); sel.innerHTML = '';
+    const opt = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); };
+    for (let m = hi; m >= lo; m = stepMonth(m, -1)) opt(m, monthLabel(m));
+    opt('all', 'All time');
+    if (month !== 'all' && (month < lo || month > hi)) month = thisMonth();
+    sel.value = month;
+    const months = [...sel.options].map(o => o.value).filter(v => v !== 'all');
+    $('prevM').disabled = month === 'all' || month <= lo;
+    $('nextM').disabled = month === 'all' || month >= hi;
+    $('statementBtn').disabled = month === 'all';
+    $('statementBtn').title = month === 'all' ? 'Pick a month first' : '';
+    return months;
+  }
+  $('month').addEventListener('change', () => { month = $('month').value; render(); });
+  $('prevM').addEventListener('click', () => { month = stepMonth(month, -1); render(); });
+  $('nextM').addEventListener('click', () => { month = stepMonth(month, 1); render(); });
+
+  // ---------- view switch ----------
+  $('view').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    view = b.dataset.v;
+    document.querySelectorAll('#view button').forEach(x => x.classList.toggle('on', x === b));
+    render();
+  });
+
+  // ---------- render ----------
+  function render(){
+    fillMonths();
+    const label = month === 'all' ? 'All time' : monthLabel(month);
+    $('pageTitle').textContent = { overview:'Overview', income:'Income', expense:'Expenses' }[view];
+    $('addLabel').textContent = view === 'expense' ? 'Add expense' : view === 'income' ? 'Add income' : 'Add entry';
+    $('overviewView').hidden = view !== 'overview';
+    $('listView').hidden = view === 'overview';
+    $('periodLabel').textContent = label;
+    fillSuggestions();
+    if (view === 'overview') renderOverview(); else renderList(view);
+  }
+
+  function renderOverview(){
+    const t = totals(inPeriod);
+    $('tTeam').textContent = usd(t.team);
+    $('tTeamSub').textContent = hm(t.teamSecs) + ' of team hours';
+    $('tIncome').textContent = usd(t.income);
+    $('tIncomeSub').textContent = plural(t.inc.length, 'entry').replace('entrys', 'entries');
+    $('tExpense').textContent = usd(t.expense);
+    $('tExpenseSub').textContent = plural(t.exp.length, 'expense');
+    $('tNet').textContent = usd(t.net);
+    $('tNetBox').classList.toggle('neg', t.net < 0);
+    const gross = t.team + t.income;
+    $('tNetSub').textContent = gross > 0 ? Math.round(t.net / gross * 100) + '% of what came in' : '';
+
+    const p = [];
+    if (t.toReceive > 0) p.push('Still to receive <b>' + usd(t.toReceive) + '</b>');
+    if (t.toPay > 0) p.push('Expenses still unpaid <b>' + usd(t.toPay) + '</b>');
+    $('pending').innerHTML = p.map(x => '<span>' + x + '</span>').join('');
+    $('pending').hidden = !p.length;
+
+    const warn = $('teamWarn');
+    if (t.skipped.length) {
+      warn.textContent = plural(t.skipped.length, 'team shift') + ' (' + hm(t.skipped.reduce((a, s) => a + s.work, 0)) + ') aren’t counted because the company had no rate when they were logged. Fix the rate in the Team tracker.';
+      warn.hidden = false;
+    } else warn.hidden = true;
+
+    // Where it came from: each team member, then each income source
+    const inRows = byPerson(t.shifts).map(g => ({ label:g.name, tag:'Team', sub:hm(g.secs) + ' · ' + [...g.cos].filter(Boolean).join(', '), amt:g.profit }));
+    const src = new Map();
+    t.inc.forEach(e => {
+      const k = key(e.party || e.title);
+      if (!src.has(k)) src.set(k, { label:e.party || e.title, titles:new Set(), amt:0, open:0 });
+      const g = src.get(k); g.amt += e.amount; g.titles.add(e.title); if (!e.settled) g.open += e.amount;
+    });
+    [...src.values()].sort((a, b) => b.amt - a.amt).forEach(g => inRows.push({
+      label:g.label, sub:[...g.titles].slice(0, 3).join(', ') + (g.open ? ' · ' + usd(g.open) + ' not received' : ''), amt:g.amt
+    }));
+    drawBars($('cameFrom'), inRows, 'in', 'Nothing came in for this period yet.');
+
+    const cat = new Map();
+    t.exp.forEach(e => {
+      const k = key(e.category);
+      if (!cat.has(k)) cat.set(k, { label:e.category, titles:new Set(), amt:0 });
+      const g = cat.get(k); g.amt += e.amount; g.titles.add(e.title);
+    });
+    drawBars($('wentTo'), [...cat.values()].sort((a, b) => b.amt - a.amt).map(g => ({ label:g.label, sub:[...g.titles].slice(0, 3).join(', '), amt:g.amt })), 'out', 'No expenses for this period.');
+
+    renderMonths();
+  }
+
+  function drawBars(el, list, cls, emptyText){
+    el.innerHTML = '';
+    if (!list.length) { el.innerHTML = '<p class="empty">' + emptyText + '</p>'; return; }
+    const max = Math.max(1, ...list.map(g => Math.abs(g.amt)));
+    list.forEach(g => {
+      const d = document.createElement('div'); d.className = 'brow';
+      d.innerHTML = '<span class="bname"><span class="l"></span><small></small></span><span class="bnum ' + cls + '"></span><div class="pbar ' + cls + '"><i></i></div>';
+      d.querySelector('.l').textContent = g.label;
+      if (g.tag) { const t = document.createElement('span'); t.className = 'tag'; t.textContent = g.tag; d.querySelector('.l').after(t); }
+      d.querySelector('small').textContent = g.sub;
+      d.querySelector('.bnum').textContent = usd(g.amt);
+      el.appendChild(d);
+      requestAnimationFrame(() => requestAnimationFrame(() => { d.querySelector('.pbar i').style.width = (Math.max(0, g.amt) / max * 100) + '%'; }));
+    });
+  }
+
+  function renderMonths(){
+    const set = new Set([...entries.map(e => e.date.slice(0, 7)), ...shifts.map(s => s.date.slice(0, 7))]);
+    const list = [...set].sort().reverse();
+    const box = $('months'); box.innerHTML = '';
+    if (!list.length) { box.innerHTML = '<p class="empty">No history yet.</p>'; return; }
+    list.forEach(m => {
+      const t = totals(d => d.slice(0, 7) === m);
+      const b = document.createElement('button'); b.className = 'mrow' + (m === month ? ' on' : '');
+      b.innerHTML = '<span></span><span class="in"></span><span class="in"></span><span class="out"></span><span class="net"></span>';
+      const c = b.children;
+      c[0].textContent = monthLabel(m); c[1].textContent = usd(t.team); c[2].textContent = usd(t.income);
+      c[3].textContent = t.expense ? '−' + usd(t.expense) : usd(0); c[4].textContent = usd(t.net);
+      c[4].classList.toggle('neg', t.net < 0);
+      b.addEventListener('click', () => { month = m; render(); window.scrollTo({ top:0, behavior:'smooth' }); });
+      box.appendChild(b);
+    });
+  }
+
+  // ---------- income / expense list ----------
+  function renderList(kind){
+    const rows = entries.filter(e => e.kind === kind && inPeriod(e.date)).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id);
+    $('logTable').classList.toggle('is-expense', kind === 'expense');
+    $('listTitle').textContent = kind === 'income' ? 'Income' : 'Expenses';
+    const total = rows.reduce((a, e) => a + e.amount, 0), open = rows.filter(e => !e.settled).reduce((a, e) => a + e.amount, 0);
+    $('listSum').textContent = (month === 'all' ? 'All time' : monthLabel(month)) + ' · ' + usd(total) + (open ? ' · ' + usd(open) + ' ' + OPEN[kind].toLowerCase() : '');
+    renderRecurring(kind);
+
+    const body = $('rows'); body.innerHTML = '';
+    if (!rows.length) body.innerHTML = '<tr><td colspan="7" class="empty">' + (kind === 'income' ? 'No income logged for this period.' : 'No expenses logged for this period.') + '</td></tr>';
+    rows.forEach(e => {
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td class="c-what"><span class="what"></span><span class="sub-line party"></span></td>' +
+        '<td class="c-date muted"></td>' +
+        '<td class="c-cat muted"></td>' +
+        '<td class="c-hrs num muted"></td>' +
+        '<td class="c-amt num r ' + (kind === 'income' ? 'in' : 'out') + '"></td>' +
+        '<td class="c-status"><button class="status"><i></i><span></span></button></td>' +
+        '<td class="c-act"><div class="acts">' +
+          '<button class="icon-btn edit" aria-label="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg></button>' +
+          '<button class="icon-btn del" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button>' +
+        '</div></td>';
+      tr.querySelector('.what').textContent = e.title;
+      const sub = [e.party, e.note].filter(Boolean).join(' · ');
+      tr.querySelector('.party').textContent = sub;
+      if (e.recurring) { const r = document.createElement('span'); r.className = 'rep'; r.textContent = (sub ? ' · ' : '') + 'Monthly'; tr.querySelector('.party').appendChild(r); }
+      tr.querySelector('.c-date').textContent = fmtDate(e.date);
+      tr.querySelector('.c-cat').textContent = e.category;
+      tr.querySelector('.c-hrs').textContent = e.hours != null && e.rate != null ? hrs(e.hours) + ' × ' + usd(e.rate) : '';
+      tr.querySelector('.c-amt').textContent = usd(e.amount);
+      const st = tr.querySelector('.status');
+      st.classList.add(e.settled ? 'done' : 'open');
+      st.querySelector('span').textContent = e.settled ? DONE[kind] : OPEN[kind];
+      st.title = e.settled && e.settledAt ? DONE[kind] + ' ' + new Date(e.settledAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : 'Click to mark as ' + DONE[kind].toLowerCase();
+      st.addEventListener('click', async () => {
+        const settled = !e.settled, patch = { settled, settled_at: settled ? new Date().toISOString() : null };
+        const { error } = await db.from('cash_entries').update(patch).eq('id', e.id);
+        if (error) return showNotice("Couldn't save that change. Try again.");
+        clearNotice(); e.settled = settled; e.settledAt = patch.settled_at; render();
+      });
+      tr.querySelector('.edit').addEventListener('click', () => openForm(e.kind, e));
+      tr.querySelector('.del').addEventListener('click', () => remove(e));
+      body.appendChild(tr);
+    });
+  }
+
+  // Monthly items from earlier months that haven't been logged for the month you're looking at
+  // The same monthly item: same payer/payee and category ("October salary" and "September salary" from Acme match)
+  const seriesKey = e => e.party ? 'p:' + key(e.party) + '|' + key(e.category) : 't:' + key(e.title);
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const retitle = (title, m) => title.replace(new RegExp('\\b(' + MONTHS.join('|') + ')\\b', 'i'), MONTHS[Number(m.slice(5, 7)) - 1]);
+  let missingRecurring = [];
+  function renderRecurring(kind){
+    missingRecurring = [];
+    if (month !== 'all' && month <= thisMonth()) {
+      const here = new Set(entries.filter(e => e.kind === kind && e.date.slice(0, 7) === month).map(seriesKey));
+      const latest = new Map();
+      entries.filter(e => e.kind === kind && e.recurring && e.date.slice(0, 7) < month)
+        .sort((a, b) => a.date < b.date ? -1 : 1)
+        .forEach(e => latest.set(seriesKey(e), e));
+      missingRecurring = [...latest.entries()].filter(([k]) => !here.has(k)).map(([, e]) => e);
+    }
+    const box = $('recurBox');
+    box.hidden = !missingRecurring.length;
+    if (missingRecurring.length) {
+      $('recurText').textContent = plural(missingRecurring.length, 'monthly ' + (kind === 'income' ? 'income' : 'expense')) + ' not logged for ' + monthLabel(month) + ' yet: ' +
+        missingRecurring.map(e => retitle(e.title, month) + ' (' + usd(e.amount) + ')').join(', ') + '.';
+    }
+  }
+  $('recurAdd').addEventListener('click', async () => {
+    if (!missingRecurring.length) return;
+    const [y, mo] = month.split('-').map(Number), last = new Date(y, mo, 0).getDate();
+    const rows = missingRecurring.map(e => ({
+      kind: e.kind, entry_date: month + '-' + String(Math.min(Number(e.date.slice(8, 10)), last)).padStart(2, '0'),
+      title: retitle(e.title, month), party: e.party || null, category: e.category, hours: e.hours, rate: e.rate, amount: e.amount,
+      // Subscriptions usually charge on their own; income still needs to arrive
+      settled: e.kind === 'expense', settled_at: e.kind === 'expense' ? new Date().toISOString() : null,
+      recurring: true, note: e.note || null
+    }));
+    $('recurAdd').setAttribute('aria-busy', 'true');
+    const { data, error } = await db.from('cash_entries').insert(rows).select();
+    $('recurAdd').removeAttribute('aria-busy');
+    if (error) return showNotice("Couldn't add those. Try again.");
+    clearNotice();
+    entries.push(...(Array.isArray(data) ? data : [data]).map(toEntry));
+    render(); toast('Added ' + plural(rows.length, 'monthly item') + ' to ' + monthLabel(month), false);
+  });
+
+  // ---------- add / edit ----------
+  function fillSuggestions(){
+    const parties = new Map(), cats = new Map();
+    entries.forEach(e => {
+      if (e.party && e.kind === fKind) parties.set(key(e.party), e.party);
+      if (e.kind === fKind) cats.set(key(e.category), e.category);
+    });
+    CATS[fKind].forEach(c => { if (!cats.has(key(c))) cats.set(key(c), c); });
+    const fill = (el, vals) => { el.innerHTML = ''; vals.forEach(v => { const o = document.createElement('option'); o.value = v; el.appendChild(o); }); };
+    fill($('partyList'), [...parties.values()].sort());
+    fill($('catList'), [...cats.values()]);
+  }
+  function setKind(k){
+    fKind = k;
+    document.querySelectorAll('#fKind button').forEach(b => b.classList.toggle('on', b.dataset.k === k));
+    $('fMode').hidden = k === 'expense';
+    if (k === 'expense') setMode('fixed');
+    $('fPartyLabel').textContent = k === 'income' ? 'From (who paid you)' : 'Paid to';
+    $('fTitle').placeholder = k === 'income' ? 'October salary' : 'Claude Max';
+    $('fParty').placeholder = k === 'income' ? 'Company or client' : 'Anthropic';
+    $('fCat').placeholder = k === 'income' ? 'Salary' : 'Subscriptions';
+    $('fSettledLabel').textContent = k === 'income' ? 'Already received' : 'Already paid';
+    fillSuggestions();
+  }
+  function setMode(m){
+    fMode = m;
+    document.querySelectorAll('#fMode button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+    document.querySelectorAll('.hourly').forEach(el => el.hidden = m !== 'hourly');
+    $('fAmount').readOnly = m === 'hourly';
+    if (m === 'hourly') calcAmount();
+  }
+  function calcAmount(){
+    const h = parseFloat($('fHours').value), r = parseFloat($('fRate').value);
+    $('fAmount').value = !isNaN(h) && !isNaN(r) ? cents(h * r).toFixed(2) : '';
+  }
+  $('fKind').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    setKind(b.dataset.k);
+    if (!editing) $('fSettled').checked = b.dataset.k === 'expense';
+  });
+  $('fMode').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setMode(b.dataset.m); });
+  ['fHours','fRate'].forEach(id => $(id).addEventListener('input', calcAmount));
+  ['fTitle','fParty','fDate','fCat','fHours','fRate','fAmount'].forEach(id => $(id).addEventListener('input', () => $('addErr').textContent = ''));
+
+  function defaultDate(){ return month === 'all' || month === thisMonth() ? iso(new Date()) : month + '-01'; }
+  function openForm(kind, e){
+    editing = e || null;
+    setKind(kind);
+    $('formTitle').textContent = e ? 'Edit ' + (kind === 'income' ? 'income' : 'expense') : 'Add an entry';
+    $('formHint').textContent = e ? '' : 'Income adds to your profit, expenses take away from it';
+    $('fTitle').value = e ? e.title : '';
+    $('fParty').value = e ? e.party : '';
+    $('fDate').value = e ? e.date : defaultDate();
+    $('fCat').value = e ? e.category : '';
+    $('fHours').value = e && e.hours != null ? e.hours : '';
+    $('fRate').value = e && e.rate != null ? e.rate : '';
+    $('fAmount').value = e ? e.amount.toFixed(2) : '';
+    $('fNote').value = e ? e.note : '';
+    $('fSettled').checked = e ? e.settled : kind === 'expense';
+    $('fRecurring').checked = e ? e.recurring : false;
+    setMode(e && e.hours != null && e.rate != null ? 'hourly' : 'fixed');
+    $('addErr').textContent = '';
+    $('addSave').textContent = e ? 'Save changes' : 'Save';
+    $('addBox').hidden = false;
+    $('addBox').scrollIntoView({ behavior:'smooth', block:'nearest' });
+    $('fTitle').focus({ preventScroll:true });
+  }
+  function closeForm(){ $('addBox').hidden = true; editing = null; $('addErr').textContent = ''; }
+  $('addToggle').addEventListener('click', () => {
+    if (!$('addBox').hidden && !editing) { closeForm(); return; }
+    openForm(view === 'expense' ? 'expense' : 'income');
+  });
+  $('addCancel').addEventListener('click', closeForm);
+
+  $('addForm').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const err = m => { $('addErr').textContent = m; };
+    const title = $('fTitle').value.trim().replace(/\s+/g, ' ');
+    const party = $('fParty').value.trim().replace(/\s+/g, ' ');
+    const category = $('fCat').value.trim().replace(/\s+/g, ' ') || 'Other';
+    const date = $('fDate').value;
+    if (!title) return err(fKind === 'income' ? 'Say what the money was for, like "October salary".' : 'Say what you paid for, like "Claude Max".');
+    if (!date) return err('Pick the date.');
+    let hours = null, rate = null, amount;
+    if (fMode === 'hourly') {
+      hours = parseFloat($('fHours').value); rate = parseFloat($('fRate').value);
+      if (isNaN(hours) || hours <= 0) return err('Enter how many hours you worked.');
+      if (isNaN(rate) || rate < 0) return err('Enter your hourly rate.');
+      amount = cents(hours * rate);
+    } else {
+      amount = parseFloat($('fAmount').value);
+      if (isNaN(amount) || amount <= 0) return err('Enter the amount, like 20.');
+    }
+    // Keep one spelling per person or company
+    const match = entries.find(e => e.party && key(e.party) === key(party));
+    const settled = $('fSettled').checked;
+    const row = {
+      kind: fKind, entry_date: date, title, party: party ? (match ? match.party : party) : null, category,
+      hours, rate, amount: cents(amount), settled, recurring: $('fRecurring').checked, note: $('fNote').value.trim() || null
+    };
+    if (!editing || settled !== editing.settled) row.settled_at = settled ? new Date().toISOString() : null;
+    $('addSave').setAttribute('aria-busy', 'true');
+    const q = editing ? db.from('cash_entries').update(row).eq('id', editing.id).select().single() : db.from('cash_entries').insert(row).select().single();
+    const { data, error } = await q;
+    $('addSave').removeAttribute('aria-busy');
+    if (error) return err("Couldn't save that. Try again.");
+    const saved = toEntry(data);
+    if (editing) entries[entries.indexOf(editing)] = saved; else entries.push(saved);
+    const wasEdit = !!editing;
+    if (wasEdit) closeForm();
+    else { $('fTitle').value = ''; $('fHours').value = ''; $('fAmount').value = ''; $('fNote').value = ''; $('fRecurring').checked = false; }
+    if (month !== 'all' && saved.date.slice(0, 7) !== month) month = saved.date.slice(0, 7);
+    render();
+    toast((wasEdit ? 'Updated ' : 'Added ') + saved.title + ' · ' + usd(saved.amount), false);
+  });
+
+  // ---------- delete with undo ----------
+  function toast(msg, withUndo){
+    $('toastMsg').textContent = msg;
+    $('undo').hidden = !withUndo;
+    $('toast').classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { $('toast').classList.remove('show'); lastDeleted = null; }, 5000);
+  }
+  async function remove(e){
+    const i = entries.indexOf(e); if (i < 0) return;
+    const { error } = await db.from('cash_entries').delete().eq('id', e.id);
+    if (error) return showNotice("Couldn't delete that. Try again.");
+    entries.splice(i, 1);
+    if (editing === e) closeForm();
+    lastDeleted = e;
+    toast('Deleted ' + e.title, true);
+    render();
+  }
+  $('undo').addEventListener('click', async () => {
+    const e = lastDeleted; if (!e) return;
+    lastDeleted = null; $('toast').classList.remove('show');
+    const { data, error } = await db.from('cash_entries').insert({
+      kind: e.kind, entry_date: e.date, title: e.title, party: e.party || null, category: e.category, hours: e.hours, rate: e.rate,
+      amount: e.amount, settled: e.settled, settled_at: e.settledAt, recurring: e.recurring, note: e.note || null, created_at: e.createdAt
+    }).select().single();
+    if (error) return showNotice("Couldn't restore that entry.");
+    entries.push(toEntry(data)); render();
+  });
+
+  // ---------- monthly statement ----------
+  const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th','st','nd','rd'][n % 10] || 'th');
+  const longDate = d => ordinal(d.getDate()) + ' of ' + d.toLocaleDateString('en-US', { month:'long' }) + ', ' + d.getFullYear();
+  const shortDay = d => new Date(d+'T00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' });
+  const listJoin = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
+
+  let stMonth = null;
+  function openStatement(){
+    if (month === 'all') return;
+    stMonth = month;
+    $('slipNote').value = '';
+    drawStatement();
+    $('slipOverlay').hidden = false; document.body.style.overflow = 'hidden';
+    fitStatement();
+  }
+  function drawStatement(){
+    const m = stMonth, label = monthLabel(m);
+    const t = totals(d => d.slice(0, 7) === m);
+    const team = byPerson(t.shifts);
+    const inc = [...t.inc].sort((a, b) => a.date < b.date ? -1 : 1), exp = [...t.exp].sort((a, b) => a.date < b.date ? -1 : 1);
+
+    // "This month you made $X from Youssef, $Y for working at ..., your expenses were $Z, so ..."
+    const bits = team.map(g => '<b>' + usd(g.profit) + '</b> from ' + escHtml(g.name));
+    const src = new Map();
+    inc.forEach(e => { const k = key(e.party || e.title); if (!src.has(k)) src.set(k, { e, amt:0 }); src.get(k).amt += e.amount; });
+    [...src.values()].sort((a, b) => b.amt - a.amt).forEach(({ e, amt }) => bits.push('<b>' + usd(amt) + '</b> ' + (e.party ? 'from ' + escHtml(e.party) : 'for ' + escHtml(e.title))));
+    let summary = bits.length ? 'This month you made ' + listJoin(bits) + '. ' : 'Nothing came in this month. ';
+    summary += exp.length ? 'Your expenses were <b>' + usd(t.expense) + '</b>, so your total profit for ' + label + ' is <b>' + usd(t.net) + '</b>.'
+      : 'You had no expenses, so your total profit for ' + label + ' is <b>' + usd(t.net) + '</b>.';
+    if (t.toReceive > 0) summary += ' <b>' + usd(t.toReceive) + '</b> of this hasn’t reached you yet.';
+
+    const section = (title, total, head, rows, empty) =>
+      '<h3>' + title + '<span>' + total + '</span></h3>' +
+      '<table><thead><tr>' + head + '</tr></thead><tbody>' + (rows || '<tr><td class="none" colspan="5">' + empty + '</td></tr>') + '</tbody></table>';
+
+    const teamRows = team.map(g => '<tr><td><b>' + escHtml(g.name) + '</b></td><td>' + escHtml([...g.cos].filter(Boolean).join(', ')) + '</td><td class="r mono">' + hm(g.secs) + '</td><td class="r mono">' + usd(g.profit) + '</td></tr>').join('');
+    const incRows = inc.map(e => '<tr><td>' + shortDay(e.date) + '</td><td><b>' + escHtml(e.title) + '</b>' + (e.party ? '<small>' + escHtml(e.party) + '</small>' : '') + '</td>' +
+      '<td class="r mono">' + (e.hours != null && e.rate != null ? hrs(e.hours) + ' × ' + usd(e.rate) : '') + '</td>' +
+      '<td>' + (e.settled ? '<span class="ok">Received</span>' : '<span class="due">Not received</span>') + '</td><td class="r mono">' + usd(e.amount) + '</td></tr>').join('');
+    const expRows = exp.map(e => '<tr><td>' + shortDay(e.date) + '</td><td><b>' + escHtml(e.title) + '</b>' + (e.party ? '<small>' + escHtml(e.party) + '</small>' : '') + '</td>' +
+      '<td>' + escHtml(e.category) + '</td><td>' + (e.settled ? '<span class="ok">Paid</span>' : '<span class="due">Unpaid</span>') + '</td><td class="r mono neg-amt">−' + usd(e.amount) + '</td></tr>').join('');
+
+    const note = $('slipNote').value.trim();
+    const number = 'ST-' + m;
+    $('slip').innerHTML =
+      '<div class="band"></div>' +
+      '<div class="top"><div class="brand">Amr Abdelgawad<em>Talents</em><small>amrabdelgawad.site</small></div>' +
+      '<div class="doc"><h1>Monthly statement</h1><p>No. <b>' + number + '</b></p><p>Issued <b>' + longDate(new Date()) + '</b></p></div></div>' +
+      '<div class="meta">' +
+        '<div class="box"><p>Period</p><strong>' + label + '</strong><span>' + plural(team.length, 'team member') + ' · ' + plural(inc.length + exp.length, 'entry').replace('entrys', 'entries') + '</span></div>' +
+        '<div class="box"><p>Came in</p><strong>' + usd(t.team + t.income) + '</strong><span>Team ' + usd(t.team) + ' · Own ' + usd(t.income) + '</span></div>' +
+        '<div class="box hi' + (t.net < 0 ? ' neg' : '') + '"><p>Total profit</p><strong>' + usd(t.net) + '</strong><span>after ' + usd(t.expense) + ' in expenses</span></div>' +
+      '</div>' +
+      '<p class="summary">' + summary + '</p>' +
+      section('Profit from your team', usd(t.team), '<th>Team member</th><th>Worked for</th><th class="r">Hours</th><th class="r">Your profit</th>', teamRows, 'No team hours this month.') +
+      section('Your own income', usd(t.income), '<th>Date</th><th>Description</th><th class="r">Hours</th><th>Status</th><th class="r">Amount</th>', incRows, 'No income logged this month.') +
+      section('Expenses', '−' + usd(t.expense), '<th>Date</th><th>Description</th><th>Category</th><th>Status</th><th class="r">Amount</th>', expRows, 'No expenses this month.') +
+      '<div class="bottom"><div class="note"><b>How this is worked out.</b> Team profit is what each company pays per hour minus what the team is paid, at the rates locked onto each shift. Your income and expenses are what you logged for ' + label + '.' +
+        (note ? '<span class="custom"><b>Note:</b> ' + escHtml(note) + '</span>' : '') + '</div>' +
+        '<div class="totals"><div><span>From your team</span><span class="mono">' + usd(t.team) + '</span></div>' +
+        '<div><span>From your own work</span><span class="mono">' + usd(t.income) + '</span></div>' +
+        '<div><span>Expenses</span><span class="mono">−' + usd(t.expense) + '</span></div>' +
+        (t.toReceive > 0 ? '<div><span>Not received yet</span><span class="mono">' + usd(t.toReceive) + '</span></div>' : '') +
+        '<div class="grand"><span>Total profit</span><span class="mono">' + usd(t.net) + '</span></div></div></div>' +
+      '<div class="foot"><div><span>Amr Abdelgawad Talents · amrabdelgawad.site</span><span>' + number + '</span></div></div>';
+  }
+  function fitStatement(){
+    if ($('slipOverlay').hidden) return;
+    const el = $('slip'), fit = $('slipFit');
+    el.style.transform = 'none';
+    const w = el.offsetWidth, h = el.offsetHeight, avail = $('slipStage').clientWidth - 32;
+    const s = Math.min(1, avail / w);
+    el.style.transform = 'scale(' + s + ')'; el.style.transformOrigin = 'top left';
+    fit.style.width = (w * s) + 'px'; fit.style.height = (h * s) + 'px';
+  }
+  $('statementBtn').addEventListener('click', openStatement);
+  window.addEventListener('resize', fitStatement);
+  $('slipNote').addEventListener('input', () => { drawStatement(); fitStatement(); });
+  function closeStatement(){ $('slipOverlay').hidden = true; document.body.style.overflow = ''; stMonth = null; }
+  $('slipClose').addEventListener('click', closeStatement);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('slipOverlay').hidden) closeStatement(); });
+
+  let pdfLib = null;
+  function loadPdfLib(){
+    if (pdfLib) return pdfLib;
+    pdfLib = new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      s.onload = () => res(window.html2pdf); s.onerror = () => { pdfLib = null; rej(new Error('load')); };
+      document.head.appendChild(s);
+    });
+    return pdfLib;
+  }
+  $('slipDownload').addEventListener('click', async () => {
+    if (!stMonth) return;
+    const btn = $('slipDownload'); btn.setAttribute('aria-busy', 'true'); btn.textContent = 'Preparing…';
+    try {
+      const html2pdf = await loadPdfLib();
+      await document.fonts.ready;
+      const clone = $('slip').cloneNode(true);
+      clone.style.transform = 'none'; clone.style.boxShadow = 'none';
+      await html2pdf().set({
+        margin: [10, 0, 10, 0], filename: 'Statement-' + stMonth + '.pdf',
+        image: { type:'jpeg', quality:0.96 },
+        html2canvas: { scale:2, useCORS:true, backgroundColor:'#ffffff' },
+        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
+        pagebreak: { mode:['css', 'legacy'], avoid:['tr', '.bottom', '.summary'] }
+      }).from(clone).save();
+      toast('Statement downloaded', false);
+    } catch (e) {
+      toast("Couldn't make the PDF. Check your connection and try again.", false);
+    }
+    btn.removeAttribute('aria-busy'); btn.textContent = 'Download PDF';
+  });
+
+  // stay signed in on this device until you sign out (same login as the team tracker)
+  db.auth.getSession().then(({ data }) => { if (data.session) showDash(data.session.user.email); });
+  db.auth.onAuthStateChange(event => { if (event === 'SIGNED_OUT') showLogin(); });
+})();
+</script>
+</body>
+</html>
