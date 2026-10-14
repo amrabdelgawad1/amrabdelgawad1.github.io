@@ -137,3 +137,19 @@ a{ color:inherit; text-decoration:none; }
 .toast.show{ opacity:1; transform:translate(-50%, 0); }
 
 @media (max-width:420px){ .clock{ font-size:44px; } .tiles.three .tile strong{ font-size:20px; } }
+
+/* history: one line per month, tap to show its days */
+.month{ border-top:1px solid var(--border); }
+.month:first-child{ border-top:0; }
+.mrow{ display:flex; align-items:center; gap:12px; width:100%; padding:12px 0; text-align:left; }
+.mrow .n{ flex:1; min-width:0; }
+.mrow .n b{ display:block; font-weight:600; font-size:15px; }
+.mrow .n small{ color:var(--muted); font-size:12.5px; }
+.mrow .v{ text-align:right; font-weight:650; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.mrow .v small{ display:block; font-weight:500; }
+.mrow .chev{ color:var(--muted); transition:transform .2s; }
+.month.open .chev{ transform:rotate(180deg); }
+.month .days{ display:none; padding:0 0 8px 10px; border-left:2px solid var(--border); margin-left:4px; }
+.month.open .days{ display:block; }
+.month .days .row{ padding:9px 0; }
+.month .days .row:first-child{ border-top:0; }

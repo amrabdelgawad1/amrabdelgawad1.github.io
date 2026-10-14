@@ -226,19 +226,38 @@
     $('hDueEgp').textContent = fx.rate ? '= ' + egp(due * fx.rate) : '';
     const box = $('hList'); box.innerHTML = '';
     if (!rows.length) { box.innerHTML = '<p class="empty">No shifts yet. Press Run when you start.</p>'; return; }
-    let cur = '';
-    rows.slice(0, 60).forEach(r => {
-      const m = r.shift_date.slice(0, 7);
-      if (m !== cur) { cur = m; const h = document.createElement('p'); h.className = 'mhead'; h.textContent = monthLabel(m); box.appendChild(h); }
-      const amt = r.work_seconds / 3600 * Number(r.pay_rate || 0);
-      const d = document.createElement('div'); d.className = 'row';
-      const clocked = r.started_at && r.ended_at ? hhmm(new Date(r.started_at)) + '–' + hhmm(new Date(r.ended_at)) + ' · ' : '';
-      d.innerHTML = '<span class="n"><b>' + esc(dayDate(r.shift_date)) + '</b><small>' + esc((r.company_name || '') + ' · ' + clocked + hm(r.work_seconds)) + '</small></span>' +
-        '<span class="v">' + usd(amt) + '<small>' + (r.paid ? '<span class="pill p-ok">Paid</span>' : '<span class="pill p-due">Unpaid</span>') + '</small></span>';
-      if (r.paid && r.paid_at) d.title = 'Paid ' + new Date(r.paid_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + (r.paid_fx ? ' at ' + Number(r.paid_fx).toFixed(2) + ' EGP per $1' : '');
-      box.appendChild(d);
+    // One line per month; tap it to show that month's work days
+    const months = new Map();
+    rows.forEach(r => { const m = r.shift_date.slice(0, 7); if (!months.has(m)) months.set(m, []); months.get(m).push(r); });
+    months.forEach((list, m) => {
+      const secs = list.reduce((a, r) => a + r.work_seconds, 0);
+      const amt = list.reduce((a, r) => a + r.work_seconds / 3600 * Number(r.pay_rate || 0), 0);
+      const unpaid = list.filter(r => !r.paid).length;
+      const wrap = document.createElement('div'); wrap.className = 'month' + (openMonths.has(m) ? ' open' : '');
+      const head = document.createElement('button'); head.type = 'button'; head.className = 'mrow';
+      head.setAttribute('aria-expanded', String(openMonths.has(m)));
+      head.innerHTML = '<span class="n"><b>' + esc(monthLabel(m)) + '</b><small>' + esc(plural(list.length, 'day') + ' · ' + hm(secs)) + '</small></span>' +
+        '<span class="v">' + usd(amt) + '<small>' + (unpaid ? '<span class="pill p-due">' + unpaid + ' unpaid</span>' : '<span class="pill p-ok">All paid</span>') + '</small></span>' +
+        '<svg class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+      const days = document.createElement('div'); days.className = 'days';
+      list.forEach(r => {
+        const a = r.work_seconds / 3600 * Number(r.pay_rate || 0);
+        const d = document.createElement('div'); d.className = 'row';
+        const clocked = r.started_at && r.ended_at ? hhmm(new Date(r.started_at)) + '–' + hhmm(new Date(r.ended_at)) + ' · ' : '';
+        d.innerHTML = '<span class="n"><b>' + esc(dayDate(r.shift_date)) + '</b><small>' + esc((r.company_name || '') + ' · ' + clocked + hm(r.work_seconds)) + '</small></span>' +
+          '<span class="v">' + usd(a) + '<small>' + (r.paid ? '<span class="pill p-ok">Paid</span>' : '<span class="pill p-due">Unpaid</span>') + '</small></span>';
+        if (r.paid && r.paid_at) d.title = 'Paid ' + new Date(r.paid_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + (r.paid_fx ? ' at ' + Number(r.paid_fx).toFixed(2) + ' EGP per $1' : '');
+        days.appendChild(d);
+      });
+      head.addEventListener('click', () => {
+        const open = !wrap.classList.contains('open');
+        wrap.classList.toggle('open', open); head.setAttribute('aria-expanded', String(open));
+        open ? openMonths.add(m) : openMonths.delete(m);
+      });
+      wrap.appendChild(head); wrap.appendChild(days); box.appendChild(wrap);
     });
   }
+  const openMonths = new Set(); // months you've opened stay open when the list refreshes
 
   // ======================================================================
   // Owner: menu, Live now, Invite and access, and the /cash pages
