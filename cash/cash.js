@@ -46,12 +46,56 @@
   const PEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>';
 
   // ---------- auth ----------
-  function showDash(email){
-    $('loginView').hidden = true; $('dashView').hidden = false;
-    $('meEmail').textContent = email; $('meAv').textContent = (email[0] || 'A').toUpperCase();
+  // After the password comes a code from an authenticator app. It's asked once per device:
+  // the session stays verified until you sign out.
+  let mfaFactor = null, mfaEmail = '';
+  async function showDash(email){
+    mfaEmail = email;
+    const { data: aal } = await db.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.currentLevel === 'aal2') return openDash();
+    const { data: f } = await db.auth.mfa.listFactors();
+    const verified = ((f && f.totp) || []).find(x => x.status === 'verified');
+    $('loginView').hidden = true; $('dashView').hidden = true; $('mfaView').hidden = false;
+    $('mfaErr').textContent = ''; $('mfaCode').value = '';
+    if (verified) {
+      mfaFactor = verified.id;
+      $('mfaSetup').hidden = true;
+      $('mfaTitle').textContent = 'Enter your code';
+      $('mfaSub').textContent = 'Open your authenticator app and type the 6-digit code for Cash. This device stays verified until you sign out.';
+    } else {
+      // Clear any half-finished setup, then start a fresh one
+      for (const x of ((f && f.all) || []).filter(x => x.status !== 'verified')) await db.auth.mfa.unenroll({ factorId: x.id });
+      const { data, error } = await db.auth.mfa.enroll({ factorType:'totp', friendlyName:'Cash ' + Date.now() });
+      if (error) { $('mfaErr').textContent = "Couldn't start the setup. Refresh the page and try again."; return; }
+      mfaFactor = data.id;
+      $('mfaTitle').textContent = 'Set up two-step sign-in';
+      $('mfaSub').textContent = 'Scan this with an authenticator app, like Google Authenticator, then type the 6-digit code it shows. You only do this once.';
+      $('mfaQr').innerHTML = '';
+      const img = document.createElement('img'); img.src = data.totp.qr_code; img.alt = 'QR code for your authenticator app';
+      $('mfaQr').appendChild(img);
+      $('mfaSecret').textContent = data.totp.secret;
+      $('mfaSetup').hidden = false;
+    }
+    $('mfaCode').focus();
+  }
+  function openDash(){
+    $('mfaView').hidden = true; $('loginView').hidden = true; $('dashView').hidden = false;
+    $('meEmail').textContent = mfaEmail; $('meAv').textContent = (mfaEmail[0] || 'A').toUpperCase();
     load();
   }
-  function showLogin(){ $('dashView').hidden = true; $('loginView').hidden = false; entries = []; shifts = []; }
+  $('mfaForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const code = $('mfaCode').value.replace(/\D/g, '');
+    if (code.length !== 6) { $('mfaErr').textContent = 'Enter the 6-digit code from your app.'; return; }
+    $('mfaBtn').setAttribute('aria-busy', 'true');
+    const { error } = await db.auth.mfa.challengeAndVerify({ factorId: mfaFactor, code });
+    $('mfaBtn').removeAttribute('aria-busy');
+    if (error) { $('mfaErr').textContent = "That code didn't work. Codes change every 30 seconds, so try the one showing now."; $('mfaCode').select(); return; }
+    openDash();
+  });
+  $('mfaCode').addEventListener('input', () => $('mfaErr').textContent = '');
+  $('mfaOut').addEventListener('click', async () => { await db.auth.signOut(); showLogin(); });
+  function showLogin(){ $('dashView').hidden = true; $('mfaView').hidden = true; $('loginView').hidden = false; entries = []; shifts = []; }
 
   $('loginForm').addEventListener('submit', async e => {
     e.preventDefault();
@@ -95,7 +139,7 @@
   const toShift = x => ({
     id: x.id, name: x.name.trim(), date: x.shift_date, work: x.work_seconds, brk: x.break_seconds || 0,
     startedAt: x.started_at, endedAt: x.ended_at, companyId: x.company_id, source: x.source, createdAt: x.created_at,
-    owner: !!x.owner, paid: !!x.paid, paidAt: x.paid_at,
+    owner: !!x.owner, paid: !!x.paid, paidAt: x.paid_at, paidFx: x.paid_fx != null ? Number(x.paid_fx) : null,
     // Your own hours never cost team pay
     payRate: x.owner ? 0 : Number(x.pay_rate), billRate: x.bill_rate != null ? Number(x.bill_rate) : null
   });
@@ -228,19 +272,19 @@
 
   function renderOverview(){
     const t = totals(inPeriod);
-    $('tOwn').textContent = usd(t.ownAmt);
+    setUsd('tOwn', t.ownAmt);
     $('tOwnSub').textContent = hm(t.ownSecs) + ' worked';
-    $('tTeam').textContent = usd(t.team);
+    setUsd('tTeam', t.team);
     $('tTeamSub').textContent = hm(t.teamSecs) + ' of team hours';
-    $('tIncome').textContent = usd(t.income);
+    setUsd('tIncome', t.income);
     $('tIncomeSub').textContent = plural(t.inc.length, 'entry');
-    $('tExpense').textContent = usd(t.expense);
+    setUsd('tExpense', t.expense);
     $('tExpenseSub').textContent = plural(t.exp.length, 'expense');
-    $('tNet').textContent = usd(t.net);
+    setUsd('tNet', t.net);
     $('tNetBox').classList.toggle('neg', t.net < 0);
     const gross = t.ownAmt + t.team + t.income;
     $('tNetSub').textContent = gross > 0 ? Math.round(t.net / gross * 100) + '% of what came in' : '';
-    lastNet = t.net; renderNetEgp();
+    paintEgp();
 
     const p = [];
     if (t.toReceive > 0) p.push('Still to receive <b>' + usd(t.toReceive) + '</b>');
@@ -279,10 +323,17 @@
     renderMonths();
   }
 
-  let lastNet = null;
-  function renderNetEgp(){
-    $('tNetEgp').textContent = fx.rate && lastNet != null ? '≈ ' + egp(lastNet * fx.rate) + ' at ' + fx.rate + ' per $' : '';
+  // Dollar totals carry their value in data-usd; the line under each shows it in pounds at today's rate
+  const setUsd = (id, n) => { const el = $(id); el.textContent = usd(n); el.dataset.usd = n; };
+  function paintEgp(){
+    document.querySelectorAll('[data-egp]').forEach(el => {
+      const out = el.parentElement.querySelector('.egp'); if (!out) return;
+      const v = parseFloat(el.dataset.usd);
+      out.textContent = fx.rate && !isNaN(v) ? '= ' + (v < -0.004 ? '−' : '') + egp(Math.abs(v) * fx.rate) : '';
+      out.title = fx.rate ? 'At ' + fx.rate.toFixed(2) + ' EGP per $1' + (fx.live ? ' (today’s rate)' : ' (the last rate you used)') : '';
+    });
   }
+  window.paintEgp = paintEgp;
 
   function drawBars(el, list, cls, emptyText){
     el.innerHTML = '';
@@ -411,9 +462,9 @@
     $('myLabel').textContent = month === 'all' ? 'All time' : monthLabel(month);
     $('myHours').textContent = hm(sum(rows, s => s.work));
     $('myShifts').textContent = plural(rows.length, 'shift');
-    $('myEarned').textContent = usd(sum(counted, shiftValue));
-    $('myPaid').textContent = usd(sum(paid, shiftValue)); $('myPaidH').textContent = hm(sum(paid, s => s.work));
-    $('myDue').textContent = usd(sum(due, shiftValue)); $('myDueH').textContent = hm(sum(due, s => s.work));
+    setUsd('myEarned', sum(counted, shiftValue));
+    setUsd('myPaid', sum(paid, shiftValue)); $('myPaidH').textContent = hm(sum(paid, s => s.work));
+    setUsd('myDue', sum(due, shiftValue)); paintEgp(); $('myDueH').textContent = hm(sum(due, s => s.work));
     $('myPayAll').hidden = !rows.some(s => !s.paid);
 
     const body = $('myRows'); body.innerHTML = '';
@@ -445,11 +496,11 @@
     });
   }
   async function setShiftsPaid(list, paid){
-    const patch = { paid, paid_at: paid ? new Date().toISOString() : null };
+    const patch = { paid, paid_at: paid ? new Date().toISOString() : null, paid_fx: paid ? fx.rate || null : null };
     const { error } = await db.from('shifts').update(patch).in('id', list.map(s => s.id));
     if (error) return showNotice("Couldn't save that change. Try again.");
     clearNotice();
-    list.forEach(s => { s.paid = paid; s.paidAt = patch.paid_at; });
+    list.forEach(s => { s.paid = paid; s.paidAt = patch.paid_at; s.paidFx = patch.paid_fx; });
     render();
     return true;
   }
@@ -478,7 +529,7 @@
     $('mSave').setAttribute('aria-busy', 'true');
     const { data, error } = await db.from('shifts').insert({
       name: OWNER_NAME, shift_date: $('mDate').value, work_seconds: secs, break_seconds: 0, company_id: co,
-      paid, paid_at: paid ? new Date().toISOString() : null, source: 'manual', owner: true, pay_rate: 0
+      paid, paid_at: paid ? new Date().toISOString() : null, paid_fx: paid ? fx.rate || null : null, source: 'manual', owner: true, pay_rate: 0
     }).select().single();
     $('mSave').removeAttribute('aria-busy');
     if (error) { $('mErr').textContent = "Couldn't save that. Try again."; return; }
@@ -487,6 +538,48 @@
     $('mH').value = ''; $('mM').value = ''; $('mPaid').checked = false;
     if (month !== 'all') month = data.shift_date.slice(0, 7);
     render(); toast('Added ' + hm(secs) + ' at ' + companyName(co) + ' on ' + dayDate(data.shift_date), false);
+  });
+
+  // ---------- my time: one payment for several shifts ----------
+  // Marks the oldest unpaid shifts at that company as paid, up to the amount. Never part of a shift.
+  $('lumpToggle').addEventListener('click', () => {
+    const f = $('lumpForm'); f.hidden = !f.hidden; $('myForm').hidden = true;
+    if (!f.hidden) { fillCompanyPicker($('lCo')); if (!$('lDate').value) $('lDate').value = iso(new Date()); lumpFx(); $('lAmt').focus(); }
+  });
+  $('myAddToggle').addEventListener('click', () => { $('lumpForm').hidden = true; });
+  function lumpFx(){ const e = $('lCur').value === 'EGP'; $('lFxWrap').hidden = !e; if (e && !$('lFx').value && fx.rate) $('lFx').value = fx.rate; }
+  $('lCur').addEventListener('change', lumpFx);
+  ['lAmt','lFx','lDate','lCo'].forEach(id => $(id).addEventListener('input', () => $('lErr').textContent = ''));
+  $('lumpForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const err = m => { $('lErr').textContent = m; };
+    const co = Number($('lCo').value), amt = parseFloat($('lAmt').value), cur = $('lCur').value, date = $('lDate').value;
+    const rate = cur === 'EGP' ? parseFloat($('lFx').value) : null;
+    if (!co) return err('Pick the company that paid you.');
+    if (isNaN(amt) || amt <= 0) return err('Enter the amount you received.');
+    if (cur === 'EGP' && !(rate > 0)) return err('Enter how many pounds one dollar was, like 48.5.');
+    if (!date) return err('Pick the day you were paid.');
+    const usdAmt = cur === 'EGP' ? amt / rate : amt;
+    const open = shifts.filter(sh => sh.owner && !sh.paid && sh.companyId === co && sh.billRate != null)
+      .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.id - b.id);
+    if (!open.length) return err('Nothing is unpaid at ' + companyName(co) + '.');
+    const pick = []; let left = usdAmt;
+    for (const sh of open) { const v = cents(shiftValue(sh)); if (v > left + 0.005) break; pick.push(sh); left -= v; }
+    if (!pick.length) return err('That’s less than your oldest unpaid shift (' + usd(shiftValue(open[0])) + ' on ' + dayDate(open[0].date) + '), so nothing was marked.');
+    const covered = pick.reduce((a, sh) => a + shiftValue(sh), 0);
+    left = cents(left);
+    const range = pick.length === 1 ? dayDate(pick[0].date) : dayDate(pick[0].date) + ' to ' + dayDate(pick[pick.length - 1].date);
+    if (!confirm('Mark ' + plural(pick.length, 'shift') + ' at ' + companyName(co) + ' as paid?\n\n' + range + ' · ' + usd(covered) +
+      (left >= 0.01 ? '\n\n' + usd(left) + ' is left over. It isn’t enough for the next unpaid shift, so that one stays unpaid.' : ''))) return;
+    const patch = { paid: true, paid_at: new Date(date + 'T12:00:00').toISOString(), paid_fx: rate || fx.rate || null };
+    $('lSave').setAttribute('aria-busy', 'true');
+    const { error } = await db.from('shifts').update(patch).in('id', pick.map(sh => sh.id));
+    $('lSave').removeAttribute('aria-busy');
+    if (error) return err("Couldn't save that. Try again.");
+    pick.forEach(sh => { sh.paid = true; sh.paidAt = patch.paid_at; sh.paidFx = patch.paid_fx; });
+    $('lAmt').value = ''; $('lumpForm').hidden = true;
+    render();
+    toast('Marked ' + plural(pick.length, 'shift') + ' as paid' + (left >= 0.01 ? ' · ' + usd(left) + ' left over' : ''), false);
   });
 
   // ---------- income / expense list ----------
@@ -625,7 +718,9 @@
       const { data } = await db.from('tracker_settings').select('*').eq('key', 'egp_rate');
       const v = parseFloat(((data || [])[0] || {}).value); if (!isNaN(v)) fx.rate = v;
     }
-    renderNetEgp();
+    window.cashFx = fx;
+    paintEgp();
+    document.dispatchEvent(new Event('fx-ready'));
   }
   function showFx(){
     const isEgp = $('fCur').value === 'EGP';
@@ -785,7 +880,7 @@
       const s = d.shift;
       const { data, error } = await db.from('shifts').insert({
         name: s.name, shift_date: s.date, work_seconds: s.work, break_seconds: s.brk, started_at: s.startedAt, ended_at: s.endedAt,
-        company_id: s.companyId, paid: s.paid, paid_at: s.paidAt, source: s.source, created_at: s.createdAt,
+        company_id: s.companyId, paid: s.paid, paid_at: s.paidAt, paid_fx: s.paidFx, source: s.source, created_at: s.createdAt,
         owner: true, pay_rate: 0, bill_rate: s.billRate
       }).select().single();
       if (error) return showNotice("Couldn't restore that shift.");
@@ -898,7 +993,9 @@
         '<div><span>Other income</span><span class="mono">' + usd(t.income) + '</span></div>' +
         '<div><span>Expenses</span><span class="mono">−' + usd(t.expense) + '</span></div>' +
         (t.toReceive > 0 ? '<div><span>Not received yet</span><span class="mono">' + usd(t.toReceive) + '</span></div>' : '') +
-        '<div class="grand"><span>Total profit</span><span class="mono">' + usd(t.net) + '</span></div></div></div>' +
+        '<div class="grand"><span>Total profit</span><span class="mono">' + usd(t.net) + '</span></div>' +
+        (fx.rate ? '<div class="in-egp"><span>' + usd(t.net) + ' = ' + egp(t.net * fx.rate) + '</span><span>at ' + fx.rate + ' per $1, ' + longDate(new Date()) + '</span></div>' : '') +
+        '</div></div>' +
       '<div class="foot"><div><span>Amr Abdelgawad Talents · amrabdelgawad.site</span><span>' + number + '</span></div></div>';
   }
   function fitStatement(){
@@ -939,7 +1036,7 @@
       await html2pdf().set({
         margin: [10, 0, 10, 0], filename: 'Statement-' + stMonth + '.pdf',
         image: { type:'jpeg', quality:0.96 },
-        html2canvas: { scale:2, useCORS:true, backgroundColor:'#ffffff' },
+        html2canvas: { scale:2, useCORS:true, backgroundColor:'#ffffff', scrollX:0, scrollY:0 }, // capture from the top, or a scrolled page gives a blank PDF
         jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
         pagebreak: { mode:['css', 'legacy'], avoid:['tr', '.bottom', '.summary'] }
       }).from(clone).save();

@@ -15,12 +15,18 @@ window.CashTeam = function(db){
   const nameKey = n => n.trim().toLowerCase().replace(/\s+/g, ' ');
   const hhmmIso = s => { const d = new Date(s); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
   const companyName = id => (companies.find(c => c.id === id) || {}).name || '';
+  // Pounds: today's rate is loaded by cash.js; each paid shift keeps the rate from the day it was marked paid
+  const fxNow = () => (window.cashFx && window.cashFx.rate) || null;
+  const egp = n => 'EGP ' + (Math.round(n * 100) / 100).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  const setUsd = (id, n) => { const el = $(id); el.textContent = usd(n); el.dataset.usd = n; };
+  const paint = () => { if (window.paintEgp) window.paintEgp(); };
+  document.addEventListener('fx-ready', () => { if (log.length) render(); });
 
   // ---------- data ----------
   const toRow = x => ({
     id: x.id, name: x.name.trim(), date: x.shift_date, work: x.work_seconds, brk: x.break_seconds,
     startedAt: x.started_at, endedAt: x.ended_at, companyId: x.company_id,
-    paid: x.paid, paidAt: x.paid_at, source: x.source, createdAt: x.created_at,
+    paid: x.paid, paidAt: x.paid_at, paidFx: x.paid_fx != null ? Number(x.paid_fx) : null, source: x.source, createdAt: x.created_at,
     // Rates are locked onto each shift when it's logged, so later rate changes don't rewrite history.
     payRate: x.pay_rate != null ? Number(x.pay_rate) : rate,
     billRate: x.bill_rate != null ? Number(x.bill_rate) : null,
@@ -61,11 +67,12 @@ window.CashTeam = function(db){
   function clearNotice(){ $('notice').hidden = true; }
 
   async function updateShifts(ids, patch){
+    if ('paid' in patch) patch = Object.assign({}, patch, { paid_fx: patch.paid ? fxNow() : null });
     const { error } = await db.from('shifts').update(patch).in('id', ids);
     if (error) { showNotice("Couldn't save that change. Try again."); return false; }
     clearNotice();
     log.forEach(r => { if (ids.includes(r.id)) {
-      if ('paid' in patch) { r.paid = patch.paid; r.paidAt = patch.paid_at; }
+      if ('paid' in patch) { r.paid = patch.paid; r.paidAt = patch.paid_at; r.paidFx = patch.paid_fx; }
       if ('company_id' in patch && patch.company_id !== r.companyId) {
         r.companyId = patch.company_id;
         const c = companies.find(x => x.id === r.companyId); r.billRate = c && c.bill_rate != null ? Number(c.bill_rate) : null; // same as the database trigger
@@ -262,9 +269,9 @@ window.CashTeam = function(db){
     $('sW').textContent = hm(tw);
     $('sB').textContent = hm(tb);
     $('sA').textContent = rows.length ? hm(tw / rows.length) : '0h 00m';
-    $('mTotal').textContent = usd(earned(rows)); $('hTotal').textContent = hm(tw);
-    $('mPaid').textContent = usd(earned(paidRows)); $('hPaid').textContent = hm(pw);
-    $('mOwed').textContent = usd(earned(owedRows)); $('hOwed').textContent = hm(ow);
+    setUsd('mTotal', earned(rows)); $('hTotal').textContent = hm(tw);
+    setUsd('mPaid', earned(paidRows)); $('hPaid').textContent = hm(pw);
+    setUsd('mOwed', earned(owedRows)); $('hOwed').textContent = hm(ow);
     $('rangeLabel').textContent = rangeLabel();
     $('payLabel').textContent = rangeLabel() + ' · worked hours × rate (breaks not paid)';
     $('histCount').textContent = rows.length + ' shift' + (rows.length === 1 ? '' : 's');
@@ -351,6 +358,7 @@ window.CashTeam = function(db){
     });
     updateBulk(rows);
     renderProfit();
+    paint();
   }
 
   // ---------- profit ----------
@@ -399,9 +407,9 @@ window.CashTeam = function(db){
     $('profitLabel').textContent = rangeLabel();
     $('pHours').textContent = hm(secs);
     $('pShifts').textContent = rows.length + ' shift' + (rows.length === 1 ? '' : 's');
-    $('pRevenue').textContent = usd(rev); $('pRevenueSub').textContent = 'at each shift’s company rate';
-    $('pCost').textContent = usd(cost);  $('pCostSub').textContent = 'at each shift’s pay rate';
-    $('pProfit').textContent = usd(rev - cost);
+    setUsd('pRevenue', rev); $('pRevenueSub').textContent = 'at each shift’s company rate';
+    setUsd('pCost', cost);  $('pCostSub').textContent = 'at each shift’s pay rate';
+    setUsd('pProfit', rev - cost); paint();
     $('pMargin').textContent = rev > 0 ? Math.round((rev - cost) / rev * 100) + '% of what you get' : '';
     const warn = $('profitWarn');
     if (skipped.length) {
@@ -482,6 +490,14 @@ window.CashTeam = function(db){
       : '<div class="stamp due"><i></i>Partly paid</div>';
     const grand = allPaid ? ['Total paid', total] : ['Amount due', nonePaid ? total : due];
     const note = $('slipNote').value.trim();
+    // Paid shifts use the rate saved when they were marked paid; anything still due uses today's rate
+    const paidRows = rows.filter(r => r.paid);
+    const fxPaid = paidRows.every(r => r.paidFx) ? paidRows.reduce((a, r, i) => a + amts[rows.indexOf(r)] * r.paidFx, 0) : null;
+    const fxRates = [...new Set(paidRows.map(r => r.paidFx))];
+    const fxDay = lastPaid ? longDate(lastPaid) : longDate(new Date());
+    let egpRow = '';
+    if (allPaid && fxPaid != null) egpRow = '<div class="in-egp"><span>' + usd(total) + ' = ' + egp(fxPaid) + '</span><span>' + (fxRates.length === 1 ? 'at ' + fxRates[0].toFixed(2) + ' per $1, ' + fxDay : 'at the rate on each payment day') + '</span></div>';
+    else if (fxNow()) egpRow = '<div class="in-egp"><span>' + usd(grand[1]) + ' = ' + egp(grand[1] * fxNow()) + '</span><span>at ' + fxNow().toFixed(2) + ' per $1, ' + longDate(new Date()) + '</span></div>';
     $('slip').innerHTML =
       '<div class="band"></div>' +
       '<div class="top"><div class="brand">Amr Abdelgawad<em>Talents</em><small>amrabdelgawad.site</small></div>' +
@@ -499,7 +515,7 @@ window.CashTeam = function(db){
         '<div class="totals"><div><span>Total hours</span><span class="mono">' + hm(secs) + '</span></div>' +
         (oneRate ? '<div><span>Hourly rate</span><span class="mono">' + usd(rates[0]) + '</span></div>' : '') +
         (!allPaid && !nonePaid ? '<div><span>Already paid</span><span class="mono">' + usd(paidAmt) + '</span></div>' : '') +
-        '<div class="grand"><span>' + grand[0] + '</span><span class="mono">' + usd(grand[1]) + '</span></div></div></div>' +
+        '<div class="grand"><span>' + grand[0] + '</span><span class="mono">' + usd(grand[1]) + '</span></div>' + egpRow + '</div></div>' +
       '<div class="foot"><div><span>Amr Abdelgawad Talents · amrabdelgawad.site</span><span>' + number + '</span></div></div>';
   }
   function fitPayslip(){
@@ -540,7 +556,7 @@ window.CashTeam = function(db){
       await html2pdf().set({
         margin: [10, 0, 10, 0], filename: file,
         image: { type:'jpeg', quality:0.96 },
-        html2canvas: { scale:2, useCORS:true, backgroundColor:'#ffffff' },
+        html2canvas: { scale:2, useCORS:true, backgroundColor:'#ffffff', scrollX:0, scrollY:0 }, // capture from the top, or a scrolled page gives a blank PDF
         jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
         pagebreak: { mode:['css', 'legacy'], avoid:['tr', '.bottom'] }
       }).from(clone).save();

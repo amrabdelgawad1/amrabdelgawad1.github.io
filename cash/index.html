@@ -389,6 +389,16 @@
   .backup-card p{ color:var(--light); font-size:14.5px; max-width:620px; }
   .backup-side{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
   .backup-side small{ color:var(--muted); font-size:12.5px; }
+  .money .egp{ display:block; color:var(--light); font:500 12.5px "JetBrains Mono", monospace; margin-top:4px; }
+  .money .egp:empty{ display:none; }
+  .qr{ background:#fff; border-radius:12px; padding:12px; width:204px; height:204px; margin:0 auto 12px; display:grid; place-items:center; }
+  .qr img{ width:180px; height:180px; display:block; }
+  .secret{ font-size:13px; color:var(--light); margin-bottom:18px; overflow-wrap:anywhere; }
+  .secret code{ font-family:"JetBrains Mono", monospace; color:var(--text); background:var(--bg); border:1px solid var(--border2); border-radius:6px; padding:2px 6px; }
+  .code-in{ font:600 22px "JetBrains Mono", monospace !important; letter-spacing:.3em; text-align:center; }
+  .link-btn{ background:none; border:0; color:var(--light); font:inherit; cursor:pointer; border-bottom:1px solid var(--border2); padding:0 0 1px; }
+  .lump{ grid-template-columns:1.4fr 1.4fr .9fr 1fr auto; }
+  .lump-help{ grid-column:1 / -1; color:var(--light); font-size:14px; }
   .list-actions{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
 
   /* My time */
@@ -426,6 +436,8 @@
   .slip .due{ color:#C77C02; font-weight:600; font-size:11px; }
   .slip .ok{ color:#0E9F6E; font-weight:600; font-size:11px; }
   .slip .none{ color:#5A6A84; font-size:12px; padding:6px 10px; }
+  .slip .totals .in-egp{ font-size:11.5px; color:#5A6A84; background:#F5F7FB; gap:12px; }
+  .slip .totals .in-egp span:first-child{ font-family:"JetBrains Mono", monospace; color:#0C0F1A; font-weight:600; }
   .slip.statement .bottom{ grid-template-columns:1fr 280px; }
 
   @media (max-width:1000px){
@@ -492,6 +504,25 @@
         <button class="btn btn-primary" type="submit" id="loginBtn">Sign in <span class="btn-arrow">&rarr;</span></button>
       </form>
       <p class="login-foot">Only Amr's account can open this page.</p>
+    </section>
+  </div>
+
+  <!-- Two-step sign-in -->
+  <div class="container wrap" id="mfaView" hidden>
+    <section class="t-card login">
+      <div class="lock-badge"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg></div>
+      <h1 id="mfaTitle">Enter your code</h1>
+      <p class="sub" id="mfaSub">Open your authenticator app and type the 6-digit code for Cash.</p>
+      <div id="mfaSetup" hidden>
+        <div class="qr" id="mfaQr"></div>
+        <p class="secret">Can’t scan it? In the app, choose “Enter a setup key” and type <code id="mfaSecret"></code></p>
+      </div>
+      <form id="mfaForm" novalidate>
+        <label><span class="label">6-digit code</span><input class="field code-in" id="mfaCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" /></label>
+        <p class="login-err" id="mfaErr"></p>
+        <button class="btn btn-primary" type="submit" id="mfaBtn">Verify <span class="btn-arrow">&rarr;</span></button>
+      </form>
+      <p class="login-foot"><button type="button" class="link-btn" id="mfaOut">Sign out</button></p>
     </section>
   </div>
 
@@ -593,11 +624,11 @@
       <section class="t-card block">
         <div class="card-title"><h2>Profit</h2><span id="periodLabel"></span></div>
         <div class="totals-grid">
-          <div class="money in"><p>Your own work</p><strong id="tOwn">$0.00</strong><small id="tOwnSub"></small></div>
-          <div class="money in"><p>From your team</p><strong id="tTeam">$0.00</strong><small id="tTeamSub"></small></div>
-          <div class="money in"><p>Other income</p><strong id="tIncome">$0.00</strong><small id="tIncomeSub"></small></div>
-          <div class="money out"><p>Expenses</p><strong id="tExpense">$0.00</strong><small id="tExpenseSub"></small></div>
-          <div class="money net" id="tNetBox"><p>Net profit</p><strong id="tNet">$0.00</strong><small id="tNetSub"></small><small id="tNetEgp"></small></div>
+          <div class="money in"><p>Your own work</p><strong id="tOwn" data-egp>$0.00</strong><small id="tOwnSub"></small><small class="egp"></small></div>
+          <div class="money in"><p>From your team</p><strong id="tTeam" data-egp>$0.00</strong><small id="tTeamSub"></small><small class="egp"></small></div>
+          <div class="money in"><p>Other income</p><strong id="tIncome" data-egp>$0.00</strong><small id="tIncomeSub"></small><small class="egp"></small></div>
+          <div class="money out"><p>Expenses</p><strong id="tExpense" data-egp>$0.00</strong><small id="tExpenseSub"></small><small class="egp"></small></div>
+          <div class="money net" id="tNetBox"><p>Net profit</p><strong id="tNet" data-egp>$0.00</strong><small id="tNetSub"></small><small class="egp"></small></div>
         </div>
         <div class="pending" id="pending"></div>
       </section>
@@ -655,9 +686,9 @@
         <div class="card-title"><h2>Your hours</h2><span id="myLabel"></span></div>
         <div class="totals-grid four">
           <div class="money"><p>Hours worked</p><strong id="myHours">0h 00m</strong><small id="myShifts"></small></div>
-          <div class="money in"><p>Earned</p><strong id="myEarned">$0.00</strong><small>at each company's rate</small></div>
-          <div class="money paid"><p>Paid to you</p><strong id="myPaid">$0.00</strong><small id="myPaidH"></small></div>
-          <div class="money due"><p>Not paid yet</p><strong id="myDue">$0.00</strong><small id="myDueH"></small></div>
+          <div class="money in"><p>Earned</p><strong id="myEarned" data-egp>$0.00</strong><small>at each company's rate</small><small class="egp"></small></div>
+          <div class="money paid"><p>Paid to you</p><strong id="myPaid" data-egp>$0.00</strong><small id="myPaidH"></small><small class="egp"></small></div>
+          <div class="money due"><p>Not paid yet</p><strong id="myDue" data-egp>$0.00</strong><small id="myDueH"></small><small class="egp"></small></div>
         </div>
       </section>
 
@@ -666,9 +697,19 @@
           <h2>Shifts</h2>
           <div class="list-actions">
             <button class="btn btn-ghost btn-sm" id="myPayAll" hidden>Mark all shown as paid</button>
+            <button class="btn btn-ghost btn-sm" id="lumpToggle">Record a payment</button>
             <button class="btn btn-ghost btn-sm" id="myAddToggle">+ Add hours by hand</button>
           </div>
         </div>
+        <form class="mgrid lump" id="lumpForm" hidden novalidate>
+          <p class="lump-help">A company paid you in one transfer? Enter it here and the oldest unpaid shifts at that company are marked paid, up to the amount.</p>
+          <label class="wide"><span class="label">Company</span><select class="field" id="lCo"></select></label>
+          <label><span class="label">Amount</span><span class="amt"><select class="field cur" id="lCur" aria-label="Currency"><option value="USD">$ USD</option><option value="EGP">EGP</option></select><input class="field" id="lAmt" type="number" min="0" step="0.01" placeholder="300" /></span></label>
+          <label id="lFxWrap" hidden><span class="label">EGP per $1</span><input class="field" id="lFx" type="number" min="0" step="0.01" placeholder="48.50" /></label>
+          <label><span class="label">Paid on</span><input class="field" id="lDate" type="date" /></label>
+          <button type="submit" class="btn btn-primary btn-sm" id="lSave" style="margin-bottom:4px;">Apply payment</button>
+          <p class="add-err" id="lErr"></p>
+        </form>
         <form class="mgrid" id="myForm" hidden novalidate>
           <label><span class="label">Date</span><input class="field" id="mDate" type="date" /></label>
           <label class="wide"><span class="label">Company</span><select class="field" id="mCo"></select></label>
@@ -786,9 +827,9 @@
         </div>
         <div class="profit-grid">
           <div class="money"><p>Hours worked</p><strong id="tm-pHours">0h 00m</strong><small id="tm-pShifts">0 shifts</small></div>
-          <div class="money"><p>You get</p><strong id="tm-pRevenue">$0.00</strong><small id="tm-pRevenueSub"></small></div>
-          <div class="money"><p>Team cost</p><strong id="tm-pCost" class="cost">$0.00</strong><small id="tm-pCostSub"></small></div>
-          <div class="money profit-big"><p>Your profit</p><strong id="tm-pProfit">$0.00</strong><small id="tm-pMargin"></small></div>
+          <div class="money"><p>You get</p><strong id="tm-pRevenue" data-egp>$0.00</strong><small id="tm-pRevenueSub"></small><small class="egp"></small></div>
+          <div class="money"><p>Team cost</p><strong id="tm-pCost" class="cost" data-egp>$0.00</strong><small id="tm-pCostSub"></small><small class="egp"></small></div>
+          <div class="money profit-big"><p>Your profit</p><strong id="tm-pProfit" data-egp>$0.00</strong><small id="tm-pMargin"></small><small class="egp"></small></div>
         </div>
       </section>
 
@@ -826,9 +867,9 @@
           <div class="rate-input"><span>$</span><input id="tm-rate" type="number" min="0" step="0.25" value="2.5" aria-label="Hourly rate in dollars" /></div>
           <small id="tm-rateNote">Past shifts keep their rate</small>
         </div>
-        <div class="money"><p>Total earned</p><strong id="tm-mTotal">$0.00</strong><small id="tm-hTotal">0h 00m</small></div>
-        <div class="money paid"><p>Paid</p><strong id="tm-mPaid">$0.00</strong><small id="tm-hPaid">0h 00m</small></div>
-        <div class="money owed"><p>Still to pay</p><strong id="tm-mOwed">$0.00</strong><small id="tm-hOwed">0h 00m</small></div>
+        <div class="money"><p>Total earned</p><strong id="tm-mTotal" data-egp>$0.00</strong><small id="tm-hTotal">0h 00m</small><small class="egp"></small></div>
+        <div class="money paid"><p>Paid</p><strong id="tm-mPaid" data-egp>$0.00</strong><small id="tm-hPaid">0h 00m</small><small class="egp"></small></div>
+        <div class="money owed"><p>Still to pay</p><strong id="tm-mOwed" data-egp>$0.00</strong><small id="tm-hOwed">0h 00m</small><small class="egp"></small></div>
       </div>
     </section>
 
@@ -919,7 +960,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="../tracker/config.js"></script>
-<script src="team.js?v=1"></script>
-<script src="cash.js?v=3"></script>
+<script src="team.js?v=2"></script>
+<script src="cash.js?v=4"></script>
 </body>
 </html>
