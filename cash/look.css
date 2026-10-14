@@ -1,0 +1,89 @@
+/* Daylight: the /cash look. Loaded after the page styles so it wins. */
+
+/* ---------- palette ---------- */
+:root{
+  --bg:#f4f5f7; --bg2:#ffffff; --bg3:#ffffff; --bg4:#ffffff; --sunk:#f8f9fb;
+  --border:#e7e9ee; --border2:#d8dce3; --accent:#2563eb; --accent2:#1d4ed8; --accent-dim:rgba(37,99,235,.08);
+  --text:#101828; --muted:#6b7280; --light:#475467; --white:#0b1220;
+  --green:#067647; --gold:#b54708; --red:#c01c28; --net-bg:#ecfdf3; --net-bd:#a6e9c5;
+  color-scheme:light;
+}
+
+/* ---------- shared: flat, quiet surfaces ---------- */
+html .glow, html .grain{ display:none; }
+html body{ background:var(--bg); color:var(--text); }
+html .eyebrow{ display:none; }
+html .section-heading, html h1, html h2{ color:var(--text); }
+html .t-card{ background:var(--bg2); border:1px solid var(--border); border-radius:12px; box-shadow:0 1px 2px rgba(16,24,40,.06); }
+html .card-title span, html .co-help{ color:var(--muted); }
+
+/* numbers: even-width digits, solid weight, cents set smaller */
+html .money strong, html .stat strong, html .clock,
+html .num, html .cnum, html .mrow, html .pnums, html .bnums, html .rate-input input, html .rate-input span{
+  font-family:"Inter", system-ui, sans-serif !important; font-feature-settings:"tnum" 1, "cv01" 1, "ss01" 1; letter-spacing:-.01em;
+}
+html .money strong, html .stat strong{ font-weight:650; font-size:28px; letter-spacing:-.025em; color:var(--text); }
+html .clock{ font-weight:600; letter-spacing:-.03em; }
+html .c{ font-size:.6em; font-weight:500; color:var(--muted); margin-left:1px; letter-spacing:0; }
+html .money, html .stat{ background:var(--sunk); border:1px solid var(--border); border-radius:10px; }
+html .stat.t-card{ background:var(--bg2); }
+html .money p, html .stat p{ text-transform:none; letter-spacing:0; font-size:13px; font-weight:500; color:var(--light); }
+html .money small{ color:var(--muted); font-family:"Inter", sans-serif; }
+html .money .egp{ color:var(--muted); font:500 13px "Inter", sans-serif; font-feature-settings:"tnum" 1; }
+html .money.in strong, html .stat.w strong, html .money.paid strong{ color:var(--green); }
+html .money.out strong{ color:var(--red); }
+html .money.due strong, html .money.owed strong, html .stat.b strong{ color:var(--gold); }
+html .money.owed, html .money.due{ background:var(--sunk); border-color:var(--border); }
+html .money.net, html .money.profit-big{ background:var(--net-bg); border-color:var(--net-bd); }
+html .money.net strong, html .money.profit-big strong{ color:var(--green); }
+html .pending b{ color:var(--gold); font-family:"Inter", sans-serif; font-feature-settings:"tnum" 1; }
+
+/* controls */
+html .seg{ background:var(--sunk); border:1px solid var(--border2); }
+html .seg button{ color:var(--light); }
+html .seg button.on{ background:var(--bg2); color:var(--text); box-shadow:0 1px 2px rgba(16,24,40,.12), 0 0 0 1px var(--border2); }
+html .field, html .sel, html .co, html .rate-input{ background:var(--bg2); border-color:var(--border2); color:var(--text); }
+html .field[readonly]{ background:var(--sunk); }
+html .btn{ box-shadow:none !important; transform:none !important; }
+html .btn-primary{ background:var(--accent); color:#fff; }
+html .btn-primary:hover{ background:var(--accent2); }
+html .btn-ghost{ color:var(--text); border-color:var(--border2); }
+html .btn-ghost:hover{ background:var(--sunk); border-color:var(--light); }
+html .btn-outline{ color:var(--accent); border-color:var(--border2); background:var(--bg2); }
+html .btn-outline:hover{ border-color:var(--accent); background:var(--accent-dim); }
+html .nav{ border-color:var(--border2); color:var(--light); background:var(--bg2); }
+html .who-pill, html .who-pill a{ color:var(--light); }
+html .who-pill .me{ background:var(--accent); color:#fff; }
+html .brand{ color:var(--text); }
+
+/* tables and lists */
+html table.log th{ color:var(--muted); border-color:var(--border); font-weight:600; }
+html table.log td{ border-color:var(--border); }
+html table.log tbody tr:hover, html button.mrow:hover, html button.mrow.on{ background:var(--sunk); }
+html .crow + .crow, html .person + .person, html .brow + .brow, html .co-row + .co-row, html button.mrow + button.mrow{ border-color:var(--border); }
+html .bbar, html .pbar{ background:var(--sunk); border-color:var(--border); }
+html .bbar i{ background:var(--green); } html .bbar.out i{ background:var(--red); }
+html .cnum.in, html .num.in, html .mrow .in, html .num.w, html .brow .bnums{ color:var(--green); }
+html .cnum.out, html .num.out, html .mrow .out, html .rt-row .keep.neg{ color:var(--red); }
+html .mrow .net{ color:var(--text); }
+html .mhead{ color:var(--muted); }
+html .tag{ border-color:var(--border2); color:var(--accent); background:var(--bg2); }
+html .tag.me{ color:var(--green); }
+html .av{ background:var(--accent-dim); color:var(--accent); border-color:var(--border2); }
+html .rt-head, html .rate-table{ border-color:var(--border2); }
+html .rt-head{ background:var(--sunk); }
+
+/* status pills and notices */
+html .status.done, html .status.paid, html .pill.on{ color:var(--green); border-color:color-mix(in srgb, var(--green) 35%, transparent); background:color-mix(in srgb, var(--green) 9%, transparent); }
+html .status.open, html .status.unpaid{ color:var(--gold); border-color:color-mix(in srgb, var(--gold) 35%, transparent); background:color-mix(in srgb, var(--gold) 9%, transparent); }
+html .notice{ background:color-mix(in srgb, var(--red) 7%, var(--bg2)); border-color:color-mix(in srgb, var(--red) 30%, transparent); color:var(--red); }
+html .notice.soft{ background:color-mix(in srgb, var(--gold) 8%, var(--bg2)); border-color:color-mix(in srgb, var(--gold) 30%, transparent); color:var(--gold); }
+html .add-err, html .login-err{ color:var(--red); }
+html .toast{ background:var(--text); color:var(--bg2); border:0; }
+html .toast button{ color:var(--accent2); }
+
+
+/* Overview rows open the tab where they can be edited */
+html button.crow.go{ width:100%; border:0; background:transparent; color:inherit; font:inherit; text-align:left; cursor:pointer; padding-left:8px; padding-right:8px; margin:0 -8px; width:calc(100% + 16px); border-radius:8px; }
+html button.crow.go:hover{ background:var(--sunk); }
+html button.crow.go + .crow, html .crow + button.crow.go{ border-top:1px solid var(--border); }

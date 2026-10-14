@@ -18,7 +18,12 @@ window.CashTeam = function(db){
   // Pounds: today's rate is loaded by cash.js; each paid shift keeps the rate from the day it was marked paid
   const fxNow = () => (window.cashFx && window.cashFx.rate) || null;
   const egp = n => 'EGP ' + (Math.round(n * 100) / 100).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
-  const setUsd = (id, n) => { const el = $(id); el.textContent = usd(n); el.dataset.usd = n; };
+  // Money in a total card: cents are set smaller in their own span
+  const setUsd = (id, n) => {
+    const el = $(id), t = usd(n), m = t.match(/^(.*[0-9])([.][0-9][0-9])$/);
+    el.textContent = m ? m[1] : t; el.dataset.usd = n;
+    if (m) { const c = document.createElement('span'); c.className = 'c'; c.textContent = m[2]; el.appendChild(c); }
+  };
   const paint = () => { if (window.paintEgp) window.paintEgp(); };
   document.addEventListener('fx-ready', () => { if (log.length) render(); });
 

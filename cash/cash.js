@@ -299,8 +299,8 @@
     } else warn.hidden = true;
 
     // Where it came from: your own work, each team member, then each income source
-    const inRows = byCompany(t.own).map(g => ({ label:g.name, tag:'You', me:true, sub:hm(g.secs) + (g.due ? ' · ' + usd(g.due) + ' not paid yet' : ' · paid'), amt:g.amt }));
-    byPerson(t.crew).forEach(g => inRows.push({ label:g.name, tag:'Team', sub:hm(g.secs) + ' · ' + [...g.cos].filter(Boolean).join(', '), amt:g.profit }));
+    const inRows = byCompany(t.own).map(g => ({ label:g.name, tag:'You', me:true, sub:hm(g.secs) + (g.due ? ' · ' + usd(g.due) + ' not paid yet' : ' · paid'), amt:g.amt, go:'mytime' }));
+    byPerson(t.crew).forEach(g => inRows.push({ label:g.name, tag:'Team', sub:hm(g.secs) + ' · ' + [...g.cos].filter(Boolean).join(', '), amt:g.profit, go:'team' }));
     const src = new Map();
     t.inc.forEach(e => {
       const k = key(e.party || e.title);
@@ -308,7 +308,7 @@
       const g = src.get(k); g.amt += usdOf(e); g.titles.add(e.title); if (!e.settled) g.open += usdOf(e);
     });
     [...src.values()].sort((a, b) => b.amt - a.amt).forEach(g => inRows.push({
-      label:g.label, sub:[...g.titles].slice(0, 3).join(', ') + (g.open ? ' · ' + usd(g.open) + ' not received' : ''), amt:g.amt
+      label:g.label, sub:[...g.titles].slice(0, 3).join(', ') + (g.open ? ' · ' + usd(g.open) + ' not received' : ''), amt:g.amt, go:'income'
     }));
     drawBars($('cameFrom'), inRows, 'in', 'Nothing came in for this period yet.');
 
@@ -318,13 +318,18 @@
       if (!cat.has(k)) cat.set(k, { label:e.category, titles:new Set(), amt:0 });
       const g = cat.get(k); g.amt += usdOf(e); g.titles.add(e.title);
     });
-    drawBars($('wentTo'), [...cat.values()].sort((a, b) => b.amt - a.amt).map(g => ({ label:g.label, sub:[...g.titles].slice(0, 3).join(', '), amt:g.amt })), 'out', 'No expenses for this period.');
+    drawBars($('wentTo'), [...cat.values()].sort((a, b) => b.amt - a.amt).map(g => ({ label:g.label, sub:[...g.titles].slice(0, 3).join(', '), amt:g.amt, go:'expense' })), 'out', 'No expenses for this period.');
 
     renderMonths();
   }
 
   // Dollar totals carry their value in data-usd; the line under each shows it in pounds at today's rate
-  const setUsd = (id, n) => { const el = $(id); el.textContent = usd(n); el.dataset.usd = n; };
+  // Money in a total card: cents are set smaller in their own span
+  const setUsd = (id, n) => {
+    const el = $(id), t = usd(n), m = t.match(/^(.*[0-9])([.][0-9][0-9])$/);
+    el.textContent = m ? m[1] : t; el.dataset.usd = n;
+    if (m) { const c = document.createElement('span'); c.className = 'c'; c.textContent = m[2]; el.appendChild(c); }
+  };
   function paintEgp(){
     document.querySelectorAll('[data-egp]').forEach(el => {
       const out = el.parentElement.querySelector('.egp'); if (!out) return;
@@ -340,7 +345,9 @@
     if (!list.length) { el.innerHTML = '<p class="empty">' + emptyText + '</p>'; return; }
     const max = Math.max(1, ...list.map(g => Math.abs(g.amt)));
     list.forEach(g => {
-      const d = document.createElement('div'); d.className = 'crow';
+      const d = document.createElement(g.go ? 'button' : 'div'); d.className = 'crow' + (g.go ? ' go' : '');
+      // Each row opens the tab where its entries can be edited
+      if (g.go) { d.type = 'button'; d.title = 'Open ' + { mytime:'My time', team:'Team', income:'Income', expense:'Expenses' }[g.go]; d.addEventListener('click', () => { switchView(g.go); window.scrollTo({ top:0, behavior:'smooth' }); }); }
       d.innerHTML = '<span class="cname"><span class="l"></span><small></small></span><span class="cnum ' + cls + '"></span><div class="bbar ' + cls + '"><i></i></div>';
       d.querySelector('.l').textContent = g.label;
       if (g.tag) { const t = document.createElement('span'); t.className = 'tag' + (g.me ? ' me' : ''); t.textContent = g.tag; d.querySelector('.l').after(t); }
@@ -767,7 +774,7 @@
     $('fTo').value = e && e.periodEnd ? e.periodEnd : '';
     dateTouched = !!e;
     $('fAmount').value = e ? e.amount.toFixed(2) : '';
-    $('fCur').value = e ? e.currency : (store.get('cash-last-currency') || 'USD');
+    $('fCur').value = e ? e.currency : 'USD';
     $('fFx').value = e && e.fxRate ? e.fxRate : (fx.rate || '');
     $('fNote').value = e ? e.note : '';
     $('fSettled').checked = e ? e.settled : kind === 'expense';
@@ -827,7 +834,6 @@
     $('addSave').removeAttribute('aria-busy');
     if (error) return err("Couldn't save that. Try again.");
     const saved = toEntry(data);
-    store.set('cash-last-currency', currency);
     if (currency === 'EGP') { fx.rate = fxRate; db.from('tracker_settings').upsert({ key:'egp_rate', value:String(fxRate) }).then(() => {}); }
     if (editing) entries[entries.indexOf(editing)] = saved; else entries.push(saved);
     const wasEdit = !!editing;
