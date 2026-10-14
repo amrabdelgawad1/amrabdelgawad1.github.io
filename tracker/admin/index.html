@@ -606,7 +606,8 @@
     // Rates are locked onto each shift when it's logged, so later rate changes don't rewrite history.
     payRate: x.pay_rate != null ? Number(x.pay_rate) : rate,
     billRate: x.bill_rate != null ? Number(x.bill_rate) : null,
-    clocked: x.started_at && x.ended_at ? hhmmIso(x.started_at) + ' – ' + hhmmIso(x.ended_at) : 'Added by hand',
+    clocked: x.source === 'manual' ? 'Manually'
+      : 'Tracker' + (x.started_at && x.ended_at ? ' · ' + hhmmIso(x.started_at) + '–' + hhmmIso(x.ended_at) : ''),
     fresh: x.source === 'tracker' && Date.now() - new Date(x.created_at).getTime() < 24*3600*1000
   });
 
