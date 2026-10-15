@@ -293,12 +293,9 @@
     });
   }
 
-  // Pounds for "not paid yet": today's rate from a public feed
-  const fx = { rate:null };
-  async function loadFx(){
-    if (fx.rate) return;
-    try { const j = await (await fetch('https://open.er-api.com/v6/latest/USD')).json(); if (j && j.rates && j.rates.EGP) fx.rate = Math.round(j.rates.EGP * 100) / 100; } catch(e){}
-  }
+  // Pounds for "not paid yet": Amr's fixed rate, 52 EGP = $1 (same as cash/cash.js)
+  const fx = { rate:52 };
+  async function loadFx(){}
 
   async function loadHistory(){
     const { data, error } = await db.rpc('my_shifts');

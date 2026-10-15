@@ -356,7 +356,7 @@
       const out = el.parentElement.querySelector('.egp'); if (!out) return;
       const v = parseFloat(el.dataset.usd);
       out.textContent = fx.rate && !isNaN(v) ? '= ' + (v < -0.004 ? '−' : '') + egp(Math.abs(v) * fx.rate) : '';
-      out.title = fx.rate ? 'At ' + fx.rate.toFixed(2) + ' EGP per $1' + (fx.live ? ' (today’s rate)' : ' (the last rate you used)') : '';
+      out.title = fx.rate ? 'At ' + fx.rate.toFixed(2) + ' EGP per $1' : '';
     });
   }
   window.paintEgp = paintEgp;
@@ -740,18 +740,10 @@
     showFx();
   }
   // ---- currency ----
-  // Today's rate comes from a free public feed; if that's down, the last rate you used.
-  const fx = { rate:null, live:false };
+  // A fixed rate Amr sets: 52 EGP = $1 (change EGP_PER_USD here and in app/app.js)
+  const EGP_PER_USD = 52;
+  const fx = { rate:EGP_PER_USD };
   async function loadFx(){
-    try {
-      const r = await fetch('https://open.er-api.com/v6/latest/USD');
-      const j = await r.json();
-      if (j && j.rates && j.rates.EGP) { fx.rate = Math.round(j.rates.EGP * 100) / 100; fx.live = true; }
-    } catch(e){}
-    if (!fx.rate) {
-      const { data } = await db.from('tracker_settings').select('*').eq('key', 'egp_rate');
-      const v = parseFloat(((data || [])[0] || {}).value); if (!isNaN(v)) fx.rate = v;
-    }
     window.cashFx = fx;
     paintEgp();
     document.dispatchEvent(new Event('fx-ready'));
@@ -762,7 +754,7 @@
     $('fRateLabel').textContent = 'Rate ' + (isEgp ? 'EGP' : '$') + '/h';
     if (isEgp && !$('fFx').value && fx.rate) $('fFx').value = fx.rate;
     const a = parseFloat($('fAmount').value), r = parseFloat($('fFx').value);
-    $('fFxHint').textContent = isEgp ? (!isNaN(a) && r > 0 ? '≈ ' + usd(a / r) : (fx.live ? 'Today’s rate' : '')) : '';
+    $('fFxHint').textContent = isEgp ? (!isNaN(a) && r > 0 ? '≈ ' + usd(a / r) : 'At ' + fx.rate + ' EGP per $1') : '';
   }
   $('fCur').addEventListener('change', showFx);
   ['fFx','fAmount','fHours','fRate'].forEach(id => $(id).addEventListener('input', showFx));
@@ -863,7 +855,6 @@
     $('addSave').removeAttribute('aria-busy');
     if (error) return err("Couldn't save that. Try again.");
     const saved = toEntry(data);
-    if (currency === 'EGP') { fx.rate = fxRate; db.from('tracker_settings').upsert({ key:'egp_rate', value:String(fxRate) }).then(() => {}); }
     if (editing) entries[entries.indexOf(editing)] = saved; else entries.push(saved);
     const wasEdit = !!editing;
     if (wasEdit) closeForm();
