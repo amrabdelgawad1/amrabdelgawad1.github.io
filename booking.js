@@ -159,7 +159,8 @@
     let startOffset = firstDay.getDay() - 1;
     if (startOffset < 0) startOffset = 6;
     const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`; // visitor's local day, not UTC
 
     els.daysGrid.innerHTML = "";
 

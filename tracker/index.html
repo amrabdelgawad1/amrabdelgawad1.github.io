@@ -338,12 +338,18 @@
     return true;
   }
   $('nm').addEventListener('input', () => $('err').textContent = '');
+  let dtPicked = false;
+  ['input','change'].forEach(ev => $('dt').addEventListener(ev, () => { dtPicked = true; }));
 
   document.querySelectorAll('.ctl').forEach(b => b.addEventListener('click', () => {
     const k = b.dataset.k;
     if (k === 'off') return finish();
     if (mode === 'off' && !valid()) return;
-    if (mode === 'off') { $('saved').hidden = true; store.set('tracker-name', $('nm').value.trim()); }
+    if (mode === 'off') {
+      $('saved').hidden = true; store.set('tracker-name', $('nm').value.trim());
+      // A page left open overnight still shows yesterday; move it to today unless they picked a date
+      if (!dtPicked) $('dt').value = iso(new Date());
+    }
     setMode(k);
   }));
 

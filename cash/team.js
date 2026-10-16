@@ -204,12 +204,14 @@ window.CashTeam = function(db){
     const b = e.target.closest('[data-q]'); if (!b) return;
     quick(b.dataset.q); render();
   });
-  ['from','to'].forEach(id => $(id).addEventListener('change', () => {
+  // Phones (iOS Safari especially) may only fire "input" while the picker is open, so listen to both
+  const onRangePick = () => {
     const f = $('from').value, t = $('to').value;
     if (f && t && f > t) { $('rangeErr').textContent = 'The start date is after the end date. Pick an earlier start or a later end.'; return; }
     $('rangeErr').textContent = '';
     render();
-  }));
+  };
+  ['from','to'].forEach(id => ['input','change'].forEach(ev => $(id).addEventListener(ev, onRangePick)));
   ['person','company','status'].forEach(id => $(id).addEventListener('change', render));
 
   function visible(ignoreStatus){
