@@ -128,8 +128,19 @@
   const segSecs = () => live ? Math.max(0, (Date.now() - new Date(live.seg_at).getTime()) / 1000) : 0;
   const workNow = () => live ? live.work_seconds + (live.mode === 'run' ? segSecs() : 0) : 0;
   const breakNow = () => live ? live.break_seconds + (live.mode === 'brk' ? segSecs() : 0) : 0;
-  const LOCAL = 'talents-live';
+  const LOCAL = 'talents-live', DIRTY = 'talents-live-unsent';
   function keepLocal(){ try { live ? localStorage.setItem(LOCAL, JSON.stringify(live)) : localStorage.removeItem(LOCAL); } catch(e){} }
+  // Only a copy that never reached the database counts; otherwise the database is the truth
+  // (a shift ended on another phone must not come back here)
+  const setDirty = on => { try { on ? localStorage.setItem(DIRTY, '1') : localStorage.removeItem(DIRTY); } catch(e){} };
+  const isDirty = () => { try { return localStorage.getItem(DIRTY) === '1'; } catch(e){ return false; } };
+  // Pick up a Run, Pause or Off pressed on another device
+  async function syncLive(){
+    const { data, error } = await db.from('live_status').select('*').eq('user_id', user.id).maybeSingle();
+    if (error || isDirty()) return false;
+    live = data || null; keepLocal(); drawClock();
+    return true;
+  }
 
   async function startMember(){
     show('vApp');
@@ -140,10 +151,12 @@
     $('pTrack').hidden = false; ['pLive', 'pPeople', 'pCash'].forEach(p => $(p).hidden = true);
     $('tCompany').textContent = profile.company_name || 'No company yet';
     // The clock lives in the database, so you can start on one device and stop on another
-    const { data } = await db.from('live_status').select('*').eq('user_id', user.id).maybeSingle();
+    const { data, error } = await db.from('live_status').select('*').eq('user_id', user.id).maybeSingle();
     let local = null; try { local = JSON.parse(localStorage.getItem(LOCAL) || 'null'); } catch(e){}
-    live = data || local || null;
-    if (!data && local) saveLive(); // offline earlier: push this device's copy up
+    const unsent = isDirty() && local;
+    live = unsent ? local : error ? local : data || null;
+    if (unsent) saveLive(); // offline earlier: push this device's copy up
+    else if (!error) keepLocal();
     drawClock();
     clearInterval(tickTimer); tickTimer = setInterval(drawClock, 1000);
     loadHistory();
@@ -209,8 +222,10 @@
     const { error } = live
       ? await db.from('live_status').upsert(Object.assign({ user_id: user.id, updated_at: new Date().toISOString() }, live))
       : await db.from('live_status').delete().eq('user_id', user.id);
+    setDirty(!!error);
     $('tErr').textContent = error ? 'Saved on this phone only. Check your connection; it will catch up.' : '';
   }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && role === 'member') syncLive(); });
 
   document.querySelectorAll('.ctl').forEach(b => b.addEventListener('click', () => setMode(b.dataset.m)));
   async function setMode(m){
@@ -226,6 +241,10 @@
   }
 
   async function finish(){
+    if (!live) return;
+    // Ended or changed on another device? Show that instead of logging the shift twice
+    const before = live.started_at;
+    if (await syncLive() && (!live || live.started_at !== before)) { toast('This shift was already ended on another device.'); loadHistory(); return; }
     if (!live) return;
     const work = Math.round(workNow()), brk = Math.round(breakNow());
     if (work < 60) {

@@ -461,8 +461,19 @@
     if (!tmr || !confirm('Discard this shift? The time won’t be saved.')) return;
     tmr = null; renderTimer(); await saveTimer();
   });
+  // Pick up a start, break or stop pressed on another device
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && view === 'mytime' && !$('dashView').hidden) loadTimer().then(renderTimer); });
   $('tmrStop').addEventListener('click', async () => {
     if (!tmr) return;
+    // Stopped on another device already? Don't log the same hours twice
+    const before = tmr.startedAt;
+    const { data: cur, error: curErr } = await db.from('tracker_settings').select('*').eq('key', TIMER_KEY);
+    if (!curErr) {
+      let t = null; try { t = JSON.parse((cur[0] || {}).value || 'null'); } catch(e){}
+      t = validTimer(t);
+      if (!t || t.startedAt !== before) { tmr = t; renderTimer(); toast('This shift was already stopped on another device.', false); await fetchShifts(); render(); return; }
+      tmr = t; // keep breaks taken on the other device
+    }
     const now = Date.now(), work = Math.round(workSecs(now)), brk = Math.round(breakSecs(now));
     if (work < 60) { $('tmrErr').textContent = 'Less than a minute worked. Keep going, or discard the shift.'; return; }
     if (work > 86400) { $('tmrErr').textContent = 'That’s over 24 hours. Discard it and add the hours by hand.'; return; }
@@ -898,7 +909,7 @@
       const { data, error } = await db.from('cash_entries').insert({
         kind: e.kind, entry_date: e.date, title: e.title, party: e.party || null, category: e.category, hours: e.hours, rate: e.rate,
         amount: e.amount, currency: e.currency, fx_rate: e.fxRate, settled: e.settled, settled_at: e.settledAt, recurring: e.recurring, note: e.note || null, created_at: e.createdAt,
-        ...(e.periodStart ? { period_start: e.periodStart, period_end: e.periodEnd } : {})
+        ...(e.periodStart ? { period_start: e.periodStart, period_end: e.periodEnd, spread: e.spread } : {})
       }).select().single();
       if (error) return showNotice("Couldn't restore that entry.");
       entries.push(toEntry(data));

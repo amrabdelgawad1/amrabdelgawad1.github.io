@@ -623,15 +623,19 @@ window.CashTeam = function(db){
       if (ok) { selected.clear(); render(); toast((isPay ? 'Pay rate' : 'Company rate') + ' set to ' + usd(v) + '/hour on ' + ids.length + ' shift' + (ids.length === 1 ? '' : 's'), false); }
       return;
     }
+    // Only touch shifts whose status actually changes, so already-paid ones keep their paid date and rate
+    const changing = test => ids.filter(id => { const r = log.find(x => x.id === id); return r && test(r); });
     if (b.dataset.bulk === 'cpaid' || b.dataset.bulk === 'cunpaid') {
       const cpaid = b.dataset.bulk === 'cpaid';
-      const ok = await updateShifts(ids, { client_paid: cpaid });
+      const todo = changing(r => r.clientPaid !== cpaid);
+      const ok = !todo.length || await updateShifts(todo, { client_paid: cpaid });
       if (ok) { selected.clear(); render(); toast((cpaid ? 'Company paid you for ' : 'Company still owes for ') + ids.length + ' shift' + (ids.length === 1 ? '' : 's'), false); }
       return;
     }
     const paid = b.dataset.bulk === 'paid';
     b.setAttribute('aria-busy', 'true');
-    const ok = await updateShifts(ids, { paid, paid_at: paid ? new Date().toISOString() : null });
+    const todo = changing(r => r.paid !== paid);
+    const ok = !todo.length || await updateShifts(todo, { paid, paid_at: paid ? new Date().toISOString() : null });
     b.removeAttribute('aria-busy');
     if (ok) { selected.clear(); render(); toast((paid ? 'Marked ' : 'Unmarked ') + ids.length + ' shift' + (ids.length === 1 ? '' : 's') + (paid ? ' as paid' : ''), false); }
   });
@@ -672,7 +676,7 @@ window.CashTeam = function(db){
     const { data, error } = await db.from('shifts').insert({
       name, shift_date: $('aDate').value, work_seconds: secs, break_seconds: bm * 60,
       company_id: Number(co),
-      paid, paid_at: paid ? new Date().toISOString() : null, source: 'manual'
+      paid, paid_at: paid ? new Date().toISOString() : null, paid_fx: paid ? fxNow() : null, source: 'manual'
     }).select().single();
     $('addSave').removeAttribute('aria-busy');
     if (error) { $('addErr').textContent = "Couldn't save that shift. Try again."; return; }
