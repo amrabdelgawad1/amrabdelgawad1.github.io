@@ -191,7 +191,7 @@
   function clearNotice(){ $('notice').hidden = true; }
 
   // ---------- money math ----------
-  // Your own work = hours × the company's rate, all yours.
+  // Your own hours carry no money here: Amr works that out himself (add it as income to count it).
   // Team profit = what each company pays minus what the team is paid, at the rates locked onto each shift.
   const shiftValue = s => s.work / 3600 * s.billRate;
   const shiftProfit = s => s.work / 3600 * (s.billRate - s.payRate);
@@ -201,14 +201,13 @@
     const en = partsIn(entries, inP);
     const inc = en.filter(e => e.kind === 'income'), exp = en.filter(e => e.kind === 'expense');
     const sum = (l, f) => l.reduce((a, x) => a + f(x), 0);
-    const ownAmt = sum(own, shiftValue), teamAmt = sum(crew, shiftProfit), income = sum(inc, usdOf), expense = sum(exp, usdOf);
-    const ownDue = sum(own.filter(s => !s.paid), shiftValue);
+    const teamAmt = sum(crew, shiftProfit), income = sum(inc, usdOf), expense = sum(exp, usdOf);
     const crewDue = sum(crew.filter(s => !s.clientPaid), shiftValue); // companies still owe you for team hours
     return {
       own, crew, skipped: sh.filter(s => s.billRate == null), inc, exp,
-      ownAmt, team: teamAmt, income, expense, net: ownAmt + teamAmt + income - expense,
-      ownSecs: sum(own, s => s.work), teamSecs: sum(crew, s => s.work), ownDue, crewDue,
-      toReceive: ownDue + crewDue + sum(inc.filter(e => !e.settled), usdOf), toPay: sum(exp.filter(e => !e.settled), usdOf)
+      team: teamAmt, income, expense, net: teamAmt + income - expense,
+      ownSecs: sum(own, s => s.work), teamSecs: sum(crew, s => s.work), crewDue,
+      toReceive: crewDue + sum(inc.filter(e => !e.settled), usdOf), toPay: sum(exp.filter(e => !e.settled), usdOf)
     };
   }
   function byPerson(list){
@@ -224,10 +223,10 @@
   function byCompany(list){
     const m = new Map();
     list.forEach(s => {
-      if (!m.has(s.companyId)) m.set(s.companyId, { name:companyName(s.companyId), secs:0, amt:0, due:0, rates:new Set() });
-      const g = m.get(s.companyId); g.secs += s.work; g.amt += shiftValue(s); g.rates.add(s.billRate); if (!s.paid) g.due += shiftValue(s);
+      if (!m.has(s.companyId)) m.set(s.companyId, { name:companyName(s.companyId), secs:0, dueSecs:0 });
+      const g = m.get(s.companyId); g.secs += s.work; if (!s.paid) g.dueSecs += s.work;
     });
-    return [...m.values()].sort((a, b) => b.amt - a.amt);
+    return [...m.values()].sort((a, b) => b.secs - a.secs);
   }
 
   // ---------- period ----------
@@ -293,8 +292,6 @@
 
   function renderOverview(){
     const t = totals(inPeriod);
-    setUsd('tOwn', t.ownAmt);
-    $('tOwnSub').textContent = hm(t.ownSecs) + ' worked';
     setUsd('tTeam', t.team);
     $('tTeamSub').textContent = hm(t.teamSecs) + ' of team hours';
     setUsd('tIncome', t.income);
@@ -303,7 +300,7 @@
     $('tExpenseSub').textContent = plural(t.exp.length, 'expense');
     setUsd('tNet', t.net);
     $('tNetBox').classList.toggle('neg', t.net < 0);
-    const gross = t.ownAmt + t.team + t.income;
+    const gross = t.team + t.income;
     $('tNetSub').textContent = gross > 0 ? Math.round(t.net / gross * 100) + '% of what came in' : '';
     paintEgp();
 
@@ -319,8 +316,8 @@
       warn.hidden = false;
     } else warn.hidden = true;
 
-    // Where it came from: your own work, each team member, then each income source
-    const inRows = byCompany(t.own).map(g => ({ label:g.name, tag:'You', me:true, sub:hm(g.secs) + (g.due ? ' · ' + usd(g.due) + ' not paid yet' : ' · paid'), amt:g.amt, go:'mytime' }));
+    // Where it came from: each team member, then each income source
+    const inRows = [];
     byPerson(t.crew).forEach(g => inRows.push({ label:g.name, tag:'Team', sub:hm(g.secs) + ' · ' + [...g.cos].filter(Boolean).join(', ') + (g.due ? ' · company owes ' + usd(g.due) : ''), amt:g.profit, go:'team' }));
     const src = new Map();
     t.inc.forEach(e => {
@@ -387,11 +384,11 @@
     list.forEach(m => {
       const t = totals(d => d.slice(0, 7) === m);
       const b = document.createElement('button'); b.className = 'mrow' + (m === month ? ' on' : '');
-      b.innerHTML = '<span></span><span class="in"></span><span class="in"></span><span class="in"></span><span class="out"></span><span class="net"></span>';
+      b.innerHTML = '<span></span><span class="in"></span><span class="in"></span><span class="out"></span><span class="net"></span>';
       const c = b.children;
-      c[0].textContent = monthLabel(m); c[1].textContent = usd(t.ownAmt); c[2].textContent = usd(t.team); c[3].textContent = usd(t.income);
-      c[4].textContent = t.expense ? '−' + usd(t.expense) : usd(0); c[5].textContent = usd(t.net);
-      c[5].classList.toggle('neg', t.net < 0);
+      c[0].textContent = monthLabel(m); c[1].textContent = usd(t.team); c[2].textContent = usd(t.income);
+      c[3].textContent = t.expense ? '−' + usd(t.expense) : usd(0); c[4].textContent = usd(t.net);
+      c[4].classList.toggle('neg', t.net < 0);
       b.addEventListener('click', () => { month = m; render(); window.scrollTo({ top:0, behavior:'smooth' }); });
       box.appendChild(b);
     });
@@ -496,25 +493,23 @@
   function renderMyTime(){
     renderTimer();
     const rows = shifts.filter(s => s.owner && inPeriod(s.date)).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id);
-    const counted = rows.filter(s => s.billRate != null), sum = (l, f) => l.reduce((a, x) => a + f(x), 0);
-    const paid = counted.filter(s => s.paid), due = counted.filter(s => !s.paid);
+    const sum = (l, f) => l.reduce((a, x) => a + f(x), 0);
+    const paid = rows.filter(s => s.paid), due = rows.filter(s => !s.paid);
     $('myLabel').textContent = month === 'all' ? 'All time' : monthLabel(month);
     $('myHours').textContent = hm(sum(rows, s => s.work));
     $('myShifts').textContent = plural(rows.length, 'shift');
-    setUsd('myEarned', sum(counted, shiftValue));
-    setUsd('myPaid', sum(paid, shiftValue)); $('myPaidH').textContent = hm(sum(paid, s => s.work));
-    setUsd('myDue', sum(due, shiftValue)); paintEgp(); $('myDueH').textContent = hm(sum(due, s => s.work));
+    $('myPaid').textContent = hm(sum(paid, s => s.work)); $('myPaidH').textContent = plural(paid.length, 'shift');
+    $('myDue').textContent = hm(sum(due, s => s.work)); $('myDueH').textContent = plural(due.length, 'shift');
     $('myPayAll').hidden = !rows.some(s => !s.paid);
 
     const body = $('myRows'); body.innerHTML = '';
-    if (!rows.length) body.innerHTML = '<tr><td colspan="6" class="empty">No hours logged for this period. Clock in above, or add hours by hand.</td></tr>';
+    if (!rows.length) body.innerHTML = '<tr><td colspan="5" class="empty">No hours logged for this period. Clock in above, or add hours by hand.</td></tr>';
     rows.forEach(s => {
       const tr = document.createElement('tr');
       tr.innerHTML =
         '<td class="c-what"><span class="what"></span><span class="sub-line"></span></td>' +
         '<td class="c-date muted"></td>' +
         '<td class="c-hrs num"></td>' +
-        '<td class="c-amt num r in"></td>' +
         '<td class="c-status"><button class="status"><i></i><span></span></button></td>' +
         '<td class="c-act"><div class="acts"><button class="icon-btn del" aria-label="Delete shift">' + TRASH + '</button></div></td>';
       tr.querySelector('.what').textContent = companyName(s.companyId) || 'No company';
@@ -522,9 +517,6 @@
         : 'Clocked' + (s.startedAt && s.endedAt ? ' · ' + hhmm(new Date(s.startedAt)) + '–' + hhmm(new Date(s.endedAt)) : '') + (s.brk >= 60 ? ' · ' + hm(s.brk) + ' break' : '');
       tr.querySelector('.c-date').textContent = dayDate(s.date);
       tr.querySelector('.c-hrs').textContent = hm(s.work);
-      const amt = tr.querySelector('.c-amt');
-      if (s.billRate != null) { amt.textContent = usd(shiftValue(s)); amt.title = hm(s.work) + ' × ' + usd(s.billRate) + '/hour'; }
-      else { amt.textContent = 'No rate'; amt.classList.remove('in'); amt.classList.add('muted'); }
       const st = tr.querySelector('.status');
       st.classList.add(s.paid ? 'done' : 'open');
       st.querySelector('span').textContent = s.paid ? 'Paid' : 'Not paid';
@@ -546,8 +538,7 @@
   $('myPayAll').addEventListener('click', async () => {
     const list = shifts.filter(s => s.owner && inPeriod(s.date) && !s.paid);
     if (!list.length) return;
-    const amt = list.filter(s => s.billRate != null).reduce((a, s) => a + shiftValue(s), 0);
-    if (!confirm('Mark ' + plural(list.length, 'shift') + ' (' + usd(amt) + ') as paid?')) return;
+    if (!confirm('Mark ' + plural(list.length, 'shift') + ' (' + hm(list.reduce((a, s) => a + s.work, 0)) + ') as paid?')) return;
     if (await setShiftsPaid(list, true)) toast('Marked ' + plural(list.length, 'shift') + ' as paid', false);
   });
 
@@ -577,52 +568,6 @@
     $('mH').value = ''; $('mM').value = ''; $('mPaid').checked = false;
     if (month !== 'all') month = data.shift_date.slice(0, 7);
     render(); toast('Added ' + hm(secs) + ' at ' + companyName(co) + ' on ' + dayDate(data.shift_date), false);
-  });
-
-  // ---------- my time: one payment for several shifts ----------
-  // Marks the oldest unpaid shifts at that company as paid, up to the amount. Never part of a shift.
-  $('lumpToggle').addEventListener('click', () => {
-    const f = $('lumpForm'); f.hidden = !f.hidden; $('myForm').hidden = true;
-    if (!f.hidden) { fillCompanyPicker($('lCo')); if (!$('lDate').value) $('lDate').value = iso(new Date()); lumpFx(); $('lAmt').focus(); }
-  });
-  $('myAddToggle').addEventListener('click', () => { $('lumpForm').hidden = true; });
-  function lumpFx(){ const e = $('lCur').value === 'EGP'; $('lFxWrap').hidden = !e; if (e && !$('lFx').value && fx.rate) $('lFx').value = fx.rate; }
-  $('lCur').addEventListener('change', lumpFx);
-  ['lAmt','lFx','lDate','lCo'].forEach(id => $(id).addEventListener('input', () => $('lErr').textContent = ''));
-  $('lumpForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const err = m => { $('lErr').textContent = m; };
-    const co = Number($('lCo').value), amt = parseFloat($('lAmt').value), cur = $('lCur').value, date = $('lDate').value;
-    const rate = cur === 'EGP' ? parseFloat($('lFx').value) : null;
-    if (!co) return err('Pick the company that paid you.');
-    if (isNaN(amt) || amt <= 0) return err('Enter the amount you received.');
-    if (cur === 'EGP' && !(rate > 0)) return err('Enter how many pounds one dollar was, like 48.5.');
-    if (!date) return err('Pick the day you were paid.');
-    const usdAmt = cur === 'EGP' ? amt / rate : amt;
-    const open = shifts.filter(sh => (sh.owner ? !sh.paid : !sh.clientPaid) && sh.companyId === co && sh.billRate != null)
-      .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.id - b.id);
-    if (!open.length) return err('Nothing is unpaid at ' + companyName(co) + '.');
-    const pick = []; let left = usdAmt;
-    for (const sh of open) { const v = cents(shiftValue(sh)); if (v > left + 0.005) break; pick.push(sh); left -= v; }
-    if (!pick.length) return err('That’s less than your oldest unpaid shift (' + usd(shiftValue(open[0])) + ' on ' + dayDate(open[0].date) + '), so nothing was marked.');
-    const covered = pick.reduce((a, sh) => a + shiftValue(sh), 0);
-    left = cents(left);
-    const range = pick.length === 1 ? dayDate(pick[0].date) : dayDate(pick[0].date) + ' to ' + dayDate(pick[pick.length - 1].date);
-    const mine = pick.filter(sh => sh.owner), theirs = pick.filter(sh => !sh.owner);
-    const what = [mine.length ? plural(mine.length, 'of your shifts').replace('of your shiftss', 'of your shifts') : '', theirs.length ? plural(theirs.length, 'team shift') : ''].filter(Boolean).join(' and ');
-    if (!confirm('Mark ' + what + ' at ' + companyName(co) + ' as paid by them?\n\n' + range + ' · ' + usd(covered) +
-      (left >= 0.01 ? '\n\n' + usd(left) + ' is left over. It isn’t enough for the next unpaid shift, so that one stays unpaid.' : ''))) return;
-    const at = new Date(date + 'T12:00:00').toISOString(), fxDay = rate || fx.rate || null;
-    $('lSave').setAttribute('aria-busy', 'true');
-    const r1 = mine.length ? await db.from('shifts').update({ paid: true, paid_at: at, paid_fx: fxDay }).in('id', mine.map(sh => sh.id)) : {};
-    const r2 = theirs.length && !r1.error ? await db.from('shifts').update({ client_paid: true, client_paid_at: at, client_fx: fxDay }).in('id', theirs.map(sh => sh.id)) : {};
-    $('lSave').removeAttribute('aria-busy');
-    if (r1.error || r2.error) { await fetchShifts(); render(); return err("Couldn't save all of that. Check the shifts and try again."); }
-    mine.forEach(sh => { sh.paid = true; sh.paidAt = at; sh.paidFx = fxDay; });
-    theirs.forEach(sh => { sh.clientPaid = true; sh.clientPaidAt = at; sh.clientFx = fxDay; });
-    $('lAmt').value = ''; $('lumpForm').hidden = true;
-    render();
-    toast('Marked ' + plural(pick.length, 'shift') + ' as paid' + (left >= 0.01 ? ' · ' + usd(left) + ' left over' : ''), false);
   });
 
   // ---------- income / expense list ----------
@@ -1051,7 +996,7 @@
     const inc = [...t.inc].sort((a, b) => a.date < b.date ? -1 : 1), exp = [...t.exp].sort((a, b) => a.date < b.date ? -1 : 1);
 
     // "This month you made $X for your work at ..., $Y from Youssef, ... so your total profit is ..."
-    const bits = mine.map(g => '<b>' + usd(g.amt) + '</b> for your work at ' + escHtml(g.name));
+    const bits = [];
     crew.forEach(g => bits.push('<b>' + usd(g.profit) + '</b> from ' + escHtml(g.name)));
     const src = new Map();
     inc.forEach(e => { const k = key(e.party || e.title); if (!src.has(k)) src.set(k, { e, amt:0 }); src.get(k).amt += usdOf(e); });
@@ -1066,11 +1011,8 @@
       '<table><thead><tr>' + head + '</tr></thead><tbody>' + (rows || '<tr><td class="none" colspan="5">' + empty + '</td></tr>') + '</tbody></table>';
     const status = (done, yes, no) => done ? '<span class="ok">' + yes + '</span>' : '<span class="due">' + no + '</span>';
 
-    const mineRows = mine.map(g => {
-      const rates = [...g.rates];
-      return '<tr><td><b>' + escHtml(g.name) + '</b></td><td class="r mono">' + hm(g.secs) + '</td><td class="r mono">' + (rates.length === 1 ? usd(rates[0]) : usd(Math.min(...rates)) + '–' + usd(Math.max(...rates))) + '</td>' +
-        '<td>' + (g.due <= 0 ? '<span class="ok">Paid</span>' : g.due < g.amt ? '<span class="due">' + usd(g.due) + ' not paid</span>' : '<span class="due">Not paid</span>') + '</td><td class="r mono">' + usd(g.amt) + '</td></tr>';
-    }).join('');
+    const mineRows = mine.map(g => '<tr><td><b>' + escHtml(g.name || 'No company') + '</b></td><td class="r mono">' + hm(g.secs) + '</td>' +
+      '<td>' + (g.dueSecs <= 0 ? '<span class="ok">Paid</span>' : g.dueSecs < g.secs ? '<span class="due">' + hm(g.dueSecs) + ' not paid</span>' : '<span class="due">Not paid</span>') + '</td></tr>').join('');
     const crewRows = crew.map(g => '<tr><td><b>' + escHtml(g.name) + '</b></td><td>' + escHtml([...g.cos].filter(Boolean).join(', ')) + '</td><td class="r mono">' + hm(g.secs) + '</td><td class="r mono">' + usd(g.profit) + '</td></tr>').join('');
     const incRows = inc.map(e => '<tr><td>' + shortDay(e.date) + '</td><td><b>' + escHtml(e.title) + '</b>' + (e.party || e.part ? '<small>' + escHtml([e.party, partNote(e)].filter(Boolean).join(' · ')) + '</small>' : '') + '</td>' +
       '<td class="r mono">' + detailText(e) + '</td>' +
@@ -1086,18 +1028,17 @@
       '<div class="doc"><h1>Monthly statement</h1><p>No. <b>' + number + '</b></p><p>Issued <b>' + longDate(new Date()) + '</b></p></div></div>' +
       '<div class="meta">' +
         '<div class="box"><p>Period</p><strong>' + label + '</strong><span>' + hm(t.ownSecs) + ' yours · ' + hm(t.teamSecs) + ' team</span></div>' +
-        '<div class="box"><p>Came in</p><strong>' + usd(t.ownAmt + t.team + t.income) + '</strong><span>Own ' + usd(t.ownAmt) + ' · Team ' + usd(t.team) + ' · Other ' + usd(t.income) + '</span></div>' +
+        '<div class="box"><p>Came in</p><strong>' + usd(t.team + t.income) + '</strong><span>Team ' + usd(t.team) + ' · Income ' + usd(t.income) + '</span></div>' +
         '<div class="box hi' + (t.net < 0 ? ' neg' : '') + '"><p>Total profit</p><strong>' + usd(t.net) + '</strong><span>after ' + usd(t.expense) + ' in expenses</span></div>' +
       '</div>' +
       '<p class="summary">' + summary + '</p>' +
-      section('Your own work', usd(t.ownAmt), '<th>Company</th><th class="r">Hours</th><th class="r">Rate</th><th>Status</th><th class="r">Amount</th>', mineRows, 'You didn’t log any hours this month.') +
+      section('Your hours', hm(t.ownSecs), '<th>Company</th><th class="r">Hours</th><th>Status</th>', mineRows, 'You didn’t log any hours this month.') +
       section('Profit from your team', usd(t.team), '<th>Team member</th><th>Worked for</th><th class="r">Hours</th><th class="r">Your profit</th>', crewRows, 'No team hours this month.') +
       section('Other income', usd(t.income), '<th>Date</th><th>Description</th><th class="r">Hours or period</th><th>Status</th><th class="r">Amount</th>', incRows, 'No other income this month.') +
       section('Expenses', '−' + usd(t.expense), '<th>Date</th><th>Description</th><th>Category</th><th>Status</th><th class="r">Amount</th>', expRows, 'No expenses this month.') +
-      '<div class="bottom"><div class="note"><b>How this is worked out.</b> Your own work is your hours × each company’s rate, with nothing taken out. Team profit is what each company pays per hour minus what the team is paid, at the rates locked onto each shift. Other income and expenses are what you logged for ' + label + '.' +
+      '<div class="bottom"><div class="note"><b>How this is worked out.</b> Your own hours are listed without money; pay you log under Income is counted there. Team profit is what each company pays per hour minus what the team is paid, at the rates locked onto each shift. Other income and expenses are what you logged for ' + label + '.' +
         (note ? '<span class="custom"><b>Note:</b> ' + escHtml(note) + '</span>' : '') + '</div>' +
-        '<div class="totals"><div><span>Your own work</span><span class="mono">' + usd(t.ownAmt) + '</span></div>' +
-        '<div><span>From your team</span><span class="mono">' + usd(t.team) + '</span></div>' +
+        '<div class="totals"><div><span>From your team</span><span class="mono">' + usd(t.team) + '</span></div>' +
         '<div><span>Other income</span><span class="mono">' + usd(t.income) + '</span></div>' +
         '<div><span>Expenses</span><span class="mono">−' + usd(t.expense) + '</span></div>' +
         (t.toReceive > 0 ? '<div><span>Not received yet</span><span class="mono">' + usd(t.toReceive) + '</span></div>' : '') +

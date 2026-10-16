@@ -326,6 +326,7 @@
 
   .totals-grid{ display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:14px; }
   .totals-grid.four{ grid-template-columns:repeat(4, minmax(0,1fr)); }
+  .totals-grid.three{ grid-template-columns:repeat(3, minmax(0,1fr)); }
   .money{ min-width:0; }
   .money.in strong{ color:var(--green); }
   .money.out strong{ color:#ff9a9a; }
@@ -351,7 +352,7 @@
   .tag{ font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; border-radius:999px; padding:2px 7px; margin-left:8px; vertical-align:2px; border:1px solid var(--border2); color:var(--accent2); }
   .tag.me{ color:var(--green); border-color:rgba(16,185,129,.35); }
 
-  .mrow{ display:grid; grid-template-columns:minmax(0,1.3fr) repeat(5, minmax(0,1fr)); gap:12px; align-items:center; padding:12px 14px; border-radius:var(--radius-sm); font-family:"JetBrains Mono", monospace; font-size:14px; }
+  .mrow{ display:grid; grid-template-columns:minmax(0,1.3fr) repeat(4, minmax(0,1fr)); gap:12px; align-items:center; padding:12px 14px; border-radius:var(--radius-sm); font-family:"JetBrains Mono", monospace; font-size:14px; }
   .mrow > :first-child{ font-family:var(--font-body); font-weight:500; }
   .mrow > :not(:first-child){ text-align:right; white-space:nowrap; }
   .mhead{ font:600 12px var(--font-body); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
@@ -397,8 +398,6 @@
   .secret code{ font-family:"JetBrains Mono", monospace; color:var(--text); background:var(--bg); border:1px solid var(--border2); border-radius:6px; padding:2px 6px; }
   .code-in{ font:600 22px "JetBrains Mono", monospace !important; letter-spacing:.3em; text-align:center; }
   .link-btn{ background:none; border:0; color:var(--light); font:inherit; cursor:pointer; border-bottom:1px solid var(--border2); padding:0 0 1px; }
-  .lump{ grid-template-columns:1.4fr 1.4fr .9fr 1fr auto; }
-  .lump-help{ grid-column:1 / -1; color:var(--light); font-size:14px; }
   .mfa-card .card-title span.warn{ color:var(--gold); }
   .fac{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); }
   .fac:last-child{ border-bottom:0; }
@@ -459,10 +458,10 @@
     .mgrid{ grid-template-columns:repeat(3, minmax(0,1fr)); }
   }
   @media (max-width:860px){
-    .totals-grid, .totals-grid.four{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+    .totals-grid, .totals-grid.four, .totals-grid.three{ grid-template-columns:repeat(2, minmax(0,1fr)); }
     .totals-grid .net{ grid-column:1 / -1; }
     .mrow{ grid-template-columns:minmax(0,1fr) auto auto; }
-    .mrow > :nth-child(2), .mrow > :nth-child(3), .mrow > :nth-child(4){ display:none; }
+    .mrow > :nth-child(2), .mrow > :nth-child(3){ display:none; }
     .timer{ grid-template-columns:1fr; }
     .timer-btns{ flex-direction:row; flex-wrap:wrap; min-width:0; }
     .timer-btns .btn{ flex:1; }
@@ -491,7 +490,7 @@
     table.log.clist td.c-act{ grid-column:2; grid-row:3; justify-self:end; }
     table.log.clist td.c-hrs:empty, table.log.clist td.c-cat:empty{ display:none; }
     table.log.clist td.empty{ grid-column:1 / -1; }
-    table.log.mylist td.c-hrs{ grid-row:3; }
+    table.log.mylist td.c-hrs{ grid-column:2; grid-row:1; justify-self:end; font-size:14px; }
   }
 </style>
 <link rel="stylesheet" href="look.css?v=5">
@@ -646,8 +645,7 @@
       <div class="notice" id="teamWarn" hidden></div>
       <section class="t-card block">
         <div class="card-title"><h2>Profit</h2><span id="periodLabel"></span></div>
-        <div class="totals-grid">
-          <div class="money in"><p>Your own work</p><strong id="tOwn" data-egp>$0.00</strong><small id="tOwnSub"></small><small class="egp"></small></div>
+        <div class="totals-grid four">
           <div class="money in"><p>From your team</p><strong id="tTeam" data-egp>$0.00</strong><small id="tTeamSub"></small><small class="egp"></small></div>
           <div class="money in"><p>Other income</p><strong id="tIncome" data-egp>$0.00</strong><small id="tIncomeSub"></small><small class="egp"></small></div>
           <div class="money out"><p>Expenses</p><strong id="tExpense" data-egp>$0.00</strong><small id="tExpenseSub"></small><small class="egp"></small></div>
@@ -669,7 +667,7 @@
 
       <section class="t-card block">
         <div class="card-title"><h2>Month by month</h2><span>Click a month to open it</span></div>
-        <div class="mrow mhead"><span>Month</span><span>Own work</span><span>Team</span><span>Income</span><span>Expenses</span><span>Net</span></div>
+        <div class="mrow mhead"><span>Month</span><span>Team</span><span>Income</span><span>Expenses</span><span>Net</span></div>
         <div id="months"></div>
       </section>
 
@@ -726,11 +724,10 @@
 
       <section class="t-card block">
         <div class="card-title"><h2>Your hours</h2><span id="myLabel"></span></div>
-        <div class="totals-grid four">
+        <div class="totals-grid three">
           <div class="money"><p>Hours worked</p><strong id="myHours">0h 00m</strong><small id="myShifts"></small></div>
-          <div class="money in"><p>Earned</p><strong id="myEarned" data-egp>$0.00</strong><small>at each company's rate</small><small class="egp"></small></div>
-          <div class="money paid"><p>Paid to you</p><strong id="myPaid" data-egp>$0.00</strong><small id="myPaidH"></small><small class="egp"></small></div>
-          <div class="money due"><p>Not paid yet</p><strong id="myDue" data-egp>$0.00</strong><small id="myDueH"></small><small class="egp"></small></div>
+          <div class="money paid"><p>Paid hours</p><strong id="myPaid">0h 00m</strong><small id="myPaidH"></small></div>
+          <div class="money due"><p>Not paid yet</p><strong id="myDue">0h 00m</strong><small id="myDueH"></small></div>
         </div>
       </section>
 
@@ -739,19 +736,9 @@
           <h2>Shifts</h2>
           <div class="list-actions">
             <button class="btn btn-ghost btn-sm" id="myPayAll" hidden>Mark all shown as paid</button>
-            <button class="btn btn-ghost btn-sm" id="lumpToggle">Record a payment</button>
             <button class="btn btn-ghost btn-sm" id="myAddToggle">+ Add hours by hand</button>
           </div>
         </div>
-        <form class="mgrid lump" id="lumpForm" hidden novalidate>
-          <p class="lump-help">A company paid you in one transfer? Enter it here and the oldest unpaid shifts at that company, yours and your team's, are marked as paid by them, up to the amount.</p>
-          <label class="wide"><span class="label">Company</span><select class="field" id="lCo"></select></label>
-          <label><span class="label">Amount</span><span class="amt"><select class="field cur" id="lCur" aria-label="Currency"><option value="USD">$ USD</option><option value="EGP">EGP</option></select><input class="field" id="lAmt" type="number" min="0" step="0.01" placeholder="300" /></span></label>
-          <label id="lFxWrap" hidden><span class="label">EGP per $1</span><input class="field" id="lFx" type="number" min="0" step="0.01" placeholder="48.50" /></label>
-          <label><span class="label">Paid on</span><input class="field" id="lDate" type="date" /></label>
-          <button type="submit" class="btn btn-primary btn-sm" id="lSave" style="margin-bottom:4px;">Apply payment</button>
-          <p class="add-err" id="lErr"></p>
-        </form>
         <form class="mgrid" id="myForm" hidden novalidate>
           <label><span class="label">Date</span><input class="field" id="mDate" type="date" /></label>
           <label class="wide"><span class="label">Company</span><select class="field" id="mCo"></select></label>
@@ -763,7 +750,7 @@
         </form>
         <div style="overflow-x:auto;">
           <table class="log clist mylist">
-            <thead><tr><th>Company</th><th>Date</th><th class="c-hrs">Hours</th><th class="r">Amount</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Company</th><th>Date</th><th class="c-hrs">Hours</th><th>Status</th><th></th></tr></thead>
             <tbody id="myRows"></tbody>
           </table>
         </div>
@@ -1006,6 +993,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="../tracker/config.js"></script>
 <script src="team.js?v=5"></script>
-<script src="cash.js?v=9"></script>
+<script src="cash.js?v=10"></script>
 </body>
 </html>
