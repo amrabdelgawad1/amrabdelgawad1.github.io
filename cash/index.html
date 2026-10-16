@@ -326,6 +326,7 @@
 
   .totals-grid{ display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:14px; }
   .totals-grid.four{ grid-template-columns:repeat(4, minmax(0,1fr)); }
+  .money .team-add{ margin-top:10px; }
   .money{ min-width:0; }
   .money.in strong{ color:var(--green); }
   .money.out strong{ color:#ff9a9a; }
@@ -648,7 +649,7 @@
         <div class="card-title"><h2>Profit</h2><span id="periodLabel"></span></div>
         <div class="totals-grid">
           <div class="money in"><p>Your own work</p><strong id="tOwn" data-egp>$0.00</strong><small id="tOwnSub"></small><small class="egp"></small></div>
-          <div class="money in"><p>From your team</p><strong id="tTeam" data-egp>$0.00</strong><small id="tTeamSub"></small><small class="egp"></small></div>
+          <div class="money in"><p>From your team</p><strong id="tTeam" data-egp>EGP 0.00</strong><small id="tTeamSub"></small><small class="egp"></small><button type="button" class="btn btn-ghost btn-sm team-add" id="tTeamAdd">+ Add team profit</button></div>
           <div class="money in"><p>Other income</p><strong id="tIncome" data-egp>$0.00</strong><small id="tIncomeSub"></small><small class="egp"></small></div>
           <div class="money out"><p>Expenses</p><strong id="tExpense" data-egp>$0.00</strong><small id="tExpenseSub"></small><small class="egp"></small></div>
           <div class="money net" id="tNetBox"><p>Net profit</p><strong id="tNet" data-egp>$0.00</strong><small id="tNetSub"></small><small class="egp"></small></div>
@@ -777,7 +778,7 @@
         <div class="head-actions">
           <div class="seg view-seg" id="tm-view">
             <button data-v="hours" class="on">Hours and pay</button>
-            <button data-v="profit">Profit</button>
+            <button data-v="profit">Rates</button>
           </div>
           <button class="btn btn-primary btn-sm" id="tm-addToggle">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -855,9 +856,9 @@
     <div id="tm-profitView" hidden>
       <div class="notice" id="tm-profitWarn" hidden></div>
       <section class="t-card pay profit">
-        <div class="card-title"><h2>Profit</h2><span id="tm-profitLabel"></span></div>
+        <div class="card-title"><h2>Rates</h2><span id="tm-profitLabel"></span></div>
         <div class="rate-table">
-          <div class="rt-row rt-head"><span>Rates for new shifts</span><span>You get / hour</span><span>You pay / hour</span><span>You keep / hour</span></div>
+          <div class="rt-row rt-head"><span>Rates for new shifts</span><span>You get / hour</span><span>You pay / hour</span><span></span></div>
           <div id="tm-rateRows"></div>
         </div>
         <div class="rates">
@@ -867,29 +868,7 @@
           </div>
           <small class="rate-note" id="tm-billNote">Changing a rate only affects shifts logged from now on. Past shifts keep the rates they were logged at.</small>
         </div>
-        <div class="profit-grid">
-          <div class="money"><p>Hours worked</p><strong id="tm-pHours">0h 00m</strong><small id="tm-pShifts">0 shifts</small></div>
-          <div class="money"><p>You get</p><strong id="tm-pRevenue" data-egp>$0.00</strong><small id="tm-pRevenueSub"></small><small class="egp"></small></div>
-          <div class="money"><p>Team cost</p><strong id="tm-pCost" class="cost" data-egp>$0.00</strong><small id="tm-pCostSub"></small><small class="egp"></small></div>
-          <div class="money profit-big"><p>Your profit</p><strong id="tm-pProfit" data-egp>$0.00</strong><small id="tm-pMargin"></small><small class="egp"></small></div>
-        </div>
       </section>
-
-      <section class="t-card people">
-        <div class="card-title"><h2>Profit by month</h2><span>Hours &times; profit per hour</span></div>
-        <div id="tm-byMonth"></div>
-      </section>
-
-      <div class="split">
-        <section class="t-card people">
-          <div class="card-title"><h2>By company</h2></div>
-          <div id="tm-byCompany"></div>
-        </section>
-        <section class="t-card people">
-          <div class="card-title"><h2>By person</h2></div>
-          <div id="tm-byPerson"></div>
-        </section>
-      </div>
     </div>
 
     <div id="tm-hoursView">
@@ -1005,7 +984,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="../tracker/config.js"></script>
-<script src="team.js?v=5"></script>
-<script src="cash.js?v=9"></script>
+<script src="team.js?v=6"></script>
+<script src="cash.js?v=11"></script>
 </body>
 </html>

@@ -254,7 +254,7 @@ window.CashTeam = function(db){
     $('hoursView').hidden = view !== 'hours';
     $('profitView').hidden = view !== 'profit';
     $('status').hidden = view === 'profit';
-    $('pageTitle').textContent = view === 'profit' ? 'Profit' : 'Team hours';
+    $('pageTitle').textContent = view === 'profit' ? 'Rates' : 'Team hours';
     render();
   });
 
@@ -390,16 +390,11 @@ window.CashTeam = function(db){
     const box = $('rateRows'); box.innerHTML = '';
     companies.forEach(c => {
       const row = document.createElement('div'); row.className = 'rt-row';
-      row.innerHTML = '<span class="n"></span><div class="rate-input"><span>$</span><input type="number" min="0" step="0.25" /></div><span class="num pay"></span><span class="num keep"></span>';
+      row.innerHTML = '<span class="n"></span><div class="rate-input"><span>$</span><input type="number" min="0" step="0.25" /></div><span class="num pay"></span><span></span>';
       row.querySelector('.n').textContent = c.name;
       const inp = row.querySelector('input'); inp.value = c.bill_rate != null ? Number(c.bill_rate) : '';
       inp.setAttribute('aria-label', 'What ' + c.name + ' pays you per hour');
-      const keep = row.querySelector('.keep');
-      const show = () => {
-        row.querySelector('.pay').textContent = usd(rate);
-        if (c.bill_rate == null) { keep.innerHTML = '<span class="missing">Set a rate</span>'; return; }
-        const k = Number(c.bill_rate) - rate; keep.textContent = usd(k); keep.classList.toggle('neg', k < 0);
-      };
+      const show = () => { row.querySelector('.pay').textContent = usd(rate); };
       show();
       inp.addEventListener('input', () => {
         const v = parseFloat(inp.value);
@@ -416,55 +411,16 @@ window.CashTeam = function(db){
     });
   }
 
+  // Rates only: team profit isn't worked out here, Amr adds it himself on Overview
   function renderProfit(keepRateBoxes){
     if (!keepRateBoxes || !$('rateRows').children.length) renderRates();
-    const all = visible(true);
-    const rows = all.filter(r => billFor(r) != null);
-    const skipped = all.filter(r => billFor(r) == null);
-    const secs = rows.reduce((a,r) => a + r.work, 0);
-    const rev = rows.reduce((a,r) => a + r.work / 3600 * billFor(r), 0);
-    const cost = earned(rows);
-    $('profitLabel').textContent = rangeLabel();
-    $('pHours').textContent = hm(secs);
-    $('pShifts').textContent = rows.length + ' shift' + (rows.length === 1 ? '' : 's');
-    setUsd('pRevenue', rev); $('pRevenueSub').textContent = 'at each shift’s company rate';
-    setUsd('pCost', cost);  $('pCostSub').textContent = 'at each shift’s pay rate';
-    setUsd('pProfit', rev - cost); paint();
-    $('pMargin').textContent = rev > 0 ? Math.round((rev - cost) / rev * 100) + '% of what you get' : '';
+    const skipped = visible(true).filter(r => billFor(r) == null);
+    $('profitLabel').textContent = 'For new shifts';
     const warn = $('profitWarn');
     if (skipped.length) {
-      warn.textContent = skipped.length + ' shift' + (skipped.length === 1 ? '' : 's') + ' (' + hm(skipped.reduce((a,r) => a + r.work, 0)) + ') aren’t counted because ' + (skipped.length === 1 ? 'its company had' : 'their company had') + ' no rate when ' + (skipped.length === 1 ? 'it was' : 'they were') + ' logged. Select ' + (skipped.length === 1 ? 'it' : 'them') + ' in History and use Change company rate.';
+      warn.textContent = skipped.length + ' shift' + (skipped.length === 1 ? '' : 's') + ' (' + hm(skipped.reduce((a,r) => a + r.work, 0)) + ') ' + (skipped.length === 1 ? 'has' : 'have') + ' no company rate. Select ' + (skipped.length === 1 ? 'it' : 'them') + ' in History and use Change company rate.';
       warn.hidden = false;
     } else warn.hidden = true;
-
-    const group = keyFn => {
-      const m = new Map();
-      rows.forEach(r => {
-        const [k, label] = keyFn(r);
-        if (!m.has(k)) m.set(k, { label, secs:0, rev:0, cost:0 });
-        const g = m.get(k); g.secs += r.work; g.rev += r.work / 3600 * billFor(r); g.cost += r.work / 3600 * r.payRate;
-      });
-      return m;
-    };
-    const draw = (el, map, sortFn) => {
-      const list = [...map.values()].sort(sortFn);
-      const max = Math.max(1, ...list.map(g => g.rev - g.cost));
-      el.innerHTML = '';
-      if (!list.length) { el.innerHTML = '<p class="empty">No shifts match these filters.</p>'; return; }
-      list.forEach(g => {
-        const d = document.createElement('div'); d.className = 'brow';
-        d.innerHTML = '<span class="bname"></span><div class="pbar"><i></i></div><div class="bnums"><span class="t"></span><small class="s"></small></div>';
-        d.querySelector('.bname').textContent = g.label;
-        d.querySelector('.t').textContent = usd(g.rev - g.cost);
-        d.querySelector('.s').textContent = hm(g.secs) + ' · ' + usd(g.rev) + ' in, ' + usd(g.cost) + ' out';
-        el.appendChild(d);
-        requestAnimationFrame(() => requestAnimationFrame(() => { d.querySelector('.pbar i').style.width = (Math.max(0, g.rev - g.cost) / max * 100) + '%'; }));
-      });
-    };
-    draw($('byMonth'), group(r => [r.date.slice(0, 7), new Date(r.date.slice(0, 7) + '-01T00:00').toLocaleDateString('en-US', { month:'long', year:'numeric' })]),
-      () => 0); // rows are newest first, so months already are
-    draw($('byCompany'), group(r => [r.companyId, companyName(r.companyId)]), (a, b) => (b.rev - b.cost) - (a.rev - a.cost));
-    draw($('byPerson'), group(r => [nameKey(r.name), r.name]), (a, b) => (b.rev - b.cost) - (a.rev - a.cost));
   }
 
   // ---------- payslip ----------
