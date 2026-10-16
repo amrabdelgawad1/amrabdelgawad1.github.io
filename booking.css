@@ -40,7 +40,7 @@
 .cal-day.is-empty{ visibility:hidden; cursor:default; }
 .cal-day.is-disabled{ color:var(--muted); opacity:.35; cursor:not-allowed; }
 .cal-day.is-today{ border-color:var(--border2); font-weight:600; }
-.cal-day.is-selected{ background:var(--accent); color:var(--white); font-weight:600; transform:scale(1.05); }
+.cal-day.is-selected{ background:var(--accent); color:var(--on-accent); font-weight:600; transform:scale(1.05); }
 .tz-picker{ position:relative; margin-top:20px; }
 .cal-tz{
   background:none; border:none; padding:0; margin:0; font-family:var(--font-body);

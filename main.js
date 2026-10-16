@@ -393,13 +393,14 @@
   });
 
   /* ------------------------------------------------------------------ *
-   * Count-up numbers, once, on entry
+   * Count-up numbers, once, on entry. The HTML already holds the final
+   * value, so the count starts from half of it and never shows a zero.
    * ------------------------------------------------------------------ */
   document.querySelectorAll("[data-counter]").forEach((el) => {
     const to = parseFloat(el.dataset.countTo);
     const decimals = parseInt(el.dataset.decimals || "0", 10);
     const suffix = el.dataset.suffix || "";
-    const proxy = { v: 0 };
+    const proxy = { v: to / 2 };
 
     ScrollTrigger.create({
       trigger: el,
@@ -408,7 +409,7 @@
       onEnter: () =>
         gsap.to(proxy, {
           v: to,
-          duration: 1.6,
+          duration: 1.1,
           ease: "power2.out",
           onUpdate: () => (el.textContent = proxy.v.toFixed(decimals) + suffix),
         }),
