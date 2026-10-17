@@ -353,15 +353,29 @@
   .flow.hovering .band:not(.hot){ opacity:.25; }
   .flow .lbl{ font:600 13.5px var(--font-body); fill:var(--text); }
   .flow .amt{ font:500 12.5px "JetBrains Mono", monospace; }
-  .flow .amt.in{ fill:var(--green); } .flow .amt.out{ fill:#ff9a9a; }
+  .flow .amt.in{ fill:var(--green); } .flow .amt.out{ fill:#ff9a9a; } .flow .amt.save{ fill:var(--gold); }
+  .money .saved{ display:block; color:var(--gold); font:600 12.5px "JetBrains Mono", monospace; margin-top:4px; }
+  .money .saved:empty{ display:none; }
+  /* Month by month chart: came in vs spent per month, net profit as a line */
+  .trend svg{ display:block; width:100%; overflow:visible; }
+  .trend .tg{ cursor:pointer; }
+  .trend .tg .hov{ fill:transparent; }
+  .trend .tg:hover .hov, .trend .tg.on .hov{ fill:var(--accent-dim); }
+  .trend .tx{ font:500 11.5px var(--font-body); fill:var(--muted); }
+  .trend .tg.on .tx{ fill:var(--text); font-weight:700; }
+  .trend .ty{ font:500 11px "JetBrains Mono", monospace; fill:var(--muted); }
+  .trend-cap{ display:flex; gap:6px 18px; flex-wrap:wrap; font-size:13px; color:var(--light); margin:10px 0 18px; }
+  .trend-cap:empty{ display:none; }
+  .trend-cap b{ font:600 13px "JetBrains Mono", monospace; }
+  .trend-cap i{ display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
   .flow .hit{ cursor:default; }
   /* Donuts above the Where it came from / went lists; each bar below is its legend */
   .donut{ display:flex; justify-content:center; margin:-4px 0 12px; }
   .donut:empty{ display:none; }
   .donut .d-total{ font:600 15px "JetBrains Mono", monospace; fill:var(--text); }
   .donut .d-sub{ font:500 11.5px var(--font-body); fill:var(--muted); }
-  .donut .slice{ transition:opacity .2s; }
-  .donut svg:hover .slice:not(:hover){ opacity:.45; }
+  .donut .slice{ transition:opacity .2s; cursor:pointer; }
+  .donut svg.picking .slice:not(.hot){ opacity:.45; }
   .cnum .cpct{ display:block; text-align:right; color:var(--muted); font-size:12px; }
   .flow .who{ font:500 11.5px var(--font-body); fill:var(--muted); }
   @media (max-width:600px){ .flow .lbl{ font-size:12.5px; } .flow .amt{ font-size:11px; } }
@@ -372,7 +386,7 @@
   .flow .tip .t-amt{ font:500 12.5px "JetBrains Mono", monospace; color:var(--light); }
   .flow-foot{ display:flex; gap:18px; flex-wrap:wrap; margin-top:18px; font-size:13px; color:var(--light); }
   .flow-foot i{ display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
-  .flow-foot .k-in{ background:var(--green); } .flow-foot .k-out{ background:#ff8a8a; } .flow-foot .k-kept{ background:var(--green); opacity:.55; }
+  .flow-foot .k-in{ background:var(--green); } .flow-foot .k-out{ background:#ff8a8a; } .flow-foot .k-kept{ background:var(--green); opacity:.55; } .flow-foot .k-save{ background:#C99014; }
   .crow{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px 16px; align-items:center; padding:12px 0; }
   .crow + .crow{ border-top:1px solid var(--border); }
   .crow .cname{ font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -615,7 +629,7 @@
       <span class="spacer"></span>
       <button class="btn btn-outline btn-sm" id="statementBtn">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg>
-        Monthly statement
+        <span id="stLabel">Monthly statement</span>
       </button>
     </div>
 
@@ -693,7 +707,7 @@
           <div class="money in"><p>From your team</p><strong id="tTeam" data-egp>EGP 0.00</strong><small id="tTeamSub"></small><small class="egp"></small><button type="button" class="btn btn-ghost btn-sm team-add" id="tTeamAdd">+ Add team profit</button></div>
           <div class="money in"><p>Other income</p><strong id="tIncome" data-egp>$0.00</strong><small id="tIncomeSub"></small><small class="egp"></small><button type="button" class="btn btn-ghost btn-sm team-add" id="tIncAdd">+ Add income</button></div>
           <div class="money out"><p>Expenses</p><strong id="tExpense" data-egp>$0.00</strong><small id="tExpenseSub"></small><small class="egp"></small><button type="button" class="btn btn-ghost btn-sm team-add" id="tExpAdd">+ Add expense</button></div>
-          <div class="money net" id="tNetBox"><p>Net profit</p><strong id="tNet" data-egp>$0.00</strong><small id="tNetSub"></small><small class="egp"></small></div>
+          <div class="money net" id="tNetBox"><p>Net profit</p><strong id="tNet" data-egp>$0.00</strong><small id="tNetSub"></small><small class="egp"></small><small class="saved" id="tSaved"></small><button type="button" class="btn btn-ghost btn-sm team-add" id="tSaveAdd">+ Add savings</button></div>
         </div>
         <div class="pending" id="pending"></div>
       </section>
@@ -705,6 +719,7 @@
           <span><i class="k-in"></i>Came in</span>
           <span><i class="k-out"></i>Spent</span>
           <span><i class="k-kept"></i>Kept as profit</span>
+          <span id="kSave" hidden><i class="k-save"></i>Saved</span>
         </div>
       </section>
 
@@ -723,6 +738,8 @@
 
       <section class="t-card block">
         <div class="card-title"><h2>Month by month</h2><span>Click a month to open it</span></div>
+        <div class="trend" id="trend"></div>
+        <div class="trend-cap" id="trendCap"></div>
         <div class="mrow mhead"><span>Month</span><span>Own work</span><span>Team</span><span>Income</span><span>Expenses</span><span>Net</span></div>
         <div id="months"></div>
       </section>

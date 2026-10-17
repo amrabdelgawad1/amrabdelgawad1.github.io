@@ -21,7 +21,7 @@
   let view = VIEWS.includes(hashView()) ? hashView() : 'overview';
   let month = thisMonth(), lastDeleted = null, toastTimer = null, team = null;
   let editing = null, fKind = 'income', fMode = 'fixed';
-  let flowData = null, flowTimer = null;
+  let flowData = null, flowTimer = null, trendTimer = null;
 
   const cents = n => Math.round(n * 100) / 100;
   const usd = n => (cents(n) < 0 ? '−' : '') + '$' + Math.abs(cents(n)).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
@@ -50,7 +50,7 @@
     del(k){ try { localStorage.removeItem(k); } catch(e){} }
   };
   const DONE = { income:'Received', expense:'Paid' }, OPEN = { income:'Not received', expense:'Unpaid' };
-  const CATS = { income:['Own work', 'Team profit', 'Salary', 'Hourly work', 'Project', 'Client', 'Other'], expense:['Subscriptions', 'Software', 'Equipment', 'Team', 'Transport', 'Other'] };
+  const CATS = { income:['Own work', 'Team profit', 'Salary', 'Hourly work', 'Project', 'Client', 'Other'], expense:['Subscriptions', 'Software', 'Equipment', 'Team', 'Transport', 'Savings', 'Other'] };
   const TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
   const PEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>';
 
@@ -152,6 +152,8 @@
   const isTeamProfit = e => e.kind === 'income' && key(e.category) === 'team profit';
   // Own work you add by hand (money for work outside your tracked hours) counts with your hours
   const isOwnWork = e => e.kind === 'income' && key(e.category) === 'own work';
+  // Savings are logged as an expense with this category, but they're money set aside, not spent: they don't lower profit
+  const isSavings = e => e.kind === 'expense' && key(e.category) === 'savings';
   // Project pay period, like "Sep 28 – Oct 9 · 12 days"
   const periodText = e => {
     const a = new Date(e.periodStart + 'T00:00'), b = new Date(e.periodEnd + 'T00:00');
@@ -216,14 +218,14 @@
     const sh = shifts.filter(s => inP(s.date)), counted = sh.filter(s => s.billRate != null);
     const own = counted.filter(s => s.owner), crew = counted.filter(s => !s.owner);
     const en = partsIn(entries, inP);
-    const teamInc = en.filter(isTeamProfit), ownInc = en.filter(isOwnWork), exp = en.filter(e => e.kind === 'expense');
+    const teamInc = en.filter(isTeamProfit), ownInc = en.filter(isOwnWork), saved = en.filter(isSavings), exp = en.filter(e => e.kind === 'expense' && !isSavings(e));
     const inc = en.filter(e => e.kind === 'income' && !isTeamProfit(e) && !isOwnWork(e));
     const sum = (l, f) => l.reduce((a, x) => a + f(x), 0);
     const ownAmt = sum(own, shiftValue) + sum(ownInc, usdOf), teamAmt = sum(teamInc, usdOf), income = sum(inc, usdOf), expense = sum(exp, usdOf);
     const ownDue = sum(own.filter(s => !s.paid), shiftValue);
     return {
-      own, crew, skipped: sh.filter(s => s.billRate == null), inc, teamInc, ownInc, exp,
-      ownAmt, team: teamAmt, income, expense, net: ownAmt + teamAmt + income - expense,
+      own, crew, skipped: sh.filter(s => s.billRate == null), inc, teamInc, ownInc, exp, saved,
+      ownAmt, team: teamAmt, income, expense, net: ownAmt + teamAmt + income - expense, savings: sum(saved, usdOf),
       ownSecs: sum(own, s => s.work), teamSecs: sum(crew, s => s.work), ownDue,
       toReceive: ownDue + sum(inc.concat(teamInc, ownInc).filter(e => !e.settled), usdOf), toPay: sum(exp.filter(e => !e.settled), usdOf)
     };
@@ -250,8 +252,9 @@
     sel.value = month;
     $('prevM').disabled = !oneMonth() || month <= lo;
     $('nextM').disabled = !oneMonth() || month >= hi;
-    $('statementBtn').disabled = !oneMonth();
-    $('statementBtn').title = oneMonth() ? '' : 'Pick a month first';
+    $('statementBtn').disabled = month === 'all';
+    $('statementBtn').title = month === 'all' ? 'Pick a month or custom dates first' : '';
+    $('stLabel').textContent = month === 'custom' ? 'Statement' : 'Monthly statement';
     $('pRangeBox').hidden = month !== 'custom';
     $('pFrom').value = range.from; $('pTo').value = range.to;
   }
@@ -344,6 +347,9 @@
     $('tNetBox').classList.toggle('neg', t.net < 0);
     const gross = t.ownAmt + t.team + t.income;
     $('tNetSub').textContent = gross > 0 ? Math.round(t.net / gross * 100) + '% of what came in' : '';
+    // Savings: what you put aside in this period, and in total so far
+    const allSaved = month === 'all' ? t.savings : totals(() => true).savings;
+    $('tSaved').textContent = t.savings ? cash(t.savings) + ' saved' + (allSaved > t.savings + .004 ? ' · ' + cash(allSaved) + ' in total' : '') : allSaved ? cash(allSaved) + ' saved in total' : '';
     paintEgp();
 
     const p = [];
@@ -386,11 +392,70 @@
     shade(outRows, REDS);
     drawDonut($('wentDonut'), outRows, 'spent');
     drawBars($('wentTo'), outRows, 'out', 'No expenses for this period.');
-    flowData = [inRows, outRows];
-    drawFlow($('moneyFlow'), inRows, outRows);
+    flowData = [inRows, outRows, t.savings];
+    drawFlow($('moneyFlow'), inRows, outRows, t.savings);
+    $('kSave').hidden = !t.savings;
 
     renderMonths();
   }
+
+  // ---------- month by month chart ----------
+  // The last 12 months with data (empty months in between included): came in and spent side by side, net profit as a line.
+  // Pointing at or tapping a month shows its numbers underneath; clicking opens it.
+  let trendMonths = null;
+  function drawTrend(list){
+    trendMonths = list;
+    const el = $('trend'), cap = $('trendCap');
+    el.innerHTML = ''; cap.innerHTML = '';
+    if (!list.length) return;
+    const months = [];
+    for (let m = list[list.length - 1]; m <= list[0]; m = stepMonth(m, 1)) months.push(m);
+    const shown = months.slice(-12).map(m => { const t = totals(d => d.slice(0, 7) === m); return { m, came:t.ownAmt + t.team + t.income, spent:t.expense, net:t.net, saved:t.savings }; });
+    const W = el.clientWidth || 640, H = 190, top = 14, bottom = 26, left = 54, ph = H - top - bottom;
+    const hi = Math.max(1, ...shown.map(s => Math.max(s.came, s.spent))), lo = Math.min(0, ...shown.map(s => s.net));
+    const y = v => top + (hi - v) / (hi - lo) * ph;
+    const slot = (W - left) / shown.length, bw = Math.min(26, slot * .3);
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('height', H);
+    const mk = (tag, attrs, parent = svg) => { const e = document.createElementNS(ns, tag); for (const a in attrs) e.setAttribute(a, attrs[a]); parent.appendChild(e); return e; };
+    const short = n => { const v = n * fx.rate; return Math.abs(v) >= 1000 ? Math.round(v / 1000) + 'k' : String(Math.round(v)); };
+    [hi, hi / 2, 0].concat(lo < 0 ? [lo] : []).forEach(v => {
+      mk('line', { x1:left, x2:W, y1:y(v), y2:y(v), style:'stroke:var(--border2)', 'stroke-dasharray':v ? '3 4' : '' });
+      mk('text', { x:left - 8, y:y(v) + 4, 'text-anchor':'end', class:'ty' }).textContent = short(v);
+    });
+    const RED = '#ff8a8a', GREEN = getComputedStyle(el).getPropertyValue('--green').trim() || '#047857';
+    const show = s => {
+      cap.innerHTML = '';
+      const add = (color, text, amt) => { const sp = document.createElement('span'); const i = document.createElement('i'); i.style.background = color; const b = document.createElement('b'); b.textContent = cash(amt); sp.append(i, text + ' ', b); cap.appendChild(sp); };
+      const head = document.createElement('span'); head.textContent = monthLabel(s.m); head.style.fontWeight = '600'; cap.appendChild(head);
+      add(GREEN, 'Came in', s.came); add(RED, 'Spent', s.spent); add('#C99014', 'Net profit', s.net);
+      if (s.saved) add('#C99014', 'Saved', s.saved);
+      svg.querySelectorAll('.tg').forEach(g => g.classList.toggle('on', g.dataset.m === s.m));
+    };
+    const pts = [];
+    shown.forEach((s, i) => {
+      const cx = left + slot * i + slot / 2;
+      const g = mk('g', { class:'tg' }); g.dataset.m = s.m;
+      mk('rect', { class:'hov', x:left + slot * i + 2, y:top - 6, width:slot - 4, height:ph + 12, rx:6 }, g);
+      mk('rect', { x:cx - bw - 1, y:y(s.came), width:bw, height:Math.max(s.came ? 2 : 0, y(0) - y(s.came)), rx:3, fill:GREEN }, g);
+      mk('rect', { x:cx + 1, y:y(s.spent), width:bw, height:Math.max(s.spent ? 2 : 0, y(0) - y(s.spent)), rx:3, fill:RED }, g);
+      mk('text', { x:cx, y:H - 6, 'text-anchor':'middle', class:'tx' }, g).textContent = new Date(s.m + '-01T00:00').toLocaleDateString('en-US', { month:'short' }) + (shown.length > 1 && (i === 0 || s.m.endsWith('-01')) ? ' ’' + s.m.slice(2, 4) : '');
+      // On a phone the first tap shows the month's numbers and a second tap opens it
+      g.addEventListener('pointerenter', e => { if (e.pointerType !== 'touch') show(s); });
+      g.addEventListener('pointerdown', e => { g.firstTap = e.pointerType === 'touch' && !g.classList.contains('on'); });
+      g.addEventListener('click', () => { if (g.firstTap) { g.firstTap = false; show(s); return; } month = s.m; render(); window.scrollTo({ top:0, behavior:'smooth' }); });
+      pts.push([cx, y(s.net)]);
+    });
+    if (pts.length > 1) mk('polyline', { points:pts.map(p => p.join(',')).join(' '), fill:'none', stroke:'#C99014', 'stroke-width':2.5, 'stroke-linejoin':'round', 'pointer-events':'none' });
+    pts.forEach(p => mk('circle', { cx:p[0], cy:p[1], r:4, fill:'#C99014', style:'stroke:var(--bg3)', 'stroke-width':2, 'pointer-events':'none' }));
+    svg.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') show(current); });
+    el.appendChild(svg);
+    // Underneath, the month you're looking at (or the latest one)
+    const current = shown.find(s => s.m === month) || shown[shown.length - 1];
+    show(current);
+  }
+  addEventListener('resize', () => { clearTimeout(trendTimer); trendTimer = setTimeout(() => { if (trendMonths && view === 'overview') drawTrend(trendMonths); }, 150); });
 
   // ---------- donuts ----------
   // Each row gets its own shade, shared by its donut slice and its bar, so the list doubles as the legend
@@ -416,16 +481,24 @@
         const a1 = a + Math.max(sweep - .015, .02), big = a1 - a > Math.PI ? 1 : 0;
         p = mk('path', { class:'slice', fill:row.color, d:`M ${pt(R, a)} A ${R} ${R} 0 ${big} 1 ${pt(R, a1)} L ${pt(r0, a1)} A ${r0} ${r0} 0 ${big} 0 ${pt(r0, a)} Z` });
       }
-      const tt = document.createElementNS(ns, 'title');
-      tt.textContent = row.label + (row.tag ? ' · ' + row.tag : '') + ': ' + cash(row.amt) + ' · ' + (share < 1 ? share.toFixed(1) : Math.round(share)) + '%';
-      p.appendChild(tt);
+      // Pointing at or tapping a slice shows its share and name in the middle of the ring
+      const name = row.label.length > 19 ? row.label.slice(0, 18) + '…' : row.label;
+      p.addEventListener('pointerenter', () => pick(p, (share < 1 ? share.toFixed(1) : Math.round(share)) + '%' + (row.tag === 'Team' ? ' · team' : ''), name));
+      p.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') unpick(); });
       row.share = share;
       a += sweep;
     });
-    mk('text', { x:c, y:c - 1, 'text-anchor':'middle', class:'d-total' }).textContent = cash(total).replace(/\.\d\d$/, '');
-    mk('text', { x:c, y:c + 16, 'text-anchor':'middle', class:'d-sub' }).textContent = word;
+    const big = mk('text', { x:c, y:c - 1, 'text-anchor':'middle', class:'d-total' }), small = mk('text', { x:c, y:c + 16, 'text-anchor':'middle', class:'d-sub' });
+    const pick = (p, top, sub) => { unpick(); svg.classList.add('picking'); p.classList.add('hot'); big.textContent = top; small.textContent = sub; };
+    const unpick = () => { svg.classList.remove('picking'); svg.querySelectorAll('.hot').forEach(x => x.classList.remove('hot')); big.textContent = cash(total).replace(/\.\d\d$/, ''); small.textContent = word; };
+    unpick();
+    el.unpick = unpick;
     el.appendChild(svg);
   }
+  // Tapping outside a donut puts its total back in the middle
+  document.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'touch') document.querySelectorAll('.donut').forEach(d => { if (d.unpick && !d.contains(e.target)) d.unpick(); });
+  });
 
   // ---------- how the money moved ----------
   // Income on the left joins in the middle, then splits into what you kept and each expense category
@@ -439,18 +512,24 @@
   document.addEventListener('pointerdown', e => {
     if (e.pointerType === 'touch' && !e.target.closest('#moneyFlow .band, #moneyFlow .hit')) hideFlowTip($('moneyFlow'));
   });
-  function drawFlow(el, inRows, outRows){
+  function drawFlow(el, inRows, outRows, saved = 0){
     const WHO = { You:'Your work', Team:'Team’s work' };
-    const GREEN = getComputedStyle(el).getPropertyValue('--green').trim() || '#10b981', RED = '#ff8a8a';
+    const GREEN = getComputedStyle(el).getPropertyValue('--green').trim() || '#10b981', RED = '#ff8a8a', GOLD = '#C99014';
+    const fill = kind => kind === 'net' ? GREEN : kind === 'save' ? GOLD : RED;
     const sum = l => l.reduce((a, r) => a + r.amt, 0);
     const left = inRows.filter(r => r.amt > 0).map(r => ({ ...r, kind:'in' })).sort((a, b) => b.amt - a.amt);
     const right = outRows.filter(r => r.amt > 0).map(r => ({ ...r, kind:'out' }));
     const totalIn = sum(left), totalOut = sum(right), net = totalIn - totalOut;
     el.innerHTML = '';
     if (totalIn <= 0 && totalOut <= 0) { el.innerHTML = '<p class="empty">Nothing moved in this period yet.</p>'; return; }
-    // A loss shows on the left as "Short this period", profit on the right as "Kept as profit"
+    // A loss shows on the left as "Short this period", profit on the right as "Kept as profit".
+    // Savings come out of the profit: "Saved", then what's "Left over" (saving more than this period's profit shows all of it as saved)
     if (net < 0) left.push({ label:'Short this period', amt:-net, kind:'short' });
-    if (net > 0) right.unshift({ label:'Kept as profit', amt:net, kind:'net' });
+    if (net > 0) {
+      const toSave = Math.min(saved, net);
+      if (net - toSave > .004) right.unshift({ label:toSave ? 'Left over' : 'Kept as profit', amt:net - toSave, kind:'net' });
+      if (toSave) right.unshift({ label:'Saved', amt:toSave, kind:'save' });
+    }
     const total = Math.max(totalIn, totalOut);
 
     const W = el.clientWidth || 640, narrow = W < 560;
@@ -515,7 +594,7 @@
     let my = midY + (midH - sumH(left)) / 2;
     left.forEach(n => { band(x0 + nodeW, n.y, x1, my, n.h, n.kind === 'short' ? RED : GREEN, .22, n, n.kind === 'short' ? { big:'', of:'Spent beyond what came in' } : pct(n.amt, n.kind)); my += n.h; });
     my = midY + (midH - sumH(right)) / 2;
-    right.forEach(n => { band(x1 + nodeW, my, x2, n.y, n.h, n.kind === 'net' ? GREEN : RED, n.kind === 'net' ? .3 : .2, n, pct(n.amt, n.kind)); my += n.h; });
+    right.forEach(n => { band(x1 + nodeW, my, x2, n.y, n.h, fill(n.kind), n.kind === 'out' ? .2 : .3, n, pct(n.amt, n.kind)); my += n.h; });
 
     const label = (n, x, anchor, cls) => {
       const top = n.y + n.h / 2 - (n.rows * lineH) / 2 + lineH - 3;
@@ -524,7 +603,7 @@
       mk('text', { x, y:top + (n.rows - 1) * lineH + 1, 'text-anchor':anchor, class:'amt ' + cls }).textContent = narrow && n.tag ? cash(n.amt) : subOf(n);
     };
     left.forEach(n => { mk('rect', { x:x0, y:n.y, width:nodeW, height:n.h, rx:3, fill:n.kind === 'short' ? RED : GREEN }); label(n, x0 - 8, 'end', n.kind === 'short' ? 'out' : 'in'); });
-    right.forEach(n => { mk('rect', { x:x2, y:n.y, width:nodeW, height:n.h, rx:3, fill:n.kind === 'net' ? GREEN : RED }); label(n, x2 + nodeW + 8, 'start', n.kind === 'net' ? 'in' : 'out'); });
+    right.forEach(n => { mk('rect', { x:x2, y:n.y, width:nodeW, height:n.h, rx:3, fill:fill(n.kind) }); label(n, x2 + nodeW + 8, 'start', n.kind === 'net' ? 'in' : n.kind === 'save' ? 'save' : 'out'); });
     mk('rect', { x:x1, y:midY, width:nodeW, height:midH, rx:3, fill:'currentColor', opacity:.7 });
     // Pointing at a name or its bar shows the same details as its band, so small amounts are easy to reach
     left.forEach(n => n.hover(mk('rect', { class:'hit', x:0, y:n.y + n.h / 2 - n.slot / 2, width:x0 + nodeW, height:n.slot, fill:'transparent' })));
@@ -574,6 +653,7 @@
     const set = new Set([...entries.flatMap(entryMonths), ...shifts.map(s => s.date.slice(0, 7))]);
     const list = [...set].sort().reverse();
     const box = $('months'); box.innerHTML = '';
+    drawTrend(list);
     if (!list.length) { box.innerHTML = '<p class="empty">No history yet.</p>'; return; }
     list.forEach(m => {
       const t = totals(d => d.slice(0, 7) === m);
@@ -821,8 +901,10 @@
     const rows = partsIn(entries.filter(e => e.kind === kind), inPeriod).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id);
     $('logTable').classList.toggle('is-expense', kind === 'expense');
     $('listTitle').textContent = kind === 'income' ? 'Income' : 'Expenses';
-    const total = rows.reduce((a, e) => a + usdOf(e), 0), open = rows.filter(e => !e.settled).reduce((a, e) => a + usdOf(e), 0);
-    $('listSum').textContent = periodName() + ' · ' + cash(total) + (open ? ' · ' + cash(open) + ' ' + OPEN[kind].toLowerCase() : '');
+    // Savings sit in the Expenses list but aren't spending, so the total leaves them out and names them apart
+    const spent = rows.filter(e => !isSavings(e)), saved = rows.filter(isSavings).reduce((a, e) => a + usdOf(e), 0);
+    const total = spent.reduce((a, e) => a + usdOf(e), 0), open = spent.filter(e => !e.settled).reduce((a, e) => a + usdOf(e), 0);
+    $('listSum').textContent = periodName() + ' · ' + cash(total) + (open ? ' · ' + cash(open) + ' ' + OPEN[kind].toLowerCase() : '') + (saved ? ' · ' + cash(saved) + ' put into savings' : '');
     renderRecurring(kind);
 
     const body = $('rows'); body.innerHTML = '';
@@ -987,8 +1069,9 @@
     editing = e || null;
     setKind(kind);
     $('formTitle').textContent = e ? 'Edit ' + (kind === 'income' ? 'income' : 'expense') : 'Add an entry';
-    $('formHint').textContent = e ? '' : 'For money outside your tracked hours. Income adds to your profit, expenses take away from it';
-    $('fTitle').value = e ? e.title : preset === 'Team profit' ? preset : '';
+    $('formHint').textContent = e ? '' : preset === 'Savings' ? 'Money you put aside. It doesn’t lower your profit; it shows as saved'
+      : 'For money outside your tracked hours. Income adds to your profit, expenses take away from it';
+    $('fTitle').value = e ? e.title : preset === 'Team profit' || preset === 'Savings' ? preset : '';
     $('fParty').value = e ? e.party : '';
     $('fDate').value = e ? e.date : defaultDate();
     $('fCat').value = e ? e.category : preset || '';
@@ -1001,7 +1084,8 @@
     $('fCur').value = e ? e.currency : lastCurrency(kind);
     $('fFx').value = e && e.fxRate ? e.fxRate : (fx.rate || '');
     $('fNote').value = e ? e.note : '';
-    $('fSettled').checked = e ? e.settled : kind === 'expense';
+    // Own work is usually logged once it's paid, so it starts as received
+    $('fSettled').checked = e ? e.settled : kind === 'expense' || preset === 'Own work';
     $('fRecurring').checked = e ? e.recurring : false;
     $('fSpread').checked = e ? !!e.spread : false;
     setMode(e && e.periodStart ? 'project' : e && e.hours != null && e.rate != null ? 'hourly' : 'fixed');
@@ -1024,6 +1108,7 @@
   // "Other income" and "Expenses" on Overview: add one straight from the card
   $('tIncAdd').addEventListener('click', () => openForm('income'));
   $('tExpAdd').addEventListener('click', () => openForm('expense'));
+  $('tSaveAdd').addEventListener('click', () => openForm('expense', null, 'Savings'));
 
   $('addForm').addEventListener('submit', async ev => {
     ev.preventDefault();
@@ -1236,18 +1321,20 @@
   const shortDay = d => new Date(d+'T00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' });
   const listJoin = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
 
-  let stMonth = null;
+  // The period a statement covers: one month, or the custom From–To days
+  let st = null;
   function openStatement(){
-    if (!oneMonth()) return;
-    stMonth = month;
+    if (month === 'all') return;
+    if (oneMonth()) { const m = month; st = { key:m, label:monthLabel(m), word:'month', title:'Monthly statement', inP:d => d.slice(0, 7) === m }; }
+    else { const f = range.from, to = range.to; st = { key:f + '_to_' + to, label:periodName(), word:'period', title:'Statement', inP:d => d >= f && d <= to }; }
     $('slipNote').value = '';
     drawStatement();
     $('slipOverlay').hidden = false; document.body.style.overflow = 'hidden';
     fitStatement();
   }
   function drawStatement(){
-    const m = stMonth, label = monthLabel(m);
-    const t = totals(d => d.slice(0, 7) === m);
+    const label = st.label, w = st.word;
+    const t = totals(st.inP);
     const mine = byCompany(t.own), byDate = l => [...l].sort((a, b) => a.date < b.date ? -1 : 1);
     const teamInc = byDate(t.teamInc), ownInc = byDate(t.ownInc), inc = byDate(t.inc), exp = byDate(t.exp);
 
@@ -1258,10 +1345,11 @@
     const src = new Map();
     inc.forEach(e => { const k = key(e.party || e.title); if (!src.has(k)) src.set(k, { e, amt:0 }); src.get(k).amt += usdOf(e); });
     [...src.values()].sort((a, b) => b.amt - a.amt).forEach(({ e, amt }) => bits.push('<b>' + cash(amt) + '</b> ' + (e.party ? 'from ' + escHtml(e.party) : 'for ' + escHtml(e.title))));
-    let summary = bits.length ? 'This month you made ' + listJoin(bits) + '. ' : 'Nothing came in this month. ';
+    let summary = bits.length ? 'This ' + w + ' you made ' + listJoin(bits) + '. ' : 'Nothing came in this ' + w + '. ';
     summary += exp.length ? 'Your expenses were <b>' + cash(t.expense) + '</b>, so your total profit for ' + label + ' is <b>' + cash(t.net) + '</b>.'
       : 'You had no expenses, so your total profit for ' + label + ' is <b>' + cash(t.net) + '</b>.';
     if (t.toReceive > 0) summary += ' <b>' + cash(t.toReceive) + '</b> of this hasn’t reached you yet.';
+    if (t.savings > 0) summary += ' You put <b>' + cash(t.savings) + '</b> into savings.';
 
     const section = (title, total, head, rows, empty) =>
       '<h3>' + title + '<span>' + total + '</span></h3>' +
@@ -1283,21 +1371,21 @@
       '<td>' + escHtml(e.category) + '</td><td>' + status(e.settled, 'Paid', 'Unpaid') + '</td><td class="r mono neg-amt">−' + money(e) + '</td></tr>').join('');
 
     const note = $('slipNote').value.trim();
-    const number = 'ST-' + m;
+    const number = 'ST-' + st.key;
     $('slip').innerHTML =
       '<div class="band"></div>' +
       '<div class="top"><div class="brand">Amr Abdelgawad<em>Talents</em><small>amrabdelgawad.site</small></div>' +
-      '<div class="doc"><h1>Monthly statement</h1><p>No. <b>' + number + '</b></p><p>Issued <b>' + longDate(new Date()) + '</b></p></div></div>' +
+      '<div class="doc"><h1>' + st.title + '</h1><p>No. <b>' + number + '</b></p><p>Issued <b>' + longDate(new Date()) + '</b></p></div></div>' +
       '<div class="meta">' +
         '<div class="box"><p>Period</p><strong>' + label + '</strong><span>' + hm(t.ownSecs) + ' yours · ' + hm(t.teamSecs) + ' team</span></div>' +
         '<div class="box"><p>Came in</p><strong>' + cash(t.ownAmt + t.team + t.income) + '</strong><span>Own ' + cash(t.ownAmt) + ' · Team ' + cash(t.team) + ' · Other ' + cash(t.income) + '</span></div>' +
         '<div class="box hi' + (t.net < 0 ? ' neg' : '') + '"><p>Total profit</p><strong>' + cash(t.net) + '</strong><span>after ' + cash(t.expense) + ' in expenses</span></div>' +
       '</div>' +
       '<p class="summary">' + summary + '</p>' +
-      section('Your own work', cash(t.ownAmt), '<th>Company</th><th class="r">Hours</th><th class="r">Rate</th><th>Status</th><th class="r">Amount</th>', mineRows, 'You didn’t log any hours or own work this month.') +
-      section('Profit from your team', cash(t.team), '<th>Date</th><th>Description</th><th>Status</th><th class="r">Amount</th>', teamRows, 'No team profit added this month.') +
-      section('Other income', cash(t.income), '<th>Date</th><th>Description</th><th class="r">Hours or period</th><th>Status</th><th class="r">Amount</th>', incRows, 'No other income this month.') +
-      section('Expenses', '−' + cash(t.expense), '<th>Date</th><th>Description</th><th>Category</th><th>Status</th><th class="r">Amount</th>', expRows, 'No expenses this month.') +
+      section('Your own work', cash(t.ownAmt), '<th>Company</th><th class="r">Hours</th><th class="r">Rate</th><th>Status</th><th class="r">Amount</th>', mineRows, 'You didn’t log any hours or own work this ' + w + '.') +
+      section('Profit from your team', cash(t.team), '<th>Date</th><th>Description</th><th>Status</th><th class="r">Amount</th>', teamRows, 'No team profit added this ' + w + '.') +
+      section('Other income', cash(t.income), '<th>Date</th><th>Description</th><th class="r">Hours or period</th><th>Status</th><th class="r">Amount</th>', incRows, 'No other income this ' + w + '.') +
+      section('Expenses', '−' + cash(t.expense), '<th>Date</th><th>Description</th><th>Category</th><th>Status</th><th class="r">Amount</th>', expRows, 'No expenses this ' + w + '.') +
       '<div class="bottom"><div class="note"><b>How this is worked out.</b> Your own work is your hours × each company’s rate, with nothing taken out, plus any own work you added yourself. Team profit is the amount you added yourself. Other income and expenses are what you logged for ' + label + '. Amounts are in EGP at ' + fx.rate + ' per $1.' +
         (note ? '<span class="custom"><b>Note:</b> ' + escHtml(note) + '</span>' : '') + '</div>' +
         '<div class="totals"><div><span>Your own work</span><span class="mono">' + cash(t.ownAmt) + '</span></div>' +
@@ -1306,6 +1394,7 @@
         '<div><span>Expenses</span><span class="mono">−' + cash(t.expense) + '</span></div>' +
         (t.toReceive > 0 ? '<div><span>Not received yet</span><span class="mono">' + cash(t.toReceive) + '</span></div>' : '') +
         '<div class="grand"><span>Total profit</span><span class="mono">' + cash(t.net) + '</span></div>' +
+        (t.savings > 0 ? '<div><span>Put into savings</span><span class="mono">' + cash(t.savings) + '</span></div>' : '') +
         '<div class="in-egp"><span>' + cash(t.net) + ' = ' + usd(t.net) + '</span><span>at ' + fx.rate.toFixed(2) + ' EGP per $1</span></div>' +
         '</div></div>' +
       '<div class="foot"><div><span>Amr Abdelgawad Talents · amrabdelgawad.site</span><span>' + number + '</span></div></div>';
@@ -1322,7 +1411,7 @@
   $('statementBtn').addEventListener('click', openStatement);
   window.addEventListener('resize', fitStatement);
   $('slipNote').addEventListener('input', () => { drawStatement(); fitStatement(); });
-  function closeStatement(){ $('slipOverlay').hidden = true; document.body.style.overflow = ''; stMonth = null; }
+  function closeStatement(){ $('slipOverlay').hidden = true; document.body.style.overflow = ''; st = null; }
   $('slipClose').addEventListener('click', closeStatement);
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('slipOverlay').hidden) closeStatement(); });
 
@@ -1339,7 +1428,7 @@
     return pdfLib;
   }
   $('slipDownload').addEventListener('click', async () => {
-    if (!stMonth) return;
+    if (!st) return;
     const btn = $('slipDownload'); btn.setAttribute('aria-busy', 'true'); btn.textContent = 'Preparing…';
     try {
       const html2pdf = await loadPdfLib();
@@ -1347,7 +1436,7 @@
       const clone = $('slip').cloneNode(true);
       clone.style.transform = 'none'; clone.style.boxShadow = 'none';
       await html2pdf().set({
-        margin: [10, 0, 10, 0], filename: 'Statement-' + stMonth + '.pdf',
+        margin: [10, 0, 10, 0], filename: 'Statement-' + st.key + '.pdf',
         image: { type:'jpeg', quality:0.96 },
         html2canvas: { scale:2, useCORS:true, backgroundColor:'#ffffff', scrollX:0, scrollY:0 }, // capture from the top, or a scrolled page gives a blank PDF
         jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
