@@ -610,6 +610,30 @@
   let installPrompt = null;
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; $('installBtn').hidden = false; });
   $('installBtn').addEventListener('click', async () => { if (!installPrompt) return; installPrompt.prompt(); installPrompt = null; $('installBtn').hidden = true; closeMenu(); });
+
+  // ---------- backup (owner) ----------
+  // Saves every table to one file on this device. Supabase's free plan keeps no copies you can restore yourself.
+  const BACKUP_TABLES = ['cash_entries', 'shifts', 'shift_requests', 'members', 'companies', 'agents', 'agent_companies', 'tracker_settings'];
+  $('backupBtn').addEventListener('click', async () => {
+    const btn = $('backupBtn'); if (btn.disabled) return;
+    btn.disabled = true; toast('Making your backup…');
+    const out = { made: new Date().toISOString(), tables: {} }; const failed = [];
+    for (const t of BACKUP_TABLES) {
+      const rows = [];
+      for (let from = 0; ; from += 1000) { // Supabase sends at most 1000 rows per request
+        const { data, error } = await db.from(t).select('*').range(from, from + 999);
+        if (error) { failed.push(t); break; }
+        rows.push(...data); if (data.length < 1000) break;
+      }
+      out.tables[t] = rows;
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 1)], { type:'application/json' }));
+    a.download = 'talents-backup-' + out.made.slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    btn.disabled = false; closeMenu();
+    toast(failed.length ? 'Backup saved, but these couldn’t be read: ' + failed.join(', ') : 'Backup saved to your downloads.');
+  });
   // When a new version is published, the open app offers it; one tap reloads into it
   let waitingSW = null;
   if ('serviceWorker' in navigator && location.protocol === 'https:') {

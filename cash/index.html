@@ -2,19 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<!-- Browser safety rules: only code from this site and the services listed here may run or load. Add a service here before using it. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/ https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://ztlpgyomjuzmjmuifbbd.supabase.co wss://ztlpgyomjuzmjmuifbbd.supabase.co; frame-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="robots" content="noindex, nofollow" />
 <title>Cash</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<script>
-  // Inside the app: hide this page's own header and tabs. On the live site, /cash now opens the app.
-  // Runs first in <head> so the redirect happens before any styles or scripts download.
-  (function(){
-    var embed = /(^|[?&])embed=1/.test(location.search);
-    if (embed) document.documentElement.classList.add('embed');
-    else if (location.hostname === 'amrabdelgawad.site') location.replace('../app/' + (location.hash || '#overview'));
-  })();
-</script>
+<script src="../guard.js?v=1"></script>
+<script src="early.js?v=1"></script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1054,9 +1050,9 @@
 <div class="toast" id="tm-toast"><span id="tm-toastMsg"></span><button id="tm-undo">Undo</button></div>
 <div class="toast" id="toast"><span id="toastMsg"></span><button id="undo">Undo</button></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="../tracker/config.js"></script>
-<script src="team.js?v=8"></script>
-<script src="cash.js?v=14"></script>
+<script src="team.js?v=9"></script>
+<script src="cash.js?v=15"></script>
 </body>
 </html>
