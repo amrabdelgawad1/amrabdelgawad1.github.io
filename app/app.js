@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id);
   const cfg = window.TRACKER_CONFIG || {};
   // v changes with each release of the cash page, so the app never shows a stale copy
-  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=16';
+  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=17';
 
   // An invite or new sign-in link lands here with its type in the address; read it before supabase-js clears it
   const linkType = new URLSearchParams(location.hash.slice(1)).get('type');
@@ -36,6 +36,7 @@
   const db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
 
   let role = null, profile = null, user = null;
+  let access = []; // extra sections Amr switched on for this team member: live, requests, team, money
 
   // ---------- sign in ----------
   $('loginForm').addEventListener('submit', async e => {
@@ -117,6 +118,8 @@
     profile = Array.isArray(prof) ? prof[0] : prof;
     if (error || !profile) { $('noAccessMsg').textContent = 'This account isn’t set up for the tracker. Ask Amr to invite you.'; show('vNoAccess'); return; }
     if (!profile.active) { $('noAccessMsg').textContent = 'Your access was switched off. Ask Amr if that’s a mistake.'; show('vNoAccess'); return; }
+    const acc = await db.from('members').select('access').eq('user_id', user.id).maybeSingle();
+    access = (!acc.error && acc.data && acc.data.access) || [];
     role = 'member'; startMember();
   }
 
@@ -124,7 +127,7 @@
   // Team member: tracker + own history
   // ======================================================================
   let live = null; // { mode, started_at, work_seconds, break_seconds, seg_at } while clocked in
-  let tickTimer = null, liveTimer = null;
+  let tickTimer = null, liveTimer = null, liveDrawTimer = null;
   const LBL = { off:['Off', 's-off'], run:['Working', 's-run'], pau:['Paused', 's-pau'], brk:['On break', 's-brk'] };
   const segSecs = () => live ? Math.max(0, (Date.now() - new Date(live.seg_at).getTime()) / 1000) : 0;
   const workNow = () => live ? live.work_seconds + (live.mode === 'run' ? segSecs() : 0) : 0;
@@ -145,8 +148,9 @@
 
   async function startMember(){
     show('vApp');
-    if (location.hash) history.replaceState(null, '', location.pathname); // team members have one page
-    $('burger').hidden = true; $('drawer').hidden = true;
+    const extra = access.length > 0;
+    if (location.hash && !extra) history.replaceState(null, '', location.pathname); // without extra access, team members have one page
+    $('burger').hidden = !extra; $('drawer').hidden = !extra;
     $('me').textContent = initials(profile.name); $('me').classList.remove('owner');
     $('title').textContent = 'Tracker';
     $('pTrack').hidden = false; ['pLive', 'pPeople', 'pCash'].forEach(p => $(p).hidden = true);
@@ -163,6 +167,7 @@
     loadHistory();
     loadRequests();
     loadFx().then(() => loadHistory());
+    if (extra) startMenu();
   }
 
   // After 10 hours on the clock, ask whether they're still working
@@ -301,7 +306,7 @@
     loadRequests();
   });
   async function loadRequests(){
-    const { data, error } = await db.from('shift_requests').select('*').order('created_at', { ascending:false }).limit(20);
+    const { data, error } = await db.from('shift_requests').select('*').eq('user_id', user.id).order('created_at', { ascending:false }).limit(20);
     const box = $('reqList'); box.innerHTML = '';
     if (error) return;
     const recent = (data || []).filter(r => r.status === 'pending' || (r.status === 'rejected' && Date.now() - new Date(r.decided_at).getTime() < 14 * 864e5));
@@ -365,7 +370,12 @@
   // ======================================================================
   // Owner: menu, Live now, Invite and access, and the /cash pages
   // ======================================================================
-  const OWNER_PAGES = { live:'Live now', requests:'Missed-shift requests', people:'Invite and access', mytime:'My time', overview:'Overview', team:'Team', income:'Income', expense:'Expenses' };
+  const OWNER_PAGES = { live:'Live now', requests:'Missed-shift requests', people:'Invite and access', mytime:'My time', overview:'Overview', team:'Team', income:'Income', expense:'Expenses', track:'Tracker' };
+  // Which switch in Invite and access opens each page; "owner" pages are Amr's alone
+  const SECTION = { live:'live', requests:'requests', team:'team', overview:'money', income:'money', expense:'money', mytime:'owner', people:'owner', track:'track' };
+  const SECTION_NAMES = { live:'Live now', requests:'Missed-shift requests', team:'Team', money:'Money' };
+  const canSee = sec => role === 'owner' ? sec !== 'track' : role === 'member' && (sec === 'track' || access.includes(sec));
+  const hasMenu = () => role === 'owner' || (role === 'member' && access.length > 0);
   let companies = [];
 
   async function startOwner(){
@@ -375,8 +385,20 @@
     $('pTrack').hidden = true;
     const { data } = await db.from('companies').select('id,name').order('name');
     companies = data || [];
-    loadTeamMenu();
-    ownerRoute();
+    startMenu();
+  }
+  // The menu for the owner, or a team member with extra access (only the sections switched on for them).
+  // Hiding is for tidiness; the database decides what each person can actually read.
+  async function startMenu(){
+    document.querySelectorAll('#drawer [data-sec]').forEach(el => el.hidden = !canSee(el.dataset.sec));
+    if (role === 'member') {
+      $('drawName').textContent = profile.name;
+      $('drawWho').textContent = 'Can also see: ' + access.map(s => SECTION_NAMES[s]).filter(Boolean).join(', ');
+      const { data } = await db.rpc('company_names'); // names only, no rates
+      companies = data || [];
+    }
+    if (canSee('team')) loadTeamMenu();
+    menuRoute();
   }
   // Team in the menu opens into each person's name; a name goes straight to their hours (#team/<name>).
   // Names are the active agents (Team > Agents), numbered like on /tracker. Before any agents exist,
@@ -410,17 +432,18 @@
     document.querySelectorAll('.drawer .mi[href]').forEach(a => a.classList.toggle('on', a.getAttribute('href') === here));
     if (here.startsWith('#team') && !$('teamTog').hidden) openTeamMenu(true);
   }
-  function ownerRoute(){
-    if (role !== 'owner') return;
+  function menuRoute(){
+    if (!hasMenu()) return;
     let [page, person] = location.hash.slice(1).split('/');
-    if (!OWNER_PAGES[page]) { page = 'live'; history.replaceState(null, '', '#live'); }
+    if (!OWNER_PAGES[page] || !canSee(SECTION[page])) { page = role === 'owner' ? 'live' : 'track'; history.replaceState(null, '', '#' + page); }
     const here = page + (page === 'team' && person ? '/' + person : '');
     $('title').textContent = OWNER_PAGES[page];
     markMenu();
+    $('pTrack').hidden = page !== 'track';
     $('pLive').hidden = page !== 'live'; $('pPeople').hidden = page !== 'people'; $('pRequests').hidden = page !== 'requests';
-    const cashPage = !['live', 'people', 'requests'].includes(page);
+    const cashPage = !['live', 'people', 'requests', 'track'].includes(page);
     $('pCash').hidden = !cashPage;
-    clearInterval(liveTimer);
+    clearInterval(liveTimer); clearInterval(liveDrawTimer);
     if (page === 'live') { loadLive(); liveTimer = setInterval(loadLive, 15000); }
     if (page === 'people') loadPeople();
     if (page === 'requests') loadOwnerRequests();
@@ -429,7 +452,7 @@
     closeMenu();
     window.scrollTo(0, 0);
   }
-  window.addEventListener('hashchange', ownerRoute);
+  window.addEventListener('hashchange', menuRoute);
 
   // The /cash pages, inside the app: same sign-in, their own tab row hidden
   function openCash(view){
@@ -443,7 +466,7 @@
   $('burger').addEventListener('click', () => document.body.classList.add('menu-open'));
   $('shade').addEventListener('click', closeMenu);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
-  $('drawer').addEventListener('click', e => { const a = e.target.closest('.mi[href]'); if (a && a.getAttribute('href') === location.hash) ownerRoute(); });
+  $('drawer').addEventListener('click', e => { const a = e.target.closest('.mi[href]'); if (a && a.getAttribute('href') === location.hash) menuRoute(); });
 
   // ---------- live now ----------
   let liveRows = [], liveMembers = [], codeRows = [];
@@ -456,7 +479,7 @@
     countRequests();
     $('liveNote').textContent = 'Updates every 15 seconds.';
     drawLive();
-    clearInterval(tickTimer); tickTimer = setInterval(() => { if (!$('pLive').hidden) drawLive(); }, 1000);
+    clearInterval(liveDrawTimer); liveDrawTimer = setInterval(() => { if (!$('pLive').hidden) drawLive(); }, 1000);
   }
   function drawLive(){
     const coName = id => (companies.find(c => c.id === id) || {}).name || '';
@@ -484,6 +507,7 @@
 
   // ---------- missed-shift requests (owner) ----------
   async function countRequests(){
+    if (!canSee('requests')) return;
     const { count } = await db.from('shift_requests').select('id', { count:'exact', head:true }).eq('status', 'pending');
     const n = count || 0;
     $('reqCnt').hidden = !n; $('reqCnt').textContent = n + ' waiting';
@@ -494,13 +518,14 @@
     if (error) { $('reqPending').innerHTML = '<p class="empty">' + (/shift_requests/.test(error.message || '') ? 'Not set up yet. Run supabase/app-requests.sql.' : 'Couldn’t load requests.') + '</p>'; return; }
     const coName = id => (companies.find(c => c.id === id) || {}).name || '';
     const pend = data.filter(r => r.status === 'pending'), done = data.filter(r => r.status !== 'pending').slice(0, 20);
+    $('reqHead').textContent = role === 'owner' ? 'Waiting for you' : 'Waiting for Amr';
     const row = (r, actions) => {
       const d = document.createElement('div'); d.className = 'person';
       d.innerHTML = '<div class="head"><span class="av"></span><span class="n"><b></b><small></small></span><span class="num rq-h"></span></div>' + (actions ? '<div class="acts"><button class="btn small" data-ok="1">Approve</button><button class="btn ghost small" data-ok="0">Decline</button></div>' : '');
       d.querySelector('.av').textContent = initials(r.name);
       d.querySelector('b').textContent = r.name + ' · ' + dayDate(r.shift_date);
       d.querySelector('small').textContent = hhmm(new Date(r.started_at)) + '–' + hhmm(new Date(r.ended_at)) + (r.break_seconds >= 60 ? ' · ' + hm(r.break_seconds) + ' break' : '') + ' · ' + coName(r.company_id) +
-        (r.note ? ' · “' + r.note + '”' : '') + (actions ? '' : ' · ' + (r.status === 'approved' ? 'Approved' : 'Declined' + (r.reason ? ': ' + r.reason : '')));
+        (r.note ? ' · “' + r.note + '”' : '') + (r.status === 'pending' ? '' : ' · ' + (r.status === 'approved' ? 'Approved' : 'Declined' + (r.reason ? ': ' + r.reason : '')));
       d.querySelector('.rq-h').textContent = hm(r.work_seconds);
       if (actions) d.querySelectorAll('[data-ok]').forEach(b => b.addEventListener('click', async () => {
         const ok = b.dataset.ok === '1';
@@ -516,7 +541,7 @@
       return d;
     };
     $('reqPending').innerHTML = pend.length ? '' : '<p class="empty">Nothing waiting. When someone forgets to clock in, their request shows up here.</p>';
-    pend.forEach(r => $('reqPending').appendChild(row(r, true)));
+    pend.forEach(r => $('reqPending').appendChild(row(r, role === 'owner')));
     $('reqDone').innerHTML = done.length ? '' : '<p class="empty">Nothing yet.</p>';
     done.forEach(r => $('reqDone').appendChild(row(r, false)));
   }
@@ -584,6 +609,23 @@
       d.querySelector('.av').textContent = initials(m.name);
       d.querySelector('b').textContent = m.name;
       d.querySelector('small').textContent = (m.email || '') + ' · since ' + new Date(m.created_at).toLocaleDateString('en-US', { month:'short', year:'numeric' });
+      // What they can also see, look only. Team and Money ask them for an authenticator code too.
+      if (m.active && Array.isArray(m.access)) {
+        const acc = document.createElement('div'); acc.className = 'acc';
+        acc.innerHTML = '<span>Can also see</span>' + Object.keys(SECTION_NAMES).map(s => '<label><input type="checkbox" value="' + s + '"' + (m.access.includes(s) ? ' checked' : '') + ' />' + esc(SECTION_NAMES[s]) + '</label>').join('');
+        acc.title = 'Look only: they can’t add, change or approve anything. Team and Money ask them for a code from an authenticator app.';
+        acc.addEventListener('change', async e => {
+          const box = e.target, next = [...acc.querySelectorAll('input:checked')].map(i => i.value);
+          acc.querySelectorAll('input').forEach(i => i.disabled = true);
+          const { error } = await db.from('members').update({ access: next }).eq('user_id', m.user_id);
+          acc.querySelectorAll('input').forEach(i => i.disabled = false);
+          const first = m.name.split(' ')[0], what = SECTION_NAMES[box.value];
+          if (error) { box.checked = !box.checked; toast('Couldn’t change it. Try again.'); return; }
+          m.access = next;
+          toast(box.checked ? first + ' can now see ' + what + (/team|money/.test(box.value) ? '. They’ll set up an authenticator code the first time.' : '.') : first + ' can no longer see ' + what + '.');
+        });
+        d.querySelector('.head').after(acc);
+      }
       const sel = d.querySelector('select'); fillCompanies(sel, m.company_id);
       sel.addEventListener('change', async () => {
         const { error } = await db.from('members').update({ company_id: Number(sel.value) }).eq('user_id', m.user_id);
@@ -604,7 +646,7 @@
     });
   }
 
-  function stopTimers(){ clearInterval(tickTimer); clearInterval(liveTimer); }
+  function stopTimers(){ clearInterval(tickTimer); clearInterval(liveTimer); clearInterval(liveDrawTimer); }
 
   // ---------- install ----------
   let installPrompt = null;

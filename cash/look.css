@@ -136,3 +136,11 @@ html .agent-empty{ color:var(--muted); font-size:14px; padding:16px 0; }
   html .agent-row{ grid-template-columns:44px minmax(0, 1fr) auto; }
   html .agent-row .co-chips{ grid-column:2 / -1; grid-row:2; }
 }
+
+/* ---------- look-only: someone Amr gave access to (the database refuses their changes too) ---------- */
+html.look-only #addToggle, html.look-only #addBox, html.look-only .team-add, html.look-only .c-act,
+html.look-only #recurBox, html.look-only #backupNudge, html.look-only .backup-card, html.look-only .mfa-card,
+html.look-only #myPayAll, html.look-only #lumpToggle, html.look-only #myAddToggle, html.look-only #lumpForm, html.look-only #myForm,
+html.look-only #tm-addToggle, html.look-only #tm-addBox, html.look-only #tm-agentForm, html.look-only .companies-card,
+html.look-only #tm-bulk, html.look-only .c-sel, html.look-only th:has(#tm-selAll), html.look-only .c-del{ display:none !important; }
+html.look-only .c-status button, html.look-only .rate-input, html.look-only .co-chip, html.look-only .agent-row button{ pointer-events:none; }

@@ -187,3 +187,10 @@ img.logo{ width:64px; height:64px; border-radius:16px; display:block; margin:0 a
 .person .rq-h{ white-space:nowrap; align-self:flex-start; }
 .person .head{ align-items:flex-start; }
 .person .head .pill{ flex-shrink:0; }
+
+/* Invite and access: what each person can also see */
+.person .acc{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; padding-left:48px; }
+.person .acc > span{ font-size:12.5px; color:var(--muted); margin-right:2px; }
+.acc label{ display:inline-flex; align-items:center; gap:6px; font-size:13px; padding:5px 10px; border-radius:999px; border:1px solid var(--border2); cursor:pointer; user-select:none; }
+.acc label:has(input:checked){ border-color:var(--accent); background:var(--accent-dim); color:var(--accent); font-weight:600; }
+.acc input{ accent-color:var(--accent); margin:0; }

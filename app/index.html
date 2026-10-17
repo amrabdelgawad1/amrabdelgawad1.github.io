@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=5" />
+<link rel="stylesheet" href="app.css?v=6" />
 </head>
 <body>
 <div class="shell">
@@ -154,7 +154,7 @@
     <!-- owner: missed-shift requests -->
     <main class="pad" id="pRequests" hidden>
       <section class="card list">
-        <h2>Waiting for you</h2>
+        <h2 id="reqHead">Waiting for you</h2>
         <div id="reqPending"><p class="empty">Loading…</p></div>
       </section>
       <section class="card list">
@@ -193,25 +193,26 @@
     <main id="pCash" hidden><iframe id="cashFrame" title="Cash"></iframe></main>
   </div>
 
-  <!-- owner menu -->
+  <!-- menu: the owner sees everything, a team member only what Amr switched on -->
   <div class="shade" id="shade"></div>
   <nav class="drawer" id="drawer" aria-label="Sections" hidden>
-    <h3>Amr Abdelgawad</h3><p class="who">Owner · all access</p>
-    <a class="mi" href="#live"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>Live now<span class="cnt" id="liveCnt" hidden></span></a>
-    <a class="mi" href="#mytime"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>My time</a>
-    <a class="mi" href="#overview"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Overview</a>
-    <div class="mi-row">
+    <h3 id="drawName">Amr Abdelgawad</h3><p class="who" id="drawWho">Owner · all access</p>
+    <a class="mi" href="#track" data-sec="track" hidden><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>My tracker</a>
+    <a class="mi" href="#live" data-sec="live"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>Live now<span class="cnt" id="liveCnt" hidden></span></a>
+    <a class="mi" href="#mytime" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>My time</a>
+    <a class="mi" href="#overview" data-sec="money"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Overview</a>
+    <div class="mi-row" data-sec="team">
       <a class="mi" href="#team"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.8-3.2 3-5 5.5-5s4.7 1.8 5.5 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.2.1 3.8 1.6 4.5 4.3"/></svg>Team</a>
       <button class="mi-tog" type="button" id="teamTog" aria-expanded="false" aria-controls="teamSub" aria-label="Show team members" hidden><svg class="i" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
     </div>
     <div class="sub" id="teamSub" hidden></div>
-    <a class="mi" href="#income"><svg class="i" viewBox="0 0 24 24"><path d="M17 7L7 17M7 9v8h8"/></svg>Income</a>
-    <a class="mi" href="#expense"><svg class="i" viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>Expenses</a>
-    <p class="sec">People</p>
-    <a class="mi" href="#requests"><svg class="i" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>Missed-shift requests<span class="cnt due" id="reqCnt" hidden></span></a>
-    <a class="mi" href="#people"><svg class="i" viewBox="0 0 24 24"><circle cx="10" cy="8" r="3.2"/><path d="M4 19c.8-3.2 3.2-5 6-5s4.9 1.6 5.7 4"/><path d="M18 8v6M15 11h6"/></svg>Invite and access</a>
+    <a class="mi" href="#income" data-sec="money"><svg class="i" viewBox="0 0 24 24"><path d="M17 7L7 17M7 9v8h8"/></svg>Income</a>
+    <a class="mi" href="#expense" data-sec="money"><svg class="i" viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>Expenses</a>
+    <p class="sec" data-sec="requests">People</p>
+    <a class="mi" href="#requests" data-sec="requests"><svg class="i" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>Missed-shift requests<span class="cnt due" id="reqCnt" hidden></span></a>
+    <a class="mi" href="#people" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><circle cx="10" cy="8" r="3.2"/><path d="M4 19c.8-3.2 3.2-5 6-5s4.9 1.6 5.7 4"/><path d="M18 8v6M15 11h6"/></svg>Invite and access</a>
     <div class="bottom">
-      <button class="mi" type="button" id="backupBtn"><svg class="i" viewBox="0 0 24 24"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Download a backup</button>
+      <button class="mi" type="button" id="backupBtn" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Download a backup</button>
       <button class="mi" type="button" id="installBtn" hidden><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Install the app</button>
       <button class="mi" type="button" data-signout><svg class="i" viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11"/></svg>Sign out</button>
     </div>
@@ -223,6 +224,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="../tracker/config.js"></script>
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 </body>
 </html>

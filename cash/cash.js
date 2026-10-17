@@ -92,7 +92,10 @@
     }
     $('mfaCode').focus();
   }
-  function openDash(){
+  async function openDash(){
+    // Anyone but Amr is here because he gave them a look: hide the add, edit and pay controls
+    const { data: isOwner } = await db.rpc('is_tracker_admin');
+    document.documentElement.classList.toggle('look-only', isOwner !== true);
     $('mfaView').hidden = true; $('loginView').hidden = true; $('dashView').hidden = false;
     $('meEmail').textContent = mfaEmail; $('meAv').textContent = (mfaEmail[0] || 'A').toUpperCase();
     load();
