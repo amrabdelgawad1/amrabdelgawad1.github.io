@@ -359,6 +359,14 @@
   .flow .amt{ font:500 12.5px "JetBrains Mono", monospace; }
   .flow .amt.in{ fill:var(--green); } .flow .amt.out{ fill:#ff9a9a; }
   .flow .hit{ cursor:default; }
+  /* Donuts above the Where it came from / went lists; each bar below is its legend */
+  .donut{ display:flex; justify-content:center; margin:-4px 0 12px; }
+  .donut:empty{ display:none; }
+  .donut .d-total{ font:600 15px "JetBrains Mono", monospace; fill:var(--text); }
+  .donut .d-sub{ font:500 11.5px var(--font-body); fill:var(--muted); }
+  .donut .slice{ transition:opacity .2s; }
+  .donut svg:hover .slice:not(:hover){ opacity:.45; }
+  .cnum .cpct{ display:block; text-align:right; color:var(--muted); font-size:12px; }
   .flow .who{ font:500 11.5px var(--font-body); fill:var(--muted); }
   @media (max-width:600px){ .flow .lbl{ font-size:12.5px; } .flow .amt{ font-size:11px; } }
   .flow .tip{ position:absolute; pointer-events:none; background:var(--bg4); border:1px solid var(--border2); color:var(--text); font-size:12.5px; line-height:1.45; padding:8px 11px; border-radius:8px; white-space:nowrap; opacity:0; transition:opacity .15s; transform:translate(-50%, calc(-100% - 12px)); box-shadow:0 10px 30px -10px rgba(0,0,0,.5); z-index:2; }
@@ -707,10 +715,12 @@
       <div class="split cash-split">
         <section class="t-card block">
           <div class="card-title"><h2>Where it came from</h2></div>
+          <div class="donut" id="cameDonut"></div>
           <div id="cameFrom"></div>
         </section>
         <section class="t-card block">
           <div class="card-title"><h2>Where it went</h2></div>
+          <div class="donut" id="wentDonut"></div>
           <div id="wentTo"></div>
         </section>
       </div>

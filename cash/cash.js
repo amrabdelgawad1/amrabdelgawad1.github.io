@@ -369,6 +369,8 @@
       }));
     };
     sources(t.ownInc, 'You'); sources(t.teamInc, 'Team'); sources(t.inc);
+    shade(inRows, GREENS);
+    drawDonut($('cameDonut'), inRows, 'came in');
     drawBars($('cameFrom'), inRows, 'in', 'Nothing came in for this period yet.');
 
     const cat = new Map();
@@ -378,11 +380,48 @@
       const g = cat.get(k); g.amt += usdOf(e); g.titles.add(e.title);
     });
     const outRows = [...cat.values()].sort((a, b) => b.amt - a.amt).map(g => ({ label:g.label, sub:[...g.titles].slice(0, 3).join(', '), amt:g.amt, go:'expense' }));
+    shade(outRows, REDS);
+    drawDonut($('wentDonut'), outRows, 'spent');
     drawBars($('wentTo'), outRows, 'out', 'No expenses for this period.');
     flowData = [inRows, outRows];
     drawFlow($('moneyFlow'), inRows, outRows);
 
     renderMonths();
+  }
+
+  // ---------- donuts ----------
+  // Each row gets its own shade, shared by its donut slice and its bar, so the list doubles as the legend
+  const GREENS = ['#047857', '#10B981', '#6EE7B7', '#065F46', '#34D399', '#A7F3D0'];
+  const REDS = ['#E5484D', '#F07C7C', '#F5A3A3', '#C2373C', '#FAC9C9', '#F9B4B4'];
+  const shade = (list, pal) => list.forEach((r, i) => { r.color = pal[i % pal.length]; });
+  function drawDonut(el, list, word){
+    el.innerHTML = '';
+    const rows = list.filter(r => r.amt > 0), total = rows.reduce((a, r) => a + r.amt, 0);
+    if (total <= 0) return;
+    const S = 180, c = S / 2, R = 86, r0 = 58, ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${S} ${S}`); svg.setAttribute('width', S); svg.setAttribute('height', S);
+    const mk = (tag, attrs) => { const e = document.createElementNS(ns, tag); for (const a in attrs) e.setAttribute(a, attrs[a]); svg.appendChild(e); return e; };
+    const pt = (rad, a) => (c + rad * Math.cos(a)).toFixed(2) + ' ' + (c + rad * Math.sin(a)).toFixed(2);
+    let a = -Math.PI / 2;
+    rows.forEach(row => {
+      const sweep = row.amt / total * Math.PI * 2, share = row.amt / total * 100;
+      let p;
+      // One slice is the whole ring, which a single arc can't draw
+      if (rows.length === 1) p = mk('circle', { class:'slice', cx:c, cy:c, r:(R + r0) / 2, fill:'none', stroke:row.color, 'stroke-width':R - r0 });
+      else {
+        const a1 = a + Math.max(sweep - .015, .02), big = a1 - a > Math.PI ? 1 : 0;
+        p = mk('path', { class:'slice', fill:row.color, d:`M ${pt(R, a)} A ${R} ${R} 0 ${big} 1 ${pt(R, a1)} L ${pt(r0, a1)} A ${r0} ${r0} 0 ${big} 0 ${pt(r0, a)} Z` });
+      }
+      const tt = document.createElementNS(ns, 'title');
+      tt.textContent = row.label + (row.tag ? ' · ' + row.tag : '') + ': ' + cash(row.amt) + ' · ' + (share < 1 ? share.toFixed(1) : Math.round(share)) + '%';
+      p.appendChild(tt);
+      row.share = share;
+      a += sweep;
+    });
+    mk('text', { x:c, y:c - 1, 'text-anchor':'middle', class:'d-total' }).textContent = cash(total).replace(/\.\d\d$/, '');
+    mk('text', { x:c, y:c + 16, 'text-anchor':'middle', class:'d-sub' }).textContent = word;
+    el.appendChild(svg);
   }
 
   // ---------- how the money moved ----------
@@ -510,6 +549,9 @@
       if (g.tag) { const t = document.createElement('span'); t.className = 'tag' + (g.me ? ' me' : ''); t.textContent = g.tag; d.querySelector('.l').after(t); }
       d.querySelector('small').textContent = g.sub;
       d.querySelector('.cnum').textContent = cash(g.amt);
+      // Rows under a donut carry its slice colour and share
+      if (g.color) d.querySelector('.bbar i').style.background = g.color;
+      if (g.share != null) { const p = document.createElement('span'); p.className = 'cpct'; p.textContent = (g.share < 1 ? g.share.toFixed(1) : Math.round(g.share)) + '%'; d.querySelector('.cnum').appendChild(p); }
       el.appendChild(d);
       requestAnimationFrame(() => requestAnimationFrame(() => { d.querySelector('.bbar i').style.width = (Math.max(0, g.amt) / max * 100) + '%'; }));
     });
