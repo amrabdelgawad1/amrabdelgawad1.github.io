@@ -426,9 +426,13 @@
     // On a phone there's no room for "Team's work · EGP …", so whose work it was gets its own line
     [left, right].forEach(list => list.forEach(n => { n.lines = lines(n.label); n.rows = n.lines.length + 1 + (narrow && n.tag ? 1 : 0); }));
 
-    // Each node is as tall as its amount, with room for its label lines underneath it
-    const place = list => { let y = 0; list.forEach(n => { n.h = Math.max(1.5, n.amt * k); n.slot = Math.max(n.h, n.rows * lineH + 6); n.y = y + (n.slot - n.h) / 2; y += n.slot + gap; }); return y - gap; };
-    const H = Math.max(place(left), place(right), flowH), midY = (H - total * k) / 2;
+    // Each node is as tall as its amount, but never too thin to see or point at,
+    // with room for its label lines next to it
+    const minH = narrow ? 8 : 10;
+    const place = list => { let y = 0; list.forEach(n => { n.h = Math.max(minH, n.amt * k); n.slot = Math.max(n.h, n.rows * lineH + 6); n.y = y + (n.slot - n.h) / 2; y += n.slot + gap; }); return y - gap; };
+    const H = Math.max(place(left), place(right), flowH);
+    // The middle bar fits whichever side is taller once small amounts are thickened; the other side is centred on it
+    const sumH = l => l.reduce((a, n) => a + n.h, 0), midH = Math.max(sumH(left), sumH(right)), midY = (H - midH) / 2;
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('height', H);
 
     const pct = n => totalIn > 0 ? (n / totalIn * 100).toFixed(n / totalIn < .01 ? 1 : 0) + '% of what came in' : '';
@@ -440,13 +444,16 @@
       const show = () => { el.classList.add('hovering'); p.classList.add('hot'); tip.innerHTML = ''; const a = document.createElement('div'); a.textContent = n.label + (n.tag ? ' · ' + WHO[n.tag] : ''); const b = document.createElement('b'); b.textContent = cash(n.amt) + (share ? ' · ' + share : ''); tip.append(a, b); tip.style.opacity = 1; };
       const move = e => { const r = el.getBoundingClientRect(); tip.style.left = Math.min(Math.max(e.clientX - r.left, 110), W - 110) + 'px'; tip.style.top = (e.clientY - r.top) + 'px'; };
       const hide = () => { el.classList.remove('hovering'); p.classList.remove('hot'); tip.style.opacity = 0; };
-      p.addEventListener('pointerenter', e => { show(); move(e); });
-      p.addEventListener('pointermove', move);
-      p.addEventListener('pointerleave', hide);
+      n.hover = target => {
+        target.addEventListener('pointerenter', e => { show(); move(e); });
+        target.addEventListener('pointermove', move);
+        target.addEventListener('pointerleave', hide);
+      };
+      n.hover(p);
     };
-    let my = midY;
+    let my = midY + (midH - sumH(left)) / 2;
     left.forEach(n => { band(x0 + nodeW, n.y, x1, my, n.h, n.kind === 'short' ? RED : GREEN, .22, n, n.kind === 'short' ? 'spent beyond what came in' : pct(n.amt)); my += n.h; });
-    my = midY;
+    my = midY + (midH - sumH(right)) / 2;
     right.forEach(n => { band(x1 + nodeW, my, x2, n.y, n.h, n.kind === 'net' ? GREEN : RED, n.kind === 'net' ? .3 : .2, n, pct(n.amt)); my += n.h; });
 
     const label = (n, x, anchor, cls) => {
@@ -457,7 +464,10 @@
     };
     left.forEach(n => { mk('rect', { x:x0, y:n.y, width:nodeW, height:n.h, rx:3, fill:n.kind === 'short' ? RED : GREEN }); label(n, x0 - 8, 'end', n.kind === 'short' ? 'out' : 'in'); });
     right.forEach(n => { mk('rect', { x:x2, y:n.y, width:nodeW, height:n.h, rx:3, fill:n.kind === 'net' ? GREEN : RED }); label(n, x2 + nodeW + 8, 'start', n.kind === 'net' ? 'in' : 'out'); });
-    mk('rect', { x:x1, y:midY, width:nodeW, height:total * k, rx:3, fill:'currentColor', opacity:.7 });
+    mk('rect', { x:x1, y:midY, width:nodeW, height:midH, rx:3, fill:'currentColor', opacity:.7 });
+    // Pointing at a name or its bar shows the same details as its band, so small amounts are easy to reach
+    left.forEach(n => n.hover(mk('rect', { class:'hit', x:0, y:n.y + n.h / 2 - n.slot / 2, width:x0 + nodeW, height:n.slot, fill:'transparent' })));
+    right.forEach(n => n.hover(mk('rect', { class:'hit', x:x2, y:n.y + n.h / 2 - n.slot / 2, width:W - x2, height:n.slot, fill:'transparent' })));
   }
 
   // Totals carry their dollar value in data-usd; Cash shows them in pounds with the dollars on the line under
