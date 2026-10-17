@@ -15,7 +15,10 @@
   const iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   const thisMonth = () => iso(new Date()).slice(0, 7);
   let entries = [], shifts = [], companies = [];
-  let view = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
+  // #team/<name> opens the Team tab on one person's hours
+  const hashView = () => location.hash.slice(1).split('/')[0];
+  const hashPerson = () => decodeURIComponent(location.hash.slice(1).split('/')[1] || '');
+  let view = VIEWS.includes(hashView()) ? hashView() : 'overview';
   let month = thisMonth(), lastDeleted = null, toastTimer = null, team = null;
   let editing = null, fKind = 'income', fMode = 'fixed';
 
@@ -246,7 +249,8 @@
     const leavingTeam = view === 'team' && v !== 'team';
     view = v;
     document.querySelectorAll('#view button').forEach(x => x.classList.toggle('on', x.dataset.v === v));
-    history.replaceState(null, '', v === 'overview' ? location.pathname : '#' + v);
+    const person = v === 'team' ? hashPerson() : '';
+    history.replaceState(null, '', v === 'overview' ? location.pathname : '#' + v + (person ? '/' + encodeURIComponent(person) : ''));
     $('teamView').hidden = v !== 'team';
     $('cashTools').hidden = v === 'team';
     $('addToggle').hidden = v === 'team' || v === 'mytime';
@@ -255,6 +259,7 @@
       ['overviewView', 'mytimeView', 'listView'].forEach(id => $(id).hidden = true);
       $('pageTitle').textContent = 'Team';
       if (!team) team = window.CashTeam(db);
+      team.pick(person);
       team.load();
       return;
     }
@@ -264,7 +269,12 @@
   }
   $('view').addEventListener('click', e => { const b = e.target.closest('button'); if (b) switchView(b.dataset.v); });
   // The app's menu switches sections by changing the address
-  window.addEventListener('hashchange', () => { const v = location.hash.slice(1); if (VIEWS.includes(v) && v !== view && !$('dashView').hidden) switchView(v); });
+  window.addEventListener('hashchange', () => {
+    const v = hashView();
+    if (!VIEWS.includes(v) || $('dashView').hidden) return;
+    if (v !== view) switchView(v);
+    else if (v === 'team' && team) team.pick(hashPerson(), true);
+  });
 
   // ---------- render ----------
   function render(){

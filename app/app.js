@@ -374,14 +374,41 @@
     $('pTrack').hidden = true;
     const { data } = await db.from('companies').select('id,name').order('name');
     companies = data || [];
+    loadTeamMenu();
     ownerRoute();
+  }
+  // Team in the menu opens into each person's name; a name goes straight to their hours (#team/<name>).
+  // Names come from the last 60 days of shifts, since people on the company-code tracker have no account.
+  async function loadTeamMenu(){
+    const since = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10);
+    const { data } = await db.from('shifts').select('name').eq('owner', false).gte('shift_date', since).limit(1000);
+    const names = new Map();
+    (data || []).forEach(r => { const n = (r.name || '').trim(), k = n.toLowerCase().replace(/\s+/g, ' '); if (n && !names.has(k)) names.set(k, n); });
+    const sub = $('teamSub');
+    sub.innerHTML = '';
+    [...names.values()].sort((a, b) => a.localeCompare(b)).forEach(n => {
+      const a = document.createElement('a');
+      a.className = 'mi'; a.href = '#team/' + encodeURIComponent(n); a.textContent = n;
+      sub.appendChild(a);
+    });
+    $('teamTog').hidden = !names.size;
+    markMenu();
+  }
+  function openTeamMenu(open){ $('teamTog').setAttribute('aria-expanded', open); $('teamSub').hidden = !open; }
+  $('teamTog').addEventListener('click', () => openTeamMenu($('teamSub').hidden));
+  // Highlights the open section (or person) in the menu; the names under Team stay open while on Team
+  function markMenu(){
+    const here = location.hash;
+    document.querySelectorAll('.drawer .mi[href]').forEach(a => a.classList.toggle('on', a.getAttribute('href') === here));
+    if (here.startsWith('#team') && !$('teamTog').hidden) openTeamMenu(true);
   }
   function ownerRoute(){
     if (role !== 'owner') return;
-    let page = location.hash.slice(1);
+    let [page, person] = location.hash.slice(1).split('/');
     if (!OWNER_PAGES[page]) { page = 'live'; history.replaceState(null, '', '#live'); }
+    const here = page + (page === 'team' && person ? '/' + person : '');
     $('title').textContent = OWNER_PAGES[page];
-    document.querySelectorAll('.drawer .mi[href]').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + page));
+    markMenu();
     $('pLive').hidden = page !== 'live'; $('pPeople').hidden = page !== 'people'; $('pRequests').hidden = page !== 'requests';
     const cashPage = !['live', 'people', 'requests'].includes(page);
     $('pCash').hidden = !cashPage;
@@ -390,7 +417,7 @@
     if (page === 'people') loadPeople();
     if (page === 'requests') loadOwnerRequests();
     countRequests();
-    if (cashPage) openCash(page);
+    if (cashPage) openCash(here);
     closeMenu();
     window.scrollTo(0, 0);
   }
@@ -408,7 +435,7 @@
   $('burger').addEventListener('click', () => document.body.classList.add('menu-open'));
   $('shade').addEventListener('click', closeMenu);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
-  document.querySelectorAll('.drawer .mi[href]').forEach(a => a.addEventListener('click', () => { if (a.getAttribute('href') === location.hash) ownerRoute(); }));
+  $('drawer').addEventListener('click', e => { const a = e.target.closest('.mi[href]'); if (a && a.getAttribute('href') === location.hash) ownerRoute(); });
 
   // ---------- live now ----------
   let liveRows = [], liveMembers = [], codeRows = [];

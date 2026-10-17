@@ -130,6 +130,12 @@ a{ color:inherit; text-decoration:none; }
 .mi:hover{ background:var(--sunk); }
 .mi.on{ background:#eef4ff; color:var(--accent2); font-weight:600; }
 .mi .cnt{ margin-left:auto; font-size:12px; font-weight:700; color:var(--green); background:color-mix(in srgb, var(--green) 10%, var(--panel)); border-radius:999px; padding:1px 8px; }
+.mi-row{ display:flex; align-items:center; gap:2px; }
+.mi-tog{ flex:none; display:grid; place-items:center; width:38px; height:38px; border-radius:10px; color:#667085; }
+.mi-tog:hover{ background:var(--sunk); }
+.mi-tog .i{ transition:transform .2s; }
+.mi-tog[aria-expanded="true"] .i{ transform:rotate(180deg); }
+.sub .mi{ padding:8px 10px 8px 46px; font-size:14px; }
 .sec{ font-size:12px; color:#98a2b3; padding:12px 10px 4px; }
 .drawer .bottom{ margin-top:auto; padding-top:12px; }
 

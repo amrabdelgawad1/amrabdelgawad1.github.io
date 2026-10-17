@@ -34,6 +34,8 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="app/icon-180.png">
 <link rel="stylesheet" href="style.css?v=10">
 <link rel="stylesheet" href="booking.css">
 </head>
@@ -248,7 +250,9 @@
 
       <div class="samples-v2">
         <figure class="intro-video" data-animate="fade-up">
-          <video controls preload="metadata" playsinline poster="assets/media/intro-poster.jpg">
+          <!-- Media isn't uploaded yet: preload="none" and no poster keep the hidden section from requesting missing files.
+               When assets/media/ is filled, add back poster="assets/media/intro-poster.jpg" and remove "hidden" from #samples and its nav link. -->
+          <video controls preload="none" playsinline>
             <source src="assets/media/intro.mp4" type="video/mp4" />
           </video>
           <figcaption><strong>60-second introduction</strong> Who I am, what I do and how I work with a team.</figcaption>

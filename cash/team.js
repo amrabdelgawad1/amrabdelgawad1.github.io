@@ -5,6 +5,7 @@ window.CashTeam = function(db){
 
   let log = [], companies = [], rate = 2.5, payslipCounter = 0;
   let range = 'week', view = 'hours', lastDeleted = null, toastTimer = null;
+  let picked = null; // a person the app's menu asked for (#team/<name>), applied on the next render
   const selected = new Set();
 
   const hm = s => Math.floor(s/3600)+'h '+String(Math.floor(s%3600/60)).padStart(2,'0')+'m';
@@ -261,7 +262,9 @@ window.CashTeam = function(db){
   // ---------- render ----------
   function render(){
     // people filter + name suggestions
-    const sel = $('person'), cur = sel.value, names = new Map();
+    const sel = $('person'), names = new Map();
+    let cur = sel.value;
+    if (picked !== null) { cur = nameKey(picked); if (cur) names.set(cur, picked.trim()); picked = null; }
     log.forEach(r => { const k = nameKey(r.name); if (!names.has(k)) names.set(k, r.name); });
     const sorted = [...names.entries()].sort((a,b) => a[1].localeCompare(b[1]));
     sel.innerHTML = '<option value="">Everyone</option>';
@@ -685,5 +688,11 @@ window.CashTeam = function(db){
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });
 
-  return { load };
+  // The app's menu opens one person's hours (#team/<name>); applied on the next render
+  function pick(name, now){
+    picked = name || '';
+    if (now && log.length) render();
+  }
+
+  return { load, pick };
 };
