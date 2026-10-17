@@ -37,6 +37,11 @@
   .foot-link button:hover{ color:var(--accent2); }
   .save-error{ margin-top:16px; padding:14px 16px; border-radius:var(--radius); border:1px solid rgba(255,107,107,.35); background:rgba(255,107,107,.07); color:#ffb0b0; font-size:14px; display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
   .ctl[aria-busy="true"]{ opacity:.5; pointer-events:none; }
+  .end-ask{ margin:16px 0 0; }
+  p.foot-link.switch-msg{ margin-top:8px; color:var(--text); font-weight:600; }
+  .save-error .new-code{ flex:1 1 180px; min-width:0; background:var(--bg); border:1px solid var(--border2); border-radius:var(--radius-sm); color:var(--text); font:600 15px "JetBrains Mono", monospace; letter-spacing:.06em; padding:9px 12px; }
+  .save-error .new-code:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-dim); }
+  #saveErrMsg{ flex:1 1 100%; }
 
   .tracker-page{ position:relative; min-height:100vh; padding:72px 0 120px; overflow:hidden; }
   .tracker-glow{ position:absolute; width:620px; height:620px; border-radius:50%; filter:blur(120px); opacity:.22; pointer-events:none; transition:background .8s ease; }
@@ -222,7 +227,14 @@
         <button class="ctl" data-k="brk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 3v2M12 3v2"/></svg>Break</button>
         <button class="ctl" data-k="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.4 6.6a8 8 0 1 0 11.2 0"/></svg><span id="offLbl">Off</span></button>
       </div>
-      <div class="save-error" id="saveErr" hidden><span id="saveErrMsg"></span><button class="btn btn-ghost btn-sm" id="retry">Try again</button></div>
+      <div class="gap-check end-ask" id="endAsk" hidden>
+        <p>End your shift and send it to Amr?</p>
+        <div class="row">
+          <button type="button" class="btn btn-primary btn-sm" id="endYes">Yes, end my shift</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="endNo">Keep working</button>
+        </div>
+      </div>
+      <div class="save-error" id="saveErr" hidden><span id="saveErrMsg"></span><input id="newCode" class="new-code" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="New company code" aria-label="New company code" hidden /><button class="btn btn-ghost btn-sm" id="retry">Try again</button></div>
     </section>
 
     <!-- Saved confirmation -->
@@ -239,6 +251,7 @@
     </section>
 
     <p class="foot-link"><button type="button" id="switchCo">Use a different code</button></p>
+    <p class="foot-link switch-msg" id="switchMsg" role="status" hidden>Finish your current shift first, then enter a different code.</p>
     <p class="foot-link"><a href="../app/" style="color:var(--accent); font-weight:600; text-decoration:none;">Got an invite from Amr? Open the team app</a></p>
 
     </div>
@@ -247,6 +260,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="config.js?v=3"></script>
-<script src="tracker.js?v=2"></script>
+<script src="tracker.js?v=3"></script>
 </body>
 </html>

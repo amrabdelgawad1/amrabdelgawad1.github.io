@@ -65,7 +65,7 @@
   });
   $('code').addEventListener('input', () => $('gateErr').textContent = '');
   $('switchCo').addEventListener('click', () => {
-    if (mode !== 'off') { alert('Finish your current shift first, then enter a different code.'); return; }
+    if (mode !== 'off') { $('switchMsg').hidden = false; return; }
     store.del(CODE_KEY); store.del(CO_KEY); teamCode = null; companyName = ''; showGate();
   });
 
@@ -148,6 +148,7 @@
 
   function applyMode(m){
     mode = m; document.body.dataset.mode = m;
+    if (m === 'off') { $('endAsk').hidden = true; $('switchMsg').hidden = true; }
     $('status').querySelector('span').textContent = LABEL[m];
     document.querySelectorAll('.ctl').forEach(b => b.classList.toggle('on', b.dataset.k === m));
     const locked = m !== 'off';
@@ -177,7 +178,14 @@
 
   document.querySelectorAll('.ctl').forEach(b => b.addEventListener('click', () => {
     const k = b.dataset.k;
-    if (k === 'off') return finish();
+    if (k === 'off') {
+      // Ask on the page first; a shift that already failed to save goes straight to saving again
+      if (mode === 'off' || saving) return;
+      if (pending) return finish();
+      $('endAsk').hidden = false; $('endYes').focus();
+      return;
+    }
+    $('endAsk').hidden = true;
     if (mode === 'off' && !valid()) return;
     if (mode === 'off') {
       $('saved').hidden = true; store.set('tracker-name', $('nm').value.trim());
@@ -193,7 +201,7 @@
   // endAt: when the shift really ended (from the "page was closed" check); otherwise now
   async function finish(endAt){
     if (mode === 'off' || saving) return;
-    if (!pending && !endAt && !confirm('End your shift and send it to Amr?')) return;
+    $('endAsk').hidden = true;
     advance();
     if (!pending) {
       pending = {
@@ -219,7 +227,7 @@
         ? 'The team code changed. Enter the new code, then press Try again. Your shift is kept.'
         : "Couldn't save your shift. Check your connection and press Try again. Your shift is kept.";
       $('saveErr').hidden = false;
-      if (badCode) { store.del(CODE_KEY); $('saveErrMsg').textContent = 'The company code changed. Get the new code from Amr, then press Enter new code. Your shift is kept.'; $('retry').textContent = 'Enter new code'; }
+      if (badCode) { store.del(CODE_KEY); $('saveErrMsg').textContent = 'The company code changed. Get the new code from Amr, type it below, then press Save shift. Your shift is kept.'; $('retry').textContent = 'Save shift'; $('newCode').hidden = false; $('newCode').focus(); }
       persist();
       return;
     }
@@ -239,15 +247,22 @@
 
   $('retry').addEventListener('click', async () => {
     if (!store.get(CODE_KEY)) {
-      const code = prompt('Enter the new company code');
-      if (!code) return;
-      const { data } = await db.rpc('check_team_code', { p_code: code.trim() });
-      if (!data) { $('saveErrMsg').textContent = "That code isn't right. Check it with Amr."; return; }
-      setCompany(code.trim(), data);
+      const code = $('newCode').value.trim();
+      if (!code) { $('saveErrMsg').textContent = 'Type the new company code from Amr first. Your shift is kept.'; $('newCode').focus(); return; }
+      $('retry').setAttribute('aria-busy', 'true');
+      const { data, error } = await db.rpc('check_team_code', { p_code: code });
+      $('retry').removeAttribute('aria-busy');
+      if (error) { $('saveErrMsg').textContent = "Couldn't reach the server. Check your connection and try again. Your shift is kept."; return; }
+      if (!data) { $('saveErrMsg').textContent = "That code isn't right. Check it with Amr. Your shift is kept."; $('newCode').select(); return; }
+      setCompany(code, data);
       pending.p_code = teamCode; $('retry').textContent = 'Try again';
+      $('newCode').hidden = true; $('newCode').value = '';
     }
     finish();
   });
+  $('newCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('retry').click(); });
+  $('endYes').addEventListener('click', () => finish());
+  $('endNo').addEventListener('click', () => { $('endAsk').hidden = true; });
 
   // ---------- Amr's Pause / Break / Resume / End from Live now ----------
   // Checked every 30 seconds while a shift runs. An End is already saved on Amr's side, so this copy is dropped, not sent again.
