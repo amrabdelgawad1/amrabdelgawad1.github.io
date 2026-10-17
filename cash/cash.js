@@ -459,7 +459,8 @@
 
   // ---------- donuts ----------
   // Each row gets its own shade, shared by its donut slice and its bar, so the list doubles as the legend
-  const GREENS = ['#047857', '#10B981', '#6EE7B7', '#065F46', '#34D399', '#A7F3D0'];
+  // Income shades leave out the site's dark green, which the flow chart keeps for "Kept as profit"
+  const GREENS = ['#10B981', '#6EE7B7', '#0D8F6A', '#A7F3D0', '#34D399', '#5FB59A'];
   const REDS = ['#E5484D', '#F07C7C', '#F5A3A3', '#C2373C', '#FAC9C9', '#F9B4B4'];
   const shade = (list, pal) => list.forEach((r, i) => { r.color = pal[i % pal.length]; });
   function drawDonut(el, list, word){
@@ -510,7 +511,7 @@
   }
   // Tapping anywhere outside a band closes its details
   document.addEventListener('pointerdown', e => {
-    if (e.pointerType === 'touch' && !e.target.closest('#moneyFlow .band, #moneyFlow .hit')) hideFlowTip($('moneyFlow'));
+    if (e.pointerType === 'touch' && !e.target.closest('#moneyFlow .band, #moneyFlow .hit, #moneyFlow .fi')) hideFlowTip($('moneyFlow'));
   });
   function drawFlow(el, inRows, outRows, saved = 0){
     const WHO = { You:'Your work', Team:'Team’s work' };
@@ -532,10 +533,14 @@
     }
     const total = Math.max(totalIn, totalOut);
 
+    // On a phone there's no room for names beside the chart: the chart takes the full width, every item gets
+    // its own shade, and the names and amounts go in a matching list underneath
     const W = el.clientWidth || 640, narrow = W < 560;
-    const labelW = narrow ? 112 : 190, nodeW = narrow ? 8 : 10, gap = 10, flowH = narrow ? 200 : 260, k = flowH / total;
-    const lineH = narrow ? 15 : 16;
+    el.parentElement.classList.toggle('flow-compact', narrow);
+    const labelW = narrow ? 0 : 190, nodeW = narrow ? 12 : 10, gap = narrow ? 6 : 10, flowH = narrow ? 220 : 260, k = flowH / total;
+    const lineH = 16;
     const x0 = labelW, x1 = W / 2 - nodeW / 2, x2 = W - labelW - nodeW;
+    const colorOf = n => narrow && n.color && (n.kind === 'in' || n.kind === 'out') ? n.color : n.kind === 'in' ? GREEN : n.kind === 'short' ? RED : fill(n.kind);
 
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg');
@@ -553,8 +558,7 @@
       probe.remove(); return out;
     };
     const subOf = n => (n.tag ? WHO[n.tag] + ' · ' : '') + cash(n.amt);
-    // On a phone there's no room for "Team's work · EGP …", so whose work it was gets its own line
-    [left, right].forEach(list => list.forEach(n => { n.lines = lines(n.label); n.rows = n.lines.length + 1 + (narrow && n.tag ? 1 : 0); }));
+    [left, right].forEach(list => list.forEach(n => { n.lines = narrow ? [] : lines(n.label); n.rows = narrow ? 0 : n.lines.length + 1; }));
 
     // Each node is as tall as its amount, but never too thin to see or point at,
     // with room for its label lines next to it
@@ -592,22 +596,41 @@
       n.hover(p);
     };
     let my = midY + (midH - sumH(left)) / 2;
-    left.forEach(n => { band(x0 + nodeW, n.y, x1, my, n.h, n.kind === 'short' ? RED : GREEN, .22, n, n.kind === 'short' ? { big:'', of:'Spent beyond what came in' } : pct(n.amt, n.kind)); my += n.h; });
+    const shortTip = { big:'', of:'Spent beyond what came in' };
+    left.forEach(n => { band(x0 + nodeW, n.y, x1, my, n.h, colorOf(n), narrow ? .35 : .22, n, n.kind === 'short' ? shortTip : pct(n.amt, n.kind)); my += n.h; });
     my = midY + (midH - sumH(right)) / 2;
-    right.forEach(n => { band(x1 + nodeW, my, x2, n.y, n.h, fill(n.kind), n.kind === 'out' ? .2 : .3, n, pct(n.amt, n.kind)); my += n.h; });
+    right.forEach(n => { band(x1 + nodeW, my, x2, n.y, n.h, colorOf(n), n.kind === 'out' && !narrow ? .2 : .3, n, pct(n.amt, n.kind)); my += n.h; });
 
     const label = (n, x, anchor, cls) => {
+      if (narrow) return;
       const top = n.y + n.h / 2 - (n.rows * lineH) / 2 + lineH - 3;
       n.lines.forEach((s, i) => { mk('text', { x, y:top + i * lineH, 'text-anchor':anchor, class:'lbl' }).textContent = s; });
-      if (narrow && n.tag) mk('text', { x, y:top + n.lines.length * lineH, 'text-anchor':anchor, class:'who' }).textContent = WHO[n.tag];
-      mk('text', { x, y:top + (n.rows - 1) * lineH + 1, 'text-anchor':anchor, class:'amt ' + cls }).textContent = narrow && n.tag ? cash(n.amt) : subOf(n);
+      mk('text', { x, y:top + (n.rows - 1) * lineH + 1, 'text-anchor':anchor, class:'amt ' + cls }).textContent = subOf(n);
     };
-    left.forEach(n => { mk('rect', { x:x0, y:n.y, width:nodeW, height:n.h, rx:3, fill:n.kind === 'short' ? RED : GREEN }); label(n, x0 - 8, 'end', n.kind === 'short' ? 'out' : 'in'); });
-    right.forEach(n => { mk('rect', { x:x2, y:n.y, width:nodeW, height:n.h, rx:3, fill:fill(n.kind) }); label(n, x2 + nodeW + 8, 'start', n.kind === 'net' ? 'in' : n.kind === 'save' ? 'save' : 'out'); });
+    left.forEach(n => { mk('rect', { x:x0, y:n.y, width:nodeW, height:n.h, rx:3, fill:colorOf(n) }); label(n, x0 - 8, 'end', n.kind === 'short' ? 'out' : 'in'); });
+    right.forEach(n => { mk('rect', { x:x2, y:n.y, width:nodeW, height:n.h, rx:3, fill:colorOf(n) }); label(n, x2 + nodeW + 8, 'start', n.kind === 'net' ? 'in' : n.kind === 'save' ? 'save' : 'out'); });
     mk('rect', { x:x1, y:midY, width:nodeW, height:midH, rx:3, fill:'currentColor', opacity:.7 });
     // Pointing at a name or its bar shows the same details as its band, so small amounts are easy to reach
-    left.forEach(n => n.hover(mk('rect', { class:'hit', x:0, y:n.y + n.h / 2 - n.slot / 2, width:x0 + nodeW, height:n.slot, fill:'transparent' })));
-    right.forEach(n => n.hover(mk('rect', { class:'hit', x:x2, y:n.y + n.h / 2 - n.slot / 2, width:W - x2, height:n.slot, fill:'transparent' })));
+    left.forEach(n => n.hover(mk('rect', { class:'hit', x:0, y:n.y + n.h / 2 - n.slot / 2, width:Math.max(x0 + nodeW, 30), height:n.slot, fill:'transparent' })));
+    right.forEach(n => n.hover(mk('rect', { class:'hit', x:Math.min(x2, W - 30), y:n.y + n.h / 2 - n.slot / 2, width:W - Math.min(x2, W - 30), height:n.slot, fill:'transparent' })));
+    if (!narrow) return;
+
+    // Phone: the list of names under the chart, in the same shades; tapping a name shows its details too
+    const list = document.createElement('div'); list.className = 'flow-list';
+    [['Came in', left], ['Went to', right]].forEach(([title, items]) => {
+      const col = document.createElement('div');
+      const h = document.createElement('h4'); h.textContent = title; col.appendChild(h);
+      items.forEach(n => {
+        const it = document.createElement('div'); it.className = 'fi';
+        const dot = document.createElement('i'); dot.style.background = colorOf(n);
+        const txt = document.createElement('span'); txt.textContent = n.label + (n.tag ? ' · ' + WHO[n.tag] : '');
+        const amt = document.createElement('small'); amt.textContent = cash(n.amt) + (totalIn > 0 && n.kind !== 'short' ? ' · ' + share(n.amt, totalIn) : '');
+        txt.appendChild(amt); it.append(dot, txt); col.appendChild(it);
+        n.hover(it);
+      });
+      list.appendChild(col);
+    });
+    el.appendChild(list);
   }
 
   // Totals carry their dollar value in data-usd; Cash shows them in pounds with the dollars on the line under
