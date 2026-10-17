@@ -505,7 +505,7 @@
     table.log.mylist td.c-hrs{ grid-row:3; }
   }
 </style>
-<link rel="stylesheet" href="look.css?v=6">
+<link rel="stylesheet" href="look.css?v=7">
 </head>
 <body>
 
@@ -781,6 +781,7 @@
           <div class="seg view-seg" id="tm-view">
             <button data-v="hours" class="on">Hours and pay</button>
             <button data-v="profit">Rates</button>
+            <button data-v="agents">Agents</button>
           </div>
           <button class="btn btn-primary btn-sm" id="tm-addToggle">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -853,6 +854,20 @@
         </div>
       </form>
     </section>
+
+    <!-- Agents view: the names people pick on /tracker -->
+    <div id="tm-agentsView" hidden>
+      <section class="t-card agents">
+        <div class="card-title"><h2>Agents</h2><span>Active agents show on /tracker for the companies picked</span></div>
+        <form class="agent-add" id="tm-agentForm" novalidate>
+          <label class="agent-new"><span class="label">New agent</span><input class="field" id="tm-agentName" placeholder="Full name, like Mona Adel" autocomplete="off" /></label>
+          <div><span class="label">Works for</span><div class="co-chips" id="tm-agentCos"></div></div>
+          <button class="btn btn-primary btn-sm" type="submit" id="tm-agentSave">Add agent</button>
+        </form>
+        <p class="add-err" id="tm-agentErr"></p>
+        <div class="agent-list" id="tm-agentRows"><p class="agent-empty">Loading agents…</p></div>
+      </section>
+    </div>
 
     <!-- Profit view -->
     <div id="tm-profitView" hidden>
@@ -986,7 +1001,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="../tracker/config.js"></script>
-<script src="team.js?v=7"></script>
+<script src="team.js?v=8"></script>
 <script src="cash.js?v=12"></script>
 </body>
 </html>

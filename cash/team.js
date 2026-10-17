@@ -247,15 +247,107 @@ window.CashTeam = function(db){
   $('rate').addEventListener('input', () => onPayRate($('rate'), $('rateNote')));
   $('payRate2').addEventListener('input', () => onPayRate($('payRate2'), $('billNote')));
 
+  // ---------- agents: the names people pick on /tracker ----------
+  // Each agent's number is their id (01, 02, …), so numbers are never reused.
+  // Switching someone off hides them on /tracker but keeps their number and past hours.
+  let agents = [];
+  const agentNo = id => String(id).padStart(2, '0');
+  async function loadAgents(){
+    const [a, ac] = await Promise.all([
+      db.from('agents').select('id,name,active').order('id'),
+      db.from('agent_companies').select('agent_id,company_id')
+    ]);
+    if (a.error || ac.error) { $('agentErr').textContent = "Couldn't load agents. Refresh the page to try again."; return; }
+    $('agentErr').textContent = '';
+    agents = a.data.map(x => ({ ...x, cos: new Set(ac.data.filter(r => r.agent_id === x.id).map(r => r.company_id)) }));
+    renderAgents();
+  }
+  function coChip(c, on, onClick){
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'co-chip'; b.dataset.co = c.id; b.textContent = c.name;
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.addEventListener('click', () => onClick(b));
+    return b;
+  }
+  function renderAgents(){
+    // Companies for a new agent: keep what was ticked; with one company, tick it for them
+    const box = $('agentCos');
+    const ticked = new Set([...box.querySelectorAll('[aria-pressed="true"]')].map(b => Number(b.dataset.co)));
+    box.innerHTML = '';
+    companies.forEach(c => box.appendChild(coChip(c, ticked.size ? ticked.has(c.id) : companies.length === 1,
+      b => b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'))));
+
+    const rows = $('agentRows');
+    rows.innerHTML = '';
+    if (!agents.length) { rows.innerHTML = '<p class="agent-empty">No agents yet. Add your first one above.</p>'; return; }
+    agents.forEach(a => {
+      const row = document.createElement('div'); row.className = 'agent-row' + (a.active ? '' : ' off');
+      const no = document.createElement('span'); no.className = 'agent-no'; no.textContent = agentNo(a.id);
+      const nm = document.createElement('span'); nm.className = 'agent-name'; nm.textContent = a.name;
+      const cos = document.createElement('div'); cos.className = 'co-chips';
+      companies.forEach(c => cos.appendChild(coChip(c, a.cos.has(c.id), () => toggleAgentCompany(a, c.id))));
+      const sw = document.createElement('button');
+      sw.type = 'button'; sw.className = 'btn btn-ghost btn-sm'; sw.textContent = a.active ? 'Switch off' : 'Switch on';
+      sw.title = a.active ? 'Hide ' + a.name + ' on /tracker' : 'Show ' + a.name + ' on /tracker again';
+      sw.addEventListener('click', () => setAgentActive(a, !a.active));
+      row.append(no, nm, cos, sw);
+      rows.appendChild(row);
+    });
+  }
+  async function toggleAgentCompany(a, coId){
+    const on = !a.cos.has(coId);
+    const { error } = on
+      ? await db.from('agent_companies').insert({ agent_id: a.id, company_id: coId })
+      : await db.from('agent_companies').delete().eq('agent_id', a.id).eq('company_id', coId);
+    if (error) { toast("Couldn't save that. Try again."); return; }
+    on ? a.cos.add(coId) : a.cos.delete(coId);
+    renderAgents();
+  }
+  async function setAgentActive(a, active){
+    const { error } = await db.from('agents').update({ active }).eq('id', a.id);
+    if (error) { toast("Couldn't save that. Try again."); return; }
+    a.active = active;
+    renderAgents();
+    toast(agentNo(a.id) + ' ' + a.name + (active ? ' is back on /tracker' : ' is hidden on /tracker'));
+  }
+  $('agentName').addEventListener('input', () => { $('agentErr').textContent = ''; });
+  $('agentForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = $('agentName').value.trim().replace(/\s+/g, ' ');
+    const cos = [...$('agentCos').querySelectorAll('[aria-pressed="true"]')].map(b => Number(b.dataset.co));
+    const same = agents.find(a => a.name.toLowerCase() === name.toLowerCase());
+    if (name.length < 2) { $('agentErr').textContent = "Type the agent's full name."; $('agentName').focus(); return; }
+    if (same) { $('agentErr').textContent = name + ' is already on the list as ' + agentNo(same.id) + '. Tick another company on their row instead.'; return; }
+    if (!cos.length) { $('agentErr').textContent = 'Pick at least one company they work for.'; return; }
+    $('agentSave').setAttribute('aria-busy', 'true');
+    const { data, error } = await db.from('agents').insert({ name }).select('id,name,active').single();
+    let linkErr = null;
+    if (!error) ({ error: linkErr } = await db.from('agent_companies').insert(cos.map(company_id => ({ agent_id: data.id, company_id }))));
+    $('agentSave').removeAttribute('aria-busy');
+    if (error) { $('agentErr').textContent = "Couldn't add the agent. Check your connection and try again."; return; }
+    agents.push({ ...data, cos: new Set(linkErr ? [] : cos) });
+    $('agentName').value = '';
+    renderAgents();
+    if (linkErr) $('agentErr').textContent = 'Added ' + agentNo(data.id) + ' ' + name + ", but the companies didn't save. Tick them on their row.";
+    else toast('Added ' + agentNo(data.id) + ' ' + name);
+  });
+
   // ---------- view switch ----------
+  const VIEW_TITLE = { hours:'Team hours', profit:'Rates', agents:'Agents' };
   $('view').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     view = b.dataset.v;
     document.querySelectorAll('#tm-view button').forEach(x => x.classList.toggle('on', x === b));
     $('hoursView').hidden = view !== 'hours';
     $('profitView').hidden = view !== 'profit';
+    $('agentsView').hidden = view !== 'agents';
     $('status').hidden = view === 'profit';
-    $('pageTitle').textContent = view === 'profit' ? 'Rates' : 'Team hours';
+    // Date range, filters and Add shift don't apply to the agents list
+    document.querySelector('#teamView .tools').hidden = view === 'agents';
+    $('addToggle').hidden = view === 'agents';
+    $('customBox').hidden = view === 'agents' || range !== 'custom';
+    if (view === 'agents') { $('addBox').hidden = true; loadAgents(); }
+    $('pageTitle').textContent = VIEW_TITLE[view];
     render();
   });
 

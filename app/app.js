@@ -378,20 +378,27 @@
     ownerRoute();
   }
   // Team in the menu opens into each person's name; a name goes straight to their hours (#team/<name>).
-  // Names come from the last 60 days of shifts, since people on the company-code tracker have no account.
+  // Names are the active agents (Team > Agents), numbered like on /tracker. Before any agents exist,
+  // they come from the last 60 days of shifts.
   async function loadTeamMenu(){
-    const since = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10);
-    const { data } = await db.from('shifts').select('name').eq('owner', false).gte('shift_date', since).limit(1000);
-    const names = new Map();
-    (data || []).forEach(r => { const n = (r.name || '').trim(), k = n.toLowerCase().replace(/\s+/g, ' '); if (n && !names.has(k)) names.set(k, n); });
+    let people = [];
+    const ag = await db.from('agents').select('id,name').eq('active', true).order('id');
+    if (!ag.error && ag.data.length) people = ag.data.map(a => ({ name: a.name.trim(), label: String(a.id).padStart(2, '0') + ' · ' + a.name.trim() }));
+    else {
+      const since = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10);
+      const { data } = await db.from('shifts').select('name').eq('owner', false).gte('shift_date', since).limit(1000);
+      const names = new Map();
+      (data || []).forEach(r => { const n = (r.name || '').trim(), k = n.toLowerCase().replace(/\s+/g, ' '); if (n && !names.has(k)) names.set(k, n); });
+      people = [...names.values()].sort((a, b) => a.localeCompare(b)).map(n => ({ name: n, label: n }));
+    }
     const sub = $('teamSub');
     sub.innerHTML = '';
-    [...names.values()].sort((a, b) => a.localeCompare(b)).forEach(n => {
+    people.forEach(p => {
       const a = document.createElement('a');
-      a.className = 'mi'; a.href = '#team/' + encodeURIComponent(n); a.textContent = n;
+      a.className = 'mi'; a.href = '#team/' + encodeURIComponent(p.name); a.textContent = p.label;
       sub.appendChild(a);
     });
-    $('teamTog').hidden = !names.size;
+    $('teamTog').hidden = !people.length;
     markMenu();
   }
   function openTeamMenu(open){ $('teamTog').setAttribute('aria-expanded', open); $('teamSub').hidden = !open; }

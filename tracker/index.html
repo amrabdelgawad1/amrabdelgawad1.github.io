@@ -242,7 +242,7 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2"></script>
+<script src="config.js?v=3"></script>
 <script>
 (function(){
   const $ = id => document.getElementById(id);
@@ -295,7 +295,7 @@
     $('gateErr').textContent = msg || '';
     $('code').value = ''; $('code').focus();
   }
-  function showApp(){ $('gate').hidden = true; $('app').hidden = false; $('coName').textContent = companyName; }
+  function showApp(){ $('gate').hidden = true; $('app').hidden = false; $('coName').textContent = companyName; fillNames(savedAgents()); loadAgents(); }
   function setCompany(code, name){ teamCode = code; companyName = name; store.set(CODE_KEY, code); store.set(CO_KEY, name); $('coName').textContent = name; }
 
   $('gateForm').addEventListener('submit', async e => {
@@ -315,18 +315,36 @@
     store.del(CODE_KEY); store.del(CO_KEY); teamCode = null; companyName = ''; showGate();
   });
 
-  // ---------- name: pick from the team list, or type it under "Someone else" ----------
-  const TEAM = (cfg.teamNames || []).map(n => n.trim()).filter(Boolean);
-  const OTHER = '__other';
-  (function fillNames(){
+  // ---------- name: pick from the agents list, or type it under "Someone else" ----------
+  // The list is the agents Amr added on Team > Agents for this code's company, shown as "01 - Name".
+  // The last list is kept on the device for a bad connection; config.js names are the last resort.
+  const OTHER = '__other', AGENTS_KEY = 'tracker-agents';
+  let TEAM = [];
+  function fillNames(list){
+    TEAM = list;
     const sel = $('nmSel');
-    TEAM.forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o); });
+    sel.innerHTML = '<option value="">Choose your name</option>';
+    TEAM.forEach(p => { const o = document.createElement('option'); o.value = p.name; o.textContent = p.label; sel.appendChild(o); });
     const o = document.createElement('option'); o.value = OTHER; o.textContent = 'Someone else'; sel.appendChild(o);
-  })();
+    syncName();
+  }
+  function savedAgents(){
+    let s = null; try { s = JSON.parse(store.get(AGENTS_KEY)); } catch(e){}
+    if (s && s.code === teamCode && Array.isArray(s.list)) return s.list;
+    return (cfg.teamNames || []).map(n => n.trim()).filter(Boolean).map(n => ({ name: n, label: n }));
+  }
+  async function loadAgents(){
+    if (!teamCode) return;
+    const { data, error } = await db.rpc('team_agents', { p_code: teamCode });
+    if (error) return; // keep the saved list
+    const list = (data || []).map(a => ({ name: a.name.trim(), label: String(a.agent_no).padStart(2, '0') + ' - ' + a.name.trim() }));
+    store.set(AGENTS_KEY, JSON.stringify({ code: teamCode, list }));
+    fillNames(list);
+  }
   // Show the typed name in the list when it matches someone on it
   function syncName(){
-    const v = $('nm').value.trim(), hit = TEAM.find(n => n.toLowerCase() === v.toLowerCase());
-    if (hit) { $('nmSel').value = hit; $('nm').value = hit; $('nm').hidden = true; }
+    const v = $('nm').value.trim(), hit = TEAM.find(p => p.name.toLowerCase() === v.toLowerCase());
+    if (hit) { $('nmSel').value = hit.name; $('nm').value = hit.name; $('nm').hidden = true; }
     else if (v) { $('nmSel').value = OTHER; $('nm').hidden = false; }
     else { $('nmSel').value = TEAM.length ? '' : OTHER; $('nm').hidden = !!TEAM.length; }
   }

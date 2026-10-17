@@ -112,3 +112,27 @@ html .team table.log td, html .team table.log th{ padding-left:8px; padding-righ
 html.embed .topbar, html.embed #view, html.embed #pageTitle{ display:none !important; }
 html.embed .page{ padding-top:16px; }
 html.embed .head{ margin-bottom:12px; }
+
+/* Team > Agents: the names people pick on /tracker */
+html .t-card.agents{ padding:28px 30px; }
+html .agent-add{ display:grid; grid-template-columns:minmax(0, 1fr) auto auto; gap:16px; align-items:end; }
+html .agent-add .label{ margin-bottom:8px; }
+html .co-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+html .co-chip{ font:500 13px "Inter", sans-serif; padding:8px 12px; border-radius:999px; border:1px solid var(--border2); background:var(--bg2); color:var(--light); cursor:pointer; }
+html .co-chip::before{ content:"+ "; }
+html .co-chip[aria-pressed="true"]{ background:#eef4ff; border-color:#b2ccff; color:#1d4ed8; }
+html .co-chip[aria-pressed="true"]::before{ content:"\2713  "; }
+html #tm-agentErr{ min-height:20px; margin:10px 0 6px; }
+html .agent-list{ border-top:1px solid var(--border); }
+html .agent-row{ display:grid; grid-template-columns:44px minmax(0, 1fr) auto auto; gap:14px; align-items:center; padding:14px 0; border-bottom:1px solid var(--border); }
+html .agent-no{ font:600 13px "JetBrains Mono", monospace; color:var(--light); background:var(--sunk); border:1px solid var(--border); border-radius:8px; text-align:center; padding:5px 0; }
+html .agent-name{ font-weight:600; color:var(--text); overflow-wrap:anywhere; }
+html .agent-row.off .agent-name{ color:var(--muted); text-decoration:line-through; }
+html .agent-row.off .co-chips{ opacity:.5; }
+html .agent-empty{ color:var(--muted); font-size:14px; padding:16px 0; }
+@media (max-width:720px){
+  html .t-card.agents{ padding:22px 18px; }
+  html .agent-add{ grid-template-columns:1fr; }
+  html .agent-row{ grid-template-columns:44px minmax(0, 1fr) auto; }
+  html .agent-row .co-chips{ grid-column:2 / -1; grid-row:2; }
+}
