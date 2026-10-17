@@ -285,7 +285,7 @@
         "-=0.35"
       )
       .from(
-        ".hero-portrait",
+        ".hero-photo",
         { y: 14, opacity: 0, scale: 0.92, duration: 0.7, ease: "power3.out" },
         "-=0.45"
       );
@@ -321,8 +321,8 @@
       const glowBY = gsap.quickTo(".hero-glow-b", "y", { duration: 1.1, ease: "power3.out" });
       const cardX = gsap.quickTo(".hero-card", "x", { duration: 0.7, ease: "power3.out" });
       const cardY = gsap.quickTo(".hero-card", "y", { duration: 0.7, ease: "power3.out" });
-      const portraitX = gsap.quickTo(".hero-portrait", "x", { duration: 0.6, ease: "power3.out" });
-      const portraitY = gsap.quickTo(".hero-portrait", "y", { duration: 0.6, ease: "power3.out" });
+      const portraitX = gsap.quickTo(".hero-photo", "x", { duration: 0.6, ease: "power3.out" });
+      const portraitY = gsap.quickTo(".hero-photo", "y", { duration: 0.6, ease: "power3.out" });
 
       document.querySelector(".hero").addEventListener("mousemove", (e) => {
         const relX = e.clientX / window.innerWidth - 0.5;

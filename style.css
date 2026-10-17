@@ -681,3 +681,116 @@ button.chip[data-tool-desc]:focus-visible{ outline:none; color:var(--accent2); b
 @media (max-width: 680px){
   .main-nav{ background:rgba(250,247,241,.98); }
 }
+
+/* ==========================================================================
+   v2 layout: hero ID card, services, call samples, how I work, closing band
+   ========================================================================== */
+
+/* Hero card: photo sits inside the card, one photo instead of two */
+.hero-card--v2{ padding:36px 32px 28px; }
+.hero-id{ text-align:center; margin-bottom:26px; }
+.hero-photo{
+  width:168px; height:168px; margin:0 auto 18px; border-radius:50%;
+  padding:5px; background:linear-gradient(140deg, var(--accent), rgba(227,170,53,.15));
+  box-shadow:0 18px 40px -18px rgba(20,33,61,.45);
+}
+.hero-photo img{ width:100%; height:100%; object-fit:cover; border-radius:50%; border:4px solid #fff; }
+.hero-id .hero-card-name{ font-family:var(--font-display); font-weight:400; font-size:26px; }
+.hero-id .hero-card-role{ font-size:13.5px; margin-top:2px; }
+.hero-stats-v2{ margin-bottom:22px; }
+.hero-stats-v2 .hero-stat-num{ font-size:26px; color:var(--accent2); }
+.hero-card-rating .ti{ font-size:16px; color:var(--accent2); }
+
+/* Trust strip: company names under the badges */
+.worked-with{
+  margin-top:44px; padding-top:28px; border-top:1px solid var(--border);
+  text-align:center; font-size:14px; color:var(--light); line-height:1.9;
+}
+.worked-with span{
+  display:block; margin-bottom:6px; font-size:11.5px; font-weight:600;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--accent2);
+}
+
+/* Services */
+.services-grid{ display:grid; grid-template-columns:1.15fr .85fr; gap:24px; }
+.service-card{
+  background:#fff; border:1px solid var(--border); border-radius:var(--radius-lg); padding:34px;
+  box-shadow:0 1px 2px rgba(20,33,61,.05), 0 12px 32px -12px rgba(20,33,61,.12);
+}
+.service-card--primary{ border-color:var(--accent); border-width:1.5px; }
+.service-tag{
+  display:inline-block; font-size:11.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--accent2); background:var(--accent-dim); padding:5px 10px; border-radius:999px; margin-bottom:16px;
+}
+.service-card h3{ font-size:clamp(24px, 2.4vw, 30px); line-height:1.15; margin-bottom:8px; }
+.service-for{ color:var(--muted); font-size:15px; margin-bottom:20px; }
+.service-list li{ position:relative; padding-left:26px; margin-bottom:11px; font-size:15px; }
+.service-list li::before{
+  content:""; position:absolute; left:2px; top:9px; width:12px; height:7px;
+  border-left:2px solid var(--accent2); border-bottom:2px solid var(--accent2); transform:rotate(-45deg);
+}
+
+/* Call samples */
+.samples-v2{ display:grid; grid-template-columns:1.1fr .9fr; gap:24px; align-items:start; }
+.intro-video{ margin:0; background:#fff; border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden;
+  box-shadow:0 1px 2px rgba(20,33,61,.05), 0 12px 32px -12px rgba(20,33,61,.12); }
+.intro-video video{ display:block; width:100%; aspect-ratio:16/9; background:#14213D; object-fit:cover; }
+.intro-video figcaption{ padding:18px 22px; font-size:14px; color:var(--muted); }
+.intro-video figcaption strong{ display:block; color:var(--text); font-size:15.5px; margin-bottom:2px; }
+.call-list{ display:flex; flex-direction:column; gap:16px; }
+.call-card{ margin:0; background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:20px 22px;
+  box-shadow:0 1px 2px rgba(20,33,61,.05), 0 8px 24px -14px rgba(20,33,61,.14); }
+.call-title{ font-weight:600; font-size:15.5px; }
+.call-desc{ font-size:13.5px; color:var(--muted); margin:2px 0 12px; }
+.call-card audio{ width:100%; height:40px; }
+
+/* How I work: the four steps plus three concrete promises */
+.process .section-lede{ margin-bottom:48px; }
+.work-promises{
+  margin-top:56px; display:grid; grid-template-columns:repeat(3, 1fr); gap:18px;
+}
+.work-promises li{
+  display:flex; gap:12px; align-items:flex-start; font-size:14.5px; color:var(--light);
+  background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px;
+}
+.work-promises .ti{ font-size:20px; color:var(--accent2); flex-shrink:0; margin-top:1px; }
+
+.experience-cta{ margin-top:40px; text-align:center; }
+
+/* Closing band: rounded navy panel with the photo rising out of the top */
+.close-band-wrap{ padding-top:clamp(96px, 12vw, 160px); }
+.close-band{
+  --text:#FFFFFF; --muted:#A9B5CC; --light:#C9D2E3; --accent2:#E2B354; --border:#2A3A5E;
+  position:relative; display:grid; grid-template-columns:1.2fr .8fr; align-items:end;
+  border-radius:32px; color:var(--text);
+  background:radial-gradient(ellipse 60% 90% at 85% 100%, rgba(226,179,84,.28), transparent 70%), linear-gradient(120deg, #14213D 0%, #1F3260 100%);
+  padding:clamp(36px, 5vw, 64px);
+}
+.close-band .close-heading{ font-size:clamp(32px, 4vw, 48px); line-height:1.1; margin-bottom:16px; }
+.close-band .close-body{ color:var(--light); font-size:16.5px; max-width:500px; margin:0 0 30px; }
+.close-band .close-actions{ margin-bottom:26px; }
+.close-band .btn-primary{ background:#E3AA35; color:#14213D; }
+.close-band .close-links{ display:flex; flex-wrap:wrap; gap:22px; font-size:14px; color:var(--light); justify-content:flex-start; }
+.close-band .close-links a:hover{ color:var(--accent2); }
+.close-band-photo{ position:relative; align-self:stretch; }
+.close-band-photo img{
+  position:absolute; right:4%; bottom:-8px;
+  width:min(330px, 100%); aspect-ratio:1; object-fit:cover; border-radius:50%;
+  border:6px solid #E3AA35; box-shadow:0 30px 60px -20px rgba(0,0,0,.55);
+  transform:translateY(-38%);
+}
+
+@media (max-width: 980px){
+  .services-grid, .samples-v2{ grid-template-columns:1fr; }
+  .work-promises{ grid-template-columns:1fr; }
+  .close-band{ grid-template-columns:1fr; }
+  .close-band-photo{ order:-1; height:150px; }
+  .close-band-photo img{ position:absolute; left:0; right:auto; bottom:0; width:150px; transform:translateY(-55%); }
+}
+@media (max-width: 680px){
+  .hero-photo{ width:132px; height:132px; }
+  .service-card{ padding:26px 22px; }
+  .worked-with{ font-size:13px; }
+}
+
+[hidden]{ display:none !important; }
