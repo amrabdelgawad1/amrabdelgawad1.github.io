@@ -140,7 +140,7 @@
   });
   // Money in pounds is converted at the rate saved with the entry
   const usdOf = e => e.currency === 'EGP' ? (e.fxRate ? e.amount / e.fxRate : 0) : e.amount;
-  const egp = n => 'EGP ' + (Math.round(n * 100) / 100).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  const egp = n => (Math.round(n * 100) < 0 ? '−' : '') + 'EGP ' + Math.abs(Math.round(n * 100) / 100).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
   const inCur = (n, cur) => cur === 'EGP' ? egp(n) : usd(n);
   // Money in Cash shows in pounds first (dollars × the fixed rate); only the team's pay stays in dollars
   const cash = n => egp(n * fx.rate);
@@ -427,6 +427,15 @@
   // ---------- how the money moved ----------
   // Income on the left joins in the middle, then splits into what you kept and each expense category
   addEventListener('resize', () => { clearTimeout(flowTimer); flowTimer = setTimeout(() => { if (flowData && view === 'overview') drawFlow($('moneyFlow'), ...flowData); }, 150); });
+  function hideFlowTip(el){
+    el.classList.remove('hovering');
+    el.querySelectorAll('.hot').forEach(x => x.classList.remove('hot'));
+    const tip = el.querySelector('.tip'); if (tip) tip.style.opacity = 0;
+  }
+  // Tapping anywhere outside a band closes its details
+  document.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'touch' && !e.target.closest('#moneyFlow .band, #moneyFlow .hit')) hideFlowTip($('moneyFlow'));
+  });
   function drawFlow(el, inRows, outRows){
     const WHO = { You:'Your work', Team:'Team’s work' };
     const GREEN = getComputedStyle(el).getPropertyValue('--green').trim() || '#10b981', RED = '#ff8a8a';
@@ -476,26 +485,27 @@
 
     // Hover details: the share of what came in, big, and for spending also its share of everything spent
     const share = (n, of) => (n / of * 100).toFixed(n / of < .01 ? 1 : 0) + '%';
-    const pct = (n, kind) => ({ big: totalIn > 0 ? share(n, totalIn) : '', of:'of what came in', extra: kind === 'out' && totalOut > 0 ? share(n, totalOut) + ' of what you spent' : '' });
+    const pct = (n, kind) => ({ big: totalIn > 0 ? share(n, totalIn) : '', of: totalIn > 0 ? 'of what came in' : '', extra: kind === 'out' && totalOut > 0 ? share(n, totalOut) + ' of what you spent' : '' });
     const band = (xa, ya, xb, yb, h, color, alpha, n, share) => {
       const c = (xa + xb) / 2;
       const p = mk('path', { class:'band', fill:color, 'fill-opacity':alpha,
         d:`M${xa},${ya} C${c},${ya} ${c},${yb} ${xb},${yb} L${xb},${yb + h} C${c},${yb + h} ${c},${ya + h} ${xa},${ya + h} Z` });
       svg.insertBefore(p, svg.firstChild); // bands sit under the nodes and labels
       const show = () => {
-        el.classList.add('hovering'); p.classList.add('hot'); tip.innerHTML = '';
+        hideFlowTip(el); el.classList.add('hovering'); p.classList.add('hot'); tip.innerHTML = '';
         const line = (cls, text) => { const d = document.createElement('div'); d.className = cls; d.textContent = text; tip.appendChild(d); return d; };
         line('t-name', n.label + (n.tag ? ' · ' + WHO[n.tag] : ''));
-        const big = line('t-pct', share.big); const of = document.createElement('span'); of.textContent = ' ' + share.of; big.appendChild(of);
+        // No income in the period means no "% of what came in" to show
+        if (share.big || share.of) { const big = line('t-pct', share.big); const of = document.createElement('span'); of.textContent = (share.big ? ' ' : '') + share.of; big.appendChild(of); }
         line('t-amt', cash(n.amt) + (share.extra ? ' · ' + share.extra : ''));
         tip.style.opacity = 1;
       };
       const move = e => { const r = el.getBoundingClientRect(); tip.style.left = Math.min(Math.max(e.clientX - r.left, 110), W - 110) + 'px'; tip.style.top = (e.clientY - r.top) + 'px'; };
-      const hide = () => { el.classList.remove('hovering'); p.classList.remove('hot'); tip.style.opacity = 0; };
+      // A finger lifting counts as leaving, so on a phone the details stay until you tap somewhere else
       n.hover = target => {
         target.addEventListener('pointerenter', e => { show(); move(e); });
         target.addEventListener('pointermove', move);
-        target.addEventListener('pointerleave', hide);
+        target.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') hideFlowTip(el); });
       };
       n.hover(p);
     };
@@ -966,6 +976,8 @@
   ['fHours','fRate'].forEach(id => $(id).addEventListener('input', calcAmount));
   ['fTitle','fParty','fDate','fCat','fHours','fRate','fAmount','fFrom','fTo'].forEach(id => $(id).addEventListener('input', () => $('addErr').textContent = ''));
 
+  // A new entry starts in the currency you used last for that kind (pounds if there's nothing yet)
+  const lastCurrency = kind => { const l = entries.filter(x => x.kind === kind && x.createdAt).sort((a, b) => a.createdAt < b.createdAt ? 1 : -1); return l.length ? l[0].currency : 'EGP'; };
   function defaultDate(){ return !oneMonth() || month === thisMonth() ? iso(new Date()) : month + '-01'; }
   // preset: the category a new entry starts with, like 'Team profit' or 'Own work'
   function openForm(kind, e, preset){
@@ -983,7 +995,7 @@
     $('fTo').value = e && e.periodEnd ? e.periodEnd : '';
     dateTouched = !!e;
     $('fAmount').value = e ? e.amount.toFixed(2) : '';
-    $('fCur').value = e ? e.currency : 'USD';
+    $('fCur').value = e ? e.currency : lastCurrency(kind);
     $('fFx').value = e && e.fxRate ? e.fxRate : (fx.rate || '');
     $('fNote').value = e ? e.note : '';
     $('fSettled').checked = e ? e.settled : kind === 'expense';
