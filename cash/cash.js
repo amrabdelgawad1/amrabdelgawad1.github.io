@@ -964,6 +964,9 @@
   $('tTeamAdd').addEventListener('click', () => openForm('income', null, 'Team profit'));
   // "Your own work" on Overview: add money you made yourself outside your tracked hours
   $('tOwnAdd').addEventListener('click', () => openForm('income', null, 'Own work'));
+  // "Other income" and "Expenses" on Overview: add one straight from the card
+  $('tIncAdd').addEventListener('click', () => openForm('income'));
+  $('tExpAdd').addEventListener('click', () => openForm('expense'));
 
   $('addForm').addEventListener('submit', async ev => {
     ev.preventDefault();
