@@ -21,6 +21,7 @@
   let view = VIEWS.includes(hashView()) ? hashView() : 'overview';
   let month = thisMonth(), lastDeleted = null, toastTimer = null, team = null;
   let editing = null, fKind = 'income', fMode = 'fixed';
+  let flowData = null, flowTimer = null;
 
   const cents = n => Math.round(n * 100) / 100;
   const usd = n => (cents(n) < 0 ? '−' : '') + '$' + Math.abs(cents(n)).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
@@ -32,7 +33,12 @@
   const dayDate = d => new Date(d+'T00:00').toLocaleDateString('en-US',{ weekday:'short', month:'short', day:'numeric' });
   const monthLabel = m => new Date(m+'-01T00:00').toLocaleDateString('en-US',{ month:'long', year:'numeric' });
   const stepMonth = (m, n) => { const [y, mo] = m.split('-').map(Number); return iso(new Date(y, mo - 1 + n, 1)).slice(0, 7); };
-  const inPeriod = d => month === 'all' || d.slice(0, 7) === month;
+  // month is "YYYY-MM", 'all', or 'custom' (the From and To days in range)
+  const range = { from:'', to:'' };
+  const inPeriod = d => month === 'all' || (month === 'custom' ? d >= range.from && d <= range.to : d.slice(0, 7) === month);
+  const oneMonth = () => month !== 'all' && month !== 'custom';
+  const periodName = () => month === 'all' ? 'All time' : month !== 'custom' ? monthLabel(month)
+    : range.from === range.to ? fmtDate(range.from) : fmtDate(range.from) + ' – ' + fmtDate(range.to);
   const key = s => (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
   const plural = (n, w) => n + ' ' + (n === 1 ? w : w === 'entry' ? 'entries' : w + 's');
   const company = id => companies.find(c => c.id === id) || null;
@@ -44,7 +50,7 @@
     del(k){ try { localStorage.removeItem(k); } catch(e){} }
   };
   const DONE = { income:'Received', expense:'Paid' }, OPEN = { income:'Not received', expense:'Unpaid' };
-  const CATS = { income:['Team profit', 'Salary', 'Hourly work', 'Project', 'Client', 'Other'], expense:['Subscriptions', 'Software', 'Equipment', 'Team', 'Transport', 'Other'] };
+  const CATS = { income:['Own work', 'Team profit', 'Salary', 'Hourly work', 'Project', 'Client', 'Other'], expense:['Subscriptions', 'Software', 'Equipment', 'Team', 'Transport', 'Other'] };
   const TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
   const PEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>';
 
@@ -141,6 +147,8 @@
   const money = e => e.currency === 'EGP' ? egp(e.amount) + ' · ' + usd(usdOf(e)) : cash(e.amount) + ' · ' + usd(e.amount);
   // Team profit is never worked out from shifts: Amr adds it himself as income with this category
   const isTeamProfit = e => e.kind === 'income' && key(e.category) === 'team profit';
+  // Own work you add by hand (money for work outside your tracked hours) counts with your hours
+  const isOwnWork = e => e.kind === 'income' && key(e.category) === 'own work';
   // Project pay period, like "Sep 28 – Oct 9 · 12 days"
   const periodText = e => {
     const a = new Date(e.periodStart + 'T00:00'), b = new Date(e.periodEnd + 'T00:00');
@@ -198,22 +206,23 @@
   function clearNotice(){ $('notice').hidden = true; }
 
   // ---------- money math ----------
-  // Your own work = hours × the company's rate, all yours.
+  // Your own work = hours × the company's rate, all yours, plus income entries with the category "Own work".
   // Team profit = income entries with the category "Team profit", added by hand.
   const shiftValue = s => s.work / 3600 * s.billRate;
   function totals(inP){
     const sh = shifts.filter(s => inP(s.date)), counted = sh.filter(s => s.billRate != null);
     const own = counted.filter(s => s.owner), crew = counted.filter(s => !s.owner);
     const en = partsIn(entries, inP);
-    const teamInc = en.filter(isTeamProfit), inc = en.filter(e => e.kind === 'income' && !isTeamProfit(e)), exp = en.filter(e => e.kind === 'expense');
+    const teamInc = en.filter(isTeamProfit), ownInc = en.filter(isOwnWork), exp = en.filter(e => e.kind === 'expense');
+    const inc = en.filter(e => e.kind === 'income' && !isTeamProfit(e) && !isOwnWork(e));
     const sum = (l, f) => l.reduce((a, x) => a + f(x), 0);
-    const ownAmt = sum(own, shiftValue), teamAmt = sum(teamInc, usdOf), income = sum(inc, usdOf), expense = sum(exp, usdOf);
+    const ownAmt = sum(own, shiftValue) + sum(ownInc, usdOf), teamAmt = sum(teamInc, usdOf), income = sum(inc, usdOf), expense = sum(exp, usdOf);
     const ownDue = sum(own.filter(s => !s.paid), shiftValue);
     return {
-      own, crew, skipped: sh.filter(s => s.billRate == null), inc, teamInc, exp,
+      own, crew, skipped: sh.filter(s => s.billRate == null), inc, teamInc, ownInc, exp,
       ownAmt, team: teamAmt, income, expense, net: ownAmt + teamAmt + income - expense,
       ownSecs: sum(own, s => s.work), teamSecs: sum(crew, s => s.work), ownDue,
-      toReceive: ownDue + sum(inc.concat(teamInc).filter(e => !e.settled), usdOf), toPay: sum(exp.filter(e => !e.settled), usdOf)
+      toReceive: ownDue + sum(inc.concat(teamInc, ownInc).filter(e => !e.settled), usdOf), toPay: sum(exp.filter(e => !e.settled), usdOf)
     };
   }
   function byCompany(list){
@@ -233,14 +242,39 @@
     const opt = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); };
     for (let m = hi; m >= lo; m = stepMonth(m, -1)) opt(m, monthLabel(m));
     opt('all', 'All time');
-    if (month !== 'all' && (month < lo || month > hi)) month = thisMonth();
+    opt('custom', 'Custom dates…');
+    if (oneMonth() && (month < lo || month > hi)) month = thisMonth();
     sel.value = month;
-    $('prevM').disabled = month === 'all' || month <= lo;
-    $('nextM').disabled = month === 'all' || month >= hi;
-    $('statementBtn').disabled = month === 'all';
-    $('statementBtn').title = month === 'all' ? 'Pick a month first' : '';
+    $('prevM').disabled = !oneMonth() || month <= lo;
+    $('nextM').disabled = !oneMonth() || month >= hi;
+    $('statementBtn').disabled = !oneMonth();
+    $('statementBtn').title = oneMonth() ? '' : 'Pick a month first';
+    $('pRangeBox').hidden = month !== 'custom';
+    $('pFrom').value = range.from; $('pTo').value = range.to;
   }
-  $('month').addEventListener('change', () => { month = $('month').value; render(); });
+  $('month').addEventListener('change', () => {
+    month = $('month').value;
+    if (month === 'custom' && !range.from) return pickRange('thismonth');
+    render();
+  });
+  // Custom dates: any From–To days, or a quick pick
+  function pickRange(q){
+    const now = new Date(); let f = new Date(now), t = new Date(now);
+    if (q === '7') f.setDate(f.getDate() - 6);
+    if (q === 'thismonth') f = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (q === 'lastmonth') { f = new Date(now.getFullYear(), now.getMonth() - 1, 1); t = new Date(now.getFullYear(), now.getMonth(), 0); }
+    if (q === '3m') f = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    if (q === 'year') f = new Date(now.getFullYear(), 0, 1);
+    range.from = iso(f); range.to = iso(t); month = 'custom';
+    render();
+  }
+  $('pRangeBox').addEventListener('click', e => { const b = e.target.closest('[data-q]'); if (b) pickRange(b.dataset.q); });
+  ['pFrom', 'pTo'].forEach(id => $(id).addEventListener('change', () => {
+    let f = $('pFrom').value, t = $('pTo').value;
+    if (!f || !t) return;
+    if (f > t) [f, t] = [t, f];
+    range.from = f; range.to = t; render();
+  }));
   $('prevM').addEventListener('click', () => { month = stepMonth(month, -1); render(); });
   $('nextM').addEventListener('click', () => { month = stepMonth(month, 1); render(); });
 
@@ -280,7 +314,7 @@
   function render(){
     if (view === 'team') return;
     fillMonths();
-    const label = month === 'all' ? 'All time' : monthLabel(month);
+    const label = periodName();
     $('pageTitle').textContent = { overview:'Overview', mytime:'My time', income:'Income', expense:'Expenses' }[view];
     $('addLabel').textContent = view === 'expense' ? 'Add expense' : view === 'income' ? 'Add income' : 'Add entry';
     $('overviewView').hidden = view !== 'overview';
@@ -296,7 +330,7 @@
   function renderOverview(){
     const t = totals(inPeriod);
     setUsd('tOwn', t.ownAmt);
-    $('tOwnSub').textContent = hm(t.ownSecs) + ' worked';
+    $('tOwnSub').textContent = hm(t.ownSecs) + ' worked' + (t.ownInc.length ? ' · ' + plural(t.ownInc.length, 'entry') : '');
     setUsd('tTeam', t.team);
     $('tTeamSub').textContent = t.teamInc.length ? plural(t.teamInc.length, 'entry') : 'You add this yourself';
     setUsd('tIncome', t.income);
@@ -334,7 +368,7 @@
         label:g.label, tag, sub:[...g.titles].slice(0, 3).join(', ') + (g.open ? ' · ' + cash(g.open) + ' not received' : ''), amt:g.amt, go:'income'
       }));
     };
-    sources(t.teamInc, 'Team'); sources(t.inc);
+    sources(t.ownInc, 'You'); sources(t.teamInc, 'Team'); sources(t.inc);
     drawBars($('cameFrom'), inRows, 'in', 'Nothing came in for this period yet.');
 
     const cat = new Map();
@@ -343,9 +377,87 @@
       if (!cat.has(k)) cat.set(k, { label:e.category, titles:new Set(), amt:0 });
       const g = cat.get(k); g.amt += usdOf(e); g.titles.add(e.title);
     });
-    drawBars($('wentTo'), [...cat.values()].sort((a, b) => b.amt - a.amt).map(g => ({ label:g.label, sub:[...g.titles].slice(0, 3).join(', '), amt:g.amt, go:'expense' })), 'out', 'No expenses for this period.');
+    const outRows = [...cat.values()].sort((a, b) => b.amt - a.amt).map(g => ({ label:g.label, sub:[...g.titles].slice(0, 3).join(', '), amt:g.amt, go:'expense' }));
+    drawBars($('wentTo'), outRows, 'out', 'No expenses for this period.');
+    flowData = [inRows, outRows];
+    drawFlow($('moneyFlow'), inRows, outRows);
 
     renderMonths();
+  }
+
+  // ---------- how the money moved ----------
+  // Income on the left joins in the middle, then splits into what you kept and each expense category
+  addEventListener('resize', () => { clearTimeout(flowTimer); flowTimer = setTimeout(() => { if (flowData && view === 'overview') drawFlow($('moneyFlow'), ...flowData); }, 150); });
+  function drawFlow(el, inRows, outRows){
+    const WHO = { You:'Your work', Team:'Team’s work' };
+    const GREEN = getComputedStyle(el).getPropertyValue('--green').trim() || '#10b981', RED = '#ff8a8a';
+    const sum = l => l.reduce((a, r) => a + r.amt, 0);
+    const left = inRows.filter(r => r.amt > 0).map(r => ({ ...r, kind:'in' })).sort((a, b) => b.amt - a.amt);
+    const right = outRows.filter(r => r.amt > 0).map(r => ({ ...r, kind:'out' }));
+    const totalIn = sum(left), totalOut = sum(right), net = totalIn - totalOut;
+    el.innerHTML = '';
+    if (totalIn <= 0 && totalOut <= 0) { el.innerHTML = '<p class="empty">Nothing moved in this period yet.</p>'; return; }
+    // A loss shows on the left as "Short this period", profit on the right as "Kept as profit"
+    if (net < 0) left.push({ label:'Short this period', amt:-net, kind:'short' });
+    if (net > 0) right.unshift({ label:'Kept as profit', amt:net, kind:'net' });
+    const total = Math.max(totalIn, totalOut);
+
+    const W = el.clientWidth || 640, narrow = W < 560;
+    const labelW = narrow ? 112 : 190, nodeW = narrow ? 8 : 10, gap = 10, flowH = narrow ? 200 : 260, k = flowH / total;
+    const lineH = narrow ? 15 : 16;
+    const x0 = labelW, x1 = W / 2 - nodeW / 2, x2 = W - labelW - nodeW;
+
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    const mk = (tag, attrs, parent = svg) => { const e = document.createElementNS(ns, tag); for (const a in attrs) e.setAttribute(a, attrs[a]); parent.appendChild(e); return e; };
+    const tip = document.createElement('div'); tip.className = 'tip';
+    el.append(svg, tip); // on the page first, so names can be measured
+
+    // Names wrap onto two lines when they don't fit the label column, then get shortened
+    const fit = (t, s) => { t.textContent = s; if (t.getComputedTextLength() <= labelW - 14) return s; while (s.length > 3) { s = s.slice(0, -1); t.textContent = s.trimEnd() + '…'; if (t.getComputedTextLength() <= labelW - 14) break; } return t.textContent; };
+    const lines = name => {
+      const probe = mk('text', { class:'lbl', x:-999, y:-999 }), words = name.split(' ');
+      let a = '';
+      while (words.length) { const next = a ? a + ' ' + words[0] : words[0]; probe.textContent = next; if (a && probe.getComputedTextLength() > labelW - 14) break; a = next; words.shift(); }
+      const out = [fit(probe, a)]; if (words.length) out.push(fit(probe, words.join(' ')));
+      probe.remove(); return out;
+    };
+    const subOf = n => (n.tag ? WHO[n.tag] + ' · ' : '') + cash(n.amt);
+    // On a phone there's no room for "Team's work · EGP …", so whose work it was gets its own line
+    [left, right].forEach(list => list.forEach(n => { n.lines = lines(n.label); n.rows = n.lines.length + 1 + (narrow && n.tag ? 1 : 0); }));
+
+    // Each node is as tall as its amount, with room for its label lines underneath it
+    const place = list => { let y = 0; list.forEach(n => { n.h = Math.max(1.5, n.amt * k); n.slot = Math.max(n.h, n.rows * lineH + 6); n.y = y + (n.slot - n.h) / 2; y += n.slot + gap; }); return y - gap; };
+    const H = Math.max(place(left), place(right), flowH), midY = (H - total * k) / 2;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('height', H);
+
+    const pct = n => totalIn > 0 ? (n / totalIn * 100).toFixed(n / totalIn < .01 ? 1 : 0) + '% of what came in' : '';
+    const band = (xa, ya, xb, yb, h, color, alpha, n, share) => {
+      const c = (xa + xb) / 2;
+      const p = mk('path', { class:'band', fill:color, 'fill-opacity':alpha,
+        d:`M${xa},${ya} C${c},${ya} ${c},${yb} ${xb},${yb} L${xb},${yb + h} C${c},${yb + h} ${c},${ya + h} ${xa},${ya + h} Z` });
+      svg.insertBefore(p, svg.firstChild); // bands sit under the nodes and labels
+      const show = () => { el.classList.add('hovering'); p.classList.add('hot'); tip.innerHTML = ''; const a = document.createElement('div'); a.textContent = n.label + (n.tag ? ' · ' + WHO[n.tag] : ''); const b = document.createElement('b'); b.textContent = cash(n.amt) + (share ? ' · ' + share : ''); tip.append(a, b); tip.style.opacity = 1; };
+      const move = e => { const r = el.getBoundingClientRect(); tip.style.left = Math.min(Math.max(e.clientX - r.left, 110), W - 110) + 'px'; tip.style.top = (e.clientY - r.top) + 'px'; };
+      const hide = () => { el.classList.remove('hovering'); p.classList.remove('hot'); tip.style.opacity = 0; };
+      p.addEventListener('pointerenter', e => { show(); move(e); });
+      p.addEventListener('pointermove', move);
+      p.addEventListener('pointerleave', hide);
+    };
+    let my = midY;
+    left.forEach(n => { band(x0 + nodeW, n.y, x1, my, n.h, n.kind === 'short' ? RED : GREEN, .22, n, n.kind === 'short' ? 'spent beyond what came in' : pct(n.amt)); my += n.h; });
+    my = midY;
+    right.forEach(n => { band(x1 + nodeW, my, x2, n.y, n.h, n.kind === 'net' ? GREEN : RED, n.kind === 'net' ? .3 : .2, n, pct(n.amt)); my += n.h; });
+
+    const label = (n, x, anchor, cls) => {
+      const top = n.y + n.h / 2 - (n.rows * lineH) / 2 + lineH - 3;
+      n.lines.forEach((s, i) => { mk('text', { x, y:top + i * lineH, 'text-anchor':anchor, class:'lbl' }).textContent = s; });
+      if (narrow && n.tag) mk('text', { x, y:top + n.lines.length * lineH, 'text-anchor':anchor, class:'who' }).textContent = WHO[n.tag];
+      mk('text', { x, y:top + (n.rows - 1) * lineH + 1, 'text-anchor':anchor, class:'amt ' + cls }).textContent = narrow && n.tag ? cash(n.amt) : subOf(n);
+    };
+    left.forEach(n => { mk('rect', { x:x0, y:n.y, width:nodeW, height:n.h, rx:3, fill:n.kind === 'short' ? RED : GREEN }); label(n, x0 - 8, 'end', n.kind === 'short' ? 'out' : 'in'); });
+    right.forEach(n => { mk('rect', { x:x2, y:n.y, width:nodeW, height:n.h, rx:3, fill:n.kind === 'net' ? GREEN : RED }); label(n, x2 + nodeW + 8, 'start', n.kind === 'net' ? 'in' : 'out'); });
+    mk('rect', { x:x1, y:midY, width:nodeW, height:total * k, rx:3, fill:'currentColor', opacity:.7 });
   }
 
   // Totals carry their dollar value in data-usd; Cash shows them in pounds with the dollars on the line under
@@ -503,7 +615,7 @@
     const rows = shifts.filter(s => s.owner && inPeriod(s.date)).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id);
     const counted = rows.filter(s => s.billRate != null), sum = (l, f) => l.reduce((a, x) => a + f(x), 0);
     const paid = counted.filter(s => s.paid), due = counted.filter(s => !s.paid);
-    $('myLabel').textContent = month === 'all' ? 'All time' : monthLabel(month);
+    $('myLabel').textContent = periodName();
     $('myHours').textContent = hm(sum(rows, s => s.work));
     $('myShifts').textContent = plural(rows.length, 'shift');
     setUsd('myEarned', sum(counted, shiftValue));
@@ -558,7 +670,7 @@
 
   $('myAddToggle').addEventListener('click', () => {
     const f = $('myForm'); f.hidden = !f.hidden;
-    if (!f.hidden) { if (!$('mDate').value) $('mDate').value = month === 'all' || month === thisMonth() ? iso(new Date()) : month + '-01'; fillCompanyPicker($('mCo')); $('mH').focus(); }
+    if (!f.hidden) { if (!$('mDate').value) $('mDate').value = defaultDate(); fillCompanyPicker($('mCo')); $('mH').focus(); }
   });
   ['mDate','mH','mM'].forEach(id => $(id).addEventListener('input', () => $('mErr').textContent = ''));
   $('myForm').addEventListener('submit', async e => {
@@ -580,7 +692,7 @@
     store.set('cash-last-company', String(co));
     shifts.push(toShift(data));
     $('mH').value = ''; $('mM').value = ''; $('mPaid').checked = false;
-    if (month !== 'all') month = data.shift_date.slice(0, 7);
+    if (oneMonth()) month = data.shift_date.slice(0, 7);
     render(); toast('Added ' + hm(secs) + ' at ' + companyName(co) + ' on ' + dayDate(data.shift_date), false);
   });
 
@@ -636,7 +748,7 @@
     $('logTable').classList.toggle('is-expense', kind === 'expense');
     $('listTitle').textContent = kind === 'income' ? 'Income' : 'Expenses';
     const total = rows.reduce((a, e) => a + usdOf(e), 0), open = rows.filter(e => !e.settled).reduce((a, e) => a + usdOf(e), 0);
-    $('listSum').textContent = (month === 'all' ? 'All time' : monthLabel(month)) + ' · ' + cash(total) + (open ? ' · ' + cash(open) + ' ' + OPEN[kind].toLowerCase() : '');
+    $('listSum').textContent = periodName() + ' · ' + cash(total) + (open ? ' · ' + cash(open) + ' ' + OPEN[kind].toLowerCase() : '');
     renderRecurring(kind);
 
     const body = $('rows'); body.innerHTML = '';
@@ -683,7 +795,7 @@
   let missingRecurring = [];
   function renderRecurring(kind){
     missingRecurring = [];
-    if (month !== 'all' && month <= thisMonth()) {
+    if (oneMonth() && month <= thisMonth()) {
       const here = new Set(entries.filter(e => e.kind === kind && e.date.slice(0, 7) === month).map(seriesKey));
       const latest = new Map();
       entries.filter(e => e.kind === kind && e.recurring && e.date.slice(0, 7) < month)
@@ -793,16 +905,17 @@
   ['fHours','fRate'].forEach(id => $(id).addEventListener('input', calcAmount));
   ['fTitle','fParty','fDate','fCat','fHours','fRate','fAmount','fFrom','fTo'].forEach(id => $(id).addEventListener('input', () => $('addErr').textContent = ''));
 
-  function defaultDate(){ return month === 'all' || month === thisMonth() ? iso(new Date()) : month + '-01'; }
-  function openForm(kind, e, teamProfit){
+  function defaultDate(){ return !oneMonth() || month === thisMonth() ? iso(new Date()) : month + '-01'; }
+  // preset: the category a new entry starts with, like 'Team profit' or 'Own work'
+  function openForm(kind, e, preset){
     editing = e || null;
     setKind(kind);
     $('formTitle').textContent = e ? 'Edit ' + (kind === 'income' ? 'income' : 'expense') : 'Add an entry';
     $('formHint').textContent = e ? '' : 'For money outside your tracked hours. Income adds to your profit, expenses take away from it';
-    $('fTitle').value = e ? e.title : teamProfit ? 'Team profit' : '';
+    $('fTitle').value = e ? e.title : preset === 'Team profit' ? preset : '';
     $('fParty').value = e ? e.party : '';
     $('fDate').value = e ? e.date : defaultDate();
-    $('fCat').value = e ? e.category : teamProfit ? 'Team profit' : '';
+    $('fCat').value = e ? e.category : preset || '';
     $('fHours').value = e && e.hours != null ? e.hours : '';
     $('fRate').value = e && e.rate != null ? e.rate : '';
     $('fFrom').value = e && e.periodStart ? e.periodStart : '';
@@ -829,7 +942,9 @@
   });
   $('addCancel').addEventListener('click', closeForm);
   // "From your team" on Overview: add the team profit you worked out
-  $('tTeamAdd').addEventListener('click', () => openForm('income', null, true));
+  $('tTeamAdd').addEventListener('click', () => openForm('income', null, 'Team profit'));
+  // "Your own work" on Overview: add money you made yourself outside your tracked hours
+  $('tOwnAdd').addEventListener('click', () => openForm('income', null, 'Own work'));
 
   $('addForm').addEventListener('submit', async ev => {
     ev.preventDefault();
@@ -877,7 +992,7 @@
     const wasEdit = !!editing;
     if (wasEdit) closeForm();
     else { $('fTitle').value = ''; $('fHours').value = ''; $('fAmount').value = ''; $('fNote').value = ''; $('fRecurring').checked = false; }
-    if (month !== 'all' && saved.date.slice(0, 7) !== month) month = saved.date.slice(0, 7);
+    if (oneMonth() && saved.date.slice(0, 7) !== month) month = saved.date.slice(0, 7);
     render();
     toast((wasEdit ? 'Updated ' : 'Added ') + saved.title + ' · ' + money(saved), false);
   });
@@ -1044,7 +1159,7 @@
 
   let stMonth = null;
   function openStatement(){
-    if (month === 'all') return;
+    if (!oneMonth()) return;
     stMonth = month;
     $('slipNote').value = '';
     drawStatement();
@@ -1055,10 +1170,11 @@
     const m = stMonth, label = monthLabel(m);
     const t = totals(d => d.slice(0, 7) === m);
     const mine = byCompany(t.own), byDate = l => [...l].sort((a, b) => a.date < b.date ? -1 : 1);
-    const teamInc = byDate(t.teamInc), inc = byDate(t.inc), exp = byDate(t.exp);
+    const teamInc = byDate(t.teamInc), ownInc = byDate(t.ownInc), inc = byDate(t.inc), exp = byDate(t.exp);
 
     // "This month you made $X for your work at ..., $Y from Youssef, ... so your total profit is ..."
     const bits = mine.map(g => '<b>' + cash(g.amt) + '</b> for your work at ' + escHtml(g.name));
+    ownInc.forEach(e => bits.push('<b>' + cash(usdOf(e)) + '</b> for ' + escHtml(e.title)));
     if (teamInc.length) bits.push('<b>' + cash(t.team) + '</b> from your team');
     const src = new Map();
     inc.forEach(e => { const k = key(e.party || e.title); if (!src.has(k)) src.set(k, { e, amt:0 }); src.get(k).amt += usdOf(e); });
@@ -1077,7 +1193,8 @@
       const rates = [...g.rates];
       return '<tr><td><b>' + escHtml(g.name) + '</b></td><td class="r mono">' + hm(g.secs) + '</td><td class="r mono">' + (rates.length === 1 ? usd(rates[0]) : usd(Math.min(...rates)) + '–' + usd(Math.max(...rates))) + '</td>' +
         '<td>' + (g.due <= 0 ? '<span class="ok">Paid</span>' : g.due < g.amt ? '<span class="due">' + cash(g.due) + ' not paid</span>' : '<span class="due">Not paid</span>') + '</td><td class="r mono">' + cash(g.amt) + '</td></tr>';
-    }).join('');
+    }).join('') + ownInc.map(e => '<tr><td><b>' + escHtml(e.title) + '</b>' + (e.party ? '<small>' + escHtml(e.party) + '</small>' : '') + '</td><td class="r mono"></td><td class="r mono"></td>' +
+      '<td>' + status(e.settled, 'Received', 'Not received') + '</td><td class="r mono">' + money(e) + '</td></tr>').join('');
     const teamRows = teamInc.map(e => '<tr><td>' + shortDay(e.date) + '</td><td><b>' + escHtml(e.title) + '</b>' + (e.party ? '<small>' + escHtml(e.party) + '</small>' : '') + '</td>' +
       '<td>' + status(e.settled, 'Received', 'Not received') + '</td><td class="r mono">' + money(e) + '</td></tr>').join('');
     const incRows = inc.map(e => '<tr><td>' + shortDay(e.date) + '</td><td><b>' + escHtml(e.title) + '</b>' + (e.party || e.part ? '<small>' + escHtml([e.party, partNote(e)].filter(Boolean).join(' · ')) + '</small>' : '') + '</td>' +
@@ -1098,11 +1215,11 @@
         '<div class="box hi' + (t.net < 0 ? ' neg' : '') + '"><p>Total profit</p><strong>' + cash(t.net) + '</strong><span>after ' + cash(t.expense) + ' in expenses</span></div>' +
       '</div>' +
       '<p class="summary">' + summary + '</p>' +
-      section('Your own work', cash(t.ownAmt), '<th>Company</th><th class="r">Hours</th><th class="r">Rate</th><th>Status</th><th class="r">Amount</th>', mineRows, 'You didn’t log any hours this month.') +
+      section('Your own work', cash(t.ownAmt), '<th>Company</th><th class="r">Hours</th><th class="r">Rate</th><th>Status</th><th class="r">Amount</th>', mineRows, 'You didn’t log any hours or own work this month.') +
       section('Profit from your team', cash(t.team), '<th>Date</th><th>Description</th><th>Status</th><th class="r">Amount</th>', teamRows, 'No team profit added this month.') +
       section('Other income', cash(t.income), '<th>Date</th><th>Description</th><th class="r">Hours or period</th><th>Status</th><th class="r">Amount</th>', incRows, 'No other income this month.') +
       section('Expenses', '−' + cash(t.expense), '<th>Date</th><th>Description</th><th>Category</th><th>Status</th><th class="r">Amount</th>', expRows, 'No expenses this month.') +
-      '<div class="bottom"><div class="note"><b>How this is worked out.</b> Your own work is your hours × each company’s rate, with nothing taken out. Team profit is the amount you added yourself. Other income and expenses are what you logged for ' + label + '. Amounts are in EGP at ' + fx.rate + ' per $1.' +
+      '<div class="bottom"><div class="note"><b>How this is worked out.</b> Your own work is your hours × each company’s rate, with nothing taken out, plus any own work you added yourself. Team profit is the amount you added yourself. Other income and expenses are what you logged for ' + label + '. Amounts are in EGP at ' + fx.rate + ' per $1.' +
         (note ? '<span class="custom"><b>Note:</b> ' + escHtml(note) + '</span>' : '') + '</div>' +
         '<div class="totals"><div><span>Your own work</span><span class="mono">' + cash(t.ownAmt) + '</span></div>' +
         '<div><span>From your team</span><span class="mono">' + cash(t.team) + '</span></div>' +

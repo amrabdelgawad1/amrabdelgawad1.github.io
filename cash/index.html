@@ -350,6 +350,21 @@
 
   .split .block{ margin-bottom:0; }
   .cash-split{ margin-bottom:24px; }
+  /* How the money moved: income on the left, expenses and profit on the right */
+  .flow{ position:relative; }
+  .flow svg{ display:block; width:100%; overflow:visible; }
+  .flow .band{ transition:opacity .2s; }
+  .flow.hovering .band:not(.hot){ opacity:.25; }
+  .flow .lbl{ font:600 13.5px var(--font-body); fill:var(--text); }
+  .flow .amt{ font:500 12.5px "JetBrains Mono", monospace; }
+  .flow .amt.in{ fill:var(--green); } .flow .amt.out{ fill:#ff9a9a; }
+  .flow .who{ font:500 11.5px var(--font-body); fill:var(--muted); }
+  @media (max-width:600px){ .flow .lbl{ font-size:12.5px; } .flow .amt{ font-size:11px; } }
+  .flow .tip{ position:absolute; pointer-events:none; background:var(--bg4); border:1px solid var(--border2); color:var(--text); font-size:12.5px; line-height:1.45; padding:8px 11px; border-radius:8px; white-space:nowrap; opacity:0; transition:opacity .15s; transform:translate(-50%, calc(-100% - 12px)); box-shadow:0 10px 30px -10px rgba(0,0,0,.5); z-index:2; }
+  .flow .tip b{ font-family:"JetBrains Mono", monospace; font-weight:600; }
+  .flow-foot{ display:flex; gap:18px; flex-wrap:wrap; margin-top:18px; font-size:13px; color:var(--light); }
+  .flow-foot i{ display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+  .flow-foot .k-in{ background:var(--green); } .flow-foot .k-out{ background:#ff8a8a; } .flow-foot .k-kept{ background:var(--green); opacity:.55; }
   .crow{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px 16px; align-items:center; padding:12px 0; }
   .crow + .crow{ border-top:1px solid var(--border); }
   .crow .cname{ font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -596,6 +611,22 @@
       </button>
     </div>
 
+    <div class="t-card custom-range" id="pRangeBox" hidden>
+      <label><span class="label">From</span><input class="field" type="date" id="pFrom" /></label>
+      <span class="arrow" aria-hidden="true">&rarr;</span>
+      <label><span class="label">To</span><input class="field" type="date" id="pTo" /></label>
+      <div class="quick">
+        <span class="label">Quick pick</span>
+        <div class="chips">
+          <button type="button" data-q="7">Last 7 days</button>
+          <button type="button" data-q="thismonth">This month</button>
+          <button type="button" data-q="lastmonth">Last month</button>
+          <button type="button" data-q="3m">Last 3 months</button>
+          <button type="button" data-q="year">This year</button>
+        </div>
+      </div>
+    </div>
+
     <div class="notice" id="notice" hidden></div>
 
     <!-- Add / edit income or expense -->
@@ -650,13 +681,23 @@
       <section class="t-card block">
         <div class="card-title"><h2>Profit</h2><span id="periodLabel"></span></div>
         <div class="totals-grid">
-          <div class="money in"><p>Your own work</p><strong id="tOwn" data-egp>$0.00</strong><small id="tOwnSub"></small><small class="egp"></small></div>
+          <div class="money in"><p>Your own work</p><strong id="tOwn" data-egp>$0.00</strong><small id="tOwnSub"></small><small class="egp"></small><button type="button" class="btn btn-ghost btn-sm team-add" id="tOwnAdd">+ Add own work</button></div>
           <div class="money in"><p>From your team</p><strong id="tTeam" data-egp>EGP 0.00</strong><small id="tTeamSub"></small><small class="egp"></small><button type="button" class="btn btn-ghost btn-sm team-add" id="tTeamAdd">+ Add team profit</button></div>
           <div class="money in"><p>Other income</p><strong id="tIncome" data-egp>$0.00</strong><small id="tIncomeSub"></small><small class="egp"></small></div>
           <div class="money out"><p>Expenses</p><strong id="tExpense" data-egp>$0.00</strong><small id="tExpenseSub"></small><small class="egp"></small></div>
           <div class="money net" id="tNetBox"><p>Net profit</p><strong id="tNet" data-egp>$0.00</strong><small id="tNetSub"></small><small class="egp"></small></div>
         </div>
         <div class="pending" id="pending"></div>
+      </section>
+
+      <section class="t-card block">
+        <div class="card-title"><h2>How the money moved</h2><span>Hover or tap a band for details</span></div>
+        <div class="flow" id="moneyFlow"></div>
+        <div class="flow-foot">
+          <span><i class="k-in"></i>Came in</span>
+          <span><i class="k-out"></i>Spent</span>
+          <span><i class="k-kept"></i>Kept as profit</span>
+        </div>
       </section>
 
       <div class="split cash-split">
@@ -1002,6 +1043,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="../tracker/config.js"></script>
 <script src="team.js?v=8"></script>
-<script src="cash.js?v=12"></script>
+<script src="cash.js?v=13"></script>
 </body>
 </html>
