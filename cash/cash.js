@@ -435,13 +435,22 @@
     const sumH = l => l.reduce((a, n) => a + n.h, 0), midH = Math.max(sumH(left), sumH(right)), midY = (H - midH) / 2;
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('height', H);
 
-    const pct = n => totalIn > 0 ? (n / totalIn * 100).toFixed(n / totalIn < .01 ? 1 : 0) + '% of what came in' : '';
+    // Hover details: the share of what came in, big, and for spending also its share of everything spent
+    const share = (n, of) => (n / of * 100).toFixed(n / of < .01 ? 1 : 0) + '%';
+    const pct = (n, kind) => ({ big: totalIn > 0 ? share(n, totalIn) : '', of:'of what came in', extra: kind === 'out' && totalOut > 0 ? share(n, totalOut) + ' of what you spent' : '' });
     const band = (xa, ya, xb, yb, h, color, alpha, n, share) => {
       const c = (xa + xb) / 2;
       const p = mk('path', { class:'band', fill:color, 'fill-opacity':alpha,
         d:`M${xa},${ya} C${c},${ya} ${c},${yb} ${xb},${yb} L${xb},${yb + h} C${c},${yb + h} ${c},${ya + h} ${xa},${ya + h} Z` });
       svg.insertBefore(p, svg.firstChild); // bands sit under the nodes and labels
-      const show = () => { el.classList.add('hovering'); p.classList.add('hot'); tip.innerHTML = ''; const a = document.createElement('div'); a.textContent = n.label + (n.tag ? ' · ' + WHO[n.tag] : ''); const b = document.createElement('b'); b.textContent = cash(n.amt) + (share ? ' · ' + share : ''); tip.append(a, b); tip.style.opacity = 1; };
+      const show = () => {
+        el.classList.add('hovering'); p.classList.add('hot'); tip.innerHTML = '';
+        const line = (cls, text) => { const d = document.createElement('div'); d.className = cls; d.textContent = text; tip.appendChild(d); return d; };
+        line('t-name', n.label + (n.tag ? ' · ' + WHO[n.tag] : ''));
+        const big = line('t-pct', share.big); const of = document.createElement('span'); of.textContent = ' ' + share.of; big.appendChild(of);
+        line('t-amt', cash(n.amt) + (share.extra ? ' · ' + share.extra : ''));
+        tip.style.opacity = 1;
+      };
       const move = e => { const r = el.getBoundingClientRect(); tip.style.left = Math.min(Math.max(e.clientX - r.left, 110), W - 110) + 'px'; tip.style.top = (e.clientY - r.top) + 'px'; };
       const hide = () => { el.classList.remove('hovering'); p.classList.remove('hot'); tip.style.opacity = 0; };
       n.hover = target => {
@@ -452,9 +461,9 @@
       n.hover(p);
     };
     let my = midY + (midH - sumH(left)) / 2;
-    left.forEach(n => { band(x0 + nodeW, n.y, x1, my, n.h, n.kind === 'short' ? RED : GREEN, .22, n, n.kind === 'short' ? 'spent beyond what came in' : pct(n.amt)); my += n.h; });
+    left.forEach(n => { band(x0 + nodeW, n.y, x1, my, n.h, n.kind === 'short' ? RED : GREEN, .22, n, n.kind === 'short' ? { big:'', of:'Spent beyond what came in' } : pct(n.amt, n.kind)); my += n.h; });
     my = midY + (midH - sumH(right)) / 2;
-    right.forEach(n => { band(x1 + nodeW, my, x2, n.y, n.h, n.kind === 'net' ? GREEN : RED, n.kind === 'net' ? .3 : .2, n, pct(n.amt)); my += n.h; });
+    right.forEach(n => { band(x1 + nodeW, my, x2, n.y, n.h, n.kind === 'net' ? GREEN : RED, n.kind === 'net' ? .3 : .2, n, pct(n.amt, n.kind)); my += n.h; });
 
     const label = (n, x, anchor, cls) => {
       const top = n.y + n.h / 2 - (n.rows * lineH) / 2 + lineH - 3;
