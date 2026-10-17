@@ -188,9 +188,22 @@ img.logo{ width:64px; height:64px; border-radius:16px; display:block; margin:0 a
 .person .head{ align-items:flex-start; }
 .person .head .pill{ flex-shrink:0; }
 
-/* Invite and access: what each person can also see */
-.person .acc{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; padding-left:48px; }
-.person .acc > span{ font-size:12.5px; color:var(--muted); margin-right:2px; }
-.acc label{ display:inline-flex; align-items:center; gap:6px; font-size:13px; padding:5px 10px; border-radius:999px; border:1px solid var(--border2); cursor:pointer; user-select:none; }
-.acc label:has(input:checked){ border-color:var(--accent); background:var(--accent-dim); color:var(--accent); font-weight:600; }
-.acc input{ accent-color:var(--accent); margin:0; }
+/* Invite and access: one Access dropdown per person, a tick per section inside */
+.acc{ position:relative; }
+.acc summary{ list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:600; padding:7px 12px; border-radius:999px; border:1px solid var(--border2); background:var(--panel); max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.acc summary::-webkit-details-marker{ display:none; }
+.acc summary::after{ content:""; width:7px; height:7px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:translateY(-2px) rotate(45deg); flex-shrink:0; opacity:.6; }
+.acc[open] summary{ border-color:var(--accent); color:var(--accent); }
+.acc-menu{ position:absolute; z-index:5; top:calc(100% + 6px); left:0; width:250px; display:grid; gap:2px; padding:8px; background:var(--panel); border:1px solid var(--border2); border-radius:12px; box-shadow:0 8px 24px rgba(16,24,40,.12); }
+.acc-menu label{ display:flex; align-items:center; gap:10px; font-size:14px; padding:8px; border-radius:8px; cursor:pointer; user-select:none; }
+.acc-menu label:hover{ background:var(--sunk); }
+.acc-menu input{ accent-color:var(--accent); width:16px; height:16px; margin:0; }
+.acc-menu p{ font-size:12px; color:var(--muted); padding:6px 8px 2px; border-top:1px solid var(--border); margin-top:4px; }
+
+/* Live now: Amr's Pause / Break / Resume / End under each person */
+.list .lrow{ border-top:1px solid var(--border); }
+.list .lrow:first-child{ border-top:0; }
+.list .lrow .row{ border-top:0; }
+.lrow .acts{ display:flex; gap:8px; flex-wrap:wrap; padding:0 0 12px 48px; }
+.lrow .endf{ display:grid; gap:8px; padding:0 0 12px 48px; max-width:440px; }
+.lrow .endf .acts{ padding:0; }

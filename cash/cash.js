@@ -630,7 +630,7 @@
     const since = hhmm(new Date(onBreak ? tmr.breakSince : tmr.startedAt));
     $('tmrSub').innerHTML = '<span class="live-dot"></span>';
     $('tmrSub').append((onBreak ? 'On break since ' + since : 'Working since ' + hhmm(new Date(tmr.startedAt))) +
-      (breakSecs() >= 60 ? ' · ' + hm(breakSecs()) + ' break' : '') +
+      (breakSecs() >= 1 ? ' · break ' + clock(breakSecs()) : '') +
       (r != null ? ' · ' + cash(workSecs() / 3600 * r) + ' so far' : ''));
   }
   setInterval(() => { if (tmr && view === 'mytime' && !document.hidden) renderTimer(); }, 1000);

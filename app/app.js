@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id);
   const cfg = window.TRACKER_CONFIG || {};
   // v changes with each release of the cash page, so the app never shows a stale copy
-  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=17';
+  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=18';
 
   // An invite or new sign-in link lands here with its type in the address; read it before supabase-js clears it
   const linkType = new URLSearchParams(location.hash.slice(1)).get('type');
@@ -127,7 +127,7 @@
   // Team member: tracker + own history
   // ======================================================================
   let live = null; // { mode, started_at, work_seconds, break_seconds, seg_at } while clocked in
-  let tickTimer = null, liveTimer = null, liveDrawTimer = null;
+  let tickTimer = null, liveTimer = null, liveDrawTimer = null, memberSyncTimer = null;
   const LBL = { off:['Off', 's-off'], run:['Working', 's-run'], pau:['Paused', 's-pau'], brk:['On break', 's-brk'] };
   const segSecs = () => live ? Math.max(0, (Date.now() - new Date(live.seg_at).getTime()) / 1000) : 0;
   const workNow = () => live ? live.work_seconds + (live.mode === 'run' ? segSecs() : 0) : 0;
@@ -138,11 +138,14 @@
   // (a shift ended on another phone must not come back here)
   const setDirty = on => { try { on ? localStorage.setItem(DIRTY, '1') : localStorage.removeItem(DIRTY); } catch(e){} };
   const isDirty = () => { try { return localStorage.getItem(DIRTY) === '1'; } catch(e){ return false; } };
-  // Pick up a Run, Pause or Off pressed on another device
-  async function syncLive(){
+  // Pick up a Run, Pause or Off pressed on another device, or by Amr from Live now
+  async function syncLive(tell){
     const { data, error } = await db.from('live_status').select('*').eq('user_id', user.id).maybeSingle();
     if (error || isDirty()) return false;
+    const before = live;
     live = data || null; keepLocal(); drawClock();
+    if (tell && before && !live) { toast('Your shift was ended from another device or by Amr. It’s saved in your history.'); loadHistory(); }
+    else if (tell && before && live && before.mode !== live.mode) toast('Your shift is now: ' + LBL[live.mode][0]);
     return true;
   }
 
@@ -164,6 +167,7 @@
     else if (!error) keepLocal();
     drawClock();
     clearInterval(tickTimer); tickTimer = setInterval(drawClock, 1000);
+    clearInterval(memberSyncTimer); memberSyncTimer = setInterval(() => { if (!document.hidden) syncLive(true); }, 30000);
     loadHistory();
     loadRequests();
     loadFx().then(() => loadHistory());
@@ -220,7 +224,7 @@
     if (!profile.company_id) { $('tSub').textContent = 'Amr needs to set the company you work for before you can clock in.'; return; }
     if (!live) { $('tSub').textContent = 'Press Run to start your shift'; return; }
     const since = hhmm(new Date(live.started_at));
-    $('tSub').textContent = (mode === 'run' ? 'Working since ' : mode === 'brk' ? 'On break · shift started ' : 'Paused · shift started ') + since + (breakNow() >= 60 ? ' · ' + hm(breakNow()) + ' break' : '');
+    $('tSub').textContent = (mode === 'run' ? 'Working since ' : mode === 'brk' ? 'On break · shift started ' : 'Paused · shift started ') + since + (breakNow() >= 1 ? ' · break ' + clock(breakNow()) : '');
   }
 
   async function saveLive(){
@@ -231,12 +235,13 @@
     setDirty(!!error);
     $('tErr').textContent = error ? 'Saved on this phone only. Check your connection; it will catch up.' : '';
   }
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && role === 'member') syncLive(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && role === 'member') syncLive(true); });
 
   document.querySelectorAll('.ctl').forEach(b => b.addEventListener('click', () => setMode(b.dataset.m)));
   async function setMode(m){
     if (!profile || !profile.company_id) return;
     if (m === 'off') return finish();
+    if (live) await syncLive(true); // Amr may have changed it from Live now
     const now = new Date();
     if (!live) live = { mode:m, started_at: now.toISOString(), work_seconds:0, break_seconds:0, seg_at: now.toISOString() };
     else if (live.mode !== m) {
@@ -481,14 +486,17 @@
     drawLive();
     clearInterval(liveDrawTimer); liveDrawTimer = setInterval(() => { if (!$('pLive').hidden) drawLive(); }, 1000);
   }
+  // Rows are rebuilt only when someone's state changes; the clocks tick in place, so buttons don't move under a tap
+  let liveSig = '', endFor = null;
   function drawLive(){
     const coName = id => (companies.find(c => c.id === id) || {}).name || '';
     const now = Date.now();
-    const fromCode = codeRows.map(r => ({ m:{ name:r.name, company_id:r.company_id }, s:r, viaCode:true }));
-    const people = liveMembers.map(m => ({ m, s: liveRows.find(r => r.user_id === m.user_id) })).concat(fromCode).map(({ m, s, viaCode }) => {
-      if (!s) return { m, mode:'off' };
+    // A /tracker shift Amr already ended stays in the table until that phone checks in; it's over, so leave it out
+    const fromCode = codeRows.filter(r => r.command !== 'end').map(r => ({ m:{ name:r.name, company_id:r.company_id }, s:r, viaCode:true, key:'d:' + r.device_id }));
+    const people = liveMembers.map(m => ({ m, s: liveRows.find(r => r.user_id === m.user_id), key:'u:' + m.user_id })).concat(fromCode).map(({ m, s, viaCode, key }) => {
+      if (!s) return { m, key, mode:'off' };
       const seg = Math.max(0, (now - new Date(s.seg_at).getTime()) / 1000);
-      return { m, mode:s.mode, work: s.work_seconds + (s.mode === 'run' ? seg : 0), brk: s.break_seconds + (s.mode === 'brk' ? seg : 0), seg, since: new Date(s.started_at), long: (now - new Date(s.started_at).getTime()) / 1000 > 10 * 3600, viaCode, quiet: viaCode && now - new Date(s.updated_at).getTime() > 15 * 60e3, seen: new Date(s.updated_at) };
+      return { m, key, mode:s.mode, work: s.work_seconds + (s.mode === 'run' ? seg : 0), brk: s.break_seconds + (s.mode === 'brk' ? seg : 0), seg, since: new Date(s.started_at), long: (now - new Date(s.started_at).getTime()) / 1000 > 10 * 3600, viaCode, quiet: viaCode && now - new Date(s.updated_at).getTime() > 15 * 60e3, seen: new Date(s.updated_at), asked: viaCode ? s.command || null : null };
     });
     const order = { run:0, brk:1, pau:2, off:3 };
     people.sort((a, b) => order[a.mode] - order[b.mode] || a.m.name.localeCompare(b.m.name));
@@ -496,14 +504,70 @@
     $('lRun').textContent = count('run'); $('lBrk').textContent = count('brk'); $('lPau').textContent = count('pau');
     $('liveCnt').hidden = !count('run'); $('liveCnt').textContent = count('run') + ' working';
     const box = $('liveList');
-    if (!people.length) { box.innerHTML = '<p class="empty">No team members yet. Invite someone from Invite and access.</p>'; return; }
+    if (!people.length) { liveSig = ''; box.innerHTML = '<p class="empty">No team members yet. Invite someone from Invite and access.</p>'; return; }
+    const ASKED = { run:'Resume', pau:'Pause', brk:'Break' };
+    const sub = p => p.mode === 'off' ? 'Not clocked in' : (p.long ? 'Clocked in over 10 hours ago. Did they forget to clock out? · ' : '') + coName(p.m.company_id) + ' · ' +
+      (p.mode === 'run' ? 'working since ' + hhmm(p.since) + (p.brk >= 1 ? ' · break ' + clock(p.brk) : '') : p.mode === 'brk' ? 'on break ' + clock(p.seg) + (p.brk - p.seg >= 1 ? ' · break total ' + clock(p.brk) : '') : 'paused ' + clock(p.seg)) +
+      (p.viaCode ? ' · via /tracker' + (p.quiet ? ', last heard from ' + hhmm(p.seen) : '') : '') + (p.asked ? ' · ' + ASKED[p.asked] + ' sent, waiting for their phone' : '');
+    const sig = role + '|' + endFor + '|' + people.map(p => p.key + p.mode + p.long + p.quiet + p.asked).join('|');
+    if (sig === liveSig) {
+      people.forEach(p => {
+        const row = box.querySelector('[data-k="' + CSS.escape(p.key) + '"]'); if (!row) return;
+        row.querySelector('small').textContent = sub(p);
+        const n = row.querySelector('.num'); if (n) n.textContent = clock(p.work);
+      });
+      return;
+    }
+    liveSig = sig;
     const pill = { run:'<span class="pill p-ok">Working</span>', brk:'<span class="pill p-due">On break</span>', pau:'<span class="pill p-pau">Paused</span>', off:'<span class="pill p-off">Off</span>' };
-    box.innerHTML = people.map(p => {
-      const sub = p.mode === 'off' ? 'Not clocked in' : (p.long ? 'Clocked in over 10 hours ago. Did they forget to clock out? · ' : '') + coName(p.m.company_id) + ' · ' + (p.mode === 'run' ? 'working since ' + hhmm(p.since) : p.mode === 'brk' ? 'on break ' + Math.floor(p.seg / 60) + 'm' : 'paused ' + Math.floor(p.seg / 60) + 'm') + (p.viaCode ? ' · via /tracker' + (p.quiet ? ', last heard from ' + hhmm(p.seen) : '') : '');
-      return '<div class="row' + (p.long ? ' long' : '') + '"><span class="av">' + esc(initials(p.m.name)) + '</span><span class="n"><b>' + esc(p.m.name) + '</b><small>' + esc(sub) + '</small></span>' +
-        '<span class="v">' + (p.mode === 'off' ? '' : '<span class="num">' + clock(p.work) + '</span><small>') + pill[p.mode] + (p.mode === 'off' ? '' : '</small>') + '</span></div>';
-    }).join('');
+    // Only Amr can change someone's clock
+    const local = d => new Date(d.getTime() - d.getTimezoneOffset() * 60e3).toISOString().slice(0, 16);
+    const ctl = p => {
+      if (role !== 'owner' || p.mode === 'off') return '';
+      if (endFor === p.key) {
+        const v = local(new Date());
+        return '<form class="endf" data-end="' + esc(p.key) + '" novalidate><label class="label">When did ' + esc(p.m.name.split(' ')[0]) + ' stop working?<input class="field" type="datetime-local" name="at" value="' + v + '" min="' + local(p.since) + '" max="' + v + '" /></label>' +
+          '<div class="acts"><button class="btn small" type="submit">End shift and save it</button><button class="btn ghost small" type="button" data-act="cancel">Cancel</button></div><p class="err"></p></form>';
+      }
+      const b = (act, label) => '<button class="btn ghost small" type="button" data-act="' + act + '">' + label + '</button>';
+      return '<div class="acts">' + (p.mode === 'run' ? b('pau', 'Pause') + b('brk', 'Break') : b('run', 'Resume')) + b('end', 'End shift') + '</div>';
+    };
+    box.innerHTML = people.map(p => '<div class="lrow" data-k="' + esc(p.key) + '"><div class="row' + (p.long ? ' long' : '') + '"><span class="av">' + esc(initials(p.m.name)) + '</span><span class="n"><b>' + esc(p.m.name) + '</b><small>' + esc(sub(p)) + '</small></span>' +
+      '<span class="v">' + (p.mode === 'off' ? '' : '<span class="num">' + clock(p.work) + '</span><small>') + pill[p.mode] + (p.mode === 'off' ? '' : '</small>') + '</span></div>' + ctl(p) + '</div>').join('');
   }
+  // Pause, Break, Resume and End on someone else's shift. App users change at once; /tracker phones pick it up within 30 seconds.
+  async function controlShift(key, act, endAt){
+    const kind = key.slice(0, 1), id = key.slice(2);
+    const { error } = kind === 'u'
+      ? await db.rpc('owner_control_member', { p_user: id, p_action: act, p_end: endAt || null })
+      : await db.rpc('owner_control_code', { p_device: id, p_action: act, p_end: endAt || null });
+    if (!error) return null;
+    return /Not clocked in/.test(error.message || '') ? 'They’re not clocked in any more.' : /Bad end time/.test(error.message || '') ? 'Pick a time between the start of the shift and now.' : 'Couldn’t do that. Try again.';
+  }
+  $('liveList').addEventListener('click', async e => {
+    const b = e.target.closest('[data-act]'); if (!b || role !== 'owner') return;
+    const key = b.closest('[data-k]').dataset.k, act = b.dataset.act;
+    if (act === 'end') { endFor = key; drawLive(); return; }
+    if (act === 'cancel') { endFor = null; drawLive(); return; }
+    b.setAttribute('aria-busy', 'true');
+    const err = await controlShift(key, act);
+    b.removeAttribute('aria-busy');
+    const did = act === 'run' ? 'Resume' : act === 'pau' ? 'Pause' : 'Break';
+    toast(err || (key[0] === 'd' ? did + ' sent. Their /tracker page picks it up within 30 seconds.' : act === 'run' ? 'Resumed.' : act === 'pau' ? 'Paused.' : 'Put on break.'));
+    loadLive();
+  });
+  $('liveList').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target, key = f.dataset.end, at = new Date(f.elements.at.value);
+    if (isNaN(at)) { f.querySelector('.err').textContent = 'Pick the time they stopped.'; return; }
+    const end = at > new Date() ? new Date() : at;
+    const btn = f.querySelector('[type=submit]'); btn.setAttribute('aria-busy', 'true');
+    const err = await controlShift(key, 'end', end.toISOString());
+    btn.removeAttribute('aria-busy');
+    if (err) { f.querySelector('.err').textContent = err; return; }
+    endFor = null; toast('Shift ended at ' + hhmm(end) + ' and saved to their hours.');
+    loadLive();
+  });
 
   // ---------- missed-shift requests (owner) ----------
   async function countRequests(){
@@ -611,9 +675,12 @@
       d.querySelector('small').textContent = (m.email || '') + ' · since ' + new Date(m.created_at).toLocaleDateString('en-US', { month:'short', year:'numeric' });
       // What they can also see, look only. Team and Money ask them for an authenticator code too.
       if (m.active && Array.isArray(m.access)) {
-        const acc = document.createElement('div'); acc.className = 'acc';
-        acc.innerHTML = '<span>Can also see</span>' + Object.keys(SECTION_NAMES).map(s => '<label><input type="checkbox" value="' + s + '"' + (m.access.includes(s) ? ' checked' : '') + ' />' + esc(SECTION_NAMES[s]) + '</label>').join('');
-        acc.title = 'Look only: they can’t add, change or approve anything. Team and Money ask them for a code from an authenticator app.';
+        // One Access dropdown: the button sums it up, the list inside has a tick per section
+        const acc = document.createElement('details'); acc.className = 'acc';
+        const sum = () => 'Access: ' + (m.access.length ? m.access.map(s => SECTION_NAMES[s]).join(', ') : 'tracker only');
+        acc.innerHTML = '<summary></summary><div class="acc-menu">' + Object.keys(SECTION_NAMES).map(s => '<label><input type="checkbox" value="' + s + '"' + (m.access.includes(s) ? ' checked' : '') + ' />' + esc(SECTION_NAMES[s]) + '</label>').join('') +
+          '<p>Look only: they can’t add, change or approve anything. Team and Money ask them for an authenticator code.</p></div>';
+        acc.querySelector('summary').textContent = sum();
         acc.addEventListener('change', async e => {
           const box = e.target, next = [...acc.querySelectorAll('input:checked')].map(i => i.value);
           acc.querySelectorAll('input').forEach(i => i.disabled = true);
@@ -621,10 +688,10 @@
           acc.querySelectorAll('input').forEach(i => i.disabled = false);
           const first = m.name.split(' ')[0], what = SECTION_NAMES[box.value];
           if (error) { box.checked = !box.checked; toast('Couldn’t change it. Try again.'); return; }
-          m.access = next;
+          m.access = next; acc.querySelector('summary').textContent = sum();
           toast(box.checked ? first + ' can now see ' + what + (/team|money/.test(box.value) ? '. They’ll set up an authenticator code the first time.' : '.') : first + ' can no longer see ' + what + '.');
         });
-        d.querySelector('.head').after(acc);
+        d.querySelector('.acts').prepend(acc);
       }
       const sel = d.querySelector('select'); fillCompanies(sel, m.company_id);
       sel.addEventListener('change', async () => {
@@ -646,7 +713,10 @@
     });
   }
 
-  function stopTimers(){ clearInterval(tickTimer); clearInterval(liveTimer); clearInterval(liveDrawTimer); }
+  // A tap outside an open Access dropdown closes it
+  document.addEventListener('click', e => document.querySelectorAll('details.acc[open]').forEach(x => { if (!x.contains(e.target)) x.open = false; }));
+
+  function stopTimers(){ clearInterval(tickTimer); clearInterval(liveTimer); clearInterval(liveDrawTimer); clearInterval(memberSyncTimer); }
 
   // ---------- install ----------
   let installPrompt = null;

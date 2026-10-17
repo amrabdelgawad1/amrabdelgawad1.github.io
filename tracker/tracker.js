@@ -230,8 +230,8 @@
     work = brk = 0; segs = []; startedAt = null;
     applyMode('off'); persist();
     $('savedSub').textContent = p.p_name + ' · ' + fmtDate(p.p_shift_date) + (companyName ? ' · ' + companyName : '');
-    $('svW').textContent = hm(p.p_work_seconds);
-    $('svB').textContent = hm(p.p_break_seconds);
+    $('svW').textContent = clock(p.p_work_seconds);
+    $('svB').textContent = clock(p.p_break_seconds);
     $('svC').textContent = hhmm(new Date(p.p_started_at)) + '–' + hhmm(new Date(p.p_ended_at));
     const card = $('saved'); card.hidden = true; void card.offsetWidth; card.hidden = false;
     card.scrollIntoView({ behavior:'smooth', block:'center' });
@@ -248,6 +248,35 @@
     }
     finish();
   });
+
+  // ---------- Amr's Pause / Break / Resume / End from Live now ----------
+  // Checked every 30 seconds while a shift runs. An End is already saved on Amr's side, so this copy is dropped, not sent again.
+  let checking = false;
+  async function checkRemote(){
+    if (mode === 'off' || !teamCode || !deviceId || checking || pending) return;
+    checking = true;
+    const { data, error } = await db.rpc('code_live_check', { p_code: teamCode, p_device: deviceId });
+    checking = false;
+    const c = !error && data && data[0];
+    if (!c || mode === 'off' || pending) return;
+    if (c.command === 'end') {
+      advance();
+      const end = c.end_at ? new Date(c.end_at) : new Date(), over = Math.max(0, (Date.now() - end) / 1000);
+      const w = Math.max(0, work - (mode === 'run' ? over : 0)), b = Math.max(0, brk - (mode === 'brk' ? over : 0));
+      const name = $('nm').value.trim(), date = $('dt').value, start = startedAt;
+      work = brk = 0; segs = []; startedAt = null; gapSnap = null; $('gapCheck').hidden = true;
+      applyMode('off'); persist(); pushLive('off');
+      $('savedSub').textContent = 'Amr ended this shift at ' + hhmm(end) + ' and saved it for you · ' + name + ' · ' + fmtDate(date);
+      $('svW').textContent = clock(w); $('svB').textContent = clock(b);
+      $('svC').textContent = (start ? hhmm(start) : '--:--') + '–' + hhmm(end);
+      const card = $('saved'); card.hidden = true; void card.offsetWidth; card.hidden = false;
+      card.scrollIntoView({ behavior:'smooth', block:'center' });
+      return;
+    }
+    const m = c.command === 'pau' ? 'pause' : c.command;
+    if (!LABEL[m]) return;
+    if (m !== mode) setMode(m); else pushLive(); // reporting the asked-for mode clears Amr's request
+  }
 
   // ---------- clock ----------
   function advance(){
@@ -266,7 +295,7 @@
     $('wk').textContent = clock(work);
     $('prog').style.strokeDashoffset = CIRC * (1 - Math.min(work/GOAL, 1));
     $('goal').textContent = work >= GOAL ? 'Shift goal reached' : 'of an 8h shift';
-    $('sW').textContent = hm(work); $('sB').textContent = hm(brk);
+    $('sW').textContent = clock(work); $('sB').textContent = clock(brk);
     $('sS').textContent = startedAt ? hhmm(startedAt) : '--:--';
     const bar = $('bar'); bar.innerHTML = '';
     segs.forEach(s => { const e = document.createElement('span'); e.className = 'seg-'+s.k; e.style.flexGrow = Math.max(s.t, 0.5); bar.appendChild(e); });
@@ -276,10 +305,10 @@
   let tickCount = 0;
   setInterval(() => {
     advance();
-    if (mode !== 'off') { draw(); if (++tickCount % 20 === 0) persist(); if (tickCount % 1200 === 0) pushLive(); } // every 5 minutes
+    if (mode !== 'off') { draw(); if (++tickCount % 20 === 0) persist(); if (tickCount % 1200 === 0) pushLive(); if (tickCount % 120 === 0 && !document.hidden) checkRemote(); } // live every 5 minutes, Amr's requests every 30 seconds
   }, 250);
   window.addEventListener('pagehide', () => { advance(); persist(); });
-  document.addEventListener('visibilitychange', () => { advance(); persist(); draw(); });
+  document.addEventListener('visibilitychange', () => { advance(); persist(); draw(); if (!document.hidden) checkRemote(); });
 
   // ---------- start ----------
   $('dt').value = iso(new Date());
@@ -287,7 +316,7 @@
   syncName();
   document.querySelector('[data-k="pause"]').setAttribute('aria-disabled', 'true');
   const resumed = restore();
-  if (resumed) pushLive();
+  if (resumed) { pushLive(); checkRemote(); }
   draw();
   if (teamCode || resumed) showApp(); else showGate();
 })();
