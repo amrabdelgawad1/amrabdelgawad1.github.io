@@ -81,7 +81,7 @@
       } else {
         imageEl.hidden = true;
         imageEl.removeAttribute("src");
-        frameEl.src = docSrc + (docSrc.includes("#") ? "" : "#toolbar=1");
+        frameEl.src = docType === "page" ? docSrc : docSrc + (docSrc.includes("#") ? "" : "#toolbar=1");
         frameEl.hidden = false;
       }
 
@@ -117,7 +117,10 @@
     }
 
     triggers.forEach((trigger) => {
-      trigger.addEventListener("click", () => openModal(trigger));
+      trigger.addEventListener("click", (e) => {
+        e.preventDefault();
+        openModal(trigger);
+      });
       trigger.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();

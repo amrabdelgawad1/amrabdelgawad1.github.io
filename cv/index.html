@@ -34,8 +34,12 @@
   ul{ margin:4px 0 0; padding-left:20px; }
   li{ margin-bottom:5px; }
   .label{ font-weight:600; }
+  .embed .bar{ display:none; }
+  .embed body{ background:#fff; }
+  .embed .sheet{ margin:0 auto; border:0; border-radius:0; box-shadow:none; }
   @media print{ .bar{ display:none; } .sheet{ border:0; box-shadow:none; margin:0; padding:0; } body{ background:#fff; } }
 </style>
+<script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add("embed");</script>
 </head>
 <body>
 <div class="bar">
