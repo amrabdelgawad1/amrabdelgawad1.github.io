@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="../style.css?v=7">
+<link rel="stylesheet" href="../style.css?v=10">
 <style>
   [hidden]{ display:none !important; }
   .gate{ max-width:440px; margin:0 auto; padding:36px 34px; text-align:center; animation:savedIn .7s cubic-bezier(.16,1,.3,1); }
@@ -54,6 +54,13 @@
   .fields input{ width:100%; background:var(--bg); border:1px solid var(--border2); border-radius:var(--radius-sm); color:var(--text); font:500 15px var(--font-body); padding:13px 14px; transition:border-color .25s, box-shadow .25s; color-scheme:dark; }
   .fields input:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-dim); }
   .fields input:disabled{ opacity:.6; }
+  .fields select{ width:100%; border:1px solid var(--border2); border-radius:var(--radius-sm); font:500 15px var(--font-body); padding:13px 40px 13px 14px; appearance:none; cursor:pointer; background:var(--bg2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235A6478' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center; color:var(--text); transition:border-color .25s, box-shadow .25s; }
+  .fields select:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-dim); }
+  .fields select:disabled{ background-color:var(--sunk, var(--bg2)); color:var(--light); cursor:default; }
+  .name-pick{ display:grid; gap:10px; }
+  .gap-check{ margin:0 0 18px; padding:16px 18px; border-radius:var(--radius); border:1px solid color-mix(in srgb, var(--gold) 40%, transparent); background:color-mix(in srgb, var(--gold) 8%, var(--bg2)); font-size:14.5px; color:var(--text); }
+  .gap-check p{ margin-bottom:12px; }
+  .gap-check .row{ display:flex; gap:10px; flex-wrap:wrap; }
   .form-error{ color:#ff7a7a; font-size:13.5px; min-height:20px; margin-top:10px; }
 
   .clock-wrap{ display:grid; grid-template-columns:auto minmax(0,1fr); gap:36px; align-items:center; margin:18px 0 32px; }
@@ -160,12 +167,24 @@
     <p class="eyebrow"><span class="dot-live"></span>Shift tracker</p>
     <p class="company-pill">Logging time for <strong id="coName"></strong></p>
     <h1 class="section-heading">Clock in for your shift</h1>
-    <p class="section-lede" style="margin-bottom:36px;">Enter your name and the date you're covering, then hit Run. Use Break for breaks and Off when you're done.</p>
+    <p class="section-lede" style="margin-bottom:36px;">Choose your name and the date you're covering, then hit Run. Use Break for breaks and Off when you're done.</p>
 
     <!-- Clock -->
     <section class="t-card clock-card">
+      <div class="gap-check" id="gapCheck" hidden>
+        <p id="gapMsg"></p>
+        <div class="row">
+          <button type="button" class="btn btn-primary btn-sm" id="gapKeep">Yes, I was working</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="gapDrop"></button>
+        </div>
+      </div>
       <div class="fields">
-        <label><span>Full name</span><input id="nm" type="text" placeholder="Omar Hassan" autocomplete="name" /></label>
+        <div class="name-pick">
+          <label><span>Your name</span>
+            <select id="nmSel"><option value="">Choose your name</option></select>
+          </label>
+          <input id="nm" type="text" placeholder="Type your full name" autocomplete="name" aria-label="Full name" hidden />
+        </div>
         <label><span>Shift date</span><input id="dt" type="date" /></label>
       </div>
       <p class="form-error" id="err"></p>
@@ -223,7 +242,7 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="config.js"></script>
+<script src="config.js?v=2"></script>
 <script>
 (function(){
   const $ = id => document.getElementById(id);
@@ -296,30 +315,71 @@
     store.del(CODE_KEY); store.del(CO_KEY); teamCode = null; companyName = ''; showGate();
   });
 
+  // ---------- name: pick from the team list, or type it under "Someone else" ----------
+  const TEAM = (cfg.teamNames || []).map(n => n.trim()).filter(Boolean);
+  const OTHER = '__other';
+  (function fillNames(){
+    const sel = $('nmSel');
+    TEAM.forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o); });
+    const o = document.createElement('option'); o.value = OTHER; o.textContent = 'Someone else'; sel.appendChild(o);
+  })();
+  // Show the typed name in the list when it matches someone on it
+  function syncName(){
+    const v = $('nm').value.trim(), hit = TEAM.find(n => n.toLowerCase() === v.toLowerCase());
+    if (hit) { $('nmSel').value = hit; $('nm').value = hit; $('nm').hidden = true; }
+    else if (v) { $('nmSel').value = OTHER; $('nm').hidden = false; }
+    else { $('nmSel').value = TEAM.length ? '' : OTHER; $('nm').hidden = !!TEAM.length; }
+  }
+  $('nmSel').addEventListener('change', () => {
+    const v = $('nmSel').value;
+    $('err').textContent = '';
+    if (v === OTHER) { $('nm').value = ''; $('nm').hidden = false; $('nm').focus(); }
+    else { $('nm').value = v; $('nm').hidden = true; }
+  });
+
   // ---------- shift state (kept on this device so closing the tab doesn't lose it) ----------
   let mode = 'off', work = 0, brk = 0, segs = [], startedAt = null, last = Date.now(), saving = false;
+  // A shift left running with the page closed (or the laptop asleep) for this long asks before counting it
+  const GAP_ASK = 3 * 3600;
+  let gapSnap = null;
 
   function persist(){
     if (mode === 'off') { store.del(SHIFT_KEY); return; }
-    store.set(SHIFT_KEY, JSON.stringify({ mode, work, brk, segs, startedAt: startedAt.toISOString(), last, name: $('nm').value, date: $('dt').value }));
+    store.set(SHIFT_KEY, JSON.stringify({ mode, work, brk, segs, startedAt: startedAt.toISOString(), last, name: $('nm').value, date: $('dt').value, gap: gapSnap }));
   }
   function restore(){
     let s = null; try { s = JSON.parse(store.get(SHIFT_KEY)); } catch(e){}
     if (!s || !s.mode || s.mode === 'off') return false;
     $('nm').value = s.name || ''; $('dt').value = s.date || iso(new Date());
+    syncName();
     work = s.work || 0; brk = s.brk || 0; segs = s.segs || []; startedAt = new Date(s.startedAt);
-    last = s.last || Date.now();
+    last = s.last || Date.now(); gapSnap = s.gap || null;
     applyMode(s.mode);
-    advance(); // count the time that passed while the page was closed
+    advance(); // count the time that passed while the page was closed (a long gap asks first)
+    if (gapSnap) showGap();
     return true;
   }
+
+  function showGap(){
+    const away = Math.max(0, (Date.now() - gapSnap.seenAt) / 1000), seen = hhmm(new Date(gapSnap.seenAt));
+    $('gapMsg').textContent = 'This shift kept running for ' + hm(away) + ' while the page was closed (since ' + seen + '). Were you working all that time?';
+    $('gapDrop').textContent = 'No, end my shift at ' + seen;
+    $('gapCheck').hidden = false;
+  }
+  $('gapKeep').addEventListener('click', () => { gapSnap = null; $('gapCheck').hidden = true; persist(); });
+  $('gapDrop').addEventListener('click', () => {
+    if (!gapSnap) return;
+    const snap = gapSnap; gapSnap = null; $('gapCheck').hidden = true;
+    work = snap.work; brk = snap.brk; segs = snap.segs; last = Date.now();
+    draw(); finish(new Date(snap.seenAt));
+  });
 
   function applyMode(m){
     mode = m; document.body.dataset.mode = m;
     $('status').querySelector('span').textContent = LABEL[m];
     document.querySelectorAll('.ctl').forEach(b => b.classList.toggle('on', b.dataset.k === m));
     const locked = m !== 'off';
-    $('nm').disabled = locked; $('dt').disabled = locked;
+    $('nm').disabled = locked; $('nmSel').disabled = locked; $('dt').disabled = locked;
     document.querySelector('[data-k="pause"]').setAttribute('aria-disabled', m === 'off');
     $('runLbl').textContent = (m === 'pause' || m === 'brk') ? 'Resume' : 'Run';
     draw();
@@ -334,7 +394,8 @@
   }
 
   function valid(){
-    if ($('nm').value.trim().length < 2) { $('err').textContent = 'Enter your full name to start.'; $('nm').focus(); return false; }
+    if (!$('nmSel').value) { $('err').textContent = 'Choose your name to start.'; $('nmSel').focus(); return false; }
+    if ($('nm').value.trim().length < 2) { $('err').textContent = 'Type your full name to start.'; $('nm').focus(); return false; }
     if (!$('dt').value) { $('err').textContent = 'Pick the date you are covering.'; return false; }
     return true;
   }
@@ -357,9 +418,10 @@
   // ---------- end shift + save online ----------
   let pending = null;
 
-  async function finish(){
+  // endAt: when the shift really ended (from the "page was closed" check); otherwise now
+  async function finish(endAt){
     if (mode === 'off' || saving) return;
-    if (!pending && !confirm('End your shift and send it to Amr?')) return;
+    if (!pending && !endAt && !confirm('End your shift and send it to Amr?')) return;
     advance();
     if (!pending) {
       pending = {
@@ -369,7 +431,7 @@
         p_work_seconds: Math.round(work),
         p_break_seconds: Math.round(brk),
         p_started_at: startedAt.toISOString(),
-        p_ended_at: new Date().toISOString()
+        p_ended_at: (endAt || new Date()).toISOString()
       };
       // freeze the clock while saving
       segs.push({ k:'pause', t:0 }); applyMode('pause');
@@ -417,7 +479,12 @@
 
   // ---------- clock ----------
   function advance(){
-    const now = Date.now(), dt = Math.max(0, (now - last) / 1000); last = now;
+    const now = Date.now(), dt = Math.max(0, (now - last) / 1000);
+    if (dt > GAP_ASK && (mode === 'run' || mode === 'brk') && !gapSnap && !pending) {
+      gapSnap = { work, brk, segs: segs.map(s => ({ ...s })), seenAt: last };
+      if (!$('app').hidden || teamCode) setTimeout(showGap);
+    }
+    last = now;
     if (mode === 'run') work += dt;
     if (mode === 'brk') brk += dt;
     if (mode !== 'off' && segs.length) segs[segs.length-1].t += dt;
@@ -445,6 +512,7 @@
   // ---------- start ----------
   $('dt').value = iso(new Date());
   $('nm').value = store.get('tracker-name') || '';
+  syncName();
   document.querySelector('[data-k="pause"]').setAttribute('aria-disabled', 'true');
   const resumed = restore();
   if (resumed) pushLive();

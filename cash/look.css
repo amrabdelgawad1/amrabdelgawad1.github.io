@@ -36,6 +36,9 @@ html .money.due strong, html .money.owed strong, html .stat.b strong{ color:var(
 html .money.owed, html .money.due{ background:var(--sunk); border-color:var(--border); }
 html .money.net, html .money.profit-big{ background:var(--net-bg); border-color:var(--net-bd); }
 html .money.net strong, html .money.profit-big strong{ color:var(--green); }
+/* Profit row: five cards share one line, so each amount shrinks to fit its own card instead of spilling out */
+html .totals-grid .money{ container-type:inline-size; }
+html .totals-grid .money strong{ font-size:clamp(17px, 11.5cqi, 28px); }
 html .pending b{ color:var(--gold); font-family:"Inter", sans-serif; font-feature-settings:"tnum" 1; }
 
 /* controls */
