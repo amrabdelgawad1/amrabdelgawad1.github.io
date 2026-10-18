@@ -801,8 +801,9 @@ button.chip[data-tool-desc]:focus-visible{ outline:none; color:var(--accent2); b
    Each phrase's words come in one after another out of a soft blur and leave the same way. */
 .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .hero-headline .hl-static{ display:block; }
-.hl-rotator{ display:grid; }
-.hl-phrase{ grid-area:1 / 1; visibility:hidden; }
+.hero-copy{ min-width:0; }
+.hl-rotator{ display:grid; grid-template-columns:minmax(0, 1fr); }
+.hl-phrase{ grid-area:1 / 1; visibility:hidden; white-space:nowrap; }
 .hl-phrase.is-active, .hl-phrase.is-leaving{ visibility:visible; }
 .hl-word{ display:inline-block; opacity:0; filter:blur(8px); transform:translateY(.45em);
   transition:opacity .6s ease, filter .6s ease, transform .7s cubic-bezier(.22,.8,.3,1);

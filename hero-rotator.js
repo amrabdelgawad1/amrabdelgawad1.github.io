@@ -25,6 +25,22 @@
     });
   });
 
+  // Keep every phrase on one line: if the longest one is wider than the space,
+  // shrink the phrase text just enough to fit (never larger than the headline).
+  function fit() {
+    box.style.fontSize = "";
+    var room = box.getBoundingClientRect().width;
+    var widest = 0;
+    phrases.forEach(function (p) { widest = Math.max(widest, p.scrollWidth); });
+    if (widest > room) {
+      var size = parseFloat(getComputedStyle(box).fontSize);
+      box.style.fontSize = Math.floor(size * room / widest) + "px";
+    }
+  }
+  fit();
+  window.addEventListener("resize", fit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+
   function next() {
     var out = phrases[current];
     current = (current + 1) % phrases.length;
