@@ -39,7 +39,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" integrity="sha384-hs5SINUk7GPohxRis+rS7grpSWEbtOIJ3sRoseBKg3CDPIKpG55RfSenbvA6ALOt" crossorigin="anonymous">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="app/icon-180.png">
-<link rel="stylesheet" href="style.css?v=12">
+<link rel="stylesheet" href="style.css?v=15">
 <link rel="stylesheet" href="booking.css">
 </head>
 <body>
@@ -77,7 +77,16 @@
       <div class="hero-copy">
         <p class="eyebrow">Real Estate Acquisitions &middot; Lead Management</p>
         <p class="availability-pill"><span class="dot-live"></span>Available for remote work, US hours</p>
-        <h1 class="hero-headline" data-split-lines>I Help US Real Estate Investors <em>Find Motivated Sellers</em> and Move Deals Forward</h1>
+        <h1 class="hero-headline">
+          <span class="sr-only">I help US businesses find motivated sellers, close more deals, book qualified appointments and manage their leads.</span>
+          <span class="hl-static" aria-hidden="true">I Help US Businesses</span>
+          <span class="hl-rotator" aria-hidden="true" data-rotator>
+            <em class="hl-phrase is-active">Find Motivated Sellers</em>
+            <em class="hl-phrase">Close More Deals</em>
+            <em class="hl-phrase">Book Qualified Appointments</em>
+            <em class="hl-phrase">Manage Their Leads</em>
+          </span>
+        </h1>
         <p class="hero-sub">More than five years working with US companies, the last four remotely. <strong>Closed 2 to 4 deals a month</strong> as an acquisition manager, rated 5.0 on every Upwork contract, and recommended in writing by the CEO of Galaxy Call Centers.</p>
         <div class="hero-actions">
           <a href="#lets-talk" class="btn btn-primary">Book a Call <span class="btn-arrow">&#8594;</span></a>
@@ -686,7 +695,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/ScrollTrigger.min.js" integrity="sha384-wl5TeDVvOWt30Pbf8aSo2ZrzsOjddu3avOBvHe+p+OhJt9gP6w9YXmDkN5DK2/dF" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/SplitText.min.js" integrity="sha384-SWJ0lLVRoipvHh59xj0pL7uC7Ih51F+5smaFtrG+2nr+TlDZU5SYJHmxfolbeNTr" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.25/dist/lenis.min.js" integrity="sha384-ClD7pCgIUz5M81HT8aZmMxCsWmfsycmBiwL5gy1pUbdWHvICIbea22N9sTtAFotA" crossorigin="anonymous"></script>
-<script src="main.js?v=6"></script>
+<script src="main.js?v=7"></script>
+<script src="hero-rotator.js?v=3"></script>
 <script src="booking.js?v=2"></script>
 </body>
 </html>

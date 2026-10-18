@@ -249,7 +249,7 @@
 
   (function hero() {
     const heroBg = document.querySelector(".hero-bg");
-    const headline = document.querySelector(".hero-headline");
+    const headline = document.querySelector(".hero-headline .hl-static");
 
     gsap.set(heroBg, { opacity: 0 });
     gsap.to(heroBg, { opacity: 1, duration: 0.9, ease: "power2.out" });
@@ -278,6 +278,8 @@
         });
       },
     });
+
+    gsap.from(".hl-rotator", { y: 24, opacity: 0, duration: 0.7, ease: "power3.out", delay: 0.6 });
 
     const tl = gsap.timeline({ delay: 0.95 });
     tl.from(".hero-sub", { y: 18, opacity: 0, duration: 0.6, ease: "power2.out" })
