@@ -39,7 +39,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" integrity="sha384-hs5SINUk7GPohxRis+rS7grpSWEbtOIJ3sRoseBKg3CDPIKpG55RfSenbvA6ALOt" crossorigin="anonymous">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="app/icon-180.png">
-<link rel="stylesheet" href="style.css?v=11">
+<link rel="stylesheet" href="style.css?v=12">
 <link rel="stylesheet" href="booking.css">
 </head>
 <body>
@@ -52,7 +52,7 @@
   <nav class="main-nav" aria-label="Primary">
     <a href="#services">Services</a>
     <a href="#verified">Proof</a>
-    <a href="#samples" hidden>Call Samples</a>
+    <a href="#samples">Call Samples</a>
     <a href="#experience">Experience</a>
     <a href="cv/" data-doc-open data-doc-type="page" data-doc-src="cv/?embed=1" data-doc-title="Amr Abdelgawad, CV" data-doc-download="assets/Amr-Abdelgawad-CV.pdf">CV</a>
     <a href="#lets-talk" class="btn btn-primary main-nav-cta">Book a Call</a>
@@ -245,16 +245,15 @@
   </section>
 
   <!-- ============ CALL SAMPLES ============ -->
-  <section class="section work-samples" id="samples" hidden>
+  <section class="section work-samples" id="samples">
     <div class="container">
       <p class="eyebrow" data-animate="fade-up">Hear Me Work</p>
       <h2 class="section-heading" data-animate="fade-up">Call Samples</h2>
       <p class="section-lede" data-animate="fade-up">Real calls with personal details removed. Listen to how I open, qualify and handle pushback.</p>
 
       <div class="samples-v2">
-        <figure class="intro-video" data-animate="fade-up">
-          <!-- Media isn't uploaded yet: preload="none" and no poster keep the hidden section from requesting missing files.
-               When assets/media/ is filled, add back poster="assets/media/intro-poster.jpg" and remove "hidden" from #samples and its nav link. -->
+        <figure class="intro-video" data-animate="fade-up" hidden>
+          <!-- Hidden until assets/media/intro.mp4 is uploaded: then add poster="assets/media/intro-poster.jpg" and remove "hidden" here. -->
           <video controls preload="none" playsinline>
             <source src="assets/media/intro.mp4" type="video/mp4" />
           </video>
@@ -267,16 +266,17 @@
               <p class="call-title">Real estate cold call</p>
               <p class="call-desc">Opening a cold conversation, handling "not interested", qualifying the seller.</p>
             </figcaption>
-            <audio controls preload="none" src="assets/media/call-real-estate.mp3"></audio>
+            <audio controls preload="metadata" src="assets/media/call-real-estate.m4a"></audio>
           </figure>
-          <figure class="call-card" data-animate="fade-up">
+          <!-- Hidden until the file is uploaded; same for the B2B card below. -->
+          <figure class="call-card" data-animate="fade-up" hidden>
             <figcaption>
               <p class="call-title">Acquisition call</p>
               <p class="call-desc">Seller motivation, condition and price, then agreeing the next step.</p>
             </figcaption>
             <audio controls preload="none" src="assets/media/call-acquisition.mp3"></audio>
           </figure>
-          <figure class="call-card" data-animate="fade-up">
+          <figure class="call-card" data-animate="fade-up" hidden>
             <figcaption>
               <p class="call-title">B2B appointment call</p>
               <p class="call-desc">Reaching a business owner and booking the meeting with the closer.</p>
