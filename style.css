@@ -811,3 +811,9 @@ button.chip[data-tool-desc]:focus-visible{ outline:none; color:var(--accent2); b
 .is-active .hl-word{ opacity:1; filter:blur(0); transform:none; }
 .is-leaving .hl-word{ opacity:0; filter:blur(8px); transform:translateY(-.35em); transition-duration:.45s; }
 .reduced-motion .hl-word{ transform:none; }
+
+/* Phone menu: the blurred header makes it the frame for the fixed menu, so "bottom:0" stopped at the header.
+   Give the menu an explicit height instead. */
+@media (max-width: 680px){
+  .main-nav{ bottom:auto; height:calc(100vh - 73px); height:calc(100dvh - 73px); overflow-y:auto; }
+}

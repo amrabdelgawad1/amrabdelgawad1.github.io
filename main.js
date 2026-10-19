@@ -3,6 +3,22 @@
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  /* ------------------------------------------------------------------ *
+   * Nav toggle (mobile) — kept simple, no motion budget spent here
+   * ------------------------------------------------------------------ */
+  const navToggle = document.querySelector("[data-nav-toggle]");
+  if (navToggle) {
+    const closeNav = () => {
+      document.body.classList.remove("nav-open");
+      navToggle.setAttribute("aria-expanded", "false");
+    };
+    navToggle.addEventListener("click", () => {
+      const open = document.body.classList.toggle("nav-open");
+      navToggle.setAttribute("aria-expanded", String(open));
+    });
+    document.querySelectorAll(".main-nav a").forEach((link) => link.addEventListener("click", closeNav));
+  }
+
   if (reduced) {
     document.documentElement.classList.add("reduced-motion");
   }
@@ -581,21 +597,6 @@
     });
   });
 
-  /* ------------------------------------------------------------------ *
-   * Nav toggle (mobile) — kept simple, no motion budget spent here
-   * ------------------------------------------------------------------ */
-  const navToggle = document.querySelector("[data-nav-toggle]");
-  if (navToggle) {
-    const closeNav = () => {
-      document.body.classList.remove("nav-open");
-      navToggle.setAttribute("aria-expanded", "false");
-    };
-    navToggle.addEventListener("click", () => {
-      const open = document.body.classList.toggle("nav-open");
-      navToggle.setAttribute("aria-expanded", String(open));
-    });
-    document.querySelectorAll(".main-nav a").forEach((link) => link.addEventListener("click", closeNav));
-  }
 
   /* ------------------------------------------------------------------ *
    * Refresh after fonts + full load so offsets are measured correctly
