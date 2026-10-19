@@ -426,7 +426,7 @@
 
     ScrollTrigger.create({
       trigger: el,
-      start: "top 85%",
+      start: "top bottom",
       once: true,
       onEnter: () =>
         gsap.to(proxy, {
@@ -445,9 +445,9 @@
     gsap.to(el, {
       y: 0,
       opacity: 1,
-      duration: 0.9,
+      duration: 0.5,
       ease: "power3.out",
-      scrollTrigger: { trigger: el, start: "top 88%", toggleActions: "play none none reverse" },
+      scrollTrigger: { trigger: el, start: "top bottom", toggleActions: "play none none none" },
     });
   });
 
@@ -455,9 +455,9 @@
     gsap.to(el, {
       scale: 1,
       opacity: 1,
-      duration: 1,
+      duration: 0.5,
       ease: "power3.out",
-      scrollTrigger: { trigger: el, start: "top 85%", toggleActions: "play none none reverse" },
+      scrollTrigger: { trigger: el, start: "top bottom", toggleActions: "play none none none" },
     });
   });
 
@@ -468,17 +468,16 @@
     const items = gsap.utils.toArray(`[data-batch="${key}"] > *`);
     if (!items.length) return;
     ScrollTrigger.batch(items, {
-      start: "top 88%",
+      start: "top bottom",
       onEnter: (batch) =>
         gsap.to(batch, {
           y: 0,
           opacity: 1,
-          duration: 0.7,
+          duration: 0.5,
           stagger: 0.08,
           ease: "power3.out",
           overwrite: true,
         }),
-      onLeaveBack: (batch) => gsap.to(batch, { y: 24, opacity: 0, duration: 0.4, overwrite: true }),
     });
   });
 
@@ -495,7 +494,7 @@
 
     gsap
       .timeline({
-        scrollTrigger: { trigger: shot, start: "top 82%", toggleActions: "play none none reverse" },
+        scrollTrigger: { trigger: shot, start: "top bottom", toggleActions: "play none none none" },
       })
       .fromTo(shot, { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: 1.1, ease: "power3.inOut" })
       .fromTo(img, { scale: 1.12 }, { scale: 1, duration: 1.3, ease: "power2.out" }, "<");
@@ -526,9 +525,9 @@
       gsap.to(item, {
         y: 0,
         opacity: 1,
-        duration: 0.8,
+        duration: 0.5,
         ease: "power3.out",
-        scrollTrigger: { trigger: item, start: "top 85%", toggleActions: "play none none reverse" },
+        scrollTrigger: { trigger: item, start: "top bottom", toggleActions: "play none none none" },
       });
     });
   })();
@@ -545,9 +544,9 @@
       gsap.to(step, {
         y: 0,
         opacity: 1,
-        duration: 0.7,
+        duration: 0.5,
         ease: "power3.out",
-        scrollTrigger: { trigger: step, start: "top 88%", toggleActions: "play none none reverse" },
+        scrollTrigger: { trigger: step, start: "top bottom", toggleActions: "play none none none" },
       });
     });
 
@@ -576,7 +575,7 @@
 
     gsap
       .timeline({
-        scrollTrigger: { trigger: win, start: "top 85%", toggleActions: "play none none reverse" },
+        scrollTrigger: { trigger: win, start: "top bottom", toggleActions: "play none none none" },
       })
       .to(win, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" })
       .from(preview, { opacity: 0, y: 10, duration: 0.35, ease: "power2.out" }, "-=0.2")
@@ -594,7 +593,7 @@
       duration: 0.4,
       stagger: 0.02,
       ease: "power1.out",
-      scrollTrigger: { trigger: group, start: "top 82%" },
+      scrollTrigger: { trigger: group, start: "top bottom" },
     });
   });
 
