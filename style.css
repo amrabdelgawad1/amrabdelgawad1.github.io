@@ -180,7 +180,7 @@ button.link-download{
 .hero-card-name{ font-weight:600; font-size:15.5px; }
 .hero-card-role{ font-size:13px; color:var(--muted); }
 
-/* Floating portrait — breaks out of the card's top-left corner for depth.
+/* Floating portrait â breaks out of the card's top-left corner for depth.
    The source photo is already a hard-edged circle crop on white; the mask
    feathers that rim into true transparency instead of pasting a matching
    flat color over it, so whatever sits behind (card or page bg) shows through. */
@@ -576,7 +576,8 @@ button.chip[data-tool-desc]:focus-visible{ outline:none; color:var(--accent2); b
   .process-line{ display:none; }
 }
 
-@media (max-width: 680px){
+/* Phone-style menu (☰) below 900px: the full menu, the dark-mode switch and Book a Call no longer fit in one row */
+@media (max-width: 900px){
   .nav-toggle{
     display:flex; flex-direction:column; justify-content:center; gap:5px;
     width:36px; height:36px; padding:0; margin-left:12px;
@@ -610,7 +611,9 @@ button.chip[data-tool-desc]:focus-visible{ outline:none; color:var(--accent2); b
     display:inline-flex; margin-top:20px; border-bottom:none; padding:15px 26px;
     width:fit-content;
   }
+}
 
+@media (max-width: 680px){
   .badge-row{ grid-template-columns:repeat(2, 1fr); }
   .why-grid{ grid-template-columns:1fr; }
   .process-track{ grid-template-columns:1fr; }
@@ -678,7 +681,7 @@ button.chip[data-tool-desc]:focus-visible{ outline:none; color:var(--accent2); b
 .badge-icon .ti, .why-icon .ti{ font-size:26px; color:var(--accent2); }
 .skill-group-head .ti{ font-size:18px; color:var(--accent2); }
 .why-icon{ width:48px; height:48px; border-radius:12px; display:grid; place-items:center; background:var(--accent-dim); }
-@media (max-width: 680px){
+@media (max-width: 900px){
   .main-nav{ background:rgba(250,247,241,.98); }
 }
 
@@ -813,7 +816,7 @@ button.chip[data-tool-desc]:focus-visible{ outline:none; color:var(--accent2); b
 .reduced-motion .hl-word{ transform:none; }
 
 /* Phone menu: the blurred header makes it the frame for the fixed menu, so "bottom:0" stopped at the header.
-   Give the menu an explicit height instead. */
-@media (max-width: 680px){
-  .main-nav{ bottom:auto; height:calc(100vh - 73px); height:calc(100dvh - 73px); overflow-y:auto; }
+   Start it at the header's bottom edge (100% = the header's height here) and give it an explicit height. */
+@media (max-width: 900px){
+  .main-nav{ top:100%; bottom:auto; height:calc(100vh - 100% + 8px); height:calc(100dvh - 100% + 8px); overflow-y:auto; }
 }
