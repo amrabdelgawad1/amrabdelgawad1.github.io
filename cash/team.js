@@ -40,12 +40,15 @@ window.CashTeam = function(db){
     billRate: x.bill_rate != null ? Number(x.bill_rate) : null,
     clocked: x.source === 'manual' ? 'Manually'
       : 'Tracker' + (x.started_at && x.ended_at ? ' · ' + hhmmIso(x.started_at) + '–' + hhmmIso(x.ended_at) : ''),
-    fresh: x.source === 'tracker' && Date.now() - new Date(x.created_at).getTime() < 24*3600*1000
+    fresh: x.source === 'tracker' && Date.now() - new Date(x.created_at).getTime() < 24*3600*1000,
+    brief: (x.brief || '').trim(), editedAt: x.edited_at || null
   });
+  const NOTE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="M9 13h6M9 17h4"/></svg>';
+  const PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.8 2.8 0 0 0-4-4L4 16v4"/><path d="M13.5 6.5l4 4"/></svg>';
 
   async function load(){
     $('notice').hidden = true;
-    $('rows').innerHTML = '<tr class="loading"><td colspan="9">Loading shifts…</td></tr>';
+    $('rows').innerHTML = '<tr class="loading"><td colspan="10">Loading shifts…</td></tr>';
     const [co, st] = await Promise.all([
       db.from('companies').select('*').order('name'),
       db.from('tracker_settings').select('*')
@@ -414,7 +417,7 @@ window.CashTeam = function(db){
     const visibleIds = new Set(rows.map(r => r.id));
     [...selected].forEach(id => { if (!visibleIds.has(id)) selected.delete(id); });
     const body = $('rows'); body.innerHTML = '';
-    if (!rows.length) body.innerHTML = '<tr><td colspan="9" class="empty">No shifts match these filters.</td></tr>';
+    if (!rows.length) body.innerHTML = '<tr><td colspan="10" class="empty">No shifts match these filters.</td></tr>';
     rows.forEach(r => {
       const tr = document.createElement('tr'); if (selected.has(r.id)) tr.className = 'sel-row';
       tr.innerHTML =
@@ -426,7 +429,8 @@ window.CashTeam = function(db){
         '<td class="c-co"><select class="co" aria-label="Company"></select></td>' +
         '<td class="c-amt num"></td>' +
         '<td class="c-status"><button class="status team"><i></i><span></span></button><button class="status client"><i></i><span></span></button></td>' +
-        '<td class="c-del" style="text-align:right"><button class="del" aria-label="Delete shift"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></td>';
+        '<td class="c-note"></td>' +
+        '<td class="c-del" style="text-align:right"><button class="del edit" aria-label="Edit shift">' + PENCIL + '</button><button class="del" aria-label="Delete shift"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></td>';
       const cb = tr.querySelector('.c-sel input');
       cb.checked = selected.has(r.id);
       cb.addEventListener('change', () => { cb.checked ? selected.add(r.id) : selected.delete(r.id); tr.classList.toggle('sel-row', cb.checked); updateBulk(rows); });
@@ -468,7 +472,16 @@ window.CashTeam = function(db){
         if (ok) render();
       });
 
-      tr.querySelector('.del').addEventListener('click', () => remove(r));
+      const nc = tr.querySelector('.c-note');
+      if (r.brief) {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'note-btn';
+        b.innerHTML = NOTE_ICON + '<span>View</span>'; b.setAttribute('aria-label', 'View ' + r.name + "'s note for " + fmtDate(r.date));
+        b.addEventListener('click', () => openNote(r)); nc.appendChild(b);
+      } else nc.innerHTML = '<span class="no-note">No note</span>';
+      if (r.editedAt) { const e = document.createElement('span'); e.className = 'edited'; e.textContent = 'Edited'; e.title = 'Edited ' + new Date(r.editedAt).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }); tr.querySelector('.c-date').appendChild(e); }
+
+      tr.querySelector('.del.edit').addEventListener('click', () => openEdit(r));
+      tr.querySelector('.del:not(.edit)').addEventListener('click', () => remove(r));
       body.appendChild(tr);
     });
     updateBulk(rows);
@@ -738,6 +751,112 @@ window.CashTeam = function(db){
     render(); toast('Added ' + hm(secs) + ' for ' + name + ' on ' + fmtDate(data.shift_date), false);
   });
 
+  // ---------- one day's note, and editing a shift ----------
+  // Both are <dialog>s styled like the ask() box. The edit fixes a wrong time, date, break or brief without deleting the shift.
+  let noteDlg = null, editDlg = null, editing = null;
+  const hhmmVal = s => s ? hhmmIso(s) : '';
+  function dialog(html){
+    const d = document.createElement('dialog'); d.className = 'ask wide shift-dlg'; d.innerHTML = html;
+    d.addEventListener('click', e => { if (e.target === d) d.close(); }); // tap outside
+    d.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => d.close()));
+    document.body.appendChild(d); return d;
+  }
+
+  function openNote(r){
+    if (!noteDlg) {
+      noteDlg = dialog('<form method="dialog"><div class="sd-head"><div><h3 class="ask-t"></h3><p class="sd-sub"></p></div><button type="button" class="sd-x" data-close aria-label="Close">×</button></div>' +
+        '<div class="sd-stats"></div><div class="sd-sec"><h4>How the day went</h4><p class="sd-brief"></p></div>' +
+        '<div class="ask-b"><span class="sd-meta"></span><button type="button" class="sd-edit">Edit shift</button><button type="submit" class="ask-ok">Close</button></div></form>');
+      noteDlg.querySelector('.sd-edit').addEventListener('click', () => { const r = noteDlg.r; noteDlg.close(); openEdit(r); });
+      noteDlg.querySelector('.sd-edit').classList.add('owner-only');
+    }
+    noteDlg.r = r;
+    noteDlg.querySelector('.ask-t').textContent = r.name;
+    noteDlg.querySelector('.sd-sub').textContent = fmtDate(r.date) + (companyName(r.companyId) ? ' · ' + companyName(r.companyId) : '');
+    const times = r.startedAt && r.endedAt ? hhmmIso(r.startedAt) + '–' + hhmmIso(r.endedAt) : 'Not clocked';
+    noteDlg.querySelector('.sd-stats').innerHTML = '<div>Worked<strong>' + hm(r.work) + '</strong></div><div>Break<strong>' + hm(r.brk) + '</strong></div><div>Shift<strong>' + times + '</strong></div>';
+    noteDlg.querySelector('.sd-brief').textContent = r.brief;
+    noteDlg.querySelector('.sd-meta').textContent = r.editedAt ? 'Edited by you' : r.endedAt ? 'Sent at ' + hhmmIso(r.endedAt) : '';
+    noteDlg.showModal(); noteDlg.querySelector('.ask-ok').focus();
+  }
+
+  function openEdit(r){
+    if (!editDlg) {
+      editDlg = dialog('<form method="dialog" novalidate><div class="sd-head"><div><h3 class="ask-t">Edit shift</h3><p class="sd-sub"></p></div><button type="button" class="sd-x" data-close aria-label="Close">×</button></div>' +
+        '<p class="sd-warn" role="note" hidden></p>' +
+        '<div class="sd-grid"><label>Shift date<input class="ask-i" type="date" name="date" required></label><label>Company<select class="ask-i" name="co"></select></label></div>' +
+        '<div class="sd-grid three"><label>Started<input class="ask-i" type="time" name="start"></label><label>Ended<input class="ask-i" type="time" name="end"></label><label>Break (minutes)<input class="ask-i" type="number" name="brk" min="0" step="1" inputmode="numeric"></label></div>' +
+        '<div class="sd-calc"><span class="sd-calc-l">Worked</span><span class="sd-wk"><input class="ask-i" type="number" name="h" min="0" max="24" step="1" inputmode="numeric" aria-label="Hours worked"><b>h</b><input class="ask-i" type="number" name="m" min="0" max="59" step="1" inputmode="numeric" aria-label="Minutes worked"><b>m</b></span><span class="sd-amt"></span></div>' +
+        '<label>Brief<textarea class="ask-i ask-ta" name="brief" rows="4" placeholder="No note for this shift"></textarea></label>' +
+        '<p class="ask-e" role="alert" hidden></p>' +
+        '<div class="ask-b"><button type="button" data-close>Cancel</button><button type="submit" class="ask-ok">Save changes</button></div></form>');
+      const f = editDlg.querySelector('form');
+      ['start', 'end', 'brk', 'h', 'm'].forEach(n => f[n].addEventListener('input', () => { editDlg.querySelector('.ask-e').hidden = true; recalc(n); }));
+      f.addEventListener('submit', e => { e.preventDefault(); saveEdit(); });
+    }
+    editing = r;
+    const f = editDlg.querySelector('form');
+    editDlg.querySelector('.sd-sub').textContent = r.name;
+    const w = editDlg.querySelector('.sd-warn');
+    w.hidden = !r.paid;
+    w.textContent = 'This shift is already marked paid' + (r.paidAt ? ' (' + new Date(r.paidAt).toLocaleDateString('en-US', { month:'short', day:'numeric' }) + ')' : '') +
+      '. Changing the hours changes its amount here, but not what you already paid ' + r.name.split(' ')[0] + '.';
+    f.date.value = r.date;
+    companyOptions(f.co, { pick: r.companyId ? null : 'Pick a company', current: r.companyId ? String(r.companyId) : '' });
+    f.start.value = hhmmVal(r.startedAt); f.end.value = hhmmVal(r.endedAt);
+    f.brk.value = Math.round(r.brk / 60);
+    f.h.value = Math.floor(r.work / 3600); f.m.value = Math.floor(r.work % 3600 / 60);
+    f.brief.value = r.brief;
+    editDlg.querySelector('.ask-e').hidden = true;
+    recalc();
+    editDlg.showModal(); (f.start.value ? f.start : f.h).focus();
+  }
+
+  // Start + end times work out the hours (minus the break); with no times, the hours are typed in
+  function editTimes(f){
+    if (!f.start.value || !f.end.value) return null;
+    const [y, mo, d] = f.date.value.split('-').map(Number), at = t => { const [h, m] = t.split(':').map(Number); return new Date(y, mo - 1, d, h, m); };
+    const s = at(f.start.value), e = at(f.end.value);
+    if (e <= s) e.setDate(e.getDate() + 1); // finished after midnight
+    return { s, e };
+  }
+  function recalc(changed){
+    const f = editDlg.querySelector('form'), t = f.date.value ? editTimes(f) : null;
+    const auto = !!t && changed !== 'h' && changed !== 'm';
+    if (auto) {
+      const secs = Math.max(0, Math.round((t.e - t.s) / 60000) * 60 - (parseInt(f.brk.value, 10) || 0) * 60);
+      f.h.value = Math.floor(secs / 3600); f.m.value = Math.floor(secs % 3600 / 60);
+    }
+    const secs = (parseInt(f.h.value, 10) || 0) * 3600 + (parseInt(f.m.value, 10) || 0) * 60;
+    editDlg.querySelector('.sd-amt').textContent = secs > 0 ? usd(secs / 3600 * editing.payRate) : '';
+  }
+
+  async function saveEdit(){
+    const r = editing, f = editDlg.querySelector('form'), err = editDlg.querySelector('.ask-e');
+    const fail = m => { err.textContent = m; err.hidden = false; };
+    if (!f.date.value) return fail('Pick the shift date.');
+    if (!f.co.value || f.co.value === 'add') return fail('Pick the company.');
+    if (!!f.start.value !== !!f.end.value) return fail('Fill in both the start and end time, or clear both.');
+    const bm = parseInt(f.brk.value || '0', 10), h = parseInt(f.h.value || '0', 10), m = parseInt(f.m.value || '0', 10);
+    if ([bm, h, m].some(n => isNaN(n) || n < 0) || m > 59) return fail('Check the break and worked minutes.');
+    const secs = h * 3600 + m * 60;
+    if (secs < 60 || secs > 86400) return fail(secs < 60 ? 'Worked time has to be at least a minute. Check the times and the break.' : 'Worked time can’t be more than 24 hours.');
+    const t = editTimes(f);
+    if (t && (t.e - t.s) / 1000 < secs + bm * 60 - 59) return fail('Worked plus break is longer than the time between start and end.');
+    const patch = {
+      shift_date: f.date.value, company_id: Number(f.co.value), work_seconds: secs, break_seconds: bm * 60,
+      started_at: t ? t.s.toISOString() : null, ended_at: t ? t.e.toISOString() : null,
+      brief: f.brief.value.trim() || null, edited_at: new Date().toISOString()
+    };
+    const ok = editDlg.querySelector('.ask-ok'); ok.setAttribute('aria-busy', 'true');
+    const { data, error } = await db.from('shifts').update(patch).eq('id', r.id).select().single();
+    ok.removeAttribute('aria-busy');
+    if (error) return fail("Couldn't save the changes. Check your connection and try again.");
+    const i = log.indexOf(r); if (i >= 0) log[i] = toRow(data);
+    editDlg.close(); render();
+    toast('Updated ' + r.name + "'s shift on " + fmtDate(data.shift_date), false);
+  }
+
   // ---------- delete with undo ----------
   function toast(msg, withUndo){
     $('toastMsg').textContent = msg;
@@ -761,7 +880,7 @@ window.CashTeam = function(db){
       name: r.name, shift_date: r.date, work_seconds: r.work, break_seconds: r.brk,
       started_at: r.startedAt, ended_at: r.endedAt, company_id: r.companyId,
       paid: r.paid, paid_at: r.paidAt, paid_fx: r.paidFx, client_paid: r.clientPaid, client_paid_at: r.clientPaidAt, client_fx: r.clientFx, source: r.source, created_at: r.createdAt,
-      pay_rate: r.payRate, bill_rate: r.billRate
+      pay_rate: r.payRate, bill_rate: r.billRate, brief: r.brief || null, edited_at: r.editedAt
     }).select().single();
     if (error) { showNotice("Couldn't restore that shift."); return; }
     log.splice(i, 0, toRow(data)); render();
@@ -770,11 +889,11 @@ window.CashTeam = function(db){
   // ---------- CSV export ----------
   $('export').addEventListener('click', () => {
     const esc = v => { let s = String(v); if (/^[=+\-@]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
-    const lines = [['Name','Shift date','Worked (hours)','Break (hours)','Company','Status','Company paid you','Amount (USD)','Clock in','Clock out'].map(esc).join(',')];
+    const lines = [['Name','Shift date','Worked (hours)','Break (hours)','Company','Status','Company paid you','Amount (USD)','Clock in','Clock out','Brief'].map(esc).join(',')];
     visible().forEach(r => lines.push([
       r.name, r.date, (r.work/3600).toFixed(2), (r.brk/3600).toFixed(2), companyName(r.companyId),
       r.paid ? 'Paid' : 'Unpaid', r.clientPaid ? 'Yes' : 'No', earned([r]).toFixed(2),
-      r.startedAt ? hhmmIso(r.startedAt) : '', r.endedAt ? hhmmIso(r.endedAt) : ''
+      r.startedAt ? hhmmIso(r.startedAt) : '', r.endedAt ? hhmmIso(r.endedAt) : '', r.brief
     ].map(esc).join(',')));
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type:'text/csv' }));

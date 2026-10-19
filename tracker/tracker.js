@@ -123,10 +123,11 @@
   // A shift left running with the page closed (or the laptop asleep) for this long asks before counting it
   const GAP_ASK = 3 * 3600;
   let gapSnap = null;
+  let brief = ''; // the end-of-shift note for Amr, kept with the shift until it's saved
 
   function persist(){
     if (mode === 'off') { store.del(SHIFT_KEY); return; }
-    store.set(SHIFT_KEY, JSON.stringify({ mode, work, brk, segs, startedAt: startedAt.toISOString(), last, name: $('nm').value, date: $('dt').value, len: GOAL/3600, gap: gapSnap }));
+    store.set(SHIFT_KEY, JSON.stringify({ mode, work, brk, segs, startedAt: startedAt.toISOString(), last, name: $('nm').value, date: $('dt').value, len: GOAL/3600, gap: gapSnap, brief }));
   }
   function restore(){
     let s = null; try { s = JSON.parse(store.get(SHIFT_KEY)); } catch(e){}
@@ -135,7 +136,7 @@
     syncName();
     setLen(s.len || lenFor(s.name));
     work = s.work || 0; brk = s.brk || 0; segs = s.segs || []; startedAt = new Date(s.startedAt);
-    last = s.last || Date.now(); gapSnap = s.gap || null;
+    last = s.last || Date.now(); gapSnap = s.gap || null; brief = s.brief || '';
     applyMode(s.mode);
     advance(); // count the time that passed while the page was closed (a long gap asks first)
     if (gapSnap) showGap();
@@ -149,8 +150,10 @@
     $('gapCheck').hidden = false;
   }
   $('gapKeep').addEventListener('click', () => { gapSnap = null; $('gapCheck').hidden = true; persist(); });
-  $('gapDrop').addEventListener('click', () => {
+  $('gapDrop').addEventListener('click', async () => {
     if (!gapSnap) return;
+    const seen = new Date(gapSnap.seenAt);
+    if (!await askBrief(gapSnap.work, gapSnap.brk, seen)) return;
     const snap = gapSnap; gapSnap = null; $('gapCheck').hidden = true;
     work = snap.work; brk = snap.brk; segs = snap.segs; last = Date.now();
     draw(); finish(new Date(snap.seenAt));
@@ -158,7 +161,7 @@
 
   function applyMode(m){
     mode = m; document.body.dataset.mode = m;
-    if (m === 'off') { $('endAsk').hidden = true; $('switchMsg').hidden = true; }
+    if (m === 'off') $('switchMsg').hidden = true;
     $('status').querySelector('span').textContent = LABEL[m];
     document.querySelectorAll('.ctl').forEach(b => b.classList.toggle('on', b.dataset.k === m));
     const locked = m !== 'off';
@@ -192,10 +195,9 @@
       // Ask on the page first; a shift that already failed to save goes straight to saving again
       if (mode === 'off' || saving) return;
       if (pending) return finish();
-      $('endAsk').hidden = false; $('endYes').focus();
+      askBrief().then(ok => { if (ok) finish(); });
       return;
     }
-    $('endAsk').hidden = true;
     if (mode === 'off' && !valid()) return;
     if (mode === 'off') {
       $('saved').hidden = true; store.set('tracker-name', $('nm').value.trim()); saveLen();
@@ -208,10 +210,24 @@
   // ---------- end shift + save online ----------
   let pending = null;
 
+  // "End your shift?" with a required brief about the day. Resolves true when they send it.
+  async function askBrief(w, b, endAt){
+    if (w == null) { advance(); w = work; b = brk; }
+    const ans = await window.ask({
+      title: 'End your shift and send it to Amr?',
+      msg: hm(w) + ' worked · ' + hm(b) + ' break · ' + hhmm(startedAt) + '–' + hhmm(endAt || new Date()),
+      input: { multiline: true, label: 'How did today go?', value: brief, placeholder: 'Dials, conversations, appointments set, anything Amr should know',
+        minLength: 10, error: 'Write a sentence or two about your day first.' },
+      ok: 'Send and end shift', cancel: 'Keep working'
+    });
+    if (ans == null) return false;
+    brief = ans.trim(); persist();
+    return mode !== 'off';
+  }
+
   // endAt: when the shift really ended (from the "page was closed" check); otherwise now
   async function finish(endAt){
     if (mode === 'off' || saving) return;
-    $('endAsk').hidden = true;
     advance();
     if (!pending) {
       pending = {
@@ -221,7 +237,8 @@
         p_work_seconds: Math.round(work),
         p_break_seconds: Math.round(brk),
         p_started_at: startedAt.toISOString(),
-        p_ended_at: (endAt || new Date()).toISOString()
+        p_ended_at: (endAt || new Date()).toISOString(),
+        p_brief: brief.trim() || null
       };
       // freeze the clock while saving
       segs.push({ k:'pause', t:0 }); applyMode('pause');
@@ -245,7 +262,7 @@
     const p = pending; pending = null;
     pushLive('off');
     document.querySelectorAll('.ctl').forEach(b => b.removeAttribute('aria-busy'));
-    work = brk = 0; segs = []; startedAt = null;
+    work = brk = 0; segs = []; startedAt = null; brief = '';
     applyMode('off'); persist();
     $('savedSub').textContent = p.p_name + ' · ' + fmtDate(p.p_shift_date) + (companyName ? ' · ' + companyName : '');
     $('svW').textContent = clock(p.p_work_seconds);
@@ -271,8 +288,6 @@
     finish();
   });
   $('newCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('retry').click(); });
-  $('endYes').addEventListener('click', () => finish());
-  $('endNo').addEventListener('click', () => { $('endAsk').hidden = true; });
 
   // ---------- Amr's Pause / Break / Resume / End from Live now ----------
   // Checked every 30 seconds while a shift runs. An End is already saved on Amr's side, so this copy is dropped, not sent again.

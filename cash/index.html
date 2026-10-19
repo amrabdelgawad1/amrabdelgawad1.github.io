@@ -300,6 +300,7 @@
     .team td.c-sel{ grid-column:1; grid-row:1; }
     .team td.c-name{ grid-column:2; grid-row:1; }
     .team td.c-del{ grid-column:3; grid-row:1; justify-self:end; }
+    .team td.c-note{ grid-column:2 / -1; grid-row:5; }
     .team td.c-date{ grid-column:2 / -1; grid-row:2; font-size:13.5px; }
     .team td.c-work{ grid-column:2; grid-row:3; font-size:14px; }
     .team td.c-amt{ grid-column:3; grid-row:3; justify-self:end; font-size:14px; }
@@ -549,10 +550,10 @@
     table.log.mylist td.c-hrs{ grid-row:3; }
   }
 </style>
-<link rel="stylesheet" href="look.css?v=8">
+<link rel="stylesheet" href="look.css?v=9">
 <link rel="stylesheet" href="../theme-switch.css?v=2">
 <link rel="stylesheet" href="../daylight-dark.css?v=2">
-<link rel="stylesheet" href="../ask.css?v=1">
+<link rel="stylesheet" href="../ask.css?v=2">
 <script src="../theme.js?v=2"></script>
 </head>
 <body>
@@ -1017,7 +1018,7 @@
         <table class="log">
           <thead><tr>
             <th style="width:34px"><input type="checkbox" id="tm-selAll" aria-label="Select all shown" /></th>
-            <th>Name</th><th>Shift date</th><th>Worked</th><th>Break</th><th>Company</th><th>Amount</th><th>Status</th><th></th>
+            <th>Name</th><th>Shift date</th><th>Worked</th><th>Break</th><th>Company</th><th>Amount</th><th>Status</th><th>Notes</th><th></th>
           </tr></thead>
           <tbody id="tm-rows"></tbody>
         </table>
@@ -1082,8 +1083,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="../tracker/config.js"></script>
-<script src="../ask.js?v=1"></script>
-<script src="team.js?v=10"></script>
+<script src="../ask.js?v=2"></script>
+<script src="team.js?v=11"></script>
 <script src="cash.js?v=21"></script>
 </body>
 </html>

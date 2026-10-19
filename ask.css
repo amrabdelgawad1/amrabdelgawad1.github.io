@@ -18,3 +18,8 @@
 html[data-theme="dark"] .ask{ box-shadow:0 20px 50px rgba(0,0,0,.5); }
 html[data-theme="dark"] .ask-b .ask-ok.danger{ color:#111315; }
 html[data-theme="dark"] .ask::backdrop{ background:rgba(0,0,0,.6); }
+/* Bigger text box (input.multiline), e.g. the end-of-shift brief */
+.ask.wide{ width:min(480px, calc(100% - 32px)); }
+.ask-ta{ resize:vertical; min-height:120px; line-height:1.45; font-size:15px; }
+.ask-i::placeholder{ color:var(--muted, #6b7280); }
+.ask-e{ margin:-4px 0 0; color:var(--red, #c01c28); font-size:13.5px; }

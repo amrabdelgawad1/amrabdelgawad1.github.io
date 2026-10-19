@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id);
   const cfg = window.TRACKER_CONFIG || {};
   // v changes with each release of the cash page, so the app never shows a stale copy
-  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=23';
+  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=24';
 
   // An invite or new sign-in link lands here with its type in the address; read it before supabase-js clears it
   const linkType = new URLSearchParams(location.hash.slice(1)).get('type');
@@ -202,14 +202,16 @@
     // Count the work up to that time, never more than the clock has
     const work = Math.round(Math.max(0, Math.min(workNow(), (end - start) / 1000 - live.break_seconds)));
     if (work < 60) { $('guardErr').textContent = 'That would be less than a minute of work. Pick a later time.'; return; }
+    const note = await askBrief(work, live.break_seconds, end);
+    if (note == null || !live) return;
     $('guardSave').setAttribute('aria-busy', 'true');
     const { error } = await db.rpc('member_log_shift', {
       p_shift_date: iso(start), p_work_seconds: Math.min(work, 86400), p_break_seconds: live.break_seconds,
-      p_started_at: live.started_at, p_ended_at: end.toISOString()
+      p_started_at: live.started_at, p_ended_at: end.toISOString(), p_brief: note
     });
     $('guardSave').removeAttribute('aria-busy');
     if (error) { $('guardErr').textContent = "Couldn't save it. Check your connection and try again."; return; }
-    live = null; keepLocal(); $('guard').hidden = true; drawClock();
+    live = null; keepLocal(); try { localStorage.removeItem(BRIEF_KEY); } catch(e){} $('guard').hidden = true; drawClock();
     toast('Shift saved: ' + hm(work) + ', ended ' + v);
     loadHistory();
   });
@@ -254,6 +256,22 @@
     drawClock(); await saveLive();
   }
 
+  // "End your shift?" with a required brief about the day. Resolves the brief, or null when they keep working.
+  // A sent brief stays on this device until the shift saves, so a failed save doesn't make them type it again.
+  const BRIEF_KEY = 'talents-brief';
+  async function askBrief(work, brk, end){
+    let draft = ''; try { draft = localStorage.getItem(BRIEF_KEY) || ''; } catch(e){}
+    const ans = await ask({
+      title:'End your shift and send it to Amr?',
+      msg:hm(work) + ' worked · ' + hm(brk) + ' break · ' + hhmm(new Date(live.started_at)) + '–' + hhmm(end),
+      input:{ multiline:true, label:'How did today go?', value:draft, placeholder:'Dials, conversations, appointments set, anything Amr should know',
+        minLength:10, error:'Write a sentence or two about your day first.' },
+      ok:'Send and end shift', cancel:'Keep working'
+    });
+    if (ans != null) try { localStorage.setItem(BRIEF_KEY, ans.trim()); } catch(e){}
+    return ans == null ? null : ans.trim();
+  }
+
   async function finish(){
     if (!live) return;
     // Ended or changed on another device? Show that instead of logging the shift twice
@@ -265,18 +283,19 @@
       if (!await ask({ title:'Discard this shift?', msg:'Less than a minute worked, so nothing will be saved.', ok:'Discard', cancel:'Keep working', danger:true })) return;
       live = null; drawClock(); await saveLive(); return;
     }
-    if (!await ask({ title:'End your shift and send it to Amr?', msg:hm(work) + ' worked' + (brk >= 60 ? ', ' + hm(brk) + ' break' : ''), ok:'End shift', cancel:'Keep working' })) return;
+    const note = await askBrief(work, brk, new Date());
+    if (note == null || !live) return;
     $('offLbl').textContent = 'Saving…';
     document.querySelectorAll('.ctl').forEach(b => b.setAttribute('aria-busy', 'true'));
     const started = new Date(live.started_at);
     const { error } = await db.rpc('member_log_shift', {
       p_shift_date: iso(started), p_work_seconds: Math.min(work, 86400), p_break_seconds: brk,
-      p_started_at: live.started_at, p_ended_at: new Date().toISOString()
+      p_started_at: live.started_at, p_ended_at: new Date().toISOString(), p_brief: note
     });
     document.querySelectorAll('.ctl').forEach(b => b.removeAttribute('aria-busy'));
     $('offLbl').textContent = 'Off';
     if (error) { $('tErr').textContent = "Couldn't save your shift. Your time is kept; check your connection and press Off again."; return; }
-    live = null; keepLocal(); drawClock();
+    live = null; keepLocal(); try { localStorage.removeItem(BRIEF_KEY); } catch(e){} drawClock();
     toast('Shift saved: ' + hm(work));
     loadHistory();
   }

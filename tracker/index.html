@@ -143,6 +143,7 @@
 <link rel="stylesheet" href="../cash/look.css?v=2">
 <link rel="stylesheet" href="look.css?v=2">
 <link rel="stylesheet" href="../theme-switch.css?v=2">
+<link rel="stylesheet" href="../ask.css?v=2">
 <link rel="stylesheet" href="../daylight-dark.css?v=2">
 <script src="../theme.js?v=2"></script>
 </head>
@@ -239,13 +240,6 @@
         <button class="ctl" data-k="brk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 3v2M12 3v2"/></svg>Break</button>
         <button class="ctl" data-k="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.4 6.6a8 8 0 1 0 11.2 0"/></svg><span id="offLbl">Off</span></button>
       </div>
-      <div class="gap-check end-ask" id="endAsk" hidden>
-        <p>End your shift and send it to Amr?</p>
-        <div class="row">
-          <button type="button" class="btn btn-primary btn-sm" id="endYes">Yes, end my shift</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="endNo">Keep working</button>
-        </div>
-      </div>
       <div class="save-error" id="saveErr" hidden><span id="saveErrMsg"></span><input id="newCode" class="new-code" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="New company code" aria-label="New company code" hidden /><button class="btn btn-ghost btn-sm" id="retry">Try again</button></div>
     </section>
 
@@ -272,6 +266,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="config.js?v=3"></script>
-<script src="tracker.js?v=4"></script>
+<script src="../ask.js?v=2"></script>
+<script src="tracker.js?v=5"></script>
 </body>
 </html>
