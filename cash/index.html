@@ -550,7 +550,7 @@
     table.log.mylist td.c-hrs{ grid-row:3; }
   }
 </style>
-<link rel="stylesheet" href="look.css?v=9">
+<link rel="stylesheet" href="look.css?v=10">
 <link rel="stylesheet" href="../theme-switch.css?v=2">
 <link rel="stylesheet" href="../daylight-dark.css?v=2">
 <link rel="stylesheet" href="../ask.css?v=2">
@@ -862,6 +862,7 @@
           <div class="seg view-seg" id="tm-view">
             <button data-v="hours" class="on">Hours and pay</button>
             <button data-v="profit">Rates</button>
+            <button data-v="notes">Notes</button>
             <button data-v="agents">Agents</button>
           </div>
           <button class="btn btn-primary btn-sm" id="tm-addToggle">
@@ -947,6 +948,14 @@
         </form>
         <p class="add-err" id="tm-agentErr"></p>
         <div class="agent-list" id="tm-agentRows"><p class="agent-empty">Loading agents…</p></div>
+      </section>
+    </div>
+
+    <!-- Notes view: every end-of-shift brief in the chosen period, newest first -->
+    <div id="tm-notesView" hidden>
+      <section class="t-card history notes-card">
+        <div class="card-title"><h2>Notes</h2><span id="tm-notesLabel"></span></div>
+        <div class="notes-list" id="tm-notesList"></div>
       </section>
     </div>
 
@@ -1083,8 +1092,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="../tracker/config.js"></script>
-<script src="../ask.js?v=2"></script>
-<script src="team.js?v=11"></script>
+<script src="../ask.js?v=3"></script>
+<script src="team.js?v=12"></script>
 <script src="cash.js?v=21"></script>
 </body>
 </html>

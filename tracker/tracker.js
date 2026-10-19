@@ -217,12 +217,27 @@
       title: 'End your shift and send it to Amr?',
       msg: hm(w) + ' worked · ' + hm(b) + ' break · ' + hhmm(startedAt) + '–' + hhmm(endAt || new Date()),
       input: { multiline: true, label: 'How did today go?', value: brief, placeholder: 'Dials, conversations, appointments set, anything Amr should know',
-        minLength: 10, error: 'Write a sentence or two about your day first.' },
+        minLength: 10, error: 'Write a sentence or two about your day first.', onCancel: v => { brief = v; persist(); } },
       ok: 'Send and end shift', cancel: 'Keep working'
     });
     if (ans == null) return false;
     brief = ans.trim(); persist();
     return mode !== 'off';
+  }
+
+  // Amr ended the shift from Live now: it's already saved, so the brief is optional and added to that shift afterwards
+  async function laterBrief(name, start){
+    const draft = brief; brief = '';
+    if (!start) return;
+    const ans = await window.ask({
+      title: 'Amr ended your shift. Add a note about your day?',
+      msg: 'Your hours are already saved. This note goes with them.',
+      input: { multiline: true, label: 'How did today go?', value: draft, placeholder: 'Dials, conversations, appointments set, anything Amr should know' },
+      ok: 'Send note', cancel: 'Skip'
+    });
+    if (!ans || !ans.trim()) return;
+    const { error } = await db.rpc('code_add_brief', { p_code: teamCode, p_name: name, p_started_at: start.toISOString(), p_brief: ans.trim() });
+    $('savedSub').textContent += error ? ' · Couldn’t send your note' : ' · Note sent';
   }
 
   // endAt: when the shift really ended (from the "page was closed" check); otherwise now
@@ -311,6 +326,7 @@
       $('svC').textContent = (start ? hhmm(start) : '--:--') + '–' + hhmm(end);
       const card = $('saved'); card.hidden = true; void card.offsetWidth; card.hidden = false;
       card.scrollIntoView({ behavior:'smooth', block:'center' });
+      laterBrief(name, start);
       return;
     }
     const m = c.command === 'pau' ? 'pause' : c.command;

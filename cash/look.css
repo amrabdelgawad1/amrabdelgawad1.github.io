@@ -178,3 +178,21 @@ html .edited{ display:block; font-size:11.5px; font-weight:600; color:var(--gold
 .sd-warn{ margin:0; padding:10px 12px; border-radius:10px; font-size:13.5px; color:var(--gold); background:color-mix(in srgb, var(--gold) 9%, var(--bg2)); border:1px solid color-mix(in srgb, var(--gold) 30%, transparent); }
 @media (max-width:480px){ .sd-grid.three{ grid-template-columns:1fr 1fr; } .sd-grid.three label:last-child{ grid-column:1 / -1; } .shift-dlg .ask-b .sd-meta{ flex-basis:100%; } }
 html.look-only .owner-only{ display:none !important; }
+
+/* Team > Notes: the period's briefs, grouped by day */
+.notes-list{ display:grid; gap:12px; }
+.note-day{ margin:10px 0 0; font:600 12px "Inter", sans-serif; letter-spacing:.06em; text-transform:uppercase; color:var(--gold); }
+.note-day:first-child{ margin-top:0; }
+.note-card{ border:1px solid var(--border); border-radius:12px; padding:14px 16px; background:var(--sunk); display:grid; gap:8px; }
+.nc-head{ display:flex; align-items:center; gap:10px; }
+.nc-head .av{ width:32px; height:32px; border-radius:50%; display:grid; place-items:center; font:600 12px "Inter", sans-serif; background:var(--accent-dim); color:var(--accent); flex:none; }
+.nc-who{ flex:1; min-width:0; }
+.nc-who b{ display:block; font-weight:600; font-size:14.5px; }
+.nc-who small{ display:block; color:var(--muted); font-size:12.5px; font-feature-settings:"tnum" 1; }
+.note-card .del{ width:32px; height:32px; border-radius:8px; border:1px solid transparent; background:transparent; color:var(--muted); display:grid; place-items:center; cursor:pointer; flex:none; }
+.note-card .del svg{ width:16px; height:16px; }
+.nc-brief{ margin:0; font-size:15px; line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; }
+.nc-orig, .sd-orig{ margin:0; font-size:12.5px; color:var(--muted); white-space:pre-wrap; overflow-wrap:anywhere; }
+.sd-ai p{ margin:0; font-size:14.5px; line-height:1.55; padding:10px 12px; border-radius:10px; background:var(--accent-dim); }
+.nc-ai{ margin:0; font-size:14px; line-height:1.5; padding:8px 12px; border-radius:10px; background:var(--accent-dim); }
+.nc-ai::before{ content:"Suggestion · "; font-weight:600; color:var(--accent); }

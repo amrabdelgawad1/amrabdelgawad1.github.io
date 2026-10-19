@@ -219,3 +219,5 @@ img.logo{ width:64px; height:64px; border-radius:16px; display:block; margin:0 a
 .bars .bar{ height:7px; border-radius:4px; background:var(--accent); min-width:3px; }
 .linkbtn{ color:var(--accent); font:inherit; text-decoration:underline; padding:0; }
 #pVisits .note a{ color:var(--accent); }
+/* Your own end-of-shift note under each day in your history */
+.list .row .n .brief{ margin:5px 0 0; font-size:13px; line-height:1.45; color:var(--light, var(--text)); white-space:pre-wrap; overflow-wrap:anywhere; border-left:2px solid var(--border); padding-left:8px; }

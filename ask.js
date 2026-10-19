@@ -1,9 +1,10 @@
 // On-page "Are you sure?" box for /app, /cash and /tracker, in place of the browser's OK / Cancel pop-ups.
 // ask({ title, msg, ok, cancel, danger }) resolves true or false.
 // With input: { label, value, placeholder, type } it resolves the typed text, or null on Cancel.
-// input.multiline gives a bigger text box; input.minLength + input.error keep the box open until enough is typed.
+// input.multiline gives a bigger text box; input.minLength + input.error keep the box open until enough is typed;
+// input.onCancel(text) gets what was typed when they back out.
 (function(){
-  let dlg, ttl, msg, inp, ta, lbl, err, okB, noB, done = null, need = 0, needMsg = '';
+  let dlg, ttl, msg, inp, ta, lbl, err, okB, noB, done = null, need = 0, needMsg = '', keep = null;
   function build(){
     dlg = document.createElement('dialog'); dlg.className = 'ask';
     dlg.innerHTML = '<form method="dialog" novalidate><h3 class="ask-t"></h3><p class="ask-m"></p><label class="ask-l"><span></span><input class="ask-i" autocomplete="off"><textarea class="ask-i ask-ta" rows="5"></textarea></label>' +
@@ -12,7 +13,10 @@
     ttl = dlg.querySelector('.ask-t'); msg = dlg.querySelector('.ask-m'); lbl = dlg.querySelector('.ask-l'); err = dlg.querySelector('.ask-e');
     inp = dlg.querySelector('input.ask-i'); ta = dlg.querySelector('.ask-ta'); okB = dlg.querySelector('.ask-ok'); noB = dlg.querySelector('.ask-no');
     const field = () => ta.hidden ? inp : ta;
-    const end = v => { const f = done; done = null; if (dlg.open) dlg.close(); if (f) f(v); };
+    const end = v => {
+      if (v === null && keep) keep(field().value); // backed out: hand back what was typed so it isn't lost
+      const f = done; done = null; keep = null; if (dlg.open) dlg.close(); if (f) f(v);
+    };
     dlg.querySelector('form').addEventListener('submit', e => {
       e.preventDefault();
       if (lbl.hidden) return end(true);
@@ -35,6 +39,7 @@
     const multi = !!(o.input && o.input.multiline);
     inp.hidden = multi; ta.hidden = !multi;
     dlg.classList.toggle('wide', multi);
+    keep = (o.input && o.input.onCancel) || null;
     need = (o.input && o.input.minLength) || 0; needMsg = (o.input && o.input.error) || 'Type a little more first.';
     if (o.input) {
       lbl.querySelector('span').textContent = o.input.label || '';

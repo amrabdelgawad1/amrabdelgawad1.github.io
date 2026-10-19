@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id);
   const cfg = window.TRACKER_CONFIG || {};
   // v changes with each release of the cash page, so the app never shows a stale copy
-  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=24';
+  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=25';
 
   // An invite or new sign-in link lands here with its type in the address; read it before supabase-js clears it
   const linkType = new URLSearchParams(location.hash.slice(1)).get('type');
@@ -147,7 +147,7 @@
     if (error || isDirty()) return false;
     const before = live;
     live = data || null; keepLocal(); drawClock();
-    if (tell && before && !live) { toast('Your shift was ended from another device or by Amr. It’s saved in your history.'); loadHistory(); }
+    if (tell && before && !live) { toast('Your shift was ended from another device or by Amr. It’s saved in your history.'); loadHistory(); laterBrief(before.started_at); }
     else if (tell && before && live && before.mode !== live.mode) toast('Your shift is now: ' + LBL[live.mode][0]);
     return true;
   }
@@ -265,11 +265,31 @@
       title:'End your shift and send it to Amr?',
       msg:hm(work) + ' worked · ' + hm(brk) + ' break · ' + hhmm(new Date(live.started_at)) + '–' + hhmm(end),
       input:{ multiline:true, label:'How did today go?', value:draft, placeholder:'Dials, conversations, appointments set, anything Amr should know',
-        minLength:10, error:'Write a sentence or two about your day first.' },
+        minLength:10, error:'Write a sentence or two about your day first.',
+        onCancel: v => { try { localStorage.setItem(BRIEF_KEY, v); } catch(e){} } },
       ok:'Send and end shift', cancel:'Keep working'
     });
     if (ans != null) try { localStorage.setItem(BRIEF_KEY, ans.trim()); } catch(e){}
     return ans == null ? null : ans.trim();
+  }
+
+  // Ended somewhere else (Amr's End, or another device): if that shift has no brief yet, offer to add one
+  async function laterBrief(startedAt){
+    const { data } = await db.rpc('my_briefs');
+    const s = (data || []).find(r => Math.abs(new Date(r.started_at) - new Date(startedAt)) < 2000);
+    if (!s || s.brief) return;
+    let draft = ''; try { draft = localStorage.getItem(BRIEF_KEY) || ''; } catch(e){}
+    const ans = await ask({
+      title:'Your shift was ended. Add a note about your day?',
+      msg:'Your hours are already saved. This note goes with them.',
+      input:{ multiline:true, label:'How did today go?', value:draft, placeholder:'Dials, conversations, appointments set, anything Amr should know' },
+      ok:'Send note', cancel:'Skip'
+    });
+    try { localStorage.removeItem(BRIEF_KEY); } catch(e){}
+    if (!ans || !ans.trim()) return;
+    const { error } = await db.rpc('member_add_brief', { p_started_at: startedAt, p_brief: ans.trim() });
+    toast(error ? 'Couldn’t send your note. Check your connection.' : 'Note sent to Amr');
+    if (!error) loadHistory();
   }
 
   async function finish(){
@@ -350,7 +370,10 @@
   async function loadFx(){}
 
   async function loadHistory(){
-    const { data, error } = await db.rpc('my_shifts');
+    const [{ data, error }, br] = await Promise.all([db.rpc('my_shifts'), db.rpc('my_briefs')]);
+    // Your own end-of-shift notes, matched to each shift by its date, length and start time
+    const bkey = r => r.shift_date + '|' + r.work_seconds + '|' + (r.started_at ? new Date(r.started_at).getTime() : '');
+    const briefs = new Map(((!br.error && br.data) || []).filter(r => r.brief).map(r => [bkey(r), r.brief]));
     if (error) { $('hList').innerHTML = '<p class="empty">Couldn’t load your history. Pull to refresh.</p>'; return; }
     const rows = data || [], month = iso(new Date()).slice(0, 7);
     const mine = rows.filter(r => r.shift_date.slice(0, 7) === month);
@@ -381,6 +404,8 @@
         const clocked = r.started_at && r.ended_at ? hhmm(new Date(r.started_at)) + '–' + hhmm(new Date(r.ended_at)) + ' · ' : '';
         d.innerHTML = '<span class="n"><b>' + esc(dayDate(r.shift_date)) + '</b><small>' + esc((r.company_name || '') + ' · ' + clocked + hm(r.work_seconds)) + '</small></span>' +
           '<span class="v">' + usd(a) + '<small>' + (r.paid ? '<span class="pill p-ok">Paid</span>' : '<span class="pill p-due">Unpaid</span>') + '</small></span>';
+        const note = briefs.get(bkey(r));
+        if (note) { const p = document.createElement('p'); p.className = 'brief'; p.textContent = note; d.querySelector('.n').appendChild(p); }
         if (r.paid && r.paid_at) d.title = 'Paid ' + new Date(r.paid_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + (r.paid_fx ? ' at ' + Number(r.paid_fx).toFixed(2) + ' EGP per $1' : '');
         days.appendChild(d);
       });

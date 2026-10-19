@@ -41,8 +41,20 @@ window.CashTeam = function(db){
     clocked: x.source === 'manual' ? 'Manually'
       : 'Tracker' + (x.started_at && x.ended_at ? ' · ' + hhmmIso(x.started_at) + '–' + hhmmIso(x.ended_at) : ''),
     fresh: x.source === 'tracker' && Date.now() - new Date(x.created_at).getTime() < 24*3600*1000,
-    brief: (x.brief || '').trim(), editedAt: x.edited_at || null
+    brief: (x.brief || '').trim(), editedAt: x.edited_at || null,
+    original: x.original || null, // the shift as first sent, saved on the first edit
+    aiNote: (x.ai_note || '').trim() // a suggestion written from the brief (filled in later by the AI step)
   });
+  // "Originally Mon, Oct 19 · 09:00–16:17 · 6h 42m worked · 0h 35m break · Fortune Consultants"
+  function originalText(r){
+    const o = r.original; if (!o) return '';
+    const parts = [fmtDate(o.date)];
+    if (o.started_at && o.ended_at) parts.push(hhmmIso(o.started_at) + '–' + hhmmIso(o.ended_at));
+    parts.push(hm(o.work) + ' worked', hm(o.brk) + ' break');
+    if (o.company_id !== r.companyId && companyName(o.company_id)) parts.push(companyName(o.company_id));
+    return 'Originally ' + parts.join(' · ') + (o.brief !== undefined && (o.brief || '') !== r.brief ? ' · brief was ' + (o.brief ? '“' + o.brief + '”' : 'empty') : '');
+  }
+  const snapshot = r => ({ date: r.date, started_at: r.startedAt, ended_at: r.endedAt, work: r.work, brk: r.brk, company_id: r.companyId, brief: r.brief || '' });
   const NOTE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="M9 13h6M9 17h4"/></svg>';
   const PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.8 2.8 0 0 0-4-4L4 16v4"/><path d="M13.5 6.5l4 4"/></svg>';
 
@@ -336,7 +348,7 @@ window.CashTeam = function(db){
   });
 
   // ---------- view switch ----------
-  const VIEW_TITLE = { hours:'Team hours', profit:'Rates', agents:'Agents' };
+  const VIEW_TITLE = { hours:'Team hours', profit:'Rates', agents:'Agents', notes:'Team notes' };
   $('view').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     view = b.dataset.v;
@@ -344,10 +356,11 @@ window.CashTeam = function(db){
     $('hoursView').hidden = view !== 'hours';
     $('profitView').hidden = view !== 'profit';
     $('agentsView').hidden = view !== 'agents';
-    $('status').hidden = view === 'profit';
+    $('notesView').hidden = view !== 'notes';
+    $('status').hidden = view === 'profit' || view === 'notes';
     // Date range, filters and Add shift don't apply to the agents list
     document.querySelector('#teamView .tools').hidden = view === 'agents';
-    $('addToggle').hidden = view === 'agents';
+    $('addToggle').hidden = view === 'agents' || view === 'notes';
     $('customBox').hidden = view === 'agents' || range !== 'custom';
     if (view === 'agents') { $('addBox').hidden = true; loadAgents(); }
     $('pageTitle').textContent = VIEW_TITLE[view];
@@ -486,7 +499,33 @@ window.CashTeam = function(db){
     });
     updateBulk(rows);
     renderProfit();
+    renderNotes();
     paint();
+  }
+
+  // ---------- notes: every brief in the period, newest first ----------
+  function renderNotes(){
+    if (view !== 'notes') return;
+    const rows = visible(true).slice().sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : (b.endedAt || b.createdAt || '').localeCompare(a.endedAt || a.createdAt || ''));
+    const withNote = rows.filter(r => r.brief), missing = rows.length - withNote.length;
+    $('notesLabel').textContent = rangeLabel() + ' · ' + withNote.length + ' note' + (withNote.length === 1 ? '' : 's') + (missing ? ' · ' + missing + ' shift' + (missing === 1 ? '' : 's') + ' without one' : '');
+    const box = $('notesList'); box.innerHTML = '';
+    if (!withNote.length) { box.innerHTML = '<p class="empty">No notes in this period yet. Notes come in when your team ends a shift.</p>'; return; }
+    let day = '';
+    withNote.forEach(r => {
+      if (r.date !== day) { day = r.date; const h = document.createElement('h3'); h.className = 'note-day'; h.textContent = fmtDate(r.date); box.appendChild(h); }
+      const card = document.createElement('article'); card.className = 'note-card';
+      card.innerHTML = '<div class="nc-head"><span class="av"></span><div class="nc-who"><b></b><small></small></div><button type="button" class="del edit owner-only" aria-label="Edit shift">' + PENCIL + '</button></div><p class="nc-brief"></p>';
+      card.querySelector('.av').textContent = initials(r.name);
+      card.querySelector('b').textContent = r.name;
+      const times = r.startedAt && r.endedAt ? hhmmIso(r.startedAt) + '–' + hhmmIso(r.endedAt) + ' · ' : '';
+      card.querySelector('small').textContent = times + hm(r.work) + ' worked' + (companyName(r.companyId) ? ' · ' + companyName(r.companyId) : '') + (r.editedAt ? ' · Edited' : '');
+      card.querySelector('.nc-brief').textContent = r.brief;
+      if (r.aiNote) { const a = document.createElement('p'); a.className = 'nc-ai owner-only'; a.textContent = r.aiNote; card.appendChild(a); }
+      if (r.original) { const o = document.createElement('p'); o.className = 'nc-orig'; o.textContent = originalText(r); card.appendChild(o); }
+      card.querySelector('.edit').addEventListener('click', () => openEdit(r));
+      box.appendChild(card);
+    });
   }
 
   // ---------- profit ----------
@@ -765,7 +804,7 @@ window.CashTeam = function(db){
   function openNote(r){
     if (!noteDlg) {
       noteDlg = dialog('<form method="dialog"><div class="sd-head"><div><h3 class="ask-t"></h3><p class="sd-sub"></p></div><button type="button" class="sd-x" data-close aria-label="Close">×</button></div>' +
-        '<div class="sd-stats"></div><div class="sd-sec"><h4>How the day went</h4><p class="sd-brief"></p></div>' +
+        '<div class="sd-stats"></div><div class="sd-sec"><h4>How the day went</h4><p class="sd-brief"></p></div><div class="sd-sec sd-ai owner-only" hidden><h4>Suggestion</h4><p></p></div><p class="sd-orig" hidden></p>' +
         '<div class="ask-b"><span class="sd-meta"></span><button type="button" class="sd-edit">Edit shift</button><button type="submit" class="ask-ok">Close</button></div></form>');
       noteDlg.querySelector('.sd-edit').addEventListener('click', () => { const r = noteDlg.r; noteDlg.close(); openEdit(r); });
       noteDlg.querySelector('.sd-edit').classList.add('owner-only');
@@ -776,6 +815,8 @@ window.CashTeam = function(db){
     const times = r.startedAt && r.endedAt ? hhmmIso(r.startedAt) + '–' + hhmmIso(r.endedAt) : 'Not clocked';
     noteDlg.querySelector('.sd-stats').innerHTML = '<div>Worked<strong>' + hm(r.work) + '</strong></div><div>Break<strong>' + hm(r.brk) + '</strong></div><div>Shift<strong>' + times + '</strong></div>';
     noteDlg.querySelector('.sd-brief').textContent = r.brief;
+    const ai = noteDlg.querySelector('.sd-ai'); ai.hidden = !r.aiNote; ai.querySelector('p').textContent = r.aiNote || '';
+    const og = noteDlg.querySelector('.sd-orig'); og.hidden = !r.original; og.textContent = originalText(r);
     noteDlg.querySelector('.sd-meta').textContent = r.editedAt ? 'Edited by you' : r.endedAt ? 'Sent at ' + hhmmIso(r.endedAt) : '';
     noteDlg.showModal(); noteDlg.querySelector('.ask-ok').focus();
   }
@@ -783,7 +824,7 @@ window.CashTeam = function(db){
   function openEdit(r){
     if (!editDlg) {
       editDlg = dialog('<form method="dialog" novalidate><div class="sd-head"><div><h3 class="ask-t">Edit shift</h3><p class="sd-sub"></p></div><button type="button" class="sd-x" data-close aria-label="Close">×</button></div>' +
-        '<p class="sd-warn" role="note" hidden></p>' +
+        '<p class="sd-warn" role="note" hidden></p><p class="sd-orig" hidden></p>' +
         '<div class="sd-grid"><label>Shift date<input class="ask-i" type="date" name="date" required></label><label>Company<select class="ask-i" name="co"></select></label></div>' +
         '<div class="sd-grid three"><label>Started<input class="ask-i" type="time" name="start"></label><label>Ended<input class="ask-i" type="time" name="end"></label><label>Break (minutes)<input class="ask-i" type="number" name="brk" min="0" step="1" inputmode="numeric"></label></div>' +
         '<div class="sd-calc"><span class="sd-calc-l">Worked</span><span class="sd-wk"><input class="ask-i" type="number" name="h" min="0" max="24" step="1" inputmode="numeric" aria-label="Hours worked"><b>h</b><input class="ask-i" type="number" name="m" min="0" max="59" step="1" inputmode="numeric" aria-label="Minutes worked"><b>m</b></span><span class="sd-amt"></span></div>' +
@@ -801,6 +842,7 @@ window.CashTeam = function(db){
     w.hidden = !r.paid;
     w.textContent = 'This shift is already marked paid' + (r.paidAt ? ' (' + new Date(r.paidAt).toLocaleDateString('en-US', { month:'short', day:'numeric' }) + ')' : '') +
       '. Changing the hours changes its amount here, but not what you already paid ' + r.name.split(' ')[0] + '.';
+    const og = editDlg.querySelector('.sd-orig'); og.hidden = !r.original; og.textContent = originalText(r);
     f.date.value = r.date;
     companyOptions(f.co, { pick: r.companyId ? null : 'Pick a company', current: r.companyId ? String(r.companyId) : '' });
     f.start.value = hhmmVal(r.startedAt); f.end.value = hhmmVal(r.endedAt);
@@ -848,6 +890,7 @@ window.CashTeam = function(db){
       started_at: t ? t.s.toISOString() : null, ended_at: t ? t.e.toISOString() : null,
       brief: f.brief.value.trim() || null, edited_at: new Date().toISOString()
     };
+    if (!r.original) patch.original = snapshot(r); // keep the shift as it was first sent, only once
     const ok = editDlg.querySelector('.ask-ok'); ok.setAttribute('aria-busy', 'true');
     const { data, error } = await db.from('shifts').update(patch).eq('id', r.id).select().single();
     ok.removeAttribute('aria-busy');
@@ -880,7 +923,7 @@ window.CashTeam = function(db){
       name: r.name, shift_date: r.date, work_seconds: r.work, break_seconds: r.brk,
       started_at: r.startedAt, ended_at: r.endedAt, company_id: r.companyId,
       paid: r.paid, paid_at: r.paidAt, paid_fx: r.paidFx, client_paid: r.clientPaid, client_paid_at: r.clientPaidAt, client_fx: r.clientFx, source: r.source, created_at: r.createdAt,
-      pay_rate: r.payRate, bill_rate: r.billRate, brief: r.brief || null, edited_at: r.editedAt
+      pay_rate: r.payRate, bill_rate: r.billRate, brief: r.brief || null, edited_at: r.editedAt, original: r.original, ai_note: r.aiNote || null
     }).select().single();
     if (error) { showNotice("Couldn't restore that shift."); return; }
     log.splice(i, 0, toRow(data)); render();
