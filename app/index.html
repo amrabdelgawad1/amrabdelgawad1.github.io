@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <!-- Browser safety rules: only code from this site and the services listed here may run or load. Add a service here before using it. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/ https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://ztlpgyomjuzmjmuifbbd.supabase.co wss://ztlpgyomjuzmjmuifbbd.supabase.co; frame-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/ https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://ztlpgyomjuzmjmuifbbd.supabase.co wss://ztlpgyomjuzmjmuifbbd.supabase.co https://amrabdelgawad.goatcounter.com; frame-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
 <meta name="referrer" content="strict-origin-when-cross-origin" />
 <script src="../guard.js?v=1"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=7" />
+<link rel="stylesheet" href="app.css?v=8" />
 <link rel="stylesheet" href="../theme-switch.css?v=2">
 <link rel="stylesheet" href="../daylight-dark.css?v=2">
 <link rel="stylesheet" href="../ask.css?v=1">
@@ -168,6 +168,42 @@
       </section>
     </main>
 
+    <!-- owner: website visitors (numbers come from GoatCounter) -->
+    <main class="pad" id="pVisits" hidden>
+      <section class="card" id="vKeyBox" hidden>
+        <h2>Connect GoatCounter</h2>
+        <p class="note">Paste the API key from your GoatCounter account (with only "Read statistics" ticked). It's stored in your database, and only your account can read it.</p>
+        <form id="vKeyForm" class="form" novalidate>
+          <input class="field" id="vKey" autocomplete="off" spellcheck="false" placeholder="Your GoatCounter API key" />
+          <p class="err" id="vKeyErr"></p>
+          <button class="btn" id="vKeyBtn" type="submit">Save key</button>
+        </form>
+      </section>
+      <div id="vStats" hidden>
+        <div class="vhead">
+          <select class="field" id="vRange" aria-label="Period">
+            <option value="1">Last 24 hours</option>
+            <option value="7" selected>Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+          </select>
+        </div>
+        <p class="err" id="vErr"></p>
+        <div class="tiles four">
+          <div class="tile"><p>Visitors</p><strong class="num" id="vTotal">–</strong></div>
+          <div class="tile"><p>Played a call</p><strong class="num" id="vPlays">–</strong></div>
+          <div class="tile in"><p>Booked a call</p><strong class="num" id="vBooked">–</strong></div>
+          <div class="tile"><p>Opened the CV</p><strong class="num" id="vCv">–</strong></div>
+        </div>
+        <div class="grid2">
+          <section class="card list bars"><h2>Where they came from</h2><div id="vRefs"><p class="empty">Loading…</p></div></section>
+          <section class="card list bars"><h2>Countries</h2><div id="vLocs"><p class="empty">Loading…</p></div></section>
+        </div>
+        <section class="card list"><h2>Pages and clicks</h2><div id="vHits"><p class="empty">Loading…</p></div></section>
+        <p class="note">Your own visits aren't counted on browsers where you opened amrabdelgawad.site/#toggle-goatcounter. <a href="https://amrabdelgawad.goatcounter.com" target="_blank" rel="noopener">Open the full dashboard</a> · <button type="button" class="linkbtn" id="vKeyChange">Change key</button></p>
+      </div>
+    </main>
+
     <!-- owner: invite and access -->
     <main class="pad" id="pPeople" hidden>
       <div class="grid2">
@@ -213,6 +249,7 @@
     <div class="sub" id="teamSub" hidden></div>
     <a class="mi" href="#income" data-sec="money"><svg class="i" viewBox="0 0 24 24"><path d="M17 7L7 17M7 9v8h8"/></svg>Income</a>
     <a class="mi" href="#expense" data-sec="money"><svg class="i" viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>Expenses</a>
+    <a class="mi" href="#visits" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Website visitors</a>
     <p class="sec" data-sec="requests">People</p>
     <a class="mi" href="#requests" data-sec="requests"><svg class="i" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>Missed-shift requests<span class="cnt due" id="reqCnt" hidden></span></a>
     <a class="mi" href="#people" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><circle cx="10" cy="8" r="3.2"/><path d="M4 19c.8-3.2 3.2-5 6-5s4.9 1.6 5.7 4"/><path d="M18 8v6M15 11h6"/></svg>Invite and access</a>
@@ -231,6 +268,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="../tracker/config.js"></script>
 <script src="../ask.js?v=1"></script>
-<script src="app.js?v=17"></script>
+<script src="app.js?v=18"></script>
 </body>
 </html>

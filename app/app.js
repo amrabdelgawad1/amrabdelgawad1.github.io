@@ -375,9 +375,9 @@
   // ======================================================================
   // Owner: menu, Live now, Invite and access, and the /cash pages
   // ======================================================================
-  const OWNER_PAGES = { live:'Live now', requests:'Missed-shift requests', people:'Invite and access', mytime:'My time', overview:'Overview', team:'Team', income:'Income', expense:'Expenses', track:'Tracker' };
+  const OWNER_PAGES = { live:'Live now', requests:'Missed-shift requests', people:'Invite and access', visits:'Website visitors', mytime:'My time', overview:'Overview', team:'Team', income:'Income', expense:'Expenses', track:'Tracker' };
   // Which switch in Invite and access opens each page; "owner" pages are Amr's alone
-  const SECTION = { live:'live', requests:'requests', team:'team', overview:'money', income:'money', expense:'money', mytime:'owner', people:'owner', track:'track' };
+  const SECTION = { live:'live', requests:'requests', team:'team', overview:'money', income:'money', expense:'money', mytime:'owner', people:'owner', visits:'owner', track:'track' };
   const SECTION_NAMES = { live:'Live now', requests:'Missed-shift requests', team:'Team', money:'Money' };
   const canSee = sec => role === 'owner' ? sec !== 'track' : role === 'member' && (sec === 'track' || access.includes(sec));
   const hasMenu = () => role === 'owner' || (role === 'member' && access.length > 0);
@@ -446,12 +446,14 @@
     markMenu();
     $('pTrack').hidden = page !== 'track';
     $('pLive').hidden = page !== 'live'; $('pPeople').hidden = page !== 'people'; $('pRequests').hidden = page !== 'requests';
-    const cashPage = !['live', 'people', 'requests', 'track'].includes(page);
+    $('pVisits').hidden = page !== 'visits';
+    const cashPage = !['live', 'people', 'requests', 'track', 'visits'].includes(page);
     $('pCash').hidden = !cashPage;
     clearInterval(liveTimer); clearInterval(liveDrawTimer);
     if (page === 'live') { loadLive(); liveTimer = setInterval(loadLive, 15000); }
     if (page === 'people') loadPeople();
     if (page === 'requests') loadOwnerRequests();
+    if (page === 'visits') loadVisits();
     countRequests();
     if (cashPage) openCash(here);
     closeMenu();
@@ -567,6 +569,66 @@
     if (err) { f.querySelector('.err').textContent = err; return; }
     endFor = null; toast('Shift ended at ' + hhmm(end) + ' and saved to their hours.');
     loadLive();
+  });
+
+  // ---------- website visitors (owner) ----------
+  // Numbers come straight from GoatCounter's API. The read-only API key lives in the database
+  // (private.app_secrets); goatcounter_key() hands it to the owner only.
+  const GC = 'https://amrabdelgawad.goatcounter.com/api/v0/';
+  let gcKey = null, gcLoading = 0;
+  function showKeyBox(msg){ $('vKeyBox').hidden = false; $('vStats').hidden = !gcKey; $('vKeyErr').textContent = msg || ''; }
+  async function loadVisits(){
+    const run = ++gcLoading;
+    if (!gcKey) {
+      const { data, error } = await db.rpc('goatcounter_key');
+      if (error) { showKeyBox("Couldn't reach your database. Check your connection and try again."); return; }
+      gcKey = data || null;
+    }
+    if (!gcKey) { showKeyBox(); return; }
+    $('vKeyBox').hidden = true; $('vStats').hidden = false; $('vErr').textContent = '';
+    const end = new Date(); end.setMinutes(0, 0, 0); end.setHours(end.getHours() + 1); // the API wants whole hours
+    const start = new Date(end.getTime() - $('vRange').value * 864e5);
+    const q = 'start=' + encodeURIComponent(start.toISOString().slice(0, 19) + 'Z') + '&end=' + encodeURIComponent(end.toISOString().slice(0, 19) + 'Z');
+    const get = p => fetch(GC + p + (p.includes('?') ? '&' : '?') + q, { headers: { Authorization: 'Bearer ' + gcKey } })
+      .then(r => { if (r.status === 401 || r.status === 403) throw new Error('key'); if (!r.ok) throw new Error('net'); return r.json(); });
+    let total, hits, refs, locs;
+    try { [total, hits, refs, locs] = await Promise.all([get('stats/total'), get('stats/hits?limit=100'), get('stats/toprefs?limit=8'), get('stats/locations?limit=8')]); }
+    catch (e) {
+      if (run !== gcLoading) return;
+      if (e.message === 'key') { gcKey = null; showKeyBox("GoatCounter didn't accept the saved key. Paste a new one."); $('vStats').hidden = true; }
+      else $('vErr').textContent = "Couldn't load the numbers from GoatCounter. Try again in a minute.";
+      return;
+    }
+    if (run !== gcLoading) return; // a newer period was picked meanwhile
+    const list = hits.hits || [];
+    const ev = test => list.filter(h => h.event && test(h.path)).reduce((s, h) => s + (h.count || 0), 0);
+    $('vTotal').textContent = (total.total || 0).toLocaleString('en-US');
+    $('vPlays').textContent = ev(p => p.startsWith('play-')).toLocaleString('en-US');
+    $('vBooked').textContent = ev(p => p === 'booked-call').toLocaleString('en-US');
+    $('vCv').textContent = ev(p => p === 'click-cv-open').toLocaleString('en-US');
+    bars($('vRefs'), (refs.stats || []).map(r => [r.name || 'Typed the address or unknown', r.count]));
+    bars($('vLocs'), (locs.stats || []).map(r => [r.name || 'Unknown', r.count]));
+    const rows = list.filter(h => h.count).map(h => [h.event ? (h.title || h.path) : (h.path === '/' ? 'Homepage' : h.path), h.count, h.event]);
+    $('vHits').innerHTML = rows.length ? rows.map(([n, c, isEv]) => '<div class="row"><div class="n"><b>' + esc(n) + '</b><small>' + (isEv ? 'Click or play' : 'Page') + '</small></div><div class="v num">' + c.toLocaleString('en-US') + '</div></div>').join('') : '<p class="empty">No visits in this period yet.</p>';
+  }
+  function bars(box, rows){
+    const max = Math.max(1, ...rows.map(r => r[1]));
+    box.innerHTML = rows.length ? rows.map(([n, c]) => '<div class="row"><div class="n"><b>' + esc(n) + '</b><div class="bar" style="width:' + Math.round(c / max * 100) + '%"></div></div><div class="v num">' + c.toLocaleString('en-US') + '</div></div>').join('') : '<p class="empty">No visits in this period yet.</p>';
+  }
+  $('vRange').addEventListener('change', loadVisits);
+  $('vKeyChange').addEventListener('click', () => { showKeyBox(); $('vKey').focus(); });
+  $('vKey').addEventListener('input', () => $('vKeyErr').textContent = '');
+  $('vKeyForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const k = $('vKey').value.trim();
+    if (k.length < 20) { $('vKeyErr').textContent = 'Paste the whole key from GoatCounter.'; return; }
+    $('vKeyBtn').setAttribute('aria-busy', 'true');
+    const { error } = await db.rpc('set_goatcounter_key', { p_key: k });
+    $('vKeyBtn').removeAttribute('aria-busy');
+    if (error) { $('vKeyErr').textContent = "Couldn't save the key. Check your connection and try again."; return; }
+    $('vKey').value = ''; gcKey = k;
+    toast('Key saved');
+    loadVisits();
   });
 
   // ---------- missed-shift requests (owner) ----------

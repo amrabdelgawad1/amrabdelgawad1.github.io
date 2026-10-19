@@ -207,3 +207,15 @@ img.logo{ width:64px; height:64px; border-radius:16px; display:block; margin:0 a
 .lrow .acts{ display:flex; gap:8px; flex-wrap:wrap; padding:0 0 12px 48px; }
 .lrow .endf{ display:grid; gap:8px; padding:0 0 12px 48px; max-width:440px; }
 .lrow .endf .acts{ padding:0; }
+
+/* website visitors */
+.vhead{ display:flex; justify-content:flex-end; margin-bottom:10px; }
+.vhead .field{ width:auto; padding:8px 12px; font-size:14px; }
+.tiles.four{ grid-template-columns:repeat(2, 1fr); margin-bottom:14px; }
+@media (min-width:700px){ .tiles.four{ grid-template-columns:repeat(4, 1fr); } }
+#pVisits .card{ margin-bottom:14px; }
+#pVisits .grid2{ gap:0 14px; }
+.bars .row .n{ display:grid; gap:5px; }
+.bars .bar{ height:7px; border-radius:4px; background:var(--accent); min-width:3px; }
+.linkbtn{ color:var(--accent); font:inherit; text-decoration:underline; padding:0; }
+#pVisits .note a{ color:var(--accent); }
