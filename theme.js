@@ -6,6 +6,12 @@
     var dark = false;
     try { dark = localStorage.getItem("theme") === "dark"; } catch(e){}
     if (dark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
+    // phone status bar / installed-app title bar follows too
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta){
+      if (!meta.dataset.light) meta.dataset.light = meta.content;
+      meta.content = dark ? "#111315" : meta.dataset.light;
+    }
   }
   apply();
 

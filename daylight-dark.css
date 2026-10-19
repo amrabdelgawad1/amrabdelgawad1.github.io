@@ -31,3 +31,5 @@ html[data-theme="dark"] .mi-tog{ color:var(--muted); }
 .tracker-top .tt-wrap{ display:flex; align-items:center; gap:12px; }
 #vApp:not([hidden]) ~ .theme-toggle--float,
 #dashView:not([hidden]) ~ .theme-toggle--float{ display:none; }
+/* /cash: selected company chip used fixed light-blue colours */
+html[data-theme="dark"] .co-chip[aria-pressed="true"]{ background:var(--accent-dim); border-color:var(--accent); color:var(--accent2); }
