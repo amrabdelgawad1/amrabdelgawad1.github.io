@@ -392,6 +392,7 @@
         displayTimezone: state.tz,
       });
       clearInterval(cycle);
+      if (window.countEvent) window.countEvent("booked-call", "Booked a call");
       els.confirmDatetime.textContent = `${result.date} · ${result.startTime} – ${result.endTime}`;
       const meetBtn = document.querySelector('[data-join-meet]');
       const calBtn = document.querySelector('[data-add-calendar]');
