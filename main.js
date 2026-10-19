@@ -244,6 +244,21 @@
   })();
 
   /* ------------------------------------------------------------------ *
+   * Nav active-section indicator (scroll-spy). Not an animation, so it
+   * sits above the reduced-motion exit and works for everyone.
+   * ------------------------------------------------------------------ */
+  document.querySelectorAll('.main-nav a[href^="#"]').forEach((link) => {
+    const section = document.querySelector(link.getAttribute("href"));
+    if (!section) return;
+    ScrollTrigger.create({
+      trigger: section,
+      start: "top 40%",
+      end: "bottom 40%",
+      onToggle: ({ isActive }) => link.classList.toggle("is-active", isActive),
+    });
+  });
+
+  /* ------------------------------------------------------------------ *
    * Reduced motion: land everything in its final, readable state.
    * ------------------------------------------------------------------ */
   if (reduced) {
@@ -398,20 +413,6 @@
       onLeaveBack: () => gsap.to(scrollCue, { opacity: 1, duration: 0.4, overwrite: true }),
     });
   }
-
-  /* ------------------------------------------------------------------ *
-   * Nav active-section indicator (scroll-spy)
-   * ------------------------------------------------------------------ */
-  document.querySelectorAll('.main-nav a[href^="#"]').forEach((link) => {
-    const section = document.querySelector(link.getAttribute("href"));
-    if (!section) return;
-    ScrollTrigger.create({
-      trigger: section,
-      start: "top 40%",
-      end: "bottom 40%",
-      onToggle: ({ isActive }) => link.classList.toggle("is-active", isActive),
-    });
-  });
 
   /* ------------------------------------------------------------------ *
    * Count-up numbers, once, on entry. The HTML already holds the final
