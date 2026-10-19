@@ -1,0 +1,33 @@
+/* Dark mode (charcoal) for /app, /cash and /tracker. Loaded last so it wins over app.css and look.css. */
+html[data-theme="dark"]{
+  /* /app names */
+  --panel:#1D2125; --sunk:#16191C;
+  /* /cash and /tracker names */
+  --bg2:#1D2125; --bg3:#1D2125; --bg4:#252A2F; --white:#FFFFFF;
+  --bg:#111315; --border:#2C3238; --border2:#3B434B;
+  --text:#F2F4F7; --light:#C3CAD5; --muted:#98A2B3;
+  --accent:#3B82F6; --accent2:#60A5FA; --accent-dim:rgba(59,130,246,.16);
+  --green:#47CD89; --gold:#FDB022; --red:#F97066;
+  --net-bg:rgba(71,205,137,.10); --net-bd:rgba(71,205,137,.35);
+  color-scheme:dark;
+}
+html[data-theme="dark"] body{ background:var(--bg); color:var(--text); }
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .t-card{ box-shadow:0 1px 2px rgba(0,0,0,.4); }
+/* dark pills that used --text as their background */
+html[data-theme="dark"] .toast,
+html[data-theme="dark"] .update{ background:#252A2F; color:var(--text); border:1px solid var(--border2); }
+html[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+html[data-theme="dark"] input[type="time"]::-webkit-calendar-picker-indicator{ filter:invert(1); }
+/* /app side menu used fixed light-mode colours */
+html[data-theme="dark"] .mi{ color:var(--light); }
+html[data-theme="dark"] .mi.on{ background:var(--accent-dim); color:var(--accent2); }
+html[data-theme="dark"] .mi-tog{ color:var(--muted); }
+
+/* where the switch sits */
+.top .theme-toggle{ margin-left:auto; width:36px; height:36px; }
+.top .theme-toggle + .me{ margin-left:0; }
+.who-pill .theme-toggle{ width:34px; height:34px; }
+.tracker-top .tt-wrap{ display:flex; align-items:center; gap:12px; }
+#vApp:not([hidden]) ~ .theme-toggle--float,
+#dashView:not([hidden]) ~ .theme-toggle--float{ display:none; }
