@@ -112,7 +112,10 @@
     }
 
     const { data: isOwner } = await db.rpc('is_tracker_admin');
-    if (isOwner === true) { role = 'owner'; startOwner(); return; }
+    if (isOwner === true) {
+      try { localStorage.setItem('nocount', '1'); } catch(e) {} // Amr's own devices don't count as website visitors
+      role = 'owner'; startOwner(); return;
+    }
 
     const { data: prof, error } = await db.rpc('my_profile');
     profile = Array.isArray(prof) ? prof[0] : prof;
@@ -572,64 +575,53 @@
   });
 
   // ---------- website visitors (owner) ----------
-  // Numbers come straight from GoatCounter's API. The read-only API key lives in the database
-  // (private.app_secrets); goatcounter_key() hands it to the owner only.
-  const GC = 'https://amrabdelgawad.goatcounter.com/api/v0/';
-  let gcKey = null, gcLoading = 0;
-  function showKeyBox(msg){ $('vKeyBox').hidden = false; $('vStats').hidden = !gcKey; $('vKeyErr').textContent = msg || ''; }
-  async function loadVisits(){
-    const run = ++gcLoading;
-    if (!gcKey) {
-      const { data, error } = await db.rpc('goatcounter_key');
-      if (error) { showKeyBox("Couldn't reach your database. Check your connection and try again."); return; }
-      gcKey = data || null;
-    }
-    if (!gcKey) { showKeyBox(); return; }
-    $('vKeyBox').hidden = true; $('vStats').hidden = false; $('vErr').textContent = '';
-    const end = new Date(); end.setMinutes(0, 0, 0); end.setHours(end.getHours() + 1); // the API wants whole hours
-    const start = new Date(end.getTime() - $('vRange').value * 864e5);
-    const q = 'start=' + encodeURIComponent(start.toISOString().slice(0, 19) + 'Z') + '&end=' + encodeURIComponent(end.toISOString().slice(0, 19) + 'Z');
-    const get = p => fetch(GC + p + (p.includes('?') ? '&' : '?') + q, { headers: { Authorization: 'Bearer ' + gcKey } })
-      .then(r => { if (r.status === 401 || r.status === 403) throw new Error('key'); if (!r.ok) throw new Error('net'); return r.json(); });
-    let total, hits, refs, locs;
-    try { [total, hits, refs, locs] = await Promise.all([get('stats/total'), get('stats/hits?limit=100'), get('stats/toprefs?limit=8'), get('stats/locations?limit=8')]); }
-    catch (e) {
-      if (run !== gcLoading) return;
-      if (e.message === 'key') { gcKey = null; showKeyBox("GoatCounter didn't accept the saved key. Paste a new one."); $('vStats').hidden = true; }
-      else $('vErr').textContent = "Couldn't load the numbers from GoatCounter. Try again in a minute.";
-      return;
-    }
-    if (run !== gcLoading) return; // a newer period was picked meanwhile
-    const list = hits.hits || [];
-    const ev = test => list.filter(h => h.event && test(h.path)).reduce((s, h) => s + (h.count || 0), 0);
-    $('vTotal').textContent = (total.total || 0).toLocaleString('en-US');
-    $('vPlays').textContent = ev(p => p.startsWith('play-')).toLocaleString('en-US');
-    $('vBooked').textContent = ev(p => p === 'booked-call').toLocaleString('en-US');
-    $('vCv').textContent = ev(p => p === 'click-cv-open').toLocaleString('en-US');
-    bars($('vRefs'), (refs.stats || []).map(r => [r.name || 'Typed the address or unknown', r.count]));
-    bars($('vLocs'), (locs.stats || []).map(r => [r.name || 'Unknown', r.count]));
-    const rows = list.filter(h => h.count).map(h => [h.event ? (h.title || h.path) : (h.path === '/' ? 'Homepage' : h.path), h.count, h.event]);
-    $('vHits').innerHTML = rows.length ? rows.map(([n, c, isEv]) => '<div class="row"><div class="n"><b>' + esc(n) + '</b><small>' + (isEv ? 'Click or play' : 'Page') + '</small></div><div class="v num">' + c.toLocaleString('en-US') + '</div></div>').join('') : '<p class="empty">No visits in this period yet.</p>';
+  // The site's /stats.js saves visits into site_visits; visit_stats() adds them up (owner only).
+  // A device where Amr signs in here stops being counted (localStorage "nocount", shared with the whole site).
+  const NAMES = { 'upwork.com':'Upwork', 'linkedin.com':'LinkedIn', 'lnkd.in':'LinkedIn', 'google.com':'Google', 'bing.com':'Bing', 'facebook.com':'Facebook', 'm.facebook.com':'Facebook', 'l.facebook.com':'Facebook', 'instagram.com':'Instagram', 'l.instagram.com':'Instagram', 't.co':'X (Twitter)', 'x.com':'X (Twitter)', 'duckduckgo.com':'DuckDuckGo', 'chatgpt.com':'ChatGPT', 'web.whatsapp.com':'WhatsApp', 'mail.google.com':'Gmail' };
+  const sourceName = h => !h ? 'Typed the address or unknown' : NAMES[h] || (/(^|\.)google\./.test(h) ? 'Google' : /(^|\.)upwork\.com$/.test(h) ? 'Upwork' : /(^|\.)linkedin\.com$/.test(h) ? 'LinkedIn' : h);
+  let countryNames = null; try { countryNames = new Intl.DisplayNames(['en'], { type: 'region' }); } catch(e) {}
+  const countryName = c => !c ? 'Unknown' : (countryNames && countryNames.of(c)) || c;
+  // US zones by their winter UTC offset: America/Detroit counts as Eastern, America/Boise as Mountain, and so on
+  const ZONE = { '-300':'Eastern', '-360':'Central', '-420':'Mountain', '-480':'Pacific', '-540':'Alaska', '-600':'Hawaii' };
+  function usZone(tz){
+    try {
+      const p = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'longOffset' }).formatToParts(new Date(Date.UTC(2026, 0, 15)));
+      const m = (p.find(x => x.type === 'timeZoneName') || {}).value.match(/GMT([+-])(\d\d):(\d\d)/);
+      return (m && ZONE[String((m[1] === '-' ? -1 : 1) * (m[2] * 60 + +m[3]))]) || 'Other';
+    } catch(e) { return 'Unknown'; }
   }
-  function bars(box, rows){
+  const noCount = () => { try { return localStorage.getItem('nocount') === '1'; } catch(e) { return false; } };
+  function setNoCount(on){ try { on ? localStorage.setItem('nocount', '1') : localStorage.removeItem('nocount'); } catch(e) {} drawMe(); }
+  function drawMe(){
+    const on = noCount();
+    $('vMeNote').textContent = on ? 'Your visits from this device are not counted. Every device where you sign in here is skipped automatically.' : 'Your visits from this device are being counted.';
+    $('vMeBtn').textContent = on ? 'Count this device again' : 'Stop counting this device';
+  }
+  $('vMeBtn').addEventListener('click', () => setNoCount(!noCount()));
+  let visitsRun = 0;
+  async function loadVisits(){
+    const run = ++visitsRun;
+    drawMe(); $('vErr').textContent = '';
+    const { data: s, error } = await db.rpc('visit_stats', { p_hours: +$('vRange').value });
+    if (run !== visitsRun) return; // a newer period was picked meanwhile
+    if (error || !s) { $('vErr').textContent = "Couldn't load the numbers. Check your connection and try again."; return; }
+    const n = x => (x || 0).toLocaleString('en-US');
+    $('vTotal').textContent = n(s.visitors);
+    $('vViews').textContent = plural(s.views || 0, 'page view');
+    $('vPlays').textContent = n(s.plays); $('vBooked').textContent = n(s.booked); $('vCv').textContent = n(s.cv);
+    const merge = (rows, name) => { const m = new Map(); rows.forEach(r => { const k = name(r.name); m.set(k, (m.get(k) || 0) + r.n); }); return [...m].sort((a, b) => b[1] - a[1]); };
+    bars($('vRefs'), merge(s.sources || [], sourceName));
+    bars($('vLocs'), merge(s.countries || [], countryName));
+    bars($('vZones'), merge(s.uszones || [], usZone), 'No US visitors in this period yet.');
+    bars($('vDevs'), merge(s.devices || [], d => d === 'phone' ? 'Phone' : d === 'desktop' ? 'Computer' : 'Unknown'));
+    const hits = s.hits || [];
+    $('vHits').innerHTML = hits.length ? hits.map(h => '<div class="row"><div class="n"><b>' + esc(h.kind === 'view' ? (h.path === '/' ? 'Homepage' : h.path === '/cv/' ? 'CV page' : h.path) : (h.title || h.path)) + '</b><small>' + (h.kind === 'view' ? 'Page' : 'Click or play') + '</small></div><div class="v num">' + n(h.n) + '</div></div>').join('') : '<p class="empty">No visits in this period yet.</p>';
+  }
+  function bars(box, rows, empty){
     const max = Math.max(1, ...rows.map(r => r[1]));
-    box.innerHTML = rows.length ? rows.map(([n, c]) => '<div class="row"><div class="n"><b>' + esc(n) + '</b><div class="bar" style="width:' + Math.round(c / max * 100) + '%"></div></div><div class="v num">' + c.toLocaleString('en-US') + '</div></div>').join('') : '<p class="empty">No visits in this period yet.</p>';
+    box.innerHTML = rows.length ? rows.map(([name, c]) => '<div class="row"><div class="n"><b>' + esc(name) + '</b><div class="bar" style="width:' + Math.round(c / max * 100) + '%"></div></div><div class="v num">' + c.toLocaleString('en-US') + '</div></div>').join('') : '<p class="empty">' + (empty || 'No visits in this period yet.') + '</p>';
   }
   $('vRange').addEventListener('change', loadVisits);
-  $('vKeyChange').addEventListener('click', () => { showKeyBox(); $('vKey').focus(); });
-  $('vKey').addEventListener('input', () => $('vKeyErr').textContent = '');
-  $('vKeyForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const k = $('vKey').value.trim();
-    if (k.length < 20) { $('vKeyErr').textContent = 'Paste the whole key from GoatCounter.'; return; }
-    $('vKeyBtn').setAttribute('aria-busy', 'true');
-    const { error } = await db.rpc('set_goatcounter_key', { p_key: k });
-    $('vKeyBtn').removeAttribute('aria-busy');
-    if (error) { $('vKeyErr').textContent = "Couldn't save the key. Check your connection and try again."; return; }
-    $('vKey').value = ''; gcKey = k;
-    toast('Key saved');
-    loadVisits();
-  });
 
   // ---------- missed-shift requests (owner) ----------
   async function countRequests(){
