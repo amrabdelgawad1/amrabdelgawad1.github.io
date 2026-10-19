@@ -58,7 +58,7 @@
   .t-card{ background:linear-gradient(160deg, var(--bg3), var(--bg2)); border:1px solid var(--border2); border-radius:var(--radius-lg); box-shadow:0 30px 80px -30px rgba(0,0,0,.6); position:relative; }
   .clock-card{ padding:36px 40px 40px; }
 
-  .fields{ display:grid; grid-template-columns:1.4fr 1fr; gap:16px; }
+  .fields{ display:grid; grid-template-columns:1.4fr 1fr .8fr; gap:16px; }
   .fields label span{ display:block; font-size:12.5px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
   .fields input{ width:100%; background:var(--bg); border:1px solid var(--border2); border-radius:var(--radius-sm); color:var(--text); font:500 15px var(--font-body); padding:13px 14px; transition:border-color .25s, box-shadow .25s; color-scheme:dark; }
   .fields input:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-dim); }
@@ -186,6 +186,9 @@
 
     <!-- Clock -->
     <section class="t-card clock-card">
+      <div class="gap-check" id="twoTabs" hidden role="alert">
+        <p>The tracker is also open in another tab or window on this device. Close the extra one and keep only one open, or the two can overwrite each other&rsquo;s shift and lose hours.</p>
+      </div>
       <div class="gap-check" id="gapCheck" hidden>
         <p id="gapMsg"></p>
         <div class="row">
@@ -201,6 +204,9 @@
           <input id="nm" type="text" placeholder="Type your full name" autocomplete="name" aria-label="Full name" hidden />
         </div>
         <label><span>Shift date</span><input id="dt" type="date" /></label>
+        <label><span>Shift length</span>
+          <select id="len"><option value="4">4 hours</option><option value="5">5 hours</option><option value="6">6 hours</option><option value="7">7 hours</option><option value="8" selected>8 hours</option><option value="9">9 hours</option><option value="10">10 hours</option><option value="12">12 hours</option></select>
+        </label>
       </div>
       <p class="form-error" id="err"></p>
 
@@ -209,7 +215,7 @@
           <svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52" fill="none" stroke-width="7"/><circle class="prog" id="prog" cx="60" cy="60" r="52" fill="none" stroke-width="7" stroke-dasharray="326.7" stroke-dashoffset="326.7"/></svg>
           <div class="ring-center">
             <span class="ring-time" id="wk">00:00:00</span>
-            <span class="ring-sub" id="goal">of an 8h shift</span>
+            <span class="ring-sub" id="goal">of your 8h shift</span>
           </div>
         </div>
         <div class="clock-side">
@@ -266,6 +272,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="config.js?v=3"></script>
-<script src="tracker.js?v=3"></script>
+<script src="tracker.js?v=4"></script>
 </body>
 </html>

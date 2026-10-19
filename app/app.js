@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id);
   const cfg = window.TRACKER_CONFIG || {};
   // v changes with each release of the cash page, so the app never shows a stale copy
-  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=22';
+  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=23';
 
   // An invite or new sign-in link lands here with its type in the address; read it before supabase-js clears it
   const linkType = new URLSearchParams(location.hash.slice(1)).get('type');
@@ -259,10 +259,10 @@
     if (!live) return;
     const work = Math.round(workNow()), brk = Math.round(breakNow());
     if (work < 60) {
-      if (!confirm('Less than a minute worked. Discard this shift?')) return;
+      if (!await ask({ title:'Discard this shift?', msg:'Less than a minute worked, so nothing will be saved.', ok:'Discard', cancel:'Keep working', danger:true })) return;
       live = null; drawClock(); await saveLive(); return;
     }
-    if (!confirm('End your shift and send it to Amr?\n\n' + hm(work) + ' worked' + (brk >= 60 ? ', ' + hm(brk) + ' break' : ''))) return;
+    if (!await ask({ title:'End your shift and send it to Amr?', msg:hm(work) + ' worked' + (brk >= 60 ? ', ' + hm(brk) + ' break' : ''), ok:'End shift', cancel:'Keep working' })) return;
     $('offLbl').textContent = 'Saving…';
     document.querySelectorAll('.ctl').forEach(b => b.setAttribute('aria-busy', 'true'));
     const started = new Date(live.started_at);
@@ -594,7 +594,7 @@
       if (actions) d.querySelectorAll('[data-ok]').forEach(b => b.addEventListener('click', async () => {
         const ok = b.dataset.ok === '1';
         let reason = null;
-        if (!ok) { reason = prompt('Why are you declining it? (optional, ' + r.name.split(' ')[0] + ' will see this)', ''); if (reason === null) return; }
+        if (!ok) { reason = await ask({ title:'Decline this shift?', ok:'Decline', danger:true, input:{ label:'Why? (optional, ' + r.name.split(' ')[0] + ' will see this)' } }); if (reason === null) return; }
         b.setAttribute('aria-busy', 'true');
         const { error } = await db.rpc('decide_shift_request', { p_id: r.id, p_approve: ok, p_reason: reason });
         b.removeAttribute('aria-busy');
@@ -700,7 +700,7 @@
       });
       d.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', async () => {
         const a = b.dataset.a;
-        if (a === 'remove' && !confirm('Remove ' + m.name + '’s access? They won’t be able to sign in. Their shifts stay in your records.')) return;
+        if (a === 'remove' && !await ask({ title:'Remove ' + m.name + '’s access?', msg:'They won’t be able to sign in. Their shifts stay in your records.', ok:'Remove access', danger:true })) return;
         b.setAttribute('aria-busy', 'true');
         const r = await callAccess({ action:a, user_id:m.user_id, via: b.dataset.via || null });
         b.removeAttribute('aria-busy');

@@ -37,7 +37,14 @@
   const hhmm = d => String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
   const fmtDate = d => new Date(d+'T00:00').toLocaleDateString('en-US',{ weekday:'short', month:'short', day:'numeric' });
   const LABEL = { off:'Off', run:'Working', pause:'Paused', brk:'On break' };
-  const GOAL = 8*3600, CIRC = 326.7;
+  const CIRC = 326.7;
+  // Shift length for the progress ring: picked on the page, remembered for each name on this device
+  const LEN_KEY = 'tracker-shift-length';
+  let GOAL = 8*3600;
+  const lens = () => { try { return JSON.parse(store.get(LEN_KEY)) || {}; } catch(e){ return {}; } };
+  const lenFor = name => lens()[(name || '').trim().toLowerCase()] || 8;
+  function setLen(h){ GOAL = h*3600; $('len').value = String(h); }
+  function saveLen(){ const m = lens(), n = $('nm').value.trim().toLowerCase(); if (n) { m[n] = GOAL/3600; store.set(LEN_KEY, JSON.stringify(m)); } }
 
   // ---------- team code gate ----------
   // The page only ever learns the company behind the code that was typed, never the others.
@@ -107,7 +114,9 @@
     $('err').textContent = '';
     if (v === OTHER) { $('nm').value = ''; $('nm').hidden = false; $('nm').focus(); }
     else { $('nm').value = v; $('nm').hidden = true; }
+    if (mode === 'off') { setLen(lenFor($('nm').value)); draw(); }
   });
+  $('len').addEventListener('change', () => { GOAL = Number($('len').value)*3600; saveLen(); persist(); draw(); });
 
   // ---------- shift state (kept on this device so closing the tab doesn't lose it) ----------
   let mode = 'off', work = 0, brk = 0, segs = [], startedAt = null, last = Date.now(), saving = false;
@@ -117,13 +126,14 @@
 
   function persist(){
     if (mode === 'off') { store.del(SHIFT_KEY); return; }
-    store.set(SHIFT_KEY, JSON.stringify({ mode, work, brk, segs, startedAt: startedAt.toISOString(), last, name: $('nm').value, date: $('dt').value, gap: gapSnap }));
+    store.set(SHIFT_KEY, JSON.stringify({ mode, work, brk, segs, startedAt: startedAt.toISOString(), last, name: $('nm').value, date: $('dt').value, len: GOAL/3600, gap: gapSnap }));
   }
   function restore(){
     let s = null; try { s = JSON.parse(store.get(SHIFT_KEY)); } catch(e){}
     if (!s || !s.mode || s.mode === 'off') return false;
     $('nm').value = s.name || ''; $('dt').value = s.date || iso(new Date());
     syncName();
+    setLen(s.len || lenFor(s.name));
     work = s.work || 0; brk = s.brk || 0; segs = s.segs || []; startedAt = new Date(s.startedAt);
     last = s.last || Date.now(); gapSnap = s.gap || null;
     applyMode(s.mode);
@@ -188,7 +198,7 @@
     $('endAsk').hidden = true;
     if (mode === 'off' && !valid()) return;
     if (mode === 'off') {
-      $('saved').hidden = true; store.set('tracker-name', $('nm').value.trim());
+      $('saved').hidden = true; store.set('tracker-name', $('nm').value.trim()); saveLen();
       // A page left open overnight still shows yesterday; move it to today unless they picked a date
       if (!dtPicked) $('dt').value = iso(new Date());
     }
@@ -309,7 +319,7 @@
   function draw(){
     $('wk').textContent = clock(work);
     $('prog').style.strokeDashoffset = CIRC * (1 - Math.min(work/GOAL, 1));
-    $('goal').textContent = work >= GOAL ? 'Shift goal reached' : 'of an 8h shift';
+    $('goal').textContent = work >= GOAL ? 'Shift goal reached' : 'of your ' + GOAL/3600 + 'h shift';
     $('sW').textContent = clock(work); $('sB').textContent = clock(brk);
     $('sS').textContent = startedAt ? hhmm(startedAt) : '--:--';
     const bar = $('bar'); bar.innerHTML = '';
@@ -325,10 +335,36 @@
   window.addEventListener('pagehide', () => { advance(); persist(); });
   document.addEventListener('visibilitychange', () => { advance(); persist(); draw(); if (!document.hidden) checkRemote(); });
 
+  // ---------- two tabs open: each keeps its own copy of the shift and saves over the other ----------
+  // Tabs on this device say hello every few seconds; while another one is open, a warning shows.
+  // A closed tab can't always say goodbye, so one that goes quiet for 70 seconds counts as closed
+  // (browsers slow a background tab down to about one tick a minute).
+  const others = new Map();
+  if (window.BroadcastChannel) {
+    const tabId = Math.random().toString(36).slice(2), ch = new BroadcastChannel('tracker-tabs');
+    const showTabs = () => {
+      const now = Date.now();
+      others.forEach((seen, id) => { if (now - seen > 70000) others.delete(id); });
+      $('twoTabs').hidden = !others.size;
+    };
+    ch.onmessage = e => {
+      const m = e.data || {};
+      if (!m.id || m.id === tabId) return;
+      if (m.t === 'bye') others.delete(m.id); else others.set(m.id, Date.now());
+      if (m.t === 'hi') ch.postMessage({ t:'here', id: tabId });
+      showTabs();
+    };
+    ch.postMessage({ t:'hi', id: tabId });
+    setInterval(() => { ch.postMessage({ t:'here', id: tabId }); showTabs(); }, 4000);
+    window.addEventListener('pagehide', () => ch.postMessage({ t:'bye', id: tabId }));
+    window.addEventListener('pageshow', e => { if (e.persisted) ch.postMessage({ t:'hi', id: tabId }); });
+  }
+
   // ---------- start ----------
   $('dt').value = iso(new Date());
   $('nm').value = store.get('tracker-name') || '';
   syncName();
+  setLen(lenFor($('nm').value));
   document.querySelector('[data-k="pause"]').setAttribute('aria-disabled', 'true');
   const resumed = restore();
   if (resumed) { pushLive(); checkRemote(); }

@@ -752,7 +752,7 @@
     renderTimer(); await saveTimer();
   });
   $('tmrCancel').addEventListener('click', async () => {
-    if (!tmr || !confirm('Discard this shift? The time won’t be saved.')) return;
+    if (!tmr || !await ask({ title:'Discard this shift?', msg:'The time won’t be saved.', ok:'Discard', cancel:'Keep it', danger:true })) return;
     tmr = null; renderTimer(); await saveTimer();
   });
   // Pick up a start, break or stop pressed on another device
@@ -841,7 +841,7 @@
     const list = shifts.filter(s => s.owner && inPeriod(s.date) && !s.paid);
     if (!list.length) return;
     const amt = list.filter(s => s.billRate != null).reduce((a, s) => a + shiftValue(s), 0);
-    if (!confirm('Mark ' + plural(list.length, 'shift') + ' (' + cash(amt) + ') as paid?')) return;
+    if (!await ask({ title:'Mark ' + plural(list.length, 'shift') + ' (' + cash(amt) + ') as paid?', ok:'Mark as paid' })) return;
     if (await setShiftsPaid(list, true)) toast('Marked ' + plural(list.length, 'shift') + ' as paid', false);
   });
 
@@ -904,8 +904,8 @@
     const range = pick.length === 1 ? dayDate(pick[0].date) : dayDate(pick[0].date) + ' to ' + dayDate(pick[pick.length - 1].date);
     const mine = pick.filter(sh => sh.owner), theirs = pick.filter(sh => !sh.owner);
     const what = [mine.length ? plural(mine.length, 'of your shifts').replace('of your shiftss', 'of your shifts') : '', theirs.length ? plural(theirs.length, 'team shift') : ''].filter(Boolean).join(' and ');
-    if (!confirm('Mark ' + what + ' at ' + companyName(co) + ' as paid by them?\n\n' + range + ' · ' + cash(covered) +
-      (left >= 0.01 ? '\n\n' + cash(left) + ' is left over. It isn’t enough for the next unpaid shift, so that one stays unpaid.' : ''))) return;
+    if (!await ask({ title:'Mark ' + what + ' at ' + companyName(co) + ' as paid by them?', ok:'Mark as paid', msg:range + ' · ' + cash(covered) +
+      (left >= 0.01 ? '\n\n' + cash(left) + ' is left over. It isn’t enough for the next unpaid shift, so that one stays unpaid.' : '') })) return;
     const at = new Date(date + 'T12:00:00').toISOString(), fxDay = rate || fx.rate || null;
     $('lSave').setAttribute('aria-busy', 'true');
     const r1 = mine.length ? await db.from('shifts').update({ paid: true, paid_at: at, paid_fx: fxDay }).in('id', mine.map(sh => sh.id)) : {};
@@ -1253,7 +1253,7 @@
       rm.disabled = list.length < 2;
       rm.title = list.length < 2 ? 'Add another app first, or you’d have no way to sign in' : '';
       rm.addEventListener('click', async () => {
-        if (!confirm('Remove “' + factorName(f) + '”? Its codes will stop working for Cash.')) return;
+        if (!await ask({ title:'Remove “' + factorName(f) + '”?', msg:'Its codes will stop working for Cash.', ok:'Remove', danger:true })) return;
         const { error } = await db.auth.mfa.unenroll({ factorId: f.id });
         if (error) { toast("Couldn't remove it. Try again.", false); return; }
         renderFactors(); toast('Removed ' + factorName(f), false);

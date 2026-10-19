@@ -114,11 +114,11 @@ window.CashTeam = function(db){
     companyOptions($('bulkCo'), { all:'Set company…', add:true, current:'' });
   }
   async function addCompany(){
-    const name = (prompt('New company name') || '').trim();
+    const name = (await ask({ title:'Add a company', ok:'Next', input:{ label:'Company name' } }) || '').trim();
     if (!name) return null;
     const existing = companies.find(c => c.name.toLowerCase() === name.toLowerCase());
     if (existing) return existing.id;
-    const r = parseFloat((prompt('What does ' + name + ' pay you per hour? (in $, like 6)') || '').replace('$', ''));
+    const r = parseFloat((await ask({ title:'What does ' + name + ' pay you per hour?', ok:'Add company', cancel:'Skip', input:{ label:'In $, like 6', inputMode:'decimal' } }) || '').replace('$', ''));
     const { data, error } = await db.from('companies').insert({ name, bill_rate: isNaN(r) || r < 0 ? null : r }).select().single();
     if (error) { showNotice("Couldn't add that company. Try again."); return null; }
     companies.push(data); companies.sort((a,b) => a.name.localeCompare(b.name));
@@ -146,14 +146,14 @@ window.CashTeam = function(db){
       row.querySelector('.rm').hidden = !has;
       const err = row.querySelector('.co-err');
       row.querySelector('.set').addEventListener('click', async () => {
-        const code = (prompt('Code for ' + c.name + ' (at least 4 characters, capitals don’t matter)') || '').trim();
+        const code = (await ask({ title:'Code for ' + c.name, ok:'Save code', input:{ label:'At least 4 characters, capitals don’t matter' } }) || '').trim();
         if (!code) return;
         const { error } = await db.rpc('set_company_code', { p_company_id: c.id, p_code: code });
         if (error) { err.textContent = /already uses/i.test(error.message) ? 'Another company already uses that code. Pick a different one.' : /4 characters/.test(error.message) ? 'Codes need at least 4 characters.' : "Couldn't save the code. Try again."; return; }
         codeStatus.set(c.id, true); renderCompanies(); toast('Code saved for ' + c.name, false);
       });
       row.querySelector('.rm').addEventListener('click', async () => {
-        if (!confirm('Remove the code for ' + c.name + '? Your team won’t be able to log shifts for it until you set a new one.')) return;
+        if (!await ask({ title:'Remove the code for ' + c.name + '?', msg:'Your team won’t be able to log shifts for it until you set a new one.', ok:'Remove code', danger:true })) return;
         const { error } = await db.rpc('set_company_code', { p_company_id: c.id, p_code: '' });
         if (error) { err.textContent = "Couldn't remove the code. Try again."; return; }
         codeStatus.set(c.id, false); renderCompanies(); toast('Code removed for ' + c.name, false);
@@ -667,7 +667,8 @@ window.CashTeam = function(db){
     if (b.dataset.bulk === 'payslip') { openPayslip(ids); return; }
     if (b.dataset.bulk === 'payrate' || b.dataset.bulk === 'billrate') {
       const isPay = b.dataset.bulk === 'payrate';
-      const ans = prompt((isPay ? 'New pay rate (what you pay them per hour)' : 'New company rate (what the company pays you per hour)') + ' for the ' + ids.length + ' selected shift' + (ids.length === 1 ? '' : 's') + ', in $:');
+      const ans = await ask({ title:(isPay ? 'New pay rate' : 'New company rate') + ' for ' + ids.length + ' shift' + (ids.length === 1 ? '' : 's'), ok:'Save rate',
+        input:{ label:(isPay ? 'What you pay them per hour' : 'What the company pays you per hour') + ', in $', inputMode:'decimal' } });
       if (ans === null) return;
       const v = parseFloat(ans.replace('$', ''));
       if (isNaN(v) || v < 0) { toast('Enter a rate like 2.5', false); return; }
