@@ -823,7 +823,7 @@
 
   // ---------- backup (owner) ----------
   // Saves every table to one file on this device. Supabase's free plan keeps no copies you can restore yourself.
-  const BACKUP_TABLES = ['cash_entries', 'shifts', 'shift_requests', 'members', 'companies', 'agents', 'agent_companies', 'tracker_settings'];
+  const BACKUP_TABLES = ['cash_entries', 'shifts', 'shift_requests', 'members', 'companies', 'agents', 'agent_companies', 'tracker_settings', 'site_visits'];
   $('backupBtn').addEventListener('click', async () => {
     const btn = $('backupBtn'); if (btn.disabled) return;
     btn.disabled = true; toast('Making your backup…');
