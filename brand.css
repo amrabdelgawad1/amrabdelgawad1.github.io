@@ -1,0 +1,27 @@
+/* Homepage colours (style.css light, theme.css dark) for /app, /cash and /tracker. Loaded last so it wins.
+   --accent is the gold that reads as text; solid gold fills (#E3AA35) carry navy text. */
+:root{
+  --bg:#FAF7F1; --panel:#FFFFFF; --sunk:#F3EEE4; --bg2:#FFFFFF; --bg3:#FFFFFF; --bg4:#FFFFFF;
+  --border:#E6DCCA; --border2:#CFC0A2;
+  --text:#14213D; --light:#4A5468; --muted:#5A6478; --white:#14213D;
+  --accent:#94650C; --accent2:#7A520A; --accent-dim:rgba(232,178,58,.18);
+  --brand-gold:#E3AA35; --brand-gold2:#D69A22; --brand-navy:#14213D;
+}
+html[data-theme="dark"]{
+  --bg:#111315; --panel:#1D2125; --sunk:#16191C; --bg2:#1D2125; --bg3:#1D2125; --bg4:#252A2F;
+  --border:#2C3238; --border2:#3B434B;
+  --text:#F5F1E8; --light:#CDD3DE; --muted:#A9B1C2; --white:#FFFFFF;
+  --accent:#E2B354; --accent2:#EBC46F; --accent-dim:rgba(232,178,58,.16);
+  --brand-gold2:#EBC46F;
+}
+
+/* solid gold fills with navy text */
+::selection{ background:var(--brand-gold); color:var(--brand-navy); }
+.btn:not(.ghost):not(.wa):not(.btn-ghost):not(.btn-outline), .ask-b .ask-ok:not(.danger){ background:var(--brand-gold); border-color:var(--brand-gold); color:var(--brand-navy); }
+.btn:not(.ghost):not(.wa):not(.btn-ghost):not(.btn-outline):hover{ background:var(--brand-gold2); }
+.bars .bar, html .ring .prog{ background:var(--brand-gold); stroke:var(--brand-gold); }
+html .co-chip[aria-pressed="true"]{ background:var(--accent-dim); border-color:var(--accent); color:var(--accent); }
+
+/* the owner's circle: navy with gold letter, like the AG mark (gold with navy in dark) */
+.me.owner, html .who-pill .me{ background:var(--brand-navy); border-color:var(--brand-navy); color:var(--brand-gold); }
+html[data-theme="dark"] .me.owner, html[data-theme="dark"] .who-pill .me{ background:var(--brand-gold); border-color:var(--brand-gold); color:var(--brand-navy); }
