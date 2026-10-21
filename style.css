@@ -721,6 +721,9 @@ button.chip[data-tool-desc]:focus-visible{ outline:none; color:var(--accent2); b
   box-shadow:0 1px 2px rgba(20,33,61,.05), 0 12px 32px -12px rgba(20,33,61,.12);
 }
 .service-card--primary{ border-color:var(--accent); border-width:1.5px; }
+.service-card--wide{ grid-column:1 / -1; }
+.service-card--wide .service-list{ columns:2; column-gap:40px; }
+.service-card--wide .service-list li{ break-inside:avoid; }
 .service-tag{
   display:inline-block; font-size:11.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
   color:var(--accent2); background:var(--accent-dim); padding:5px 10px; border-radius:999px; margin-bottom:16px;
@@ -787,6 +790,7 @@ button.chip[data-tool-desc]:focus-visible{ outline:none; color:var(--accent2); b
 
 @media (max-width: 980px){
   .services-grid, .samples-v2{ grid-template-columns:1fr; }
+  .service-card--wide .service-list{ columns:1; }
   .work-promises{ grid-template-columns:1fr; }
   .close-band{ grid-template-columns:1fr; }
   .close-band-photo{ order:-1; height:150px; }
