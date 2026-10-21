@@ -10,7 +10,7 @@
   // This checks the calendar's own date numbers, so it approximates the
   // host's business days regardless of which timezone is displayed.
   const FRONTEND_CONFIG = {
-    workingDaysJs: [1, 2, 3, 4, 5], // JS Date.getDay(): 0=Sun...6=Sat
+    workingDaysJs: [0, 1, 2, 3, 4, 5, 6], // JS Date.getDay(): 0=Sun...6=Sat
   };
 
   const TZ_STORAGE_KEY = "booking_tz";
