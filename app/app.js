@@ -5,13 +5,15 @@
   const $ = id => document.getElementById(id);
   const cfg = window.TRACKER_CONFIG || {};
   // v changes with each release of the cash page, so the app never shows a stale copy
-  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=28';
+  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=29';
 
   // An invite or new sign-in link lands here with its type in the address; read it before supabase-js clears it
   const linkType = new URLSearchParams(location.hash.slice(1)).get('type');
   // Emailed and WhatsApp links point at amrabdelgawad.site/app/?token_hash=...&type=invite|recovery
   const qs = new URLSearchParams(location.search), tokenHash = qs.get('token_hash'), tokenType = qs.get('type');
   const linkError = new URLSearchParams(location.hash.slice(1)).get('error_description');
+  // Came from the old /tracker page: say where the clock went
+  if (qs.get('from') === 'tracker') { $('movedNote').hidden = false; history.replaceState(null, '', location.pathname + location.hash); }
 
   const iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   const hm = s => Math.floor(s/3600)+'h '+String(Math.floor(s%3600/60)).padStart(2,'0')+'m';
