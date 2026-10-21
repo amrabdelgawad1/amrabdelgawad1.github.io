@@ -470,6 +470,9 @@
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { err.textContent = 'Type their full email, like name@example.com.'; return; }
       const co = links.find(x => x.agent_id === a.id);
       if (!co) { err.textContent = 'Pick the company they work for first (Works for, above).'; return; }
+      // One login per email: say so plainly instead of a failed send
+      const taken = members.find(x => (x.email || '').toLowerCase() === email.toLowerCase());
+      if (taken) { err.textContent = 'That email already has a login (' + taken.name + (taken.active ? '' : ', access removed') + '). Use a different email, or ask Claude to move that login to ' + a.name.split(' ')[0] + '.'; return; }
       err.textContent = '';
       const btn = f.querySelector('[data-via="' + inviteVia + '"]'); btn.setAttribute('aria-busy', 'true');
       const r = await callAccess({ action:'invite', name:a.name, email, company_id: co.company_id, via: inviteVia });
