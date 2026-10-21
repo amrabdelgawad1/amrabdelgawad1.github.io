@@ -159,6 +159,22 @@
     sheet.hidden = false; document.body.classList.add('sheet-open');
     drawTabs(); drawBody();
   }
+  // From a person's Team page: open their profile in Settings, at the Payslips box
+  window.TalentsAccount = {
+    async openPayslips(name){
+      if (!isOwner()) return;
+      await loadAgents();
+      const a = agents.find(x => key(x.name) === key(name));
+      if (!a) { toast('There’s no agent called ' + name + ' in Settings › Agents yet.'); return; }
+      lastFocus = document.activeElement;
+      tab = 'agents'; agentView = a.id;
+      sheet.hidden = false; document.body.classList.add('sheet-open');
+      drawTabs();
+      const p = drawAgentProfile();
+      const box = $('agSlips'); if (box) { box.scrollIntoView({ block:'start' }); $('psFrom').focus({ preventScroll:true }); }
+      await p;
+    }
+  };
   function closeSheet(){
     if (sheet.hidden) return;
     sheet.hidden = true; document.body.classList.remove('sheet-open');

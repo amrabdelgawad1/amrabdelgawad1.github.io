@@ -519,6 +519,10 @@
     $('pVisits').hidden = page !== 'visits';
     const cashPage = !['live', 'people', 'requests', 'track', 'visits'].includes(page);
     $('pCash').hidden = !cashPage;
+    // A person's Team page gets a bar for their payslips (Amr only; uploading is his)
+    let who = ''; try { who = page === 'team' && person ? decodeURIComponent(person) : ''; } catch(e) {}
+    $('cashBar').hidden = !(who && role === 'owner'); $('pCash').classList.toggle('with-bar', !!(who && role === 'owner'));
+    $('cashBarName').textContent = who;
     clearInterval(liveTimer); clearInterval(liveDrawTimer);
     if (page === 'live') { loadLive(); liveTimer = setInterval(loadLive, 15000); }
     if (page === 'people') loadPeople();
@@ -530,6 +534,8 @@
     window.scrollTo(0, 0);
   }
   window.addEventListener('hashchange', menuRoute);
+
+  $('cashBarSlips').addEventListener('click', () => { if (window.TalentsAccount) window.TalentsAccount.openPayslips($('cashBarName').textContent); });
 
   // The /cash pages, inside the app: same sign-in, their own tab row hidden
   function openCash(view){

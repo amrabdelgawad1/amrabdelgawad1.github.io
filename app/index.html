@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=14" />
+<link rel="stylesheet" href="app.css?v=15" />
 <link rel="stylesheet" href="../theme-switch.css?v=2">
 <link rel="stylesheet" href="../daylight-dark.css?v=2">
 <link rel="stylesheet" href="../ask.css?v=2">
@@ -242,7 +242,11 @@
     </main>
 
     <!-- owner: the /cash pages -->
-    <main id="pCash" hidden><iframe id="cashFrame" title="Cash"></iframe></main>
+    <main id="pCash" hidden>
+      <!-- on a person's Team page: their payslips, opened in Settings -->
+      <div class="cash-bar" id="cashBar" hidden><span><small>Payslips for</small><b id="cashBarName"></b></span><button class="btn small" type="button" id="cashBarSlips">Add or view payslips</button></div>
+      <iframe id="cashFrame" title="Cash"></iframe>
+    </main>
   </div>
 
   <!-- menu: the owner sees everything, a team member only what Amr switched on -->
@@ -279,7 +283,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="../tracker/config.js"></script>
 <script src="../ask.js?v=3"></script>
-<script src="app.js?v=27"></script>
-<script src="account.js?v=5"></script>
+<script src="app.js?v=28"></script>
+<script src="account.js?v=6"></script>
 </body>
 </html>
