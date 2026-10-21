@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=12" />
+<link rel="stylesheet" href="app.css?v=13" />
 <link rel="stylesheet" href="../theme-switch.css?v=2">
 <link rel="stylesheet" href="../daylight-dark.css?v=2">
 <link rel="stylesheet" href="../ask.css?v=2">
@@ -105,7 +105,14 @@
           <button class="btn" type="submit" id="guardSave">Clock out at that time</button>
         </form>
       </section>
-      <div class="grid2">
+      <!-- their details: photo, number and name, role, company, pay, and Settings (filled by account.js) -->
+      <section class="card me-card" id="meCard" aria-label="My details">
+        <span class="av big" id="mcAv">?</span>
+        <div class="me-info"><h2 id="mcName">…</h2><div class="chips" id="mcChips"></div></div>
+        <div class="me-rate" id="mcRate" hidden><p>Your pay</p><strong class="num" id="mcPay"></strong><small id="mcPayEgp"></small></div>
+        <button class="btn ghost" type="button" id="mcSettings"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>Settings</button>
+      </section>
+      <div class="grid2 one">
         <section class="card">
           <div class="co-line"><span class="status s-off" id="tStatus"><i></i><span>Off</span></span><span class="muted" id="tCompany"></span></div>
           <div class="clock num" id="tClock">00:00:00</div>
@@ -140,6 +147,11 @@
             <h2>My history</h2>
             <div id="reqList"></div>
             <div id="hList"><p class="empty">Loading…</p></div>
+          </section>
+          <section class="card" id="slipCard">
+            <h2>Payslips</h2>
+            <p class="note">Your signed payslip for each pay cycle. Tap one to open it.</p>
+            <div id="slipList"><p class="empty">Loading…</p></div>
           </section>
           <button class="btn ghost" type="button" data-signout>Sign out</button>
         </div>
@@ -266,7 +278,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="../tracker/config.js"></script>
 <script src="../ask.js?v=3"></script>
-<script src="app.js?v=25"></script>
-<script src="account.js?v=2"></script>
+<script src="app.js?v=26"></script>
+<script src="account.js?v=3"></script>
 </body>
 </html>

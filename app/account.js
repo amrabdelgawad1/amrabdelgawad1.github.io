@@ -32,6 +32,8 @@
   let agents = [], links = [], cos = [];          // owner: agents, agent ↔ company links, companies
   const isOwner = () => T.role === 'owner';
   const myName = () => isOwner() ? (mine.name || 'Amr Abdelgawad') : (T.profile && T.profile.name) || '';
+  let card = null; // team member: their agent number, role, agent photo, company and pay (my_card)
+  const myRole = () => isOwner() ? 'owner' : (card && card.role) || 'member';
   const myAgent = () => agents.find(a => key(a.name) === key(myName()));
 
   // Photos for Live now: people with an account by user id, /tracker agents by name
@@ -50,25 +52,76 @@
     mine = { name: data && data.display_name || '', phone: data && data.phone || '', photo: data && data.photo_path || null };
     drawCircle();
   }
+  // Their own photo first, else the one Amr set on their agent
+  const myPhoto = () => photoUrl(mine.photo) || (card && photoUrl(card.photo_path)) || null;
   function drawCircle(){
-    const url = photoUrl(mine.photo), b = $('me');
+    const url = myPhoto(), b = $('me');
     b.innerHTML = url ? '<img src="' + esc(url) + '" alt="" />' : esc(isOwner() ? 'A' : initials(myName()));
     b.classList.toggle('has-photo', !!url);
+    if (!isOwner() && $('mcAv')) $('mcAv').innerHTML = url ? '<img src="' + esc(url) + '" alt="" />' : esc(initials(myName()));
   }
 
-  document.addEventListener('talents-signed-in', async () => {
+  // ---------- team member: details card and payslips on their page ----------
+  async function loadCard(){
+    const [c, r] = await Promise.all([db.rpc('my_card'), db.rpc('fx_rate_on')]);
+    card = !c.error && (Array.isArray(c.data) ? c.data[0] : c.data) || null;
+    const rate = Number(r.data) || 0, pay = card && card.pay_rate != null ? Number(card.pay_rate) : null;
+    $('mcName').textContent = (card && card.agent_no ? pad2(card.agent_no) + ' · ' : '') + myName();
+    const co = (card && card.company_name) || T.profile.company_name;
+    $('mcChips').innerHTML = '<span class="pill p-ok">' + ROLES[myRole()] + '</span>' + (co ? '<span class="pill p-plain">' + esc(co) + '</span>' : '');
+    $('mcRate').hidden = pay == null;
+    if (pay != null) {
+      $('mcPay').innerHTML = usd(pay) + '<span> / hour</span>';
+      $('mcPayEgp').textContent = rate ? '= EGP ' + Math.round(pay * rate).toLocaleString('en-US') + ' at today’s rate' : '';
+    }
+    drawCircle();
+  }
+  $('mcSettings').addEventListener('click', () => openSettings('profile'));
+
+  // Signed payslips Amr uploaded, newest first; Cycle 1 is the oldest
+  const fmtDay = d => new Date(d + 'T00:00').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  const cycleText = p => fmtDay(p.period_start) + ' – ' + fmtDay(p.period_end);
+  async function loadSlips(){
+    const box = $('slipList'); if (!box) return;
+    const { data, error } = await db.from('payslips').select('id,period_start,period_end,file_path,file_type,note').order('period_start');
+    if (error) { box.innerHTML = '<p class="empty">Couldn’t load your payslips. Pull to refresh.</p>'; return; }
+    box.innerHTML = data.length ? data.map((p, i) => ({ p, n: i + 1 })).reverse().map(({ p, n }) =>
+      '<button type="button" class="slip" data-slip="' + p.id + '"><span class="slip-ic" aria-hidden="true">' + (p.file_type === 'application/pdf' ? 'PDF' : 'IMG') + '</span>' +
+      '<span class="n"><b>Cycle ' + n + '</b><small>' + esc(cycleText(p)) + (p.note ? ' · ' + esc(p.note) : '') + '</small></span><span class="slip-open">Open</span></button>').join('')
+      : '<p class="empty">No payslips yet. Amr adds each signed payslip here after a pay cycle.</p>';
+    slips = data;
+  }
+  let slips = [];
+  // Payslips are private files: open each one through a link that works for a few minutes
+  async function openSlip(path){
+    const w = window.open('', '_blank');
+    const { data, error } = await db.storage.from('payslips').createSignedUrl(path, 300);
+    if (error || !data) { if (w) w.close(); toast('Couldn’t open that payslip. Try again.'); return; }
+    if (w) w.location.href = data.signedUrl; else location.href = data.signedUrl;
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-slip]'); if (!b || b.closest('.sheet')) return;
+    const p = slips.find(x => x.id === Number(b.dataset.slip)); if (p) openSlip(p.file_path);
+  });
+
+  let started = false; // once per sign-in, whichever comes first: the event or this file loading late
+  document.addEventListener('talents-signed-out', () => { started = false; card = null; });
+  async function onSignedIn(){
+    if (started) return; started = true;
     closeMenu(); closeSheet();
     await loadMine();
     if (isOwner()) await loadAgents();
+    else { loadCard(); loadSlips(); }
     await loadPhotos();
-  });
+  }
+  document.addEventListener('talents-signed-in', onSignedIn);
 
   // ---------- the menu under the circle ----------
   const menu = document.createElement('div');
   menu.className = 'acct-menu'; menu.id = 'acctMenu'; menu.setAttribute('role', 'menu'); menu.hidden = true;
   document.body.appendChild(menu);
   function openMenu(){
-    const role = isOwner() ? 'Owner' : ROLES[(myAgent() || {}).role || 'member'];
+    const role = isOwner() ? 'Owner' : ROLES[myRole()];
     menu.innerHTML = '<div class="who">' + avatar(myName(), photoUrl(mine.photo), 42) + '<div><b>' + esc(myName()) + '</b><small>' + esc(role) + '</small></div></div>' +
       '<button type="button" class="ai" role="menuitem" data-go="profile">' + ICON.user + 'My profile</button>' +
       '<button type="button" class="ai" role="menuitem" data-go="settings">' + ICON.gear + 'Settings</button>' +
@@ -140,18 +193,17 @@
 
   // ---------- My profile ----------
   async function drawProfile(){
-    const B = $('setBody'), own = isOwner(), url = photoUrl(mine.photo);
-    const ag = myAgent();
+    const B = $('setBody'), own = isOwner(), url = myPhoto();
     B.innerHTML = head('My profile') +
       '<div class="photo-row">' + avatar(myName(), url, 92) + '<div class="photo-side"><b class="big">' + esc(myName()) + '</b>' +
-      '<div class="chips">' + (own ? '<span class="pill p-ok">Owner</span>' : '<span class="pill p-pau">' + ROLES[(ag || {}).role || 'member'] + '</span>' + (T.profile.company_name ? '<span class="pill p-off">' + esc(T.profile.company_name) + '</span>' : '')) + '</div>' +
+      '<div class="chips">' + (own ? '<span class="pill p-ok">Owner</span>' : '<span class="pill p-pau">' + ROLES[myRole()] + '</span>' + (T.profile.company_name ? '<span class="pill p-off">' + esc(T.profile.company_name) + '</span>' : '')) + '</div>' +
       '<div class="acts"><label class="btn small file-btn">' + ICON.cam + 'Upload photo<input type="file" accept="image/*" data-photo="me" hidden /></label>' + (mine.photo ? '<button class="btn ghost small" type="button" data-unphoto>Remove</button>' : '') + '</div></div></div>' +
       (own ? '' : '<div class="tiles four" id="myStats"><div class="tile"><p>Pay rate</p><strong class="num">…</strong></div><div class="tile"><p>Hours this month</p><strong class="num">…</strong></div><div class="tile in"><p>Earned this month</p><strong class="num">…</strong></div><div class="tile due"><p>Not paid yet</p><strong class="num">…</strong></div></div>') +
       '<form class="form" id="profForm" novalidate><div class="two">' +
         '<label class="label">Name shown in the app<input class="field" id="pfName" maxlength="80" value="' + esc(myName()) + '"' + (own ? '' : ' readonly') + ' /></label>' +
         '<label class="label">Email (sign-in)<input class="field" value="' + esc(T.user.email || '') + '" readonly /></label>' +
         '<label class="label">Phone / WhatsApp<input class="field" id="pfPhone" maxlength="40" inputmode="tel" placeholder="+20 …" value="' + esc(mine.phone) + '" /></label>' +
-        (own ? '' : '<label class="label">Role<input class="field" value="' + ROLES[(ag || {}).role || 'member'] + '" readonly /></label>') +
+        (own ? '' : '<label class="label">Role<input class="field" value="' + ROLES[myRole()] + '" readonly /></label>') +
       '</div>' + (own ? '' : '<p class="note">Only Amr can change your name, role and pay.</p>') +
       '<p class="err" id="pfErr"></p><div><button class="btn" type="submit">Save</button></div></form>';
     if (!own) {
@@ -223,14 +275,45 @@
 
   // ---------- Agents (owner) ----------
   async function loadAgents(){
-    const [a, l, c] = await Promise.all([
+    const [a, l, c, m] = await Promise.all([
       db.from('agents').select('id,name,active,role,phone,notes,photo_path,created_at').order('id'),
       db.from('agent_companies').select('agent_id,company_id'),
-      db.from('companies').select('id,name').order('name')
+      db.from('companies').select('id,name').order('name'),
+      db.from('members').select('user_id,name,email,active,agent_id,created_at')
     ]);
     if (a.error) { agents = []; return false; }
-    agents = a.data; links = l.data || []; cos = c.data || [];
+    agents = a.data; links = l.data || []; cos = c.data || []; members = m.error ? [] : m.data;
     return true;
+  }
+  // The app login that belongs to an agent: linked to them, else one with the same name
+  let members = [];
+  const loginOf = a => members.find(x => x.agent_id === a.id) || members.find(x => !x.agent_id && key(x.name) === key(a.name)) || null;
+  // Invites and sign-in links go through the same service as Invite and access
+  async function callAccess(body){
+    const { data, error } = await db.functions.invoke('team-access', { body });
+    if (error) {
+      let msg = 'Something went wrong. Try again.';
+      try { const j = await error.context.json(); if (j && j.error) msg = j.error; } catch(e){}
+      return { error: msg };
+    }
+    return data || {};
+  }
+  const linkOut = {}; // agent id → a sign-in link to copy or WhatsApp
+  function loginBox(a){
+    const m = loginOf(a), out = linkOut[a.id];
+    const shown = out ? '<div class="linkout"><span class="note">' + esc(out.note) + '</span><input class="field" readonly value="' + esc(out.link) + '" aria-label="Sign-in link" />' +
+      '<div class="acts"><button class="btn ghost small" type="button" data-copy-link="' + a.id + '">Copy link</button><a class="btn wa small" target="_blank" rel="noopener" href="' + esc(out.wa) + '">Send on WhatsApp</a></div></div>' : '';
+    if (m && m.active) return '<div class="login-box"><b>App login</b><p class="note">Login: ' + esc(m.email || 'their email') + ', added ' + new Date(m.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + '. If they never set a password or forgot it, send a sign-in link.</p>' +
+      '<div class="acts"><button class="btn ghost small" type="button" data-a-link="' + a.id + '" data-via="email">Email a sign-in link</button><button class="btn ghost small" type="button" data-a-link="' + a.id + '" data-via="whatsapp">WhatsApp a sign-in link</button></div>' + shown + '</div>';
+    if (m) return '<div class="login-box"><b>App login</b><p class="note">Their access was removed. Restore it from Invite and access in the menu.</p></div>';
+    return '<form class="login-box" data-a-invite="' + a.id + '" novalidate><b>App login</b><p class="note">Give ' + esc(a.name.split(' ')[0]) + ' their own login for the clock, their history and payslips. Their earlier shifts join their history.</p>' +
+      '<label class="label">Their email<input class="field" type="email" autocomplete="off" placeholder="name@example.com" /></label><p class="err"></p>' +
+      '<div class="acts"><button class="btn small" type="submit" data-via="email">Email an invite</button><button class="btn wa small" type="submit" data-via="whatsapp">WhatsApp an invite link</button></div>' + shown + '</form>';
+  }
+  function showLinkOut(a, link, note){
+    const first = a.name.split(' ')[0];
+    const msg = 'Hi ' + first + ', here is your link for the Amr Abdelgawad Talents app: ' + link + '\n\nOpen it, choose a password, then add the app to your home screen. The link works once.';
+    linkOut[a.id] = { link, note, wa:'https://wa.me/?text=' + encodeURIComponent(msg) };
   }
   const agentNo = a => pad2(a.id);
   const coNames = a => links.filter(x => x.agent_id === a.id).map(x => (cos.find(c => c.id === x.company_id) || {}).name).filter(Boolean);
@@ -241,14 +324,14 @@
       '<div class="ag-list">' + agents.map(a => {
         const open = agentOpen.has(a.id), names = coNames(a);
         return '<div class="ag' + (a.active ? '' : ' off') + '"><button type="button" class="ag-head" aria-expanded="' + open + '" data-toggle="' + a.id + '">' + avatar(a.name, photoUrl(a.photo_path), 38) +
-          '<span class="ag-name"><b>' + agentNo(a) + ' · ' + esc(a.name) + '</b><small>' + esc(ROLES[a.role] || ROLES.member) + (names.length ? ' · ' + esc(names.join(', ')) : '') + '</small></span>' +
+          '<span class="ag-name"><b>' + agentNo(a) + ' · ' + esc(a.name) + '</b><small>' + esc(ROLES[a.role] || ROLES.member) + (names.length ? ' · ' + esc(names.join(', ')) : '') + ' · ' + (loginOf(a) && loginOf(a).active ? 'Has an app login' : 'No app login yet') + '</small></span>' +
           (a.active ? '' : '<span class="pill p-off">Off</span>') + ICON.chev + '</button>' +
           (open ? '<div class="ag-body"><div class="two">' +
             '<label class="label">Name<input class="field" maxlength="80" value="' + esc(a.name) + '" data-a-name="' + a.id + '" /></label>' +
             '<label class="label">Role<select class="field" data-a-role="' + a.id + '">' + Object.keys(ROLES).map(k => '<option value="' + k + '"' + (a.role === k ? ' selected' : '') + '>' + ROLES[k] + '</option>').join('') + '</select></label>' +
             '<label class="label">Phone / WhatsApp<input class="field" maxlength="40" inputmode="tel" value="' + esc(a.phone || '') + '" data-a-phone="' + a.id + '" /></label>' +
             '<div class="label">Works for<div class="chips">' + cos.map(c => '<button type="button" class="chip" aria-pressed="' + links.some(x => x.agent_id === a.id && x.company_id === c.id) + '" data-a-co="' + a.id + ':' + c.id + '">' + esc(c.name) + '</button>').join('') + '</div></div>' +
-          '</div><div class="ag-foot"><button type="button" class="switch" role="switch" aria-checked="' + a.active + '" aria-label="' + esc(a.name) + ' active" data-a-active="' + a.id + '"></button><span>' + (a.active ? 'Active on /tracker' : 'Switched off') + '</span>' +
+          '</div>' + loginBox(a) + '<div class="ag-foot"><button type="button" class="switch" role="switch" aria-checked="' + a.active + '" aria-label="' + esc(a.name) + ' active" data-a-active="' + a.id + '"></button><span>' + (a.active ? 'Active on /tracker' : 'Switched off') + '</span>' +
           '<label class="btn ghost small file-btn">' + ICON.cam + 'Photo<input type="file" accept="image/*" data-photo="' + a.id + '" hidden /></label>' +
           '<button class="btn ghost small" type="button" data-a-view="' + a.id + '">View profile</button></div></div>' : '') + '</div>';
       }).join('') + (agents.length ? '' : '<p class="empty">No agents yet. Add your first one.</p>') + '</div>' +
@@ -264,7 +347,13 @@
       '<div class="two"><div class="box"><div class="kv"><span>Phone</span><span>' + esc(a.phone || '—') + '</span></div><div class="kv"><span>Added</span><span>' + day(a.created_at.slice(0, 10)) + '</span></div><div class="kv"><span>Shifts this month</span><span id="agCount">…</span></div></div>' +
       '<div class="box" id="agRecent"><p class="note">Recent shifts</p></div></div>' +
       '<label class="label">Notes (only you see these)<textarea class="field" rows="3" maxlength="2000" data-a-notes="' + a.id + '" placeholder="e.g. strong on objections, prefers mornings">' + esc(a.notes || '') + '</textarea></label>' +
+      '<div class="box" id="agSlips"><b>Payslips</b><p class="note">Upload each signed payslip (PDF or photo). ' + esc(a.name.split(' ')[0]) + ' sees them in the app as Cycle 1, Cycle 2…</p><div id="agSlipList"><p class="empty">Loading…</p></div>' +
+        '<form class="form" id="slipAdd" data-agent="' + a.id + '" novalidate><div class="two"><label class="label">Cycle from<input class="field" type="date" id="psFrom" /></label><label class="label">Cycle to<input class="field" type="date" id="psTo" /></label></div>' +
+        '<label class="label">Signed payslip (PDF, JPG or PNG, up to 10 MB)<input class="field" type="file" id="psFile" accept="application/pdf,image/jpeg,image/png,image/webp" /></label>' +
+        '<label class="label">Note (optional, they see it)<input class="field" id="psNote" maxlength="300" placeholder="e.g. includes a $5 bonus" /></label>' +
+        '<p class="err" id="psErr"></p><div><button class="btn small" type="submit">Upload payslip</button></div></form></div>' +
       '<div class="acts"><a class="btn ghost small" href="#team/' + encodeURIComponent(a.name) + '" data-close>Open all their hours</a></div>';
+    drawAgentSlips(a);
     const { data } = await db.from('shifts').select('name,shift_date,work_seconds,pay_rate,paid').eq('owner', false).order('shift_date', { ascending:false }).limit(1000);
     if (agentView !== a.id || !data) return;
     const list = data.filter(s => key(s.name) === key(a.name)), month = today().slice(0, 7), now = list.filter(s => s.shift_date.slice(0, 7) === month);
@@ -276,6 +365,49 @@
     $('agCount').textContent = now.length;
     $('agRecent').innerHTML = '<p class="note">Recent shifts</p>' + (list.length ? list.slice(0, 4).map(s => '<div class="kv"><span>' + day(s.shift_date) + '</span><span>' + hm(s.work_seconds) + (s.paid ? '' : ' · unpaid') + '</span></div>').join('') : '<p class="empty">No shifts yet.</p>');
   }
+  // An agent's payslips in their profile: Cycle 1 is the oldest; open or delete each
+  let agentSlips = [], slipDel = null;
+  async function drawAgentSlips(a){
+    const { data, error } = await db.from('payslips').select('id,period_start,period_end,file_path,file_type,note').eq('agent_id', a.id).order('period_start');
+    if (agentView !== a.id || !$('agSlipList')) return;
+    if (error) { $('agSlipList').innerHTML = '<p class="empty">Payslips aren’t set up yet. Run the latest SQL in Supabase.</p>'; return; }
+    agentSlips = data;
+    $('agSlipList').innerHTML = data.length ? data.map((p, i) => '<div class="slip-row"><span class="slip-ic" aria-hidden="true">' + (p.file_type === 'application/pdf' ? 'PDF' : 'IMG') + '</span><span class="n"><b>Cycle ' + (i + 1) + '</b><small>' + esc(cycleText(p)) + (p.note ? ' · ' + esc(p.note) : '') + '</small></span>' +
+      '<span class="acts"><button class="btn ghost small" type="button" data-ps-open="' + p.id + '">Open</button>' +
+      (slipDel === p.id ? '<button class="btn small danger" type="button" data-ps-del-yes="' + p.id + '">Yes, delete</button><button class="btn ghost small" type="button" data-ps-del-no>Keep</button>' : '<button class="btn ghost small" type="button" data-ps-del="' + p.id + '">Delete</button>') + '</span></div>').join('')
+      : '<p class="empty">No payslips yet.</p>';
+    // The next cycle starts the day after the last one ended
+    if ($('psFrom') && !$('psFrom').value && data.length) { const d = new Date(data[data.length - 1].period_end + 'T00:00'); d.setDate(d.getDate() + 1); $('psFrom').value = iso(d); }
+  }
+  async function uploadSlip(form){
+    const a = agents.find(x => x.id === Number(form.dataset.agent)), err = m => { $('psErr').textContent = m; };
+    const from = $('psFrom').value, to = $('psTo').value, f = $('psFile').files[0], note = $('psNote').value.trim();
+    if (!from || !to) return err('Pick the first and last day of the cycle.');
+    if (to < from) return err('The cycle ends before it starts. Check the dates.');
+    if (!f) return err('Choose the signed payslip file.');
+    const TYPES = { 'application/pdf':'pdf', 'image/jpeg':'jpg', 'image/png':'png', 'image/webp':'webp' };
+    if (!TYPES[f.type]) return err('Use a PDF, JPG or PNG file.');
+    if (f.size > 10 * 1024 * 1024) return err('That file is over 10 MB. Try a smaller scan or photo.');
+    err('');
+    const btn = form.querySelector('[type=submit]'); btn.setAttribute('aria-busy', 'true');
+    const path = a.id + '/' + from + '_to_' + to + '-' + Date.now() + '.' + TYPES[f.type];
+    const up = await db.storage.from('payslips').upload(path, f, { contentType: f.type });
+    if (up.error) { btn.removeAttribute('aria-busy'); return err('Couldn’t upload the file. Try again.'); }
+    const { error } = await db.from('payslips').insert({ agent_id: a.id, period_start: from, period_end: to, file_path: path, file_type: f.type, note: note || null });
+    btn.removeAttribute('aria-busy');
+    if (error) { db.storage.from('payslips').remove([path]); return err('Couldn’t save the payslip. Try again.'); }
+    $('psFrom').value = ''; $('psTo').value = ''; $('psFile').value = ''; $('psNote').value = '';
+    toast('Payslip added for ' + day(from) + ' – ' + day(to)); drawAgentSlips(a);
+  }
+  async function deleteSlip(id){
+    const p = agentSlips.find(x => x.id === id), a = agents.find(x => x.id === agentView);
+    const { error } = await db.from('payslips').delete().eq('id', id);
+    slipDel = null;
+    if (error) { toast('Couldn’t delete it. Try again.'); return drawAgentSlips(a); }
+    if (p) db.storage.from('payslips').remove([p.file_path]);
+    toast('Payslip deleted'); drawAgentSlips(a);
+  }
+
   async function addAgent(){
     const name = await window.ask({ title:'Add an agent', input:{ label:'Their full name', placeholder:'First and last name', minLength:2, error:'Type their full name.' }, ok:'Add agent' });
     if (!name || name.trim().length < 2) return;
@@ -312,6 +444,24 @@
     e.preventDefault();
     const f = e.target;
     if (f.id === 'profForm') return saveProfile(f);
+    if (f.id === 'slipAdd') return uploadSlip(f);
+    if (f.dataset.aInvite) {
+      const a = agents.find(x => x.id === Number(f.dataset.aInvite)), email = f.querySelector('input').value.trim(), err = f.querySelector('.err');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { err.textContent = 'Type their full email, like name@example.com.'; return; }
+      const co = links.find(x => x.agent_id === a.id);
+      if (!co) { err.textContent = 'Pick the company they work for first (Works for, above).'; return; }
+      err.textContent = '';
+      const btn = f.querySelector('[data-via="' + inviteVia + '"]'); btn.setAttribute('aria-busy', 'true');
+      const r = await callAccess({ action:'invite', name:a.name, email, company_id: co.company_id, via: inviteVia });
+      btn.removeAttribute('aria-busy');
+      if (r.error) { err.textContent = r.error; return; }
+      // Remember which agent this login belongs to (number, role, photo and payslips follow it)
+      await db.from('members').update({ agent_id: a.id }).ilike('email', email);
+      const joined = r.linked_shifts ? ' ' + r.linked_shifts + ' earlier shift' + (r.linked_shifts === 1 ? '' : 's') + ' joined their history.' : '';
+      if (r.sent) { delete linkOut[a.id]; toast('Invite emailed to ' + email + '.' + joined); }
+      else if (r.link) { showLinkOut(a, r.link, 'Send this to ' + a.name.split(' ')[0] + '. It works once and expires in 24 hours.' + joined); toast('Invite link ready.' + joined); }
+      T.agentsChanged(); return drawAgents();
+    }
     if (f.id === 'pwChange') {
       const a = $('npw1').value, b = $('npw2').value, err = m => { $('npwErr').textContent = m; };
       if (a.length < 8) return err('Use at least 8 characters.');
@@ -333,10 +483,31 @@
       toast('From ' + day(d) + ': ' + r + ' EGP = $1'); T.fxChanged(); drawRates();
     }
   });
+  let inviteVia = 'email';
   sheet.addEventListener('click', async e => {
     const b = e.target.closest('button'); if (!b) return;
     const d = b.dataset;
+    if (b.type === 'submit' && d.via) { inviteVia = d.via; return; } // the form's submit handler sends it
     if ('unphoto' in d) return removePhoto();
+    if (d.aLink) {
+      const a = agents.find(x => x.id === Number(d.aLink)), m = loginOf(a);
+      b.setAttribute('aria-busy', 'true');
+      const r = await callAccess({ action:'link', user_id: m.user_id, via: d.via });
+      b.removeAttribute('aria-busy');
+      if (r.error) { toast(r.error); return; }
+      if (r.sent) { toast('Sign-in link emailed to ' + m.email); return; }
+      showLinkOut(a, r.link, 'A new sign-in link for ' + a.name.split(' ')[0] + ', for a forgotten password or a new phone. It works once and expires in an hour.');
+      return drawAgents();
+    }
+    if (d.copyLink) {
+      const out = linkOut[Number(d.copyLink)]; if (!out) return;
+      try { await navigator.clipboard.writeText(out.link); toast('Link copied'); } catch(err) { const i = b.closest('.linkout').querySelector('input'); i.select(); toast('Press and hold to copy the link'); }
+      return;
+    }
+    if (d.psOpen) { const p = agentSlips.find(x => x.id === Number(d.psOpen)); if (p) openSlip(p.file_path); return; }
+    if (d.psDel) { slipDel = Number(d.psDel); return drawAgentSlips(agents.find(x => x.id === agentView)); }
+    if ('psDelNo' in d) { slipDel = null; return drawAgentSlips(agents.find(x => x.id === agentView)); }
+    if (d.psDelYes) return deleteSlip(Number(d.psDelYes));
     if ('backup' in d) { $('backupBtn').click(); return; }
     if ('addAgent' in d) return addAgent();
     if (d.toggle) { const id = Number(d.toggle); agentOpen.has(id) ? agentOpen.delete(id) : agentOpen.add(id); return drawAgents(); }
@@ -402,4 +573,6 @@
     }
   });
   sheet.addEventListener('click', e => { if (e.target.closest('a[data-close]')) closeSheet(); });
+  // The app may have signed in before this file finished loading
+  if (T.role && T.user) onSignedIn();
 })();

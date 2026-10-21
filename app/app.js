@@ -397,42 +397,47 @@
     const due = rows.filter(r => !r.paid).reduce((a, r) => a + r.work_seconds / 3600 * Number(r.pay_rate || 0), 0);
     setMoney($('hDue'), due);
     $('hDueEgp').textContent = fx.rate ? '= ' + egp(due * fx.rate) : '';
-    const box = $('hList'); box.innerHTML = '';
+    const box = $('hList');
     if (!rows.length) { box.innerHTML = '<p class="empty">No shifts yet. Press Run when you start.</p>'; return; }
-    // One line per month; tap it to show that month's work days
+    // A header per month, then one row per shift: date, hours, pay, paid or not.
+    // Tapping a row opens the clocked times, the pay worked out, and that day's note.
     const months = new Map();
     rows.forEach(r => { const m = r.shift_date.slice(0, 7); if (!months.has(m)) months.set(m, []); months.get(m).push(r); });
+    const chev = '<svg class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+    let html = '';
     months.forEach((list, m) => {
       const secs = list.reduce((a, r) => a + r.work_seconds, 0);
       const amt = list.reduce((a, r) => a + r.work_seconds / 3600 * Number(r.pay_rate || 0), 0);
-      const unpaid = list.filter(r => !r.paid).length;
-      const wrap = document.createElement('div'); wrap.className = 'month' + (openMonths.has(m) ? ' open' : '');
-      const head = document.createElement('button'); head.type = 'button'; head.className = 'mrow';
-      head.setAttribute('aria-expanded', String(openMonths.has(m)));
-      head.innerHTML = '<span class="n"><b>' + esc(monthLabel(m)) + '</b><small>' + esc(plural(list.length, 'day') + ' · ' + hm(secs)) + '</small></span>' +
-        '<span class="v">' + usd(amt) + '<small>' + (unpaid ? '<span class="pill p-due">' + unpaid + ' unpaid</span>' : '<span class="pill p-ok">All paid</span>') + '</small></span>' +
-        '<svg class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
-      const days = document.createElement('div'); days.className = 'days';
+      html += '<div class="hmonth"><b>' + esc(monthLabel(m)) + '</b><span>' + esc(plural(list.length, 'shift') + ' · ' + hm(secs) + ' · ' + usd(amt)) + '</span></div><div class="srows">';
       list.forEach(r => {
-        const a = r.work_seconds / 3600 * Number(r.pay_rate || 0);
-        const d = document.createElement('div'); d.className = 'row';
-        const clocked = r.started_at && r.ended_at ? hhmm(new Date(r.started_at)) + '–' + hhmm(new Date(r.ended_at)) + ' · ' : '';
-        d.innerHTML = '<span class="n"><b>' + esc(dayDate(r.shift_date)) + '</b><small>' + esc((r.company_name || '') + ' · ' + clocked + hm(r.work_seconds)) + '</small></span>' +
-          '<span class="v">' + usd(a) + '<small>' + (r.paid ? '<span class="pill p-ok">Paid</span>' : '<span class="pill p-due">Unpaid</span>') + '</small></span>';
-        const note = briefs.get(bkey(r));
-        if (note) { const p = document.createElement('p'); p.className = 'brief'; p.textContent = note; d.querySelector('.n').appendChild(p); }
-        if (r.paid && r.paid_at) d.title = 'Paid ' + new Date(r.paid_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + (r.paid_fx ? ' at ' + Number(r.paid_fx).toFixed(2) + ' EGP per $1' : '');
-        days.appendChild(d);
+        const id = String(r.id != null ? r.id : bkey(r)), open = openRows.has(id), a = r.work_seconds / 3600 * Number(r.pay_rate || 0), note = briefs.get(bkey(r));
+        const paid = r.paid ? '<span class="pill p-ok">Paid</span>' : '<span class="pill p-due">Unpaid</span>';
+        const clocked = r.started_at && r.ended_at ? hhmm(new Date(r.started_at)) + ' – ' + hhmm(new Date(r.ended_at)) : 'Added by hand';
+        html += '<div class="srow' + (open ? ' open' : '') + '"><button type="button" class="shead" aria-expanded="' + open + '" data-row="' + esc(id) + '">' +
+          '<span class="sd"><b>' + esc(dayDate(r.shift_date)) + '</b>' + (note ? '<span class="has-note">Note</span>' : '') + '</span>' +
+          '<span class="sh num">' + hm(r.work_seconds) + '</span><span class="sp num">' + usd(a) + '</span>' + paid + chev + '</button>' +
+          '<div class="sbody"' + (open ? '' : ' hidden') + '>' +
+            '<div class="kv"><span>Clocked</span><span class="num">' + esc(clocked) + '</span></div>' +
+            (r.break_seconds >= 60 ? '<div class="kv"><span>Break</span><span class="num">' + hm(r.break_seconds) + '</span></div>' : '') +
+            '<div class="kv"><span>Pay</span><span class="num">' + hm(r.work_seconds) + ' × ' + usd(Number(r.pay_rate || 0)) + ' = ' + usd(a) + '</span></div>' +
+            (r.company_name ? '<div class="kv"><span>Company</span><span>' + esc(r.company_name) + '</span></div>' : '') +
+            (r.paid && r.paid_at ? '<div class="kv"><span>Paid on</span><span>' + esc(new Date(r.paid_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + (r.paid_fx ? ' at ' + Number(r.paid_fx).toFixed(2) + ' EGP per $1' : '')) + '</span></div>' : '') +
+            '<div class="snote"><small>Your note for this day</small><p class="brief-text">' + (note ? esc(note) : '<span class="muted">No note for this day.</span>') + '</p></div>' +
+          '</div></div>';
       });
-      head.addEventListener('click', () => {
-        const open = !wrap.classList.contains('open');
-        wrap.classList.toggle('open', open); head.setAttribute('aria-expanded', String(open));
-        open ? openMonths.add(m) : openMonths.delete(m);
-      });
-      wrap.appendChild(head); wrap.appendChild(days); box.appendChild(wrap);
+      html += '</div>';
     });
+    box.innerHTML = html;
   }
-  const openMonths = new Set(); // months you've opened stay open when the list refreshes
+  const openRows = new Set(); // shifts you've opened stay open when the list refreshes
+  $('hList').addEventListener('click', e => {
+    const b = e.target.closest('[data-row]'); if (!b) return;
+    const id = b.dataset.row, open = !openRows.has(id);
+    open ? openRows.add(id) : openRows.delete(id);
+    b.setAttribute('aria-expanded', String(open));
+    b.parentElement.classList.toggle('open', open);
+    b.nextElementSibling.hidden = !open;
+  });
 
   // ======================================================================
   // Owner: menu, Live now, Invite and access, and the /cash pages
@@ -905,5 +910,5 @@
     }
     route();
   })();
-  db.auth.onAuthStateChange(event => { if (event === 'SIGNED_OUT') { stopTimers(); show('vLogin'); } });
+  db.auth.onAuthStateChange(event => { if (event === 'SIGNED_OUT') { stopTimers(); show('vLogin'); document.dispatchEvent(new Event('talents-signed-out')); } });
 })();
