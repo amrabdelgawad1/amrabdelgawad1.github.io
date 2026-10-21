@@ -144,6 +144,8 @@
   });
   // Money in pounds is converted at the rate saved with the entry
   const usdOf = e => e.currency === 'EGP' ? (e.fxRate ? e.amount / e.fxRate : 0) : e.amount;
+  // Pounds at each payment's own rate: pound entries as typed, dollar entries at the rate saved with them (older ones: the rate for their date)
+  const egpOf = e => e.currency === 'EGP' ? e.amount : e.amount * (e.fxRate || rateOn(e.date));
   const egp = n => (Math.round(n * 100) < 0 ? '−' : '') + 'EGP ' + Math.abs(Math.round(n * 100) / 100).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
   const inCur = (n, cur) => cur === 'EGP' ? egp(n) : usd(n);
   // Money in Cash shows in pounds first (dollars × the fixed rate); only the team's pay stays in dollars
@@ -216,6 +218,8 @@
   // Your own work = hours × the company's rate, all yours, plus income entries with the category "Own work".
   // Team profit = income entries with the category "Team profit", added by hand.
   const shiftValue = s => s.work / 3600 * s.billRate;
+  // Your hours in pounds: at the rate the company paid you at, else the rate for the shift's date
+  const shiftEgp = s => shiftValue(s) * (s.clientFx || rateOn(s.date));
   function totals(inP){
     const sh = shifts.filter(s => inP(s.date)), counted = sh.filter(s => s.billRate != null);
     const own = counted.filter(s => s.owner), crew = counted.filter(s => !s.owner);
@@ -229,14 +233,24 @@
       own, crew, skipped: sh.filter(s => s.billRate == null), inc, teamInc, ownInc, exp, saved,
       ownAmt, team: teamAmt, income, expense, net: ownAmt + teamAmt + income - expense, savings: sum(saved, usdOf),
       ownSecs: sum(own, s => s.work), teamSecs: sum(crew, s => s.work), ownDue,
-      toReceive: ownDue + sum(inc.concat(teamInc, ownInc).filter(e => !e.settled), usdOf), toPay: sum(exp.filter(e => !e.settled), usdOf)
+      toReceive: ownDue + sum(inc.concat(teamInc, ownInc).filter(e => !e.settled), usdOf), toPay: sum(exp.filter(e => !e.settled), usdOf),
+      E: totalsEgp()
     };
+    // The same totals in pounds, each payment and shift at its own rate (what the page shows first)
+    function totalsEgp(){
+      const o = { own: sum(own, shiftEgp) + sum(ownInc, egpOf), team: sum(teamInc, egpOf), income: sum(inc, egpOf), expense: sum(exp, egpOf), savings: sum(saved, egpOf) };
+      o.net = o.own + o.team + o.income - o.expense;
+      o.toReceive = sum(own.filter(s => !s.paid), shiftEgp) + sum(inc.concat(teamInc, ownInc).filter(e => !e.settled), egpOf);
+      o.toPay = sum(exp.filter(e => !e.settled), egpOf);
+      return o;
+    }
   }
   function byCompany(list){
     const m = new Map();
     list.forEach(s => {
-      if (!m.has(s.companyId)) m.set(s.companyId, { name:companyName(s.companyId), secs:0, amt:0, due:0, rates:new Set() });
-      const g = m.get(s.companyId); g.secs += s.work; g.amt += shiftValue(s); g.rates.add(s.billRate); if (!s.paid) g.due += shiftValue(s);
+      if (!m.has(s.companyId)) m.set(s.companyId, { name:companyName(s.companyId), secs:0, amt:0, due:0, egp:0, dueEgp:0, rates:new Set() });
+      const g = m.get(s.companyId); g.secs += s.work; g.amt += shiftValue(s); g.egp += shiftEgp(s); g.rates.add(s.billRate);
+      if (!s.paid) { g.due += shiftValue(s); g.dueEgp += shiftEgp(s); }
     });
     return [...m.values()].sort((a, b) => b.amt - a.amt);
   }
@@ -337,26 +351,26 @@
 
   function renderOverview(){
     const t = totals(inPeriod);
-    setUsd('tOwn', t.ownAmt);
+    setUsd('tOwn', t.ownAmt, t.E.own);
     $('tOwnSub').textContent = hm(t.ownSecs) + ' worked' + (t.ownInc.length ? ' · ' + plural(t.ownInc.length, 'entry') : '');
-    setUsd('tTeam', t.team);
+    setUsd('tTeam', t.team, t.E.team);
     $('tTeamSub').textContent = t.teamInc.length ? plural(t.teamInc.length, 'entry') : 'You add this yourself';
-    setUsd('tIncome', t.income);
+    setUsd('tIncome', t.income, t.E.income);
     $('tIncomeSub').textContent = plural(t.inc.length, 'entry');
-    setUsd('tExpense', t.expense);
+    setUsd('tExpense', t.expense, t.E.expense);
     $('tExpenseSub').textContent = plural(t.exp.length, 'expense');
-    setUsd('tNet', t.net);
+    setUsd('tNet', t.net, t.E.net);
     $('tNetBox').classList.toggle('neg', t.net < 0);
     const gross = t.ownAmt + t.team + t.income;
     $('tNetSub').textContent = gross > 0 ? Math.round(t.net / gross * 100) + '% of what came in' : '';
     // Savings: what you put aside in this period, and in total so far
-    const allSaved = month === 'all' ? t.savings : totals(() => true).savings;
-    $('tSaved').textContent = t.savings ? cash(t.savings) + ' saved' + (allSaved > t.savings + .004 ? ' · ' + cash(allSaved) + ' in total' : '') : allSaved ? cash(allSaved) + ' saved in total' : '';
+    const allSaved = month === 'all' ? t.E.savings : totals(() => true).E.savings, savedE = t.E.savings;
+    $('tSaved').textContent = savedE ? egp(savedE) + ' saved' + (allSaved > savedE + .004 ? ' · ' + egp(allSaved) + ' in total' : '') : allSaved ? egp(allSaved) + ' saved in total' : '';
     paintEgp();
 
     const p = [];
-    if (t.toReceive > 0) p.push('Still to receive <b>' + cash(t.toReceive) + '</b>');
-    if (t.toPay > 0) p.push('Expenses still unpaid <b>' + cash(t.toPay) + '</b>');
+    if (t.toReceive > 0) p.push('Still to receive <b>' + egp(t.E.toReceive) + '</b>');
+    if (t.toPay > 0) p.push('Expenses still unpaid <b>' + egp(t.E.toPay) + '</b>');
     $('pending').innerHTML = p.map(x => '<span>' + x + '</span>').join('');
     $('pending').hidden = !p.length;
 
@@ -366,17 +380,18 @@
       warn.hidden = false;
     } else warn.hidden = true;
 
-    // Where it came from: your own work, the team profit you added, then each income source
-    const inRows = byCompany(t.own).map(g => ({ label:g.name, tag:'You', me:true, sub:hm(g.secs) + (g.due ? ' · ' + cash(g.due) + ' not paid yet' : ' · paid'), amt:g.amt, go:'mytime' }));
+    // Where it came from: your own work, the team profit you added, then each income source.
+    // The charts and lists below count in pounds (amt), each payment at its own rate.
+    const inRows = byCompany(t.own).map(g => ({ label:g.name, tag:'You', me:true, sub:hm(g.secs) + (g.due ? ' · ' + egp(g.dueEgp) + ' not paid yet' : ' · paid'), amt:g.egp, go:'mytime' }));
     const sources = (list, tag) => {
       const src = new Map();
       list.forEach(e => {
         const k = key(e.party || e.title);
         if (!src.has(k)) src.set(k, { label:e.party || e.title, titles:new Set(), amt:0, open:0 });
-        const g = src.get(k); g.amt += usdOf(e); g.titles.add(e.title); if (!e.settled) g.open += usdOf(e);
+        const g = src.get(k); g.amt += egpOf(e); g.titles.add(e.title); if (!e.settled) g.open += egpOf(e);
       });
       [...src.values()].sort((a, b) => b.amt - a.amt).forEach(g => inRows.push({
-        label:g.label, tag, sub:[...g.titles].slice(0, 3).join(', ') + (g.open ? ' · ' + cash(g.open) + ' not received' : ''), amt:g.amt, go:'income'
+        label:g.label, tag, sub:[...g.titles].slice(0, 3).join(', ') + (g.open ? ' · ' + egp(g.open) + ' not received' : ''), amt:g.amt, go:'income'
       }));
     };
     sources(t.ownInc, 'You'); sources(t.teamInc, 'Team'); sources(t.inc);
@@ -388,14 +403,14 @@
     t.exp.forEach(e => {
       const k = key(e.category);
       if (!cat.has(k)) cat.set(k, { label:e.category, titles:new Set(), amt:0 });
-      const g = cat.get(k); g.amt += usdOf(e); g.titles.add(e.title);
+      const g = cat.get(k); g.amt += egpOf(e); g.titles.add(e.title);
     });
     const outRows = [...cat.values()].sort((a, b) => b.amt - a.amt).map(g => ({ label:g.label, sub:[...g.titles].slice(0, 3).join(', '), amt:g.amt, go:'expense' }));
     shade(outRows, REDS);
     drawDonut($('wentDonut'), outRows, 'spent');
     drawBars($('wentTo'), outRows, 'out', 'No expenses for this period.');
-    flowData = [inRows, outRows, t.savings];
-    drawFlow($('moneyFlow'), inRows, outRows, t.savings);
+    flowData = [inRows, outRows, t.E.savings];
+    drawFlow($('moneyFlow'), inRows, outRows, t.E.savings);
     $('kSave').hidden = !t.savings;
 
     renderMonths();
@@ -412,7 +427,7 @@
     if (!list.length) return;
     const months = [];
     for (let m = list[list.length - 1]; m <= list[0]; m = stepMonth(m, 1)) months.push(m);
-    const shown = months.slice(-12).map(m => { const t = totals(d => d.slice(0, 7) === m); return { m, came:t.ownAmt + t.team + t.income, spent:t.expense, net:t.net, saved:t.savings }; });
+    const shown = months.slice(-12).map(m => { const t = totals(d => d.slice(0, 7) === m).E; return { m, came:t.own + t.team + t.income, spent:t.expense, net:t.net, saved:t.savings }; });
     const W = el.clientWidth || 640, H = 190, top = 14, bottom = 26, left = 54, ph = H - top - bottom;
     const hi = Math.max(1, ...shown.map(s => Math.max(s.came, s.spent))), lo = Math.min(0, ...shown.map(s => s.net));
     const y = v => top + (hi - v) / (hi - lo) * ph;
@@ -421,7 +436,8 @@
     const svg = document.createElementNS(ns, 'svg');
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('height', H);
     const mk = (tag, attrs, parent = svg) => { const e = document.createElementNS(ns, tag); for (const a in attrs) e.setAttribute(a, attrs[a]); parent.appendChild(e); return e; };
-    const short = n => { const v = n * fx.rate; return Math.abs(v) >= 1000 ? Math.round(v / 1000) + 'k' : String(Math.round(v)); };
+    const short = v => {
+      return Math.abs(v) >= 1000 ? Math.round(v / 1000) + 'k' : String(Math.round(v)); };
     [hi, hi / 2, 0].concat(lo < 0 ? [lo] : []).forEach(v => {
       mk('line', { x1:left, x2:W, y1:y(v), y2:y(v), style:'stroke:var(--border2)', 'stroke-dasharray':v ? '3 4' : '' });
       mk('text', { x:left - 8, y:y(v) + 4, 'text-anchor':'end', class:'ty' }).textContent = short(v);
@@ -429,7 +445,7 @@
     const RED = '#ff8a8a', GREEN = getComputedStyle(el).getPropertyValue('--green').trim() || '#047857';
     const show = s => {
       cap.innerHTML = '';
-      const add = (color, text, amt) => { const sp = document.createElement('span'); const i = document.createElement('i'); i.style.background = color; const b = document.createElement('b'); b.textContent = cash(amt); sp.append(i, text + ' ', b); cap.appendChild(sp); };
+      const add = (color, text, amt) => { const sp = document.createElement('span'); const i = document.createElement('i'); i.style.background = color; const b = document.createElement('b'); b.textContent = egp(amt); sp.append(i, text + ' ', b); cap.appendChild(sp); };
       const head = document.createElement('span'); head.textContent = monthLabel(s.m); head.style.fontWeight = '600'; cap.appendChild(head);
       add(GREEN, 'Came in', s.came); add(RED, 'Spent', s.spent); add('#C99014', 'Net profit', s.net);
       if (s.saved) add('#C99014', 'Saved', s.saved);
@@ -493,7 +509,7 @@
     });
     const big = mk('text', { x:c, y:c - 1, 'text-anchor':'middle', class:'d-total' }), small = mk('text', { x:c, y:c + 16, 'text-anchor':'middle', class:'d-sub' });
     const pick = (p, top, sub) => { unpick(); svg.classList.add('picking'); p.classList.add('hot'); big.textContent = top; small.textContent = sub; };
-    const unpick = () => { svg.classList.remove('picking'); svg.querySelectorAll('.hot').forEach(x => x.classList.remove('hot')); big.textContent = cash(total).replace(/\.\d\d$/, ''); small.textContent = word; };
+    const unpick = () => { svg.classList.remove('picking'); svg.querySelectorAll('.hot').forEach(x => x.classList.remove('hot')); big.textContent = egp(total).replace(/\.\d\d$/, ''); small.textContent = word; };
     unpick();
     el.unpick = unpick;
     el.appendChild(svg);
@@ -559,7 +575,7 @@
       const out = [fit(probe, a)]; if (words.length) out.push(fit(probe, words.join(' ')));
       probe.remove(); return out;
     };
-    const subOf = n => (n.tag ? WHO[n.tag] + ' · ' : '') + cash(n.amt);
+    const subOf = n => (n.tag ? WHO[n.tag] + ' · ' : '') + egp(n.amt);
     [left, right].forEach(list => list.forEach(n => { n.lines = narrow ? [] : lines(n.label); n.rows = narrow ? 0 : n.lines.length + 1; }));
 
     // Each node is as tall as its amount, but never too thin to see or point at,
@@ -585,7 +601,7 @@
         line('t-name', n.label + (n.tag ? ' · ' + WHO[n.tag] : ''));
         // No income in the period means no "% of what came in" to show
         if (share.big || share.of) { const big = line('t-pct', share.big); const of = document.createElement('span'); of.textContent = (share.big ? ' ' : '') + share.of; big.appendChild(of); }
-        line('t-amt', cash(n.amt) + (share.extra ? ' · ' + share.extra : ''));
+        line('t-amt', egp(n.amt) + (share.extra ? ' · ' + share.extra : ''));
         tip.style.opacity = 1;
       };
       const move = e => { const r = el.getBoundingClientRect(); tip.style.left = Math.min(Math.max(e.clientX - r.left, 110), W - 110) + 'px'; tip.style.top = (e.clientY - r.top) + 'px'; };
@@ -626,7 +642,7 @@
         const it = document.createElement('div'); it.className = 'fi';
         const dot = document.createElement('i'); dot.style.background = colorOf(n);
         const txt = document.createElement('span'); txt.textContent = n.label + (n.tag ? ' · ' + WHO[n.tag] : '');
-        const amt = document.createElement('small'); amt.textContent = cash(n.amt) + (totalIn > 0 && n.kind !== 'short' ? ' · ' + share(n.amt, totalIn) : '');
+        const amt = document.createElement('small'); amt.textContent = egp(n.amt) + (totalIn > 0 && n.kind !== 'short' ? ' · ' + share(n.amt, totalIn) : '');
         txt.appendChild(amt); it.append(dot, txt); col.appendChild(it);
         n.hover(it);
       });
@@ -636,9 +652,9 @@
   }
 
   // Totals carry their dollar value in data-usd; Cash shows them in pounds with the dollars on the line under
-  // Money in a total card: cents are set smaller in their own span
-  const setUsd = (id, n) => {
-    const el = $(id), t = cash(n), m = t.match(/^(.*[0-9])([.][0-9][0-9])$/);
+  // Money in a total card: cents are set smaller in their own span. e = the pounds at each payment's own rate
+  const setUsd = (id, n, e) => {
+    const el = $(id), t = e != null ? egp(e) : cash(n), m = t.match(/^(.*[0-9])([.][0-9][0-9])$/);
     el.textContent = m ? m[1] : t; el.dataset.usd = n; el.dataset.first = 'egp';
     if (m) { const c = document.createElement('span'); c.className = 'c'; c.textContent = m[2]; el.appendChild(c); }
   };
@@ -665,7 +681,7 @@
       d.querySelector('.l').textContent = g.label;
       if (g.tag) { const t = document.createElement('span'); t.className = 'tag' + (g.me ? ' me' : ''); t.textContent = g.tag; d.querySelector('.l').after(t); }
       d.querySelector('small').textContent = g.sub;
-      d.querySelector('.cnum').textContent = cash(g.amt);
+      d.querySelector('.cnum').textContent = egp(g.amt);
       // Rows under a donut carry its slice colour and share
       if (g.color) d.querySelector('.bbar i').style.background = g.color;
       if (g.share != null) { const p = document.createElement('span'); p.className = 'cpct'; p.textContent = (g.share < 1 ? g.share.toFixed(1) : Math.round(g.share)) + '%'; d.querySelector('.cnum').appendChild(p); }
@@ -685,8 +701,8 @@
       const b = document.createElement('button'); b.className = 'mrow' + (m === month ? ' on' : '');
       b.innerHTML = '<span></span><span class="in"></span><span class="in"></span><span class="in"></span><span class="out"></span><span class="net"></span>';
       const c = b.children;
-      c[0].textContent = monthLabel(m); c[1].textContent = cash(t.ownAmt); c[2].textContent = cash(t.team); c[3].textContent = cash(t.income);
-      c[4].textContent = t.expense ? '−' + cash(t.expense) : cash(0); c[5].textContent = cash(t.net);
+      c[0].textContent = monthLabel(m); c[1].textContent = egp(t.E.own); c[2].textContent = egp(t.E.team); c[3].textContent = egp(t.E.income);
+      c[4].textContent = t.expense ? '−' + egp(t.E.expense) : egp(0); c[5].textContent = egp(t.E.net);
       c[5].classList.toggle('neg', t.net < 0);
       b.addEventListener('click', () => { month = m; render(); window.scrollTo({ top:0, behavior:'smooth' }); });
       box.appendChild(b);
@@ -797,9 +813,9 @@
     $('myLabel').textContent = periodName();
     $('myHours').textContent = hm(sum(rows, s => s.work));
     $('myShifts').textContent = plural(rows.length, 'shift');
-    setUsd('myEarned', sum(counted, shiftValue));
-    setUsd('myPaid', sum(paid, shiftValue)); $('myPaidH').textContent = hm(sum(paid, s => s.work));
-    setUsd('myDue', sum(due, shiftValue)); paintEgp(); $('myDueH').textContent = hm(sum(due, s => s.work));
+    setUsd('myEarned', sum(counted, shiftValue), sum(counted, shiftEgp));
+    setUsd('myPaid', sum(paid, shiftValue), sum(paid, shiftEgp)); $('myPaidH').textContent = hm(sum(paid, s => s.work));
+    setUsd('myDue', sum(due, shiftValue), sum(due, shiftEgp)); paintEgp(); $('myDueH').textContent = hm(sum(due, s => s.work));
     $('myPayAll').hidden = !rows.some(s => !s.paid);
 
     const body = $('myRows'); body.innerHTML = '';
@@ -819,7 +835,7 @@
       tr.querySelector('.c-date').textContent = dayDate(s.date);
       tr.querySelector('.c-hrs').textContent = hm(s.work);
       const amt = tr.querySelector('.c-amt');
-      if (s.billRate != null) { amt.textContent = cash(shiftValue(s)); amt.title = hm(s.work) + ' × ' + usd(s.billRate) + '/hour = ' + usd(shiftValue(s)); }
+      if (s.billRate != null) { amt.textContent = egp(shiftEgp(s)); amt.title = hm(s.work) + ' × ' + usd(s.billRate) + '/hour = ' + usd(shiftValue(s)); }
       else { amt.textContent = 'No rate'; amt.classList.remove('in'); amt.classList.add('muted'); }
       const st = tr.querySelector('.status');
       st.classList.add(s.paid ? 'done' : 'open');
@@ -842,8 +858,8 @@
   $('myPayAll').addEventListener('click', async () => {
     const list = shifts.filter(s => s.owner && inPeriod(s.date) && !s.paid);
     if (!list.length) return;
-    const amt = list.filter(s => s.billRate != null).reduce((a, s) => a + shiftValue(s), 0);
-    if (!await ask({ title:'Mark ' + plural(list.length, 'shift') + ' (' + cash(amt) + ') as paid?', ok:'Mark as paid' })) return;
+    const amt = list.filter(s => s.billRate != null).reduce((a, s) => a + shiftEgp(s), 0);
+    if (!await ask({ title:'Mark ' + plural(list.length, 'shift') + ' (' + egp(amt) + ') as paid?', ok:'Mark as paid' })) return;
     if (await setShiftsPaid(list, true)) toast('Marked ' + plural(list.length, 'shift') + ' as paid', false);
   });
 
@@ -900,7 +916,7 @@
     if (!open.length) return err('Nothing is unpaid at ' + companyName(co) + '.');
     const pick = []; let left = usdAmt;
     for (const sh of open) { const v = cents(shiftValue(sh)); if (v > left + 0.005) break; pick.push(sh); left -= v; }
-    if (!pick.length) return err('That’s less than your oldest unpaid shift (' + cash(shiftValue(open[0])) + ' on ' + dayDate(open[0].date) + '), so nothing was marked.');
+    if (!pick.length) return err('That’s less than your oldest unpaid shift (' + egp(shiftEgp(open[0])) + ' on ' + dayDate(open[0].date) + '), so nothing was marked.');
     const covered = pick.reduce((a, sh) => a + shiftValue(sh), 0);
     left = cents(left);
     const range = pick.length === 1 ? dayDate(pick[0].date) : dayDate(pick[0].date) + ' to ' + dayDate(pick[pick.length - 1].date);
@@ -927,9 +943,9 @@
     $('logTable').classList.toggle('is-expense', kind === 'expense');
     $('listTitle').textContent = kind === 'income' ? 'Income' : 'Expenses';
     // Savings sit in the Expenses list but aren't spending, so the total leaves them out and names them apart
-    const spent = rows.filter(e => !isSavings(e)), saved = rows.filter(isSavings).reduce((a, e) => a + usdOf(e), 0);
-    const total = spent.reduce((a, e) => a + usdOf(e), 0), open = spent.filter(e => !e.settled).reduce((a, e) => a + usdOf(e), 0);
-    $('listSum').textContent = periodName() + ' · ' + cash(total) + (open ? ' · ' + cash(open) + ' ' + OPEN[kind].toLowerCase() : '') + (saved ? ' · ' + cash(saved) + ' put into savings' : '');
+    const spent = rows.filter(e => !isSavings(e)), saved = rows.filter(isSavings).reduce((a, e) => a + egpOf(e), 0);
+    const total = spent.reduce((a, e) => a + egpOf(e), 0), open = spent.filter(e => !e.settled).reduce((a, e) => a + egpOf(e), 0);
+    $('listSum').textContent = periodName() + ' · ' + egp(total) + (open ? ' · ' + egp(open) + ' ' + OPEN[kind].toLowerCase() : '') + (saved ? ' · ' + egp(saved) + ' put into savings' : '');
     renderRecurring(kind);
 
     const body = $('rows'); body.innerHTML = '';
@@ -1391,17 +1407,17 @@
     const teamInc = byDate(t.teamInc), ownInc = byDate(t.ownInc), inc = byDate(t.inc), exp = byDate(t.exp);
 
     // "This month you made $X for your work at ..., $Y from Youssef, ... so your total profit is ..."
-    const bits = mine.map(g => '<b>' + cash(g.amt) + '</b> for your work at ' + escHtml(g.name));
-    ownInc.forEach(e => bits.push('<b>' + cash(usdOf(e)) + '</b> for ' + escHtml(e.title)));
-    if (teamInc.length) bits.push('<b>' + cash(t.team) + '</b> from your team');
+    const bits = mine.map(g => '<b>' + egp(g.egp) + '</b> for your work at ' + escHtml(g.name));
+    ownInc.forEach(e => bits.push('<b>' + egp(egpOf(e)) + '</b> for ' + escHtml(e.title)));
+    if (teamInc.length) bits.push('<b>' + egp(t.E.team) + '</b> from your team');
     const src = new Map();
-    inc.forEach(e => { const k = key(e.party || e.title); if (!src.has(k)) src.set(k, { e, amt:0 }); src.get(k).amt += usdOf(e); });
-    [...src.values()].sort((a, b) => b.amt - a.amt).forEach(({ e, amt }) => bits.push('<b>' + cash(amt) + '</b> ' + (e.party ? 'from ' + escHtml(e.party) : 'for ' + escHtml(e.title))));
+    inc.forEach(e => { const k = key(e.party || e.title); if (!src.has(k)) src.set(k, { e, amt:0 }); src.get(k).amt += egpOf(e); });
+    [...src.values()].sort((a, b) => b.amt - a.amt).forEach(({ e, amt }) => bits.push('<b>' + egp(amt) + '</b> ' + (e.party ? 'from ' + escHtml(e.party) : 'for ' + escHtml(e.title))));
     let summary = bits.length ? 'This ' + w + ' you made ' + listJoin(bits) + '. ' : 'Nothing came in this ' + w + '. ';
-    summary += exp.length ? 'Your expenses were <b>' + cash(t.expense) + '</b>, so your total profit for ' + label + ' is <b>' + cash(t.net) + '</b>.'
-      : 'You had no expenses, so your total profit for ' + label + ' is <b>' + cash(t.net) + '</b>.';
-    if (t.toReceive > 0) summary += ' <b>' + cash(t.toReceive) + '</b> of this hasn’t reached you yet.';
-    if (t.savings > 0) summary += ' You put <b>' + cash(t.savings) + '</b> into savings.';
+    summary += exp.length ? 'Your expenses were <b>' + egp(t.E.expense) + '</b>, so your total profit for ' + label + ' is <b>' + egp(t.E.net) + '</b>.'
+      : 'You had no expenses, so your total profit for ' + label + ' is <b>' + egp(t.E.net) + '</b>.';
+    if (t.toReceive > 0) summary += ' <b>' + egp(t.E.toReceive) + '</b> of this hasn’t reached you yet.';
+    if (t.savings > 0) summary += ' You put <b>' + egp(t.E.savings) + '</b> into savings.';
 
     const section = (title, total, head, rows, empty) =>
       '<h3>' + title + '<span>' + total + '</span></h3>' +
@@ -1411,7 +1427,7 @@
     const mineRows = mine.map(g => {
       const rates = [...g.rates];
       return '<tr><td><b>' + escHtml(g.name) + '</b></td><td class="r mono">' + hm(g.secs) + '</td><td class="r mono">' + (rates.length === 1 ? usd(rates[0]) : usd(Math.min(...rates)) + '–' + usd(Math.max(...rates))) + '</td>' +
-        '<td>' + (g.due <= 0 ? '<span class="ok">Paid</span>' : g.due < g.amt ? '<span class="due">' + cash(g.due) + ' not paid</span>' : '<span class="due">Not paid</span>') + '</td><td class="r mono">' + cash(g.amt) + '</td></tr>';
+        '<td>' + (g.due <= 0 ? '<span class="ok">Paid</span>' : g.due < g.amt ? '<span class="due">' + egp(g.dueEgp) + ' not paid</span>' : '<span class="due">Not paid</span>') + '</td><td class="r mono">' + egp(g.egp) + '</td></tr>';
     }).join('') + ownInc.map(e => '<tr><td><b>' + escHtml(e.title) + '</b>' + (e.party ? '<small>' + escHtml(e.party) + '</small>' : '') + '</td><td class="r mono"></td><td class="r mono"></td>' +
       '<td>' + status(e.settled, 'Received', 'Not received') + '</td><td class="r mono">' + money(e) + '</td></tr>').join('');
     const teamRows = teamInc.map(e => '<tr><td>' + shortDay(e.date) + '</td><td><b>' + escHtml(e.title) + '</b>' + (e.party ? '<small>' + escHtml(e.party) + '</small>' : '') + '</td>' +
@@ -1430,24 +1446,24 @@
       '<div class="doc"><h1>' + st.title + '</h1><p>No. <b>' + number + '</b></p><p>Issued <b>' + longDate(new Date()) + '</b></p></div></div>' +
       '<div class="meta">' +
         '<div class="box"><p>Period</p><strong>' + label + '</strong><span>' + hm(t.ownSecs) + ' yours · ' + hm(t.teamSecs) + ' team</span></div>' +
-        '<div class="box"><p>Came in</p><strong>' + cash(t.ownAmt + t.team + t.income) + '</strong><span>Own ' + cash(t.ownAmt) + ' · Team ' + cash(t.team) + ' · Other ' + cash(t.income) + '</span></div>' +
-        '<div class="box hi' + (t.net < 0 ? ' neg' : '') + '"><p>Total profit</p><strong>' + cash(t.net) + '</strong><span>after ' + cash(t.expense) + ' in expenses</span></div>' +
+        '<div class="box"><p>Came in</p><strong>' + egp(t.E.own + t.E.team + t.E.income) + '</strong><span>Own ' + egp(t.E.own) + ' · Team ' + egp(t.E.team) + ' · Other ' + egp(t.E.income) + '</span></div>' +
+        '<div class="box hi' + (t.net < 0 ? ' neg' : '') + '"><p>Total profit</p><strong>' + egp(t.E.net) + '</strong><span>after ' + egp(t.E.expense) + ' in expenses</span></div>' +
       '</div>' +
       '<p class="summary">' + summary + '</p>' +
-      section('Your own work', cash(t.ownAmt), '<th>Company</th><th class="r">Hours</th><th class="r">Rate</th><th>Status</th><th class="r">Amount</th>', mineRows, 'You didn’t log any hours or own work this ' + w + '.') +
-      section('Profit from your team', cash(t.team), '<th>Date</th><th>Description</th><th>Status</th><th class="r">Amount</th>', teamRows, 'No team profit added this ' + w + '.') +
-      section('Other income', cash(t.income), '<th>Date</th><th>Description</th><th class="r">Hours or period</th><th>Status</th><th class="r">Amount</th>', incRows, 'No other income this ' + w + '.') +
-      section('Expenses', '−' + cash(t.expense), '<th>Date</th><th>Description</th><th>Category</th><th>Status</th><th class="r">Amount</th>', expRows, 'No expenses this ' + w + '.') +
-      '<div class="bottom"><div class="note"><b>How this is worked out.</b> Your own work is your hours × each company’s rate, with nothing taken out, plus any own work you added yourself. Team profit is the amount you added yourself. Other income and expenses are what you logged for ' + label + '. Amounts are in EGP at ' + fx.rate + ' per $1.' +
+      section('Your own work', egp(t.E.own), '<th>Company</th><th class="r">Hours</th><th class="r">Rate</th><th>Status</th><th class="r">Amount</th>', mineRows, 'You didn’t log any hours or own work this ' + w + '.') +
+      section('Profit from your team', egp(t.E.team), '<th>Date</th><th>Description</th><th>Status</th><th class="r">Amount</th>', teamRows, 'No team profit added this ' + w + '.') +
+      section('Other income', egp(t.E.income), '<th>Date</th><th>Description</th><th class="r">Hours or period</th><th>Status</th><th class="r">Amount</th>', incRows, 'No other income this ' + w + '.') +
+      section('Expenses', '−' + egp(t.E.expense), '<th>Date</th><th>Description</th><th>Category</th><th>Status</th><th class="r">Amount</th>', expRows, 'No expenses this ' + w + '.') +
+      '<div class="bottom"><div class="note"><b>How this is worked out.</b> Your own work is your hours × each company’s rate, with nothing taken out, plus any own work you added yourself. Team profit is the amount you added yourself. Other income and expenses are what you logged for ' + label + '. Amounts are in EGP, each payment at the dollar rate saved with it, and your hours at the rate for their day.' +
         (note ? '<span class="custom"><b>Note:</b> ' + escHtml(note) + '</span>' : '') + '</div>' +
-        '<div class="totals"><div><span>Your own work</span><span class="mono">' + cash(t.ownAmt) + '</span></div>' +
-        '<div><span>From your team</span><span class="mono">' + cash(t.team) + '</span></div>' +
-        '<div><span>Other income</span><span class="mono">' + cash(t.income) + '</span></div>' +
-        '<div><span>Expenses</span><span class="mono">−' + cash(t.expense) + '</span></div>' +
-        (t.toReceive > 0 ? '<div><span>Not received yet</span><span class="mono">' + cash(t.toReceive) + '</span></div>' : '') +
-        '<div class="grand"><span>Total profit</span><span class="mono">' + cash(t.net) + '</span></div>' +
-        (t.savings > 0 ? '<div><span>Put into savings</span><span class="mono">' + cash(t.savings) + '</span></div>' : '') +
-        '<div class="in-egp"><span>' + cash(t.net) + ' = ' + usd(t.net) + '</span><span>at ' + fx.rate.toFixed(2) + ' EGP per $1</span></div>' +
+        '<div class="totals"><div><span>Your own work</span><span class="mono">' + egp(t.E.own) + '</span></div>' +
+        '<div><span>From your team</span><span class="mono">' + egp(t.E.team) + '</span></div>' +
+        '<div><span>Other income</span><span class="mono">' + egp(t.E.income) + '</span></div>' +
+        '<div><span>Expenses</span><span class="mono">−' + egp(t.E.expense) + '</span></div>' +
+        (t.toReceive > 0 ? '<div><span>Not received yet</span><span class="mono">' + egp(t.E.toReceive) + '</span></div>' : '') +
+        '<div class="grand"><span>Total profit</span><span class="mono">' + egp(t.E.net) + '</span></div>' +
+        (t.savings > 0 ? '<div><span>Put into savings</span><span class="mono">' + egp(t.E.savings) + '</span></div>' : '') +
+        '<div class="in-egp"><span>' + egp(t.E.net) + ' = ' + usd(t.net) + '</span><span>each payment at its own dollar rate</span></div>' +
         '</div></div>' +
       '<div class="foot"><div><span>Amr Abdelgawad Talents · amrabdelgawad.site</span><span>' + number + '</span></div></div>';
   }
