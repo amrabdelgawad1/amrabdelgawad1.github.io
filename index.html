@@ -40,7 +40,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="app/icon-180.png">
 <link rel="stylesheet" href="style.css?v=19">
-<link rel="stylesheet" href="booking.css">
+<link rel="stylesheet" href="booking.css?v=2">
 <link rel="stylesheet" href="theme-switch.css?v=2">
 <link rel="stylesheet" href="theme.css?v=2">
 <script src="theme.js?v=2"></script>
@@ -588,14 +588,14 @@
                 </button>
                 <div class="tz-dropdown" data-tz-dropdown hidden>
                   <input type="text" class="tz-search" data-tz-search placeholder="Search timezone&hellip;" autocomplete="off" />
-                  <div class="tz-list" data-tz-list role="listbox"></div>
+                  <div class="tz-list" data-tz-list role="listbox" data-lenis-prevent></div>
                 </div>
               </div>
             </div>
 
             <div class="booking-times">
               <p class="times-label" data-times-label>Select a date</p>
-              <div class="times-list" data-times-list>
+              <div class="times-list" data-times-list data-lenis-prevent>
                 <p class="times-empty">Choose an available date to see open times.</p>
               </div>
             </div>

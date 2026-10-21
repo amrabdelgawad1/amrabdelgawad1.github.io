@@ -64,7 +64,7 @@
   padding:9px 12px; color:var(--text); font-family:var(--font-body); font-size:13.5px;
 }
 .tz-search:focus{ outline:none; border-color:var(--accent2); }
-.tz-list{ display:flex; flex-direction:column; gap:2px; max-height:220px; overflow-y:auto; }
+.tz-list{ display:flex; flex-direction:column; gap:2px; max-height:220px; overflow-y:auto; overscroll-behavior:contain; }
 .tz-item{
   background:none; border:none; text-align:left; padding:8px 10px; border-radius:6px;
   color:var(--text); font-family:var(--font-body); font-size:13px; cursor:pointer;
@@ -75,7 +75,7 @@
 .tz-empty{ font-size:13px; color:var(--muted); padding:8px 10px; }
 
 .times-label{ font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:16px; }
-.times-list{ display:flex; flex-direction:column; gap:10px; max-height:320px; overflow-y:auto; }
+.times-list{ display:flex; flex-direction:column; gap:10px; max-height:320px; overflow-y:auto; overscroll-behavior:contain; }
 .times-empty{ font-size:13.5px; color:var(--muted); }
 .time-slot{
   display:flex; align-items:center; justify-content:space-between;
