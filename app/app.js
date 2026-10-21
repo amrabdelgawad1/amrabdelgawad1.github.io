@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id);
   const cfg = window.TRACKER_CONFIG || {};
   // v changes with each release of the cash page, so the app never shows a stale copy
-  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=26';
+  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=27';
 
   // An invite or new sign-in link lands here with its type in the address; read it before supabase-js clears it
   const linkType = new URLSearchParams(location.hash.slice(1)).get('type');
@@ -38,6 +38,16 @@
   let role = null, profile = null, user = null;
   let access = []; // extra sections Amr switched on for this team member: live, requests, team, money
 
+  // What account.js (the circle menu, profile and Settings) needs from here
+  window.TalentsApp = {
+    db, toast, esc, initials,
+    get role(){ return role; }, get user(){ return user; }, get profile(){ return profile; }, get access(){ return access; },
+    signOut: () => signOut(),
+    agentsChanged: () => { if (canSee('team')) loadTeamMenu(); liveSig = ''; },
+    fxChanged: () => { loadFx(); try { const w = $('cashFrame').contentWindow; if (w && w.reloadFx) w.reloadFx(); } catch(e){} }
+  };
+  const signedIn = () => document.dispatchEvent(new Event('talents-signed-in'));
+
   // ---------- sign in ----------
   $('loginForm').addEventListener('submit', async e => {
     e.preventDefault();
@@ -57,6 +67,7 @@
     stopTimers();
     await db.auth.signOut();
     role = null; profile = null; closeMenu();
+    document.dispatchEvent(new Event('talents-signed-out'));
     show('vLogin');
   }
 
@@ -175,6 +186,7 @@
     loadRequests();
     loadFx().then(() => loadHistory());
     if (extra) startMenu();
+    signedIn();
   }
 
   // After 10 hours on the clock, ask whether they're still working
@@ -365,9 +377,12 @@
     });
   }
 
-  // Pounds for "not paid yet": Amr's fixed rate, 52 EGP = $1 (same as cash/cash.js)
+  // Pounds for "not paid yet": today's rate from Settings › Dollar rates (52 until one loads)
   const fx = { rate:52 };
-  async function loadFx(){}
+  async function loadFx(){
+    const { data, error } = await db.rpc('fx_rate_on');
+    if (!error && Number(data) > 0) fx.rate = Number(data);
+  }
 
   async function loadHistory(){
     const [{ data, error }, br] = await Promise.all([db.rpc('my_shifts'), db.rpc('my_briefs')]);
@@ -438,6 +453,7 @@
     const { data } = await db.from('companies').select('id,name').order('name');
     companies = data || [];
     startMenu();
+    signedIn();
   }
   // The menu for the owner, or a team member with extra access (only the sections switched on for them).
   // Hiding is for tidiness; the database decides what each person can actually read.
@@ -558,7 +574,9 @@
     const sub = p => p.mode === 'off' ? 'Not clocked in' : (p.long ? 'Clocked in over 10 hours ago. Did they forget to clock out? · ' : '') + coName(p.m.company_id) + ' · ' +
       (p.mode === 'run' ? 'working since ' + hhmm(p.since) + (p.brk >= 1 ? ' · break ' + clock(p.brk) : '') : p.mode === 'brk' ? 'on break ' + clock(p.seg) + (p.brk - p.seg >= 1 ? ' · break total ' + clock(p.brk) : '') : 'paused ' + clock(p.seg)) +
       (p.viaCode ? ' · via /tracker' + (p.quiet ? ', last heard from ' + hhmm(p.seen) : '') : '') + (p.asked ? ' · ' + ASKED[p.asked] + ' sent, waiting for their phone' : '');
-    const sig = role + '|' + endFor + '|' + people.map(p => p.key + p.mode + p.long + p.quiet + p.asked).join('|');
+    const photos = window.TalentsPhotos;
+    const face = p => { const url = photos && photos.find(p.m.user_id, p.m.name); return '<span class="av">' + (url ? '<img src="' + esc(url) + '" alt="" />' : esc(initials(p.m.name))) + '</span>'; };
+    const sig = role + '|' + endFor + '|' + (photos ? photos.v : 0) + '|' + people.map(p => p.key + p.mode + p.long + p.quiet + p.asked).join('|');
     if (sig === liveSig) {
       people.forEach(p => {
         const row = box.querySelector('[data-k="' + CSS.escape(p.key) + '"]'); if (!row) return;
@@ -581,7 +599,7 @@
       const b = (act, label) => '<button class="btn ghost small" type="button" data-act="' + act + '">' + label + '</button>';
       return '<div class="acts">' + (p.mode === 'run' ? b('pau', 'Pause') + b('brk', 'Break') : b('run', 'Resume')) + b('end', 'End shift') + '</div>';
     };
-    box.innerHTML = people.map(p => '<div class="lrow" data-k="' + esc(p.key) + '"><div class="row' + (p.long ? ' long' : '') + '"><span class="av">' + esc(initials(p.m.name)) + '</span><span class="n"><b>' + esc(p.m.name) + '</b><small>' + esc(sub(p)) + '</small></span>' +
+    box.innerHTML = people.map(p => '<div class="lrow" data-k="' + esc(p.key) + '"><div class="row' + (p.long ? ' long' : '') + '">' + face(p) + '<span class="n"><b>' + esc(p.m.name) + '</b><small>' + esc(sub(p)) + '</small></span>' +
       '<span class="v">' + (p.mode === 'off' ? '' : '<span class="num">' + clock(p.work) + '</span><small>') + pill[p.mode] + (p.mode === 'off' ? '' : '</small>') + '</span></div>' + ctl(p) + '</div>').join('');
   }
   // Pause, Break, Resume and End on someone else's shift. App users change at once; /tracker phones pick it up within 30 seconds.

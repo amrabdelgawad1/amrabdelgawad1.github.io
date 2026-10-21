@@ -550,11 +550,11 @@
     table.log.mylist td.c-hrs{ grid-row:3; }
   }
 </style>
-<link rel="stylesheet" href="look.css?v=10">
+<link rel="stylesheet" href="look.css?v=11">
 <link rel="stylesheet" href="../theme-switch.css?v=2">
 <link rel="stylesheet" href="../daylight-dark.css?v=2">
 <link rel="stylesheet" href="../ask.css?v=2">
-<link rel="stylesheet" href="../brand.css?v=1">
+<link rel="stylesheet" href="../brand.css?v=2">
 <script src="../theme.js?v=2"></script>
 </head>
 <body>
@@ -690,7 +690,11 @@
           <label class="hourly"><span class="label">Hours</span><input class="field" id="fHours" type="number" min="0" step="0.25" placeholder="10" /></label>
           <label class="hourly"><span class="label" id="fRateLabel">Rate $/h</span><input class="field" id="fRate" type="number" min="0" step="0.25" placeholder="15" /></label>
           <label class="s2"><span class="label">Amount</span><span class="amt"><select class="field cur" id="fCur" aria-label="Currency"><option value="USD">$ USD</option><option value="EGP">EGP</option></select><input class="field" id="fAmount" type="number" min="0" step="0.01" placeholder="0.00" /></span></label>
-          <label class="s2" id="fxWrap" hidden><span class="label">EGP per $1 <em class="fx-hint" id="fFxHint"></em></span><input class="field" id="fFx" type="number" min="0" step="0.01" placeholder="48.50" /></label>
+          <fieldset class="s6 fx-pick" id="fxWrap"><legend class="label">Which dollar rate? <em class="fx-hint" id="fFxHint"></em></legend>
+            <label class="fx-opt"><input type="radio" name="fxSrc" value="week" checked /><span id="fxWeekLbl">The rate for this date</span></label>
+            <label class="fx-opt"><input type="radio" name="fxSrc" value="income" id="fxIncRadio" /><span>The rate an income came in at</span><select class="field" id="fxInc" aria-label="Which income"></select></label>
+            <label class="fx-opt"><input type="radio" name="fxSrc" value="typed" /><span>A different rate</span><input class="field" id="fFx" type="number" min="0" step="0.01" placeholder="52.75" aria-label="EGP per $1" /></label>
+          </fieldset>
           <label class="s6"><span class="label">Note (optional)</span><input class="field" id="fNote" maxlength="300" autocomplete="off" /></label>
         </div>
         <datalist id="partyList"></datalist>
@@ -1095,6 +1099,6 @@
 <script src="../tracker/config.js"></script>
 <script src="../ask.js?v=3"></script>
 <script src="team.js?v=12"></script>
-<script src="cash.js?v=21"></script>
+<script src="cash.js?v=22"></script>
 </body>
 </html>

@@ -196,3 +196,14 @@ html.look-only .owner-only{ display:none !important; }
 .sd-ai p{ margin:0; font-size:14.5px; line-height:1.55; padding:10px 12px; border-radius:10px; background:var(--accent-dim); }
 .nc-ai{ margin:0; font-size:14px; line-height:1.5; padding:8px 12px; border-radius:10px; background:var(--accent-dim); }
 .nc-ai::before{ content:"Suggestion · "; font-weight:600; color:var(--accent); }
+
+/* which dollar rate an income or expense uses */
+html .fx-pick{ border:0; margin:0; padding:0; display:grid; gap:8px; min-width:0; }
+html .fx-pick legend{ padding:0; margin-bottom:8px; }
+html .fx-pick .fx-hint{ font-style:normal; font-weight:600; color:var(--text); margin-left:6px; }
+html .fx-opt{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 12px; border:1px solid var(--border2); border-radius:10px; background:var(--bg2); cursor:pointer; font-size:14px; color:var(--text); }
+html .fx-opt:has(input:checked){ border-color:var(--accent); background:var(--accent-dim); }
+html .fx-opt input[type=radio]{ width:18px; height:18px; margin:0; accent-color:var(--accent); flex-shrink:0; }
+html .fx-opt > span{ flex:1; min-width:150px; }
+html .fx-opt .field{ width:auto; min-width:0; flex:1 1 180px; max-width:340px; padding:8px 10px; }
+html .fx-opt #fFx{ flex:0 1 130px; }

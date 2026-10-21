@@ -17,8 +17,8 @@ html[data-theme="dark"]{
 
 /* solid gold fills with navy text */
 ::selection{ background:var(--brand-gold); color:var(--brand-navy); }
-.btn:not(.ghost):not(.wa):not(.btn-ghost):not(.btn-outline), .ask-b .ask-ok:not(.danger){ background:var(--brand-gold); border-color:var(--brand-gold); color:var(--brand-navy); }
-.btn:not(.ghost):not(.wa):not(.btn-ghost):not(.btn-outline):hover{ background:var(--brand-gold2); }
+.btn:not(.ghost):not(.wa):not(.danger):not(.btn-ghost):not(.btn-outline), .ask-b .ask-ok:not(.danger){ background:var(--brand-gold); border-color:var(--brand-gold); color:var(--brand-navy); }
+.btn:not(.ghost):not(.wa):not(.danger):not(.btn-ghost):not(.btn-outline):hover{ background:var(--brand-gold2); }
 .bars .bar, html .ring .prog{ background:var(--brand-gold); stroke:var(--brand-gold); }
 html .co-chip[aria-pressed="true"]{ background:var(--accent-dim); border-color:var(--accent); color:var(--accent); }
 

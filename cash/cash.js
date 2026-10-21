@@ -139,7 +139,8 @@
     hours: x.hours != null ? Number(x.hours) : null, rate: x.rate != null ? Number(x.rate) : null,
     amount: Number(x.amount), settled: x.settled, settledAt: x.settled_at, recurring: x.recurring, note: x.note || '', createdAt: x.created_at,
     periodStart: x.period_start || null, periodEnd: x.period_end || null,
-    currency: x.currency || 'USD', fxRate: x.fx_rate != null ? Number(x.fx_rate) : null, spread: !!x.spread
+    currency: x.currency || 'USD', fxRate: x.fx_rate != null ? Number(x.fx_rate) : null, spread: !!x.spread,
+    fxSource: x.fx_source || null, fxIncomeId: x.fx_income_id || null
   });
   // Money in pounds is converted at the rate saved with the entry
   const usdOf = e => e.currency === 'EGP' ? (e.fxRate ? e.amount / e.fxRate : 0) : e.amount;
@@ -147,7 +148,8 @@
   const inCur = (n, cur) => cur === 'EGP' ? egp(n) : usd(n);
   // Money in Cash shows in pounds first (dollars × the fixed rate); only the team's pay stays in dollars
   const cash = n => egp(n * fx.rate);
-  const money = e => e.currency === 'EGP' ? egp(e.amount) + ' · ' + usd(usdOf(e)) : cash(e.amount) + ' · ' + usd(e.amount);
+  // A dollar entry shows in pounds at the rate saved with it (older ones have none: today's rate)
+  const money = e => e.currency === 'EGP' ? egp(e.amount) + ' · ' + usd(usdOf(e)) : egp(e.amount * (e.fxRate || fx.rate)) + ' · ' + usd(e.amount);
   // Team profit is never worked out from shifts: Amr adds it himself as income with this category
   const isTeamProfit = e => e.kind === 'income' && key(e.category) === 'team profit';
   // Own work you add by hand (money for work outside your tracked hours) counts with your hours
@@ -203,7 +205,7 @@
     if (en.error) return showNotice(/cash_entries/.test(en.error.message || '') ? 'The finance table isn’t set up yet. Run supabase/cash-setup.sql in the Supabase SQL Editor, then refresh.' : "Couldn't load your finances. Refresh the page to try again.");
     entries = en.data.map(toEntry);
     switchView(view);
-    loadFx();
+    loadFx().then(render);
     checkBackup();
     renderFactors();
   }
@@ -1047,24 +1049,46 @@
     showFx();
   }
   // ---- currency ----
-  // A fixed rate Amr sets: 52 EGP = $1 (change EGP_PER_USD here and in app/app.js)
-  const EGP_PER_USD = 52;
-  const fx = { rate:EGP_PER_USD };
+  // Dollar rates by date from Settings › Dollar rates (app): each counts from its date until the next one.
+  // fx.rate is today's, for totals; each income or expense keeps the rate picked when it was saved.
+  const fx = { rate:52, list:[] };
+  const rateOn = d => { let r = null; fx.list.forEach(x => { if (x.from <= d) r = x.rate; }); return r || (fx.list[0] && fx.list[0].rate) || fx.rate; };
   async function loadFx(){
+    const { data, error } = await db.from('fx_rates').select('from_date,rate').order('from_date');
+    if (!error && data.length) { fx.list = data.map(r => ({ from: r.from_date, rate: Number(r.rate) })); fx.rate = rateOn(iso(new Date())); }
     window.cashFx = fx;
     paintEgp();
     document.dispatchEvent(new Event('fx-ready'));
+    if (!$('addBox').hidden) showFx();
+  }
+  window.reloadFx = () => loadFx().then(() => { if (typeof render === 'function') render(); });
+  // Which rate this entry uses: the rate for its date, the rate an earlier income came in at, or one typed in
+  const fxPick = () => (document.querySelector('input[name="fxSrc"]:checked') || {}).value || 'week';
+  function fxChoice(){
+    const src = fxPick(), d = $('fDate').value || iso(new Date());
+    if (src === 'income') { const inc = entries.find(x => x.id === Number($('fxInc').value)); return inc && inc.fxRate ? { rate: inc.fxRate, src, incId: inc.id } : null; }
+    if (src === 'typed') { const r = parseFloat($('fFx').value); return r > 0 ? { rate: r, src } : null; }
+    return { rate: rateOn(d), src:'week' };
+  }
+  function fillIncomes(current){
+    const list = entries.filter(x => x.kind === 'income' && x.fxRate && (!editing || x.id !== editing.id)).sort((a, b) => a.date < b.date ? 1 : -1).slice(0, 40);
+    $('fxInc').innerHTML = list.length ? list.map(x => '<option value="' + x.id + '">' + escHtml(x.title) + ' · ' + dayDate(x.date) + ' · ' + x.fxRate + '</option>').join('') : '<option value="">No income with a rate yet</option>';
+    $('fxIncRadio').disabled = !list.length;
+    if (current) $('fxInc').value = String(current);
   }
   function showFx(){
     const isEgp = $('fCur').value === 'EGP';
-    $('fxWrap').hidden = !isEgp;
     $('fRateLabel').textContent = 'Rate ' + (isEgp ? 'EGP' : '$') + '/h';
-    if (isEgp && !$('fFx').value && fx.rate) $('fFx').value = fx.rate;
-    const a = parseFloat($('fAmount').value), r = parseFloat($('fFx').value);
-    $('fFxHint').textContent = isEgp ? (!isNaN(a) && r > 0 ? '≈ ' + usd(a / r) : 'At ' + fx.rate + ' EGP per $1') : '';
+    const d = $('fDate').value || iso(new Date());
+    $('fxWeekLbl').textContent = 'The rate for ' + dayDate(d) + ': ' + rateOn(d);
+    const c = fxChoice(), a = parseFloat($('fAmount').value);
+    $('fFxHint').textContent = !c ? '' : !isNaN(a) && a > 0 ? (isEgp ? '= ' + usd(a / c.rate) : '= ' + egp(a * c.rate)) + ' at ' + c.rate : 'At ' + c.rate + ' EGP per $1';
   }
   $('fCur').addEventListener('change', showFx);
-  ['fFx','fAmount','fHours','fRate'].forEach(id => $(id).addEventListener('input', showFx));
+  ['fFx','fAmount','fHours','fRate','fDate'].forEach(id => $(id).addEventListener('input', showFx));
+  $('fxWrap').addEventListener('change', showFx);
+  $('fFx').addEventListener('input', () => { document.querySelector('input[name="fxSrc"][value="typed"]').checked = true; showFx(); });
+  $('fxInc').addEventListener('change', () => { if (!$('fxIncRadio').disabled) $('fxIncRadio').checked = true; showFx(); });
   // The project counts on its end date unless you pick another date (like the day you got paid)
   let dateTouched = false;
   function syncProjectDate(){ if (fMode === 'project' && !dateTouched && $('fTo').value) $('fDate').value = $('fTo').value; }
@@ -1105,7 +1129,11 @@
     dateTouched = !!e;
     $('fAmount').value = e ? e.amount.toFixed(2) : '';
     $('fCur').value = e ? e.currency : lastCurrency(kind);
-    $('fFx').value = e && e.fxRate ? e.fxRate : (fx.rate || '');
+    // An entry saved before rates had a source: same as the rate for its date counts as "the rate for the date"
+    const src = e ? (e.fxSource || (e.fxRate && e.fxRate !== rateOn(e.date) ? 'typed' : 'week')) : 'week';
+    fillIncomes(e && e.fxIncomeId);
+    document.querySelector('input[name="fxSrc"][value="' + (src === 'income' && $('fxIncRadio').disabled ? 'typed' : src) + '"]').checked = true;
+    $('fFx').value = e && e.fxRate && src !== 'week' ? e.fxRate : '';
     $('fNote').value = e ? e.note : '';
     // Own work is usually logged once it's paid, so it starts as received
     $('fSettled').checked = e ? e.settled : kind === 'expense' || preset === 'Own work';
@@ -1148,8 +1176,9 @@
       if (!from || !to) return err('Pick when the project started and ended.');
       if (to < from) return err('The project ends before it starts. Check the dates.');
     }
-    const currency = $('fCur').value, fxRate = currency === 'EGP' ? parseFloat($('fFx').value) : null;
-    if (currency === 'EGP' && !(fxRate > 0)) return err('Enter how many pounds one dollar is, like 48.5.');
+    const currency = $('fCur').value, fxc = fxChoice();
+    if (!fxc) return err(fxPick() === 'typed' ? 'Type how many pounds one dollar is, like 52.75.' : 'Pick which income’s rate to use.');
+    const fxRate = fxc.rate;
     if (fMode === 'hourly') {
       hours = parseFloat($('fHours').value); rate = parseFloat($('fRate').value);
       if (isNaN(hours) || hours <= 0) return err('Enter how many hours you worked.');
@@ -1164,7 +1193,7 @@
     const settled = $('fSettled').checked;
     const row = {
       kind: fKind, entry_date: date, title, party: party ? (match ? match.party : party) : null, category,
-      hours, rate, amount: cents(amount), currency, fx_rate: fxRate, settled, recurring: $('fRecurring').checked, note: $('fNote').value.trim() || null
+      hours, rate, amount: cents(amount), currency, fx_rate: fxRate, fx_source: fxc.src, fx_income_id: fxc.incId || null, settled, recurring: $('fRecurring').checked, note: $('fNote').value.trim() || null
     };
     if (!editing || settled !== editing.settled) row.settled_at = settled ? new Date().toISOString() : null;
     if (from || (editing && editing.periodStart)) { row.period_start = from; row.period_end = to; }
