@@ -71,7 +71,7 @@
     card = !c.error && (Array.isArray(c.data) ? c.data[0] : c.data) || null;
     const rate = Number(r.data) || 0, pay = card && card.pay_rate != null ? Number(card.pay_rate) : null;
     $('mcName').textContent = (card && card.agent_no ? pad2(card.agent_no) + ' · ' : '') + myName();
-    const co = (card && card.company_name) || T.profile.company_name;
+    const co = (card && card.company_name) || (T.profile || {}).company_name;
     $('mcChips').innerHTML = '<span class="pill p-ok">' + ROLES[myRole()] + '</span>' + (co ? '<span class="pill p-plain">' + esc(co) + '</span>' : '');
     $('mcRate').hidden = pay == null;
     if (pay != null) {
@@ -134,7 +134,7 @@
     menu.querySelector('.ai').focus();
   }
   function closeMenu(){ menu.hidden = true; $('me').setAttribute('aria-expanded', 'false'); }
-  $('me').addEventListener('click', e => { e.stopPropagation(); menu.hidden ? openMenu() : closeMenu(); });
+  $('me').addEventListener('click', e => { e.stopPropagation(); if (!T.role) return; menu.hidden ? openMenu() : closeMenu(); });
   document.addEventListener('click', e => { if (!menu.hidden && !menu.contains(e.target)) closeMenu(); });
   menu.addEventListener('click', e => {
     const b = e.target.closest('[data-go]'); if (!b) return;
@@ -200,7 +200,7 @@
     const B = $('setBody'), own = isOwner(), url = myPhoto();
     B.innerHTML = head('My profile') +
       '<div class="photo-row">' + avatar(myName(), url, 92) + '<div class="photo-side"><b class="big">' + esc(myName()) + '</b>' +
-      '<div class="chips">' + (own ? '<span class="pill p-ok">Owner</span>' : '<span class="pill p-pau">' + ROLES[myRole()] + '</span>' + (T.profile.company_name ? '<span class="pill p-off">' + esc(T.profile.company_name) + '</span>' : '')) + '</div>' +
+      '<div class="chips">' + (own ? '<span class="pill p-ok">Owner</span>' : '<span class="pill p-pau">' + ROLES[myRole()] + '</span>' + ((T.profile || {}).company_name ? '<span class="pill p-off">' + esc(T.profile.company_name) + '</span>' : '')) + '</div>' +
       '<div class="acts"><label class="btn small file-btn">' + ICON.cam + 'Upload photo<input type="file" accept="image/*" data-photo="me" hidden /></label>' + (mine.photo ? '<button class="btn ghost small" type="button" data-unphoto>Remove</button>' : '') + '</div></div></div>' +
       (own ? '' : '<div class="tiles four" id="myStats"><div class="tile"><p>Pay rate</p><strong class="num">…</strong></div><div class="tile"><p>Hours this month</p><strong class="num">…</strong></div><div class="tile in"><p>Earned this month</p><strong class="num">…</strong></div><div class="tile due"><p>Not paid yet</p><strong class="num">…</strong></div></div>') +
       '<form class="form" id="profForm" novalidate><div class="two">' +
