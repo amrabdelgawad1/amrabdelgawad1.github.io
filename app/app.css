@@ -305,3 +305,5 @@ body.sheet-open{ overflow:hidden; }
   .rate-row{ grid-template-columns:1fr 96px; }
   .rate-row > :last-child{ grid-column:1 / -1; justify-self:start; }
 }
+.av.owner{ background:var(--brand-navy, #14213D); color:var(--brand-gold, #E3AA35); border-color:transparent; }
+html[data-theme="dark"] .av.owner{ background:var(--brand-gold, #E3AA35); color:var(--brand-navy, #14213D); }

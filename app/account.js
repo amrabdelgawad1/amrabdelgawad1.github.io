@@ -14,8 +14,8 @@
   const day = d => new Date(d + 'T00:00').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
   const key = s => (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
   const photoUrl = p => p ? db.storage.from('avatars').getPublicUrl(p).data.publicUrl : null;
-  const avatar = (name, url, size) => '<span class="av"' + (size ? ' style="width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * .36) + 'px"' : '') + '>' +
-    (url ? '<img src="' + esc(url) + '" alt="" />' : esc(initials(name))) + '</span>';
+  const avatar = (name, url, size) => '<span class="av' + (name === myName() && isOwner() ? ' owner' : '') + '"' + (size ? ' style="width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * .36) + 'px"' : '') + '>' +
+    (url ? '<img src="' + esc(url) + '" alt="" />' : esc(name === myName() && isOwner() ? 'A' : initials(name))) + '</span>';
   const ICON = {
     user:'<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
     gear:'<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>',
@@ -264,7 +264,7 @@
       '<div class="two"><div class="box"><div class="kv"><span>Phone</span><span>' + esc(a.phone || '—') + '</span></div><div class="kv"><span>Added</span><span>' + day(a.created_at.slice(0, 10)) + '</span></div><div class="kv"><span>Shifts this month</span><span id="agCount">…</span></div></div>' +
       '<div class="box" id="agRecent"><p class="note">Recent shifts</p></div></div>' +
       '<label class="label">Notes (only you see these)<textarea class="field" rows="3" maxlength="2000" data-a-notes="' + a.id + '" placeholder="e.g. strong on objections, prefers mornings">' + esc(a.notes || '') + '</textarea></label>' +
-      '<div><a class="btn ghost small" href="#team/' + encodeURIComponent(a.name) + '" data-close>Open all their hours</a></div>';
+      '<div class="acts"><a class="btn ghost small" href="#team/' + encodeURIComponent(a.name) + '" data-close>Open all their hours</a></div>';
     const { data } = await db.from('shifts').select('name,shift_date,work_seconds,pay_rate,paid').eq('owner', false).order('shift_date', { ascending:false }).limit(1000);
     if (agentView !== a.id || !data) return;
     const list = data.filter(s => key(s.name) === key(a.name)), month = today().slice(0, 7), now = list.filter(s => s.shift_date.slice(0, 7) === month);
