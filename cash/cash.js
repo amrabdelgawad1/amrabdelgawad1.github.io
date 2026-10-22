@@ -11,6 +11,8 @@
   const db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
 
   const OWNER_NAME = 'Amr Abdelgawad';
+  // The stacked-growth symbol at the top of the statement (same drawing as favicon.svg, without the tile)
+  const SLIP_MARK = '<svg class="slip-mark" viewBox="-4 6 96 96" width="56" height="56" aria-hidden="true"><g transform="translate(13 0) skewX(-12)"><rect x="6" y="68" width="82" height="18" rx="4" fill="#14213D"/><rect x="20" y="45" width="56" height="18" rx="4" fill="#14213D"/><rect x="34" y="22" width="28" height="18" rx="4" fill="#E3AA35"/></g></svg>';
   const VIEWS = ['overview', 'mytime', 'team', 'income', 'expense'];
   const iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   const thisMonth = () => iso(new Date()).slice(0, 7);
@@ -1445,7 +1447,7 @@
     const number = 'ST-' + st.key;
     $('slip').innerHTML =
       '<div class="band"></div>' +
-      '<div class="top"><div class="brand">Amr Abdelgawad<em>Talents</em><small>amrabdelgawad.site</small></div>' +
+      '<div class="top"><div class="brand">' + SLIP_MARK + '<div>Amr Abdelgawad<em>Talents</em><small>amrabdelgawad.site</small></div></div>' +
       '<div class="doc"><h1>' + st.title + '</h1><p>No. <b>' + number + '</b></p><p>Issued <b>' + longDate(new Date()) + '</b></p></div></div>' +
       '<div class="meta">' +
         '<div class="box"><p>Period</p><strong>' + label + '</strong><span>' + hm(t.ownSecs) + ' yours · ' + hm(t.teamSecs) + ' team</span></div>' +

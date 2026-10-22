@@ -61,6 +61,8 @@ window.CashTeam = function(db){
   }
   const snapshot = r => ({ date: r.date, started_at: r.startedAt, ended_at: r.endedAt, work: r.work, brk: r.brk, company_id: r.companyId, brief: r.brief || '', dials: r.dials, conversations: r.convos, appointments: r.appts });
   const NOTE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="M9 13h6M9 17h4"/></svg>';
+  // The stacked-growth symbol at the top of every PDF (same drawing as favicon.svg, without the tile)
+  const SLIP_MARK = '<svg class="slip-mark" viewBox="-4 6 96 96" width="56" height="56" aria-hidden="true"><g transform="translate(13 0) skewX(-12)"><rect x="6" y="68" width="82" height="18" rx="4" fill="#14213D"/><rect x="20" y="45" width="56" height="18" rx="4" fill="#14213D"/><rect x="34" y="22" width="28" height="18" rx="4" fill="#E3AA35"/></g></svg>';
   const PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.8 2.8 0 0 0-4-4L4 16v4"/><path d="M13.5 6.5l4 4"/></svg>';
 
   async function load(){
@@ -707,7 +709,7 @@ window.CashTeam = function(db){
     else if (fxNow()) egpRow = '<div class="in-egp"><span>' + usd(grand[1]) + ' = ' + egp(grand[1] * fxNow()) + '</span><span>at ' + fxNow().toFixed(2) + ' per $1, ' + longDate(new Date()) + '</span></div>';
     $('slip').innerHTML =
       '<div class="band"></div>' +
-      '<div class="top"><div class="brand">Amr Abdelgawad<em>Talents</em><small>amrabdelgawad.site</small></div>' +
+      '<div class="top"><div class="brand">' + SLIP_MARK + '<div>Amr Abdelgawad<em>Talents</em><small>amrabdelgawad.site</small></div></div>' +
       '<div class="doc"><h1>Payslip</h1><p>No. <b>' + number + '</b></p><p>Issued <b>' + longDate(new Date()) + '</b></p></div></div>' +
       '<div class="meta">' +
         '<div class="box"><p>Paid to</p><strong>' + escHtml(rows[0].name) + '</strong><span>Team member</span></div>' +
@@ -826,7 +828,7 @@ window.CashTeam = function(db){
       : 'No shifts were logged for ' + escHtml(rep.coName) + ' in ' + mText + '.';
     $('rep').innerHTML =
       '<div class="band"></div>' +
-      '<div class="top"><div class="brand">Amr Abdelgawad<em>Talents</em><small>amrabdelgawad.site</small></div>' +
+      '<div class="top"><div class="brand">' + SLIP_MARK + '<div>Amr Abdelgawad<em>Talents</em><small>amrabdelgawad.site</small></div></div>' +
       '<div class="doc"><h1>Monthly Report</h1><p>For <b>' + escHtml(rep.coName) + '</b></p><p>Issued <b>' + longDate(new Date()) + '</b></p></div></div>' +
       '<div class="meta">' +
         '<div class="box"><p>Month</p><strong>' + mText + '</strong><span>' + days + ' working day' + (days === 1 ? '' : 's') + '</span></div>' +
@@ -881,7 +883,7 @@ window.CashTeam = function(db){
     const due = allPaid ? 0 : cents(total - paidAmt);
     inv.innerHTML =
       '<div class="band"></div>' +
-      '<div class="top"><div class="brand">Amr Abdelgawad<em>Talents</em><small>amrabdelgawad.site</small></div>' +
+      '<div class="top"><div class="brand">' + SLIP_MARK + '<div>Amr Abdelgawad<em>Talents</em><small>amrabdelgawad.site</small></div></div>' +
       '<div class="doc"><h1>Invoice</h1><p>No. <b>' + number + '</b></p><p>Issued <b>' + longDate(new Date()) + '</b></p></div></div>' +
       '<div class="meta">' +
         '<div class="box"><p>Bill to</p><strong>' + escHtml(rep.coName) + '</strong><span>Remote team services</span></div>' +

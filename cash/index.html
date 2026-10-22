@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="robots" content="noindex, nofollow" />
 <title>Cash</title>
-<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.svg?v=2" type="image/svg+xml">
 <script src="../guard.js?v=1"></script>
 <script src="early.js?v=1"></script>
 
@@ -156,10 +156,11 @@
   /* Payslip sheet (also what goes into the PDF) */
   .slip{ width:210mm; min-height:274mm; padding:10mm 18mm 6mm; background:#fff; color:#0C0F1A; font-family:Inter, sans-serif; display:flex; flex-direction:column; position:relative; line-height:1.45; box-shadow:0 30px 80px -20px rgba(0,0,0,.6); }
   .slip *{ box-sizing:border-box; }
-  .slip .band{ position:absolute; top:0; left:0; right:0; height:6px; background:linear-gradient(90deg, #3B7BFF, #6d4bff); }
+  .slip .band{ position:absolute; top:0; left:0; right:0; height:6px; background:linear-gradient(90deg, #14213D, #E3AA35); }
   .slip .top{ display:flex; justify-content:space-between; align-items:flex-start; gap:24px; margin-top:3mm; }
-  .slip .brand{ font-family:"DM Serif Display", serif; font-size:24px; line-height:1.05; }
-  .slip .brand em{ display:block; font-style:normal; font-family:Inter, sans-serif; font-size:12px; font-weight:600; letter-spacing:.32em; text-transform:uppercase; color:#3B7BFF; margin-top:6px; }
+  .slip .brand{ font-family:"DM Serif Display", serif; font-size:24px; line-height:1.05; display:flex; align-items:center; gap:12px; }
+  .slip .slip-mark{ flex:none; display:block; }
+  .slip .brand em{ display:block; font-style:normal; font-family:Inter, sans-serif; font-size:12px; font-weight:600; letter-spacing:.32em; text-transform:uppercase; color:#94650C; margin-top:6px; }
   .slip .brand small{ display:block; font-family:Inter, sans-serif; font-size:11px; color:#5A6A84; letter-spacing:.04em; margin-top:5px; }
   .slip .doc{ text-align:right; }
   .slip .doc h1{ margin:0; font-family:"DM Serif Display", serif; font-weight:400; font-size:36px; line-height:1; color:#0C0F1A; }
@@ -487,7 +488,7 @@
   .mgrid .add-err:empty{ display:none; }
 
   /* Statement sheet extras */
-  .slip.statement .band{ background:linear-gradient(90deg, #0E9F6E, #3B7BFF); }
+  .slip.statement .band{ background:linear-gradient(90deg, #14213D, #E3AA35); }
   .slip.statement .doc h1{ font-size:34px; }
   .slip.statement .meta{ margin:22px 0 16px; }
   .slip .box.hi{ background:#ECFDF5; border-color:#A7F3D0; }
@@ -1128,7 +1129,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="../tracker/config.js"></script>
 <script src="../ask.js?v=4"></script>
-<script src="team.js?v=15"></script>
-<script src="cash.js?v=24"></script>
+<script src="team.js?v=16"></script>
+<script src="cash.js?v=25"></script>
 </body>
 </html>
