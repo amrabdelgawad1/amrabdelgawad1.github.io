@@ -92,6 +92,9 @@ p{ margin:0; }
 .main-nav a.is-active::after{ width:100%; background:var(--accent2); }
 .nav-toggle{ display:none; }
 .main-nav .main-nav-cta{ display:none; }
+/* Mid-size screens: tighter spacing so the whole menu stays on one row until the phone menu takes over */
+@media (max-width: 1180px){ .main-nav{ gap:24px; } }
+@media (max-width: 1060px){ .main-nav{ gap:16px; } }
 
 /* ==========================================================================
    Buttons
@@ -578,8 +581,8 @@ button.chip[data-tool-desc]:focus-visible{ outline:none; color:var(--accent2); b
   .process-line{ display:none; }
 }
 
-/* Phone-style menu (☰) below 900px: the full menu, the dark-mode switch and Book a Call no longer fit in one row */
-@media (max-width: 900px){
+/* Phone-style menu (☰) at 960px and below: the full menu, the dark-mode switch and Book a Call no longer fit in one row */
+@media (max-width: 960px){
   .nav-toggle{
     display:flex; flex-direction:column; justify-content:center; gap:5px;
     width:36px; height:36px; padding:0; margin-left:12px;
@@ -683,7 +686,7 @@ button.chip[data-tool-desc]:focus-visible{ outline:none; color:var(--accent2); b
 .badge-icon .ti, .why-icon .ti{ font-size:26px; color:var(--accent2); }
 .skill-group-head .ti{ font-size:18px; color:var(--accent2); }
 .why-icon{ width:48px; height:48px; border-radius:12px; display:grid; place-items:center; background:var(--accent-dim); }
-@media (max-width: 900px){
+@media (max-width: 960px){
   .main-nav{ background:rgba(250,247,241,.98); }
 }
 
@@ -864,7 +867,7 @@ button.chip[data-tool-desc]:focus-visible{ outline:none; color:var(--accent2); b
 
 /* Phone menu: the blurred header makes it the frame for the fixed menu, so "bottom:0" stopped at the header.
    Start it at the header's bottom edge (100% = the header's height here) and give it an explicit height. */
-@media (max-width: 900px){
+@media (max-width: 960px){
   .main-nav{ top:100%; bottom:auto; height:calc(100vh - 100% + 8px); height:calc(100dvh - 100% + 8px); overflow-y:auto; }
 }
 
