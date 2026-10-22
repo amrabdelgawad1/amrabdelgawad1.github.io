@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id);
   const cfg = window.TRACKER_CONFIG || {};
   // v changes with each release of the cash page, so the app never shows a stale copy
-  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=32';
+  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=33';
 
   // An invite or new sign-in link lands here with its type in the address; read it before supabase-js clears it
   const linkType = new URLSearchParams(location.hash.slice(1)).get('type');
@@ -864,7 +864,7 @@
 
   // ---------- backup (owner) ----------
   // Saves every table to one file on this device. Supabase's free plan keeps no copies you can restore yourself.
-  const BACKUP_TABLES = ['cash_entries', 'shifts', 'shift_requests', 'members', 'companies', 'agents', 'agent_companies', 'tracker_settings', 'site_visits'];
+  const BACKUP_TABLES = ['cash_entries', 'shifts', 'shift_requests', 'members', 'companies', 'agents', 'agent_companies', 'tracker_settings', 'site_visits', 'profiles', 'fx_rates', 'payslips'];
   $('backupBtn').addEventListener('click', async () => {
     const btn = $('backupBtn'); if (btn.disabled) return;
     btn.disabled = true; toast('Making your backup…');

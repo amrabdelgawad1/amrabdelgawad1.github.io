@@ -1352,7 +1352,7 @@
   });
 
   // ---------- backup ----------
-  // One JSON file with every table this page uses. Company codes stay out: they're stored scrambled and can't be read.
+  // One JSON file with every table, the same list as the app's owner-menu backup. Company codes stay out: they're stored scrambled and can't be read.
   async function checkBackup(){
     const { data } = await db.from('tracker_settings').select('*').eq('key', 'last_backup');
     showBackupAge(((data || [])[0] || {}).value || null);
@@ -1365,12 +1365,15 @@
   document.querySelectorAll('[data-backup]').forEach(btn => btn.addEventListener('click', async () => {
     btn.setAttribute('aria-busy', 'true');
     const out = { from:'amrabdelgawad.site/cash', made_at:new Date().toISOString(), tables:{} };
-    const parts = [['cash_entries', () => fetchAll('cash_entries', '*', 'entry_date')], ['shifts', () => fetchAll('shifts', '*', 'shift_date')],
-      ['companies', () => db.from('companies').select('*')], ['tracker_settings', () => db.from('tracker_settings').select('*')]];
-    for (const [name, get] of parts) {
-      const r = await get();
-      if (r.error) { btn.removeAttribute('aria-busy'); toast("Couldn't make the backup. Try again.", false); return; }
-      out.tables[name] = r.data;
+    const tables = ['cash_entries', 'shifts', 'shift_requests', 'members', 'companies', 'agents', 'agent_companies', 'tracker_settings', 'site_visits', 'profiles', 'fx_rates', 'payslips'];
+    for (const name of tables) {
+      const rows = [];
+      for (let from = 0; ; from += 1000) { // Supabase sends at most 1000 rows per request
+        const r = await db.from(name).select('*').range(from, from + 999);
+        if (r.error) { btn.removeAttribute('aria-busy'); toast("Couldn't make the backup. Try again.", false); return; }
+        rows.push(...r.data); if (r.data.length < 1000) break;
+      }
+      out.tables[name] = rows;
     }
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 2)], { type:'application/json' }));
