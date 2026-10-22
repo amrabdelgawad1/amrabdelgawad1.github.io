@@ -235,3 +235,6 @@ html .fx-opt #fFx{ flex:0 1 130px; }
 .slip.report td small.brief{ white-space:pre-wrap; overflow-wrap:anywhere; margin-top:3px; color:#475467; font-size:11px; line-height:1.45; }
 .slip.report h3{ margin-top:20px; }
 .slip.report td.r, .slip.report .days td:first-child{ white-space:nowrap; }
+/* PDFs stay on paper colours in dark mode too (the page-wide .brand colour turned the name light) */
+html .slip .brand{ color:#0C0F1A; }
+html .slip.report .brand{ color:#14213D; }
