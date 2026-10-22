@@ -103,12 +103,12 @@
 .booking-form{ display:flex; flex-direction:column; gap:18px; max-width:480px; }
 .booking-form label{ display:flex; flex-direction:column; gap:8px; font-size:13.5px; color:var(--light); }
 .booking-form label em{ color:var(--muted); font-style:normal; }
-.booking-form input, .booking-form textarea{
+.booking-form input, .booking-form textarea, .booking-form select{
   background:var(--bg2); border:1px solid var(--border2); border-radius:var(--radius-sm);
   padding:12px 14px; color:var(--text); font-family:var(--font-body); font-size:14.5px; resize:vertical;
   transition:border-color .25s ease;
 }
-.booking-form input:focus, .booking-form textarea:focus{ outline:none; border-color:var(--accent2); }
+.booking-form input:focus, .booking-form textarea:focus, .booking-form select:focus{ outline:none; border-color:var(--accent2); }
 .form-error{ color:#F87171; font-size:13px; }
 .booking-submit{ align-self:flex-start; margin-top:8px; }
 

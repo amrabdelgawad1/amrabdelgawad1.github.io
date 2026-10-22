@@ -368,6 +368,7 @@
     const email = (data.get("email") || "").trim();
     const company = (data.get("company") || "").trim();
     const topic = (data.get("topic") || "").trim();
+    const budget = (data.get("budget") || "").trim();
     els.formError.hidden = true;
 
     if (!name) return showError("Please enter your name.");
@@ -389,6 +390,7 @@
         email,
         company,
         topic,
+        budget,
         displayTimezone: state.tz,
       });
       clearInterval(cycle);

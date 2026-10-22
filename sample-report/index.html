@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; script-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="robots" content="noindex">
+<title>Sample Monthly Report · Amr Abdelgawad</title>
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+body{ margin:0; background:#EFE9DD; font-family:Inter, system-ui, sans-serif; color:#14213D; }
+.note{ max-width:210mm; margin:24px auto 14px; padding:0 16px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; font-size:14px; color:#4A5468; }
+.note b{ color:#14213D; }
+.note a{ color:#94650C; font-weight:600; }
+.stage{ overflow-x:auto; padding:0 12px 40px; }
+.stage .slip{ margin:0 auto; box-shadow:0 20px 60px -24px rgba(20,33,61,.35); }
+.fake{ display:inline-block; background:#FBF5E8; border:1px solid #EBD9B0; color:#94650C; border-radius:999px; padding:4px 12px; font-size:12px; font-weight:600; letter-spacing:.04em; }
+.slip-overlay{ position:fixed; inset:0; z-index:90; background:rgba(4,6,11,.88); backdrop-filter:blur(6px); display:flex; flex-direction:column; }
+.slip-bar{ display:flex; align-items:center; gap:10px; padding:14px max(16px, 3vw); border-bottom:1px solid var(--border2); background:var(--bg2); flex-wrap:wrap; }
+.slip-bar strong{ font-family:var(--font-display); font-weight:400; font-size:20px; margin-right:6px; }
+.slip-bar .slip-note{ flex:1; min-width:200px; padding:9px 12px; font-size:14px; }
+.slip-stage{ flex:1; overflow:auto; padding:28px 16px 60px; }
+.slip-fit{ margin:0 auto; transform-origin:top left; }
+.slip{ width:210mm; min-height:274mm; padding:10mm 18mm 6mm; background:#fff; color:#0C0F1A; font-family:Inter, sans-serif; display:flex; flex-direction:column; position:relative; line-height:1.45; box-shadow:0 30px 80px -20px rgba(0,0,0,.6); }
+.slip *{ box-sizing:border-box; }
+.slip .band{ position:absolute; top:0; left:0; right:0; height:6px; background:linear-gradient(90deg, #14213D, #E3AA35); }
+.slip .top{ display:flex; justify-content:space-between; align-items:flex-start; gap:24px; margin-top:3mm; }
+.slip .brand{ font-family:"DM Serif Display", serif; font-size:24px; line-height:1.05; display:flex; align-items:center; gap:12px; }
+.slip .slip-mark{ flex:none; display:block; }
+.slip .brand em{ display:block; font-style:normal; font-family:Inter, sans-serif; font-size:12px; font-weight:600; letter-spacing:.32em; text-transform:uppercase; color:#94650C; margin-top:6px; }
+.slip .brand small{ display:block; font-family:Inter, sans-serif; font-size:11px; color:#5A6A84; letter-spacing:.04em; margin-top:5px; }
+.slip .doc{ text-align:right; }
+.slip .doc h1{ margin:0; font-family:"DM Serif Display", serif; font-weight:400; font-size:36px; line-height:1; color:#0C0F1A; }
+.slip .doc p{ margin:6px 0 0; font-size:12px; color:#5A6A84; }
+.slip .doc b{ color:#0C0F1A; font-weight:600; }
+.slip .meta{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin:22px 0 18px; }
+.slip .box{ background:#F5F7FB; border:1px solid #E3E8F1; border-radius:10px; padding:12px 14px; }
+.slip .box p{ margin:0; font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:#5A6A84; }
+.slip .box strong{ display:block; margin-top:5px; font-size:14px; font-weight:600; color:#0C0F1A; }
+.slip .box span{ display:block; font-size:12px; color:#5A6A84; margin-top:2px; }
+.slip table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+.slip th{ text-align:left; font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:#5A6A84; padding:0 10px 9px; border-bottom:1.5px solid #0C0F1A; }
+.slip td{ padding:5px 10px; border-bottom:1px solid #E3E8F1; color:#0C0F1A; line-height:1.35; }
+.slip tr{ page-break-inside:avoid; }
+.slip tbody tr:nth-child(even) td{ background:#FAFBFD; }
+.slip .r{ text-align:right; }
+.slip .mono{ font-family:"JetBrains Mono", monospace; font-size:12px; }
+.slip td b{ font-weight:600; }
+.slip .bottom{ display:grid; grid-template-columns:1fr 260px; gap:24px; margin-top:22px; align-items:start; page-break-inside:avoid; }
+.slip .note{ font-size:12px; color:#5A6A84; line-height:1.6; }
+.slip .note b{ color:#0C0F1A; font-weight:600; }
+.slip .note .custom{ display:block; margin-top:8px; color:#0C0F1A; }
+.slip .totals{ border:1px solid #E3E8F1; border-radius:10px; overflow:hidden; }
+.slip .totals div{ display:flex; justify-content:space-between; padding:9px 14px; font-size:12.5px; border-bottom:1px solid #E3E8F1; color:#0C0F1A; }
+.slip .totals div:last-child{ border-bottom:0; }
+.slip .totals .grand{ background:#0C0F1A; color:#fff; font-size:15px; font-weight:600; padding:13px 14px; }
+.slip .totals .grand .mono{ font-size:16px; }
+.slip .stamp{ display:inline-flex; align-items:center; gap:8px; margin-top:14px; border:1.5px solid #0E9F6E; color:#0E9F6E; border-radius:999px; padding:6px 14px; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+.slip .stamp.due{ border-color:#C77C02; color:#C77C02; }
+.slip .stamp i{ width:7px; height:7px; border-radius:50%; background:currentColor; }
+.slip .foot{ margin-top:auto; padding-top:18px; }
+.slip .foot div{ display:flex; justify-content:space-between; font-size:10.5px; color:#5A6A84; border-top:1px solid #E3E8F1; padding-top:10px; }
+.slip.statement .band{ background:linear-gradient(90deg, #14213D, #E3AA35); }
+.slip.statement .doc h1{ font-size:34px; }
+.slip.statement .meta{ margin:22px 0 16px; }
+.slip .box.hi{ background:#ECFDF5; border-color:#A7F3D0; }
+.slip .box.hi strong{ color:#047857; font-family:"JetBrains Mono", monospace; font-size:16px; }
+.slip .box.hi.neg{ background:#FEF2F2; border-color:#FECACA; }
+.slip .box.hi.neg strong{ color:#B91C1C; }
+.slip .summary{ font-size:13.5px; line-height:1.65; color:#26324A; margin:0 0 18px; padding:14px 16px; border-left:3px solid #0E9F6E; background:#FAFBFD; border-radius:0 10px 10px 0; page-break-inside:avoid; }
+.slip .summary b{ color:#0C0F1A; font-weight:600; }
+.slip h3{ margin:16px 0 8px; font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#0C0F1A; display:flex; justify-content:space-between; page-break-after:avoid; }
+.slip h3 span{ font-family:"JetBrains Mono", monospace; letter-spacing:0; font-size:12px; }
+.slip.statement th{ padding:0 10px 7px; }
+.slip td small{ display:block; color:#5A6A84; font-size:11px; }
+.slip .neg-amt{ color:#B91C1C; }
+.slip .due{ color:#C77C02; font-weight:600; font-size:11px; }
+.slip .ok{ color:#0E9F6E; font-weight:600; font-size:11px; }
+.slip .none{ color:#5A6A84; font-size:12px; padding:6px 10px; }
+.slip .totals .in-egp{ font-size:11.5px; color:#5A6A84; background:#F5F7FB; gap:12px; }
+.slip .totals .in-egp span:first-child{ font-family:"JetBrains Mono", monospace; color:#0C0F1A; font-weight:600; }
+.slip.statement .bottom{ grid-template-columns:1fr 280px; }
+.slip-bar .rep-check + .btn{ margin-left:auto; }
+.slip.report .band{ background:linear-gradient(90deg, #14213D, #E3AA35); }
+.slip.report .brand em{ color:#94650C; }
+.slip.report .meta.nums{ margin:-6px 0 18px; }
+.slip.report .box.hi{ background:#FBF5E8; border-color:#EBD9B0; }
+.slip.report .box.hi strong{ color:#14213D; font-size:20px; }
+.slip.report .summary{ border-left-color:#E3AA35; }
+.slip.report td{ vertical-align:top; }
+.slip.report td small.brief{ white-space:pre-wrap; overflow-wrap:anywhere; margin-top:3px; color:#475467; font-size:11px; line-height:1.45; }
+.slip.report h3{ margin-top:20px; }
+.slip.report td.r, .slip.report .days td:first-child{ white-space:nowrap; }
+.slip-bar .rep-pay{ flex:1 1 260px; }
+.slip.invoice .stamp{ display:flex; width:max-content; }
+@media (max-width:820px){ .stage .slip{ zoom:.5; } }
+</style>
+</head>
+<body>
+<div class="note"><span><span class="fake">Fictional example data</span>&nbsp; This is what team clients receive every month. Names and numbers are made up.</span><a href="/#lets-talk">Book a call &rarr;</a></div>
+<div class="stage">
+<div class="slip statement report"><div class="band"></div><div class="top"><div class="brand"><svg class="slip-mark" viewBox="-4 6 96 96" width="56" height="56" aria-hidden="true"><g transform="translate(13 0) skewX(-12)"><rect x="6" y="68" width="82" height="18" rx="4" fill="#14213D"></rect><rect x="20" y="45" width="56" height="18" rx="4" fill="#14213D"></rect><rect x="34" y="22" width="28" height="18" rx="4" fill="#E3AA35"></rect></g></svg><div>Amr Abdelgawad<em>Talents</em><small>amrabdelgawad.site</small></div></div><div class="doc"><h1>Monthly Report</h1><p>For <b>Your Company</b></p><p>Issued <b>1st of October, 2026</b></p></div></div><div class="meta"><div class="box"><p>Month</p><strong>September 2026</strong><span>22 working days</span></div><div class="box"><p>Hours worked</p><strong>270h 30m</strong><span>39 shifts, avg 6h 56m</span></div><div class="box"><p>Team</p><strong>2 members</strong><span>Agent 1, Agent 2</span></div></div><div class="meta nums"><div class="box hi"><p>Dials</p><strong>12,763</strong></div><div class="box hi"><p>Conversations</p><strong>1,110</strong></div><div class="box hi"><p>Appointments</p><strong>68</strong></div></div><p class="summary">In <b>September 2026</b>, 2 team members worked <b>270h 30m</b> for Your Company across 39 shifts on 22 days. Together they made <b>12,763 dials</b>, had <b>1,110 conversations</b> and set <b>68 appointments</b>.</p><h3>By team member</h3><table><thead><tr><th>Team member</th><th class="r">Shifts</th><th class="r">Hours</th><th class="r">Avg shift</th><th class="r">Dials</th><th class="r">Conv.</th><th class="r">Appts</th></tr></thead><tbody><tr><td><b>Agent 1</b></td><td class="r mono">22</td><td class="r mono">165h 30m</td><td class="r mono">7h 31m</td><td class="r mono">8,077</td><td class="r mono">709</td><td class="r mono">45</td></tr><tr><td><b>Agent 2</b></td><td class="r mono">17</td><td class="r mono">105h 00m</td><td class="r mono">6h 10m</td><td class="r mono">4,686</td><td class="r mono">401</td><td class="r mono">23</td></tr></tbody></table><h3>Day by day</h3><table class="days"><thead><tr><th>Date</th><th>Team member</th><th class="r">Hours</th><th class="r">Dials</th><th class="r">Conv.</th><th class="r">Appts</th></tr></thead><tbody>
+<tr><td>Tue, Sep 1</td><td>Agent 1<small class="brief">Worked the probate list. Two sellers open to an offer, callbacks set for Thursday.</small></td><td class="r mono">8h 00m</td><td class="r mono">340</td><td class="r mono">28</td><td class="r mono">3</td></tr>
+<tr><td>Tue, Sep 1</td><td>Agent 2<small class="brief">Lots of voicemails in the morning, better pickup after 3 PM. One appointment set.</small></td><td class="r mono">6h 00m</td><td class="r mono">250</td><td class="r mono">20</td><td class="r mono">2</td></tr>
+<tr><td>Wed, Sep 2</td><td>Agent 1<small class="brief">Steady day. One hot lead passed to your acquisitions manager with full notes.</small></td><td class="r mono">7h 30m</td><td class="r mono">347</td><td class="r mono">31</td><td class="r mono">2</td></tr>
+<tr><td>Wed, Sep 2</td><td>Agent 2<small class="brief">Followed up last week's callbacks. One seller ready to talk numbers.</small></td><td class="r mono">6h 30m</td><td class="r mono">261</td><td class="r mono">25</td><td class="r mono">1</td></tr>
+<tr><td>Thu, Sep 3</td><td>Agent 1<small class="brief">Lots of voicemails in the morning, better pickup after 3 PM. One appointment set.</small></td><td class="r mono">7h 00m</td><td class="r mono">354</td><td class="r mono">34</td><td class="r mono">1</td></tr>
+<tr><td>Thu, Sep 3</td><td>Agent 2<small class="brief">Cleaned up CRM stages for 40 leads and booked two appointments.</small></td><td class="r mono">6h 00m</td><td class="r mono">272</td><td class="r mono">21</td><td class="r mono">1</td></tr>
+<tr><td>Fri, Sep 4</td><td>Agent 1<small class="brief">Followed up last week's callbacks. One seller ready to talk numbers.</small></td><td class="r mono">8h 00m</td><td class="r mono">361</td><td class="r mono">37</td><td class="r mono">2</td></tr>
+<tr><td>Mon, Sep 7</td><td>Agent 1<small class="brief">Cleaned up CRM stages for 40 leads and booked two appointments.</small></td><td class="r mono">7h 30m</td><td class="r mono">368</td><td class="r mono">28</td><td class="r mono">3</td></tr>
+<tr><td>Mon, Sep 7</td><td>Agent 2<small class="brief">Steady day. One hot lead passed to your acquisitions manager with full notes.</small></td><td class="r mono">6h 00m</td><td class="r mono">294</td><td class="r mono">22</td><td class="r mono">1</td></tr>
+<tr><td>Tue, Sep 8</td><td>Agent 1<small class="brief">Worked the probate list. Two sellers open to an offer, callbacks set for Thursday.</small></td><td class="r mono">7h 00m</td><td class="r mono">375</td><td class="r mono">31</td><td class="r mono">2</td></tr>
+<tr><td colspan="6" style="color:#5A6A84;font-style:italic;">… and every other working day of the month, the same way</td></tr>
+</tbody></table><div class="foot"><div><span>Amr Abdelgawad Talents · amrabdelgawad.site</span><span>Your Company · September 2026</span></div></div></div>
+</div>
+</body>
+</html>
