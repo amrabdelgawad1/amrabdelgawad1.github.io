@@ -882,10 +882,12 @@
         <button data-r="week" class="on">This week</button>
         <button data-r="month">This month</button>
         <button data-r="all">All time</button>
+        <button data-r="cycle">Pay cycle</button>
         <button data-r="custom">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-2px; margin-right:4px;"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Custom
         </button>
       </div>
+      <select class="sel" id="tm-cycle" aria-label="Pay cycle" hidden></select>
       <select class="sel" id="tm-person" aria-label="Person"><option value="">Everyone</option></select>
       <select class="sel" id="tm-company" aria-label="Company"><option value="">All companies</option></select>
       <select class="sel" id="tm-status" aria-label="Payment status">
@@ -1033,6 +1035,8 @@
         <button class="btn btn-ghost btn-sm" data-bulk="unpaid">Mark unpaid</button>
         <button class="btn btn-ghost btn-sm" data-bulk="cpaid">Company paid you</button>
         <button class="btn btn-ghost btn-sm" data-bulk="cunpaid">Company hasn't paid</button>
+        <button class="btn btn-ghost btn-sm" data-bulk="cfx" title="Change the pound rate on shifts the company already paid">EGP rate: company paid</button>
+        <button class="btn btn-ghost btn-sm" data-bulk="pfx" title="Change the pound rate on shifts you already paid">EGP rate: team paid</button>
         <select class="co" id="tm-bulkCo" aria-label="Set company for selected"></select>
         <button class="btn btn-ghost btn-sm" data-bulk="payrate">Change pay rate</button>
         <button class="btn btn-ghost btn-sm" data-bulk="billrate">Change company rate</button>
@@ -1124,7 +1128,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="../tracker/config.js"></script>
 <script src="../ask.js?v=4"></script>
-<script src="team.js?v=14"></script>
+<script src="team.js?v=15"></script>
 <script src="cash.js?v=24"></script>
 </body>
 </html>

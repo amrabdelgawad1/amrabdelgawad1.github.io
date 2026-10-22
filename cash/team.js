@@ -94,15 +94,27 @@ window.CashTeam = function(db){
   function showNotice(msg){ $('notice').textContent = msg; $('notice').hidden = false; }
   function clearNotice(){ $('notice').hidden = true; }
 
+  // How many pounds $1 was for a payment. Starts at today's rate; resolves the typed rate, or null when backed out.
+  async function askFx(title, msg){
+    const ans = await ask({ title, msg, ok:'Save', input:{ label:'EGP for $1', value: fxNow() ? String(fxNow()) : '', inputMode:'decimal', placeholder:'Like 52' } });
+    if (ans === null) return null;
+    const v = parseFloat(String(ans).replace(',', '.'));
+    if (!(v > 0) || v > 1000) { toast('Enter how many pounds one dollar was, like 52.', false); return null; }
+    return Math.round(v * 10000) / 10000;
+  }
+  const fxText = n => n ? ' at ' + n + ' EGP per $1' : '';
+
   async function updateShifts(ids, patch){
-    if ('paid' in patch) patch = Object.assign({}, patch, { paid_fx: patch.paid ? fxNow() : null });
-    if ('client_paid' in patch) patch = Object.assign({}, patch, { client_paid_at: patch.client_paid ? new Date().toISOString() : null, client_fx: patch.client_paid ? fxNow() : null });
+    if ('paid' in patch) patch = Object.assign({}, patch, { paid_fx: patch.paid ? ('paid_fx' in patch ? patch.paid_fx : fxNow()) : null });
+    if ('client_paid' in patch) patch = Object.assign({}, patch, { client_paid_at: patch.client_paid ? new Date().toISOString() : null, client_fx: patch.client_paid ? ('client_fx' in patch ? patch.client_fx : fxNow()) : null });
     const { error } = await db.from('shifts').update(patch).in('id', ids);
     if (error) { showNotice("Couldn't save that change. Try again."); return false; }
     clearNotice();
     log.forEach(r => { if (ids.includes(r.id)) {
       if ('paid' in patch) { r.paid = patch.paid; r.paidAt = patch.paid_at; r.paidFx = patch.paid_fx; }
       if ('client_paid' in patch) { r.clientPaid = patch.client_paid; r.clientPaidAt = patch.client_paid_at; r.clientFx = patch.client_fx; }
+      if (!('paid' in patch) && 'paid_fx' in patch) r.paidFx = patch.paid_fx;
+      if (!('client_paid' in patch) && 'client_fx' in patch) r.clientFx = patch.client_fx;
       if ('company_id' in patch && patch.company_id !== r.companyId) {
         r.companyId = patch.company_id;
         const c = companies.find(x => x.id === r.companyId); r.billRate = c && c.bill_rate != null ? Number(c.bill_rate) : null; // same as the database trigger
@@ -183,9 +195,33 @@ window.CashTeam = function(db){
   }
   $('coAdd').addEventListener('click', addCompany);
 
+  // ---------- pay cycles ----------
+  // Two working weeks, Monday to Friday twice (Sep 28 – Oct 9, Oct 12 – Oct 23, …).
+  // A cycle runs Monday to the second Sunday, so a weekend shift still lands in it.
+  const CYCLE_START = '2026-09-28';
+  const addDays = (d, n) => { const x = new Date(d + 'T00:00'); x.setDate(x.getDate() + n); return iso(x); };
+  function cycleOf(d){
+    const days = Math.round((new Date(d + 'T00:00') - new Date(CYCLE_START + 'T00:00')) / 86400000);
+    const from = addDays(CYCLE_START, Math.floor(days / 14) * 14);
+    return { from, to: addDays(from, 13), workTo: addDays(from, 11) };
+  }
+  const cycleLabel = c => { const f = new Date(c.from + 'T00:00'), t = new Date(c.workTo + 'T00:00');
+    return f.toLocaleDateString('en-US', { month:'short', day:'numeric' }) + ' – ' + t.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }); };
+  // Newest first: from the current cycle back to the one with the oldest shift
+  function fillCycles(){
+    const sel = $('cycle'), cur = sel.value, oldest = log.reduce((m, r) => r.date < m ? r.date : m, iso(new Date()));
+    sel.innerHTML = '';
+    for (let c = cycleOf(iso(new Date())), i = 0; c.to >= oldest && i < 60; c = cycleOf(addDays(c.from, -1)), i++) {
+      const o = document.createElement('option'); o.value = c.from; o.textContent = (i === 0 ? 'This cycle · ' : i === 1 ? 'Last cycle · ' : '') + cycleLabel(c); sel.appendChild(o);
+    }
+    if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+  }
+  $('cycle').addEventListener('change', render);
+
   // ---------- filters ----------
   function inRange(r){
     if (range === 'all') return true;
+    if (range === 'cycle') { const c = cycleOf($('cycle').value || iso(new Date())); return r.date >= c.from && r.date <= c.to; }
     if (range === 'custom') {
       const f = $('from').value, t = $('to').value;
       return (!f || r.date >= f) && (!t || r.date <= t);
@@ -198,6 +234,7 @@ window.CashTeam = function(db){
   const RANGE_LABEL = { week:'This week (from Saturday)', month:'This month', all:'All time' };
   const shortDate = d => new Date(d+'T00:00').toLocaleDateString('en-US',{ month:'short', day:'numeric', year:'numeric' });
   function rangeLabel(){
+    if (range === 'cycle') return 'Pay cycle ' + cycleLabel(cycleOf($('cycle').value || iso(new Date())));
     if (range !== 'custom') return RANGE_LABEL[range];
     const f = $('from').value, t = $('to').value;
     if (f && t) return f === t ? shortDate(f) : shortDate(f) + ' – ' + shortDate(t);
@@ -211,6 +248,8 @@ window.CashTeam = function(db){
     range = b.dataset.r;
     document.querySelectorAll('#tm-range button').forEach(x => x.classList.toggle('on', x === b));
     $('customBox').hidden = range !== 'custom';
+    $('cycle').hidden = range !== 'cycle';
+    if (range === 'cycle') fillCycles();
     if (range === 'custom' && !$('from').value && !$('to').value) quick('lastmonth');
     render();
   });
@@ -475,18 +514,22 @@ window.CashTeam = function(db){
       const st = tr.querySelector('.status.team');
       st.classList.add(r.paid ? 'paid' : 'unpaid');
       st.querySelector('span').textContent = r.paid ? 'Paid' : 'Unpaid';
-      st.title = r.paid && r.paidAt ? 'Marked paid ' + new Date(r.paidAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : 'Click to mark as paid';
+      st.title = r.paid && r.paidAt ? 'Marked paid ' + new Date(r.paidAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + fxText(r.paidFx) : 'Click to mark as paid';
       st.addEventListener('click', async () => {
-        const ok = await updateShifts([r.id], { paid: !r.paid, paid_at: r.paid ? null : new Date().toISOString() });
+        let rate;
+        if (!r.paid && (rate = await askFx('Paying ' + r.name + ' for ' + fmtDate(r.date) + '?', 'What was $1 in pounds when you paid?')) === null) return;
+        const ok = await updateShifts([r.id], r.paid ? { paid:false, paid_at:null } : { paid:true, paid_at: new Date().toISOString(), paid_fx: rate });
         if (ok) render();
       });
       // Second pill: has the company paid you for these hours?
       const cp = tr.querySelector('.status.client');
       cp.classList.add(r.clientPaid ? 'paid' : 'unpaid');
       cp.querySelector('span').textContent = r.clientPaid ? 'Company paid' : 'Company owes';
-      cp.title = r.clientPaid && r.clientPaidAt ? 'The company paid you ' + new Date(r.clientPaidAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : 'Click when the company pays you for these hours';
+      cp.title = r.clientPaid && r.clientPaidAt ? 'The company paid you ' + new Date(r.clientPaidAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + fxText(r.clientFx) : 'Click when the company pays you for these hours';
       cp.addEventListener('click', async () => {
-        const ok = await updateShifts([r.id], { client_paid: !r.clientPaid });
+        let rate;
+        if (!r.clientPaid && (rate = await askFx((companyName(r.companyId) || 'The company') + ' paid you for ' + fmtDate(r.date) + '?', 'What was $1 in pounds when the money came in?')) === null) return;
+        const ok = await updateShifts([r.id], r.clientPaid ? { client_paid:false } : { client_paid:true, client_fx: rate });
         if (ok) render();
       });
 
@@ -628,7 +671,10 @@ window.CashTeam = function(db){
     const rows = log.filter(r => ids.includes(r.id)).sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
     if (!rows.length) return;
     if (new Set(rows.map(r => nameKey(r.name))).size > 1) { toast('Pick shifts for one person to make a payslip.', false); return; }
-    slip = { rows, number: 'PS-' + new Date().getFullYear() + '-' + String(payslipCounter + 1).padStart(4, '0'), counted:false };
+    // Picked from a pay cycle: the payslip covers that whole cycle, not just the first to last shift
+    const c = range === 'cycle' ? cycleOf($('cycle').value || iso(new Date())) : null;
+    const inCycle = c && rows.every(r => r.date >= c.from && r.date <= c.to);
+    slip = { rows, cycle: inCycle ? c : null, number: 'PS-' + new Date().getFullYear() + '-' + String(payslipCounter + 1).padStart(4, '0'), counted:false };
     $('slipNote').value = '';
     drawPayslip();
     $('slipOverlay').hidden = false; document.body.style.overflow = 'hidden';
@@ -665,7 +711,9 @@ window.CashTeam = function(db){
       '<div class="doc"><h1>Payslip</h1><p>No. <b>' + number + '</b></p><p>Issued <b>' + longDate(new Date()) + '</b></p></div></div>' +
       '<div class="meta">' +
         '<div class="box"><p>Paid to</p><strong>' + escHtml(rows[0].name) + '</strong><span>Team member</span></div>' +
-        '<div class="box"><p>Pay period</p><strong>' + periodText(rows[0].date, rows[rows.length - 1].date) + '</strong><span>' + rows.length + ' shift' + (rows.length === 1 ? '' : 's') + '</span></div>' +
+        (slip.cycle
+          ? '<div class="box"><p>Pay cycle</p><strong>' + periodText(slip.cycle.from, slip.cycle.workTo) + '</strong><span>' + rows.length + ' shift' + (rows.length === 1 ? '' : 's') + ' · Mon–Fri, two weeks</span></div>'
+          : '<div class="box"><p>Pay period</p><strong>' + periodText(rows[0].date, rows[rows.length - 1].date) + '</strong><span>' + rows.length + ' shift' + (rows.length === 1 ? '' : 's') + '</span></div>') +
         '<div class="box"><p>Worked under</p><strong>Amr Abdelgawad Talents</strong><span>' + rateText + '</span></div>' +
       '</div>' +
       '<table><thead><tr><th>Date</th><th class="r">Hours</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>' +
@@ -714,7 +762,8 @@ window.CashTeam = function(db){
       const clone = $('slip').cloneNode(true);
       clone.style.transform = 'none'; clone.style.boxShadow = 'none';
       const first = slip.rows[0], last = slip.rows[slip.rows.length - 1];
-      const file = 'Payslip-' + first.name.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + first.date + (first.date === last.date ? '' : '-to-' + last.date) + '.pdf';
+      const a = slip.cycle ? slip.cycle.from : first.date, z = slip.cycle ? slip.cycle.workTo : last.date;
+      const file = 'Payslip-' + first.name.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + a + (a === z ? '' : '-to-' + z) + '.pdf';
       await html2pdf().set({
         margin: [10, 0, 10, 0], filename: file,
         image: { type:'jpeg', quality:0.96 },
@@ -924,17 +973,33 @@ window.CashTeam = function(db){
     }
     // Only touch shifts whose status actually changes, so already-paid ones keep their paid date and rate
     const changing = test => ids.filter(id => { const r = log.find(x => x.id === id); return r && test(r); });
+    const nShifts = n => n + ' shift' + (n === 1 ? '' : 's');
+    // Fix the pound rate on shifts already marked paid (by the company, or to the team member)
+    if (b.dataset.bulk === 'cfx' || b.dataset.bulk === 'pfx') {
+      const isClient = b.dataset.bulk === 'cfx';
+      const todo = changing(r => isClient ? r.clientPaid : r.paid);
+      if (!todo.length) { toast(isClient ? 'None of these are marked Company paid yet.' : 'None of these are marked Paid yet.', false); return; }
+      const rate = await askFx('EGP rate for ' + nShifts(todo.length) + (isClient ? ' the company paid' : ' you paid'), isClient ? 'What was $1 in pounds when that money came in?' : 'What was $1 in pounds when you paid?');
+      if (rate === null) return;
+      const ok = await updateShifts(todo, isClient ? { client_fx: rate } : { paid_fx: rate });
+      if (ok) { selected.clear(); render(); toast('Set ' + rate + ' EGP per $1 on ' + nShifts(todo.length), false); }
+      return;
+    }
     if (b.dataset.bulk === 'cpaid' || b.dataset.bulk === 'cunpaid') {
       const cpaid = b.dataset.bulk === 'cpaid';
       const todo = changing(r => r.clientPaid !== cpaid);
-      const ok = !todo.length || await updateShifts(todo, { client_paid: cpaid });
-      if (ok) { selected.clear(); render(); toast((cpaid ? 'Company paid you for ' : 'Company still owes for ') + ids.length + ' shift' + (ids.length === 1 ? '' : 's'), false); }
+      let rate;
+      if (cpaid && todo.length && (rate = await askFx('Company paid you for ' + nShifts(todo.length) + '?', 'What was $1 in pounds when the money came in?')) === null) return;
+      const ok = !todo.length || await updateShifts(todo, cpaid ? { client_paid:true, client_fx: rate } : { client_paid:false });
+      if (ok) { selected.clear(); render(); toast((cpaid ? 'Company paid you for ' : 'Company still owes for ') + nShifts(ids.length) + (cpaid ? fxText(rate) : ''), false); }
       return;
     }
     const paid = b.dataset.bulk === 'paid';
-    b.setAttribute('aria-busy', 'true');
     const todo = changing(r => r.paid !== paid);
-    const ok = !todo.length || await updateShifts(todo, { paid, paid_at: paid ? new Date().toISOString() : null });
+    let rate;
+    if (paid && todo.length && (rate = await askFx('Paying ' + nShifts(todo.length) + '?', 'What was $1 in pounds when you paid?')) === null) return;
+    b.setAttribute('aria-busy', 'true');
+    const ok = !todo.length || await updateShifts(todo, paid ? { paid:true, paid_at: new Date().toISOString(), paid_fx: rate } : { paid:false, paid_at:null });
     b.removeAttribute('aria-busy');
     if (ok) { selected.clear(); render(); toast((paid ? 'Marked ' : 'Unmarked ') + ids.length + ' shift' + (ids.length === 1 ? '' : 's') + (paid ? ' as paid' : ''), false); }
   });
@@ -1142,7 +1207,7 @@ window.CashTeam = function(db){
     ].map(esc).join(',')));
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type:'text/csv' }));
-    a.download = 'team-shifts-' + (range === 'custom' ? ($('from').value || 'start') + '_to_' + ($('to').value || 'today') : range) + '.csv';
+    a.download = 'team-shifts-' + (range === 'cycle' ? 'cycle-' + cycleOf($('cycle').value || iso(new Date())).from : range === 'custom' ? ($('from').value || 'start') + '_to_' + ($('to').value || 'today') : range) + '.csv';
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });
 
