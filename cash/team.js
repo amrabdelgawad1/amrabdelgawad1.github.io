@@ -741,12 +741,16 @@ window.CashTeam = function(db){
     companyOptions($('repCo'), { current: $('company').value && $('company').value !== 'none' ? $('company').value : (companies[0] ? String(companies[0].id) : '') });
     if (!$('repMonth').value) { const d = new Date(); if (d.getDate() <= 10) d.setMonth(d.getMonth() - 1, 1); $('repMonth').value = monthOf(d); } // early in a month, last month is the one to send
     $('repMonth').max = monthOf(new Date());
+    try { $('repPay').value = localStorage.getItem(PAY_KEY) || ''; } catch(e){}
     rep = {};
     drawReport();
     $('repOverlay').hidden = false; document.body.style.overflow = 'hidden';
     fitReport();
   });
-  ['repCo', 'repMonth', 'repNotes'].forEach(id => $(id).addEventListener('change', () => { if (rep) { drawReport(); fitReport(); } }));
+  ['repCo', 'repMonth', 'repNotes', 'repInv'].forEach(id => $(id).addEventListener('change', () => { if (rep) { drawReport(); fitReport(); } }));
+  // The payment line is the same for every invoice, so it's remembered on this device
+  const PAY_KEY = 'talents-invoice-pay';
+  $('repPay').addEventListener('input', () => { try { localStorage.setItem(PAY_KEY, $('repPay').value); } catch(e){} if (rep) { drawInvoice(); fitReport(); } });
   function drawReport(){
     const coId = Number($('repCo').value), month = $('repMonth').value, notes = $('repNotes').checked;
     const co = companies.find(c => c.id === coId), mDate = month ? new Date(month + '-01T00:00') : new Date();
@@ -795,10 +799,61 @@ window.CashTeam = function(db){
         '</tbody></table>' : '') +
       '<div class="foot"><div><span>Amr Abdelgawad Talents · amrabdelgawad.site</span><span>' + escHtml(rep.coName) + ' · ' + mText + '</span></div></div>';
     $('repDownload').disabled = !rows.length;
+    rep.mText = mText; rep.coId = coId;
+    drawInvoice();
+  }
+
+  // Invoice page: hours × the company rate locked onto each shift, one line per person and rate
+  function drawInvoice(){
+    const inv = $('inv'), on = $('repInv').checked && rep.rows.length;
+    inv.hidden = !on;
+    const noRate = rep.rows.filter(r => r.billRate == null);
+    $('repWarn').hidden = !(on && noRate.length);
+    $('repWarn').textContent = noRate.length + ' shift' + (noRate.length === 1 ? ' has' : 's have') + ' no company rate and ' + (noRate.length === 1 ? 'is' : 'are') + ' left off the invoice. Set it in History › Change company rate.';
+    if (!on) return;
+    const cents = n => Math.round(n * 100) / 100;
+    const lines = new Map();
+    rep.rows.filter(r => r.billRate != null).forEach(r => {
+      const k = nameKey(r.name) + '|' + r.billRate;
+      if (!lines.has(k)) lines.set(k, { name:r.name, rate:r.billRate, secs:0, n:0, rows:[] });
+      const l = lines.get(k); l.secs += r.work; l.n++; l.rows.push(r);
+    });
+    const list = [...lines.values()].sort((a, b) => a.name.localeCompare(b.name) || a.rate - b.rate);
+    list.forEach(l => { l.amt = cents(l.secs / 3600 * l.rate); });
+    const total = cents(list.reduce((a, l) => a + l.amt, 0)), secs = list.reduce((a, l) => a + l.secs, 0);
+    const billed = list.flatMap(l => l.rows), paidRows = billed.filter(r => r.clientPaid);
+    const allPaid = billed.length && paidRows.length === billed.length;
+    const paidAmt = cents(paidRows.reduce((a, r) => a + r.work / 3600 * r.billRate, 0));
+    const lastPaid = paidRows.map(r => r.clientPaidAt).filter(Boolean).sort().pop();
+    const number = 'INV-' + rep.month.replace('-', '') + '-' + String(rep.coId).padStart(2, '0');
+    const pay = $('repPay').value.trim();
+    const stamp = allPaid ? '<div class="stamp"><i></i>Paid' + (lastPaid ? ' on ' + longDate(lastPaid) : '') + '</div>'
+      : paidRows.length ? '<div class="stamp due"><i></i>Partly paid</div>' : '<div class="stamp due"><i></i>Amount due</div>';
+    const due = allPaid ? 0 : cents(total - paidAmt);
+    inv.innerHTML =
+      '<div class="band"></div>' +
+      '<div class="top"><div class="brand">Amr Abdelgawad<em>Talents</em><small>amrabdelgawad.site</small></div>' +
+      '<div class="doc"><h1>Invoice</h1><p>No. <b>' + number + '</b></p><p>Issued <b>' + longDate(new Date()) + '</b></p></div></div>' +
+      '<div class="meta">' +
+        '<div class="box"><p>Bill to</p><strong>' + escHtml(rep.coName) + '</strong><span>Remote team services</span></div>' +
+        '<div class="box"><p>Period</p><strong>' + rep.mText + '</strong><span>' + billed.length + ' shift' + (billed.length === 1 ? '' : 's') + ' · ' + hm(secs) + '</span></div>' +
+        '<div class="box"><p>From</p><strong>Amr Abdelgawad Talents</strong><span>amrabdelgawad.site</span></div>' +
+      '</div>' +
+      '<table><thead><tr><th>Description</th><th class="r">Hours</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>' +
+      list.map(l => '<tr><td><b>' + escHtml(l.name) + '</b><small>' + l.n + ' shift' + (l.n === 1 ? '' : 's') + ' in ' + rep.mText + '</small></td><td class="r mono">' + hm(l.secs) + '</td><td class="r mono">' + usd(l.rate) + '</td><td class="r mono">' + usd(l.amt) + '</td></tr>').join('') +
+      '</tbody></table>' +
+      '<div class="bottom"><div class="note"><b>Hours are worked time only.</b> Breaks aren’t billed. Each line is hours × hourly rate, rounded to the cent. Details per day are in the monthly report.' +
+        (pay ? '<span class="custom"><b>Payment:</b> ' + escHtml(pay) + '</span>' : '') + stamp + '</div>' +
+        '<div class="totals"><div><span>Total hours</span><span class="mono">' + hm(secs) + '</span></div>' +
+        '<div><span>Subtotal</span><span class="mono">' + usd(total) + '</span></div>' +
+        (paidRows.length && !allPaid ? '<div><span>Already paid</span><span class="mono">' + usd(paidAmt) + '</span></div>' : '') +
+        '<div class="grand"><span>' + (allPaid ? 'Total paid' : 'Amount due') + '</span><span class="mono">' + usd(allPaid ? total : due) + '</span></div></div></div>' +
+      '<div class="foot"><div><span>Amr Abdelgawad Talents · amrabdelgawad.site</span><span>' + number + '</span></div></div>';
+    rep.invNumber = number;
   }
   function fitReport(){
     if ($('repOverlay').hidden) return;
-    const el = $('rep'), fit = $('repFit');
+    const el = $('repSheets'), fit = $('repFit');
     el.style.transform = 'none';
     const w = el.offsetWidth, h = el.offsetHeight, s = Math.min(1, ($('repStage').clientWidth - 32) / w);
     el.style.transform = 'scale(' + s + ')'; el.style.transformOrigin = 'top left';
@@ -814,9 +869,12 @@ window.CashTeam = function(db){
     try {
       const html2pdf = await loadPdfLib();
       await document.fonts.ready;
-      const clone = $('rep').cloneNode(true);
-      clone.style.transform = 'none'; clone.style.boxShadow = 'none';
-      const file = 'Monthly-Report-' + rep.coName.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + rep.month + '.pdf';
+      // The report, then the invoice on a page of its own
+      const clone = document.createElement('div'), withInv = !$('inv').hidden;
+      const sheet = el => { const c = el.cloneNode(true); c.removeAttribute('id'); c.style.boxShadow = 'none'; return c; };
+      clone.appendChild(sheet($('rep')));
+      if (withInv) { const br = document.createElement('div'); br.className = 'html2pdf__page-break'; clone.append(br, sheet($('inv'))); }
+      const file = (withInv ? 'Report-and-Invoice-' : 'Monthly-Report-') + rep.coName.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + rep.month + '.pdf';
       await html2pdf().set({
         margin: [10, 0, 10, 0], filename: file,
         image: { type:'jpeg', quality:0.96 },

@@ -550,7 +550,7 @@
     table.log.mylist td.c-hrs{ grid-row:3; }
   }
 </style>
-<link rel="stylesheet" href="look.css?v=13">
+<link rel="stylesheet" href="look.css?v=14">
 <link rel="stylesheet" href="../theme-switch.css?v=2">
 <link rel="stylesheet" href="../daylight-dark.css?v=2">
 <link rel="stylesheet" href="../ask.css?v=3">
@@ -1109,10 +1109,13 @@
     <select class="field rep-pick" id="tm-repCo" aria-label="Company"></select>
     <input class="field rep-pick" type="month" id="tm-repMonth" aria-label="Month" />
     <label class="check rep-check"><input type="checkbox" id="tm-repNotes" checked /> Daily notes</label>
+    <label class="check rep-check"><input type="checkbox" id="tm-repInv" checked /> Invoice</label>
+    <input class="field slip-note rep-pay" id="tm-repPay" maxlength="240" placeholder="Payment details on the invoice, like: Pay by bank transfer within 7 days" aria-label="Payment details on the invoice" />
+    <span class="rep-warn" id="tm-repWarn" hidden></span>
     <button class="btn btn-ghost btn-sm" id="tm-repClose">Close</button>
     <button class="btn btn-primary btn-sm" id="tm-repDownload">Download PDF</button>
   </div>
-  <div class="slip-stage" id="tm-repStage"><div class="slip-fit" id="tm-repFit"><div class="slip statement report" id="tm-rep"></div></div></div>
+  <div class="slip-stage" id="tm-repStage"><div class="slip-fit" id="tm-repFit"><div class="rep-sheets" id="tm-repSheets"><div class="slip statement report" id="tm-rep"></div><div class="slip statement report invoice" id="tm-inv" hidden></div></div></div></div>
 </div>
 
 <div class="toast" id="tm-toast"><span id="tm-toastMsg"></span><button id="tm-undo">Undo</button></div>
@@ -1121,7 +1124,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="../tracker/config.js"></script>
 <script src="../ask.js?v=4"></script>
-<script src="team.js?v=13"></script>
+<script src="team.js?v=14"></script>
 <script src="cash.js?v=23"></script>
 </body>
 </html>

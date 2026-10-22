@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
+# Private team pages: sign-in only, nothing for search engines there
+Disallow: /app/
+Disallow: /cash/
+Disallow: /tracker/
 
 Sitemap: https://amrabdelgawad.site/sitemap.xml

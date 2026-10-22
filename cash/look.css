@@ -238,3 +238,9 @@ html .fx-opt #fFx{ flex:0 1 130px; }
 /* PDFs stay on paper colours in dark mode too (the page-wide .brand colour turned the name light) */
 html .slip .brand{ color:#0C0F1A; }
 html .slip.report .brand{ color:#14213D; }
+/* Invoice: a second sheet under the report */
+.rep-sheets{ display:flex; flex-direction:column; gap:28px; width:max-content; }
+.rep-sheets .slip[hidden]{ display:none; }
+.slip-bar .rep-pay{ flex:1 1 260px; }
+.rep-warn{ flex-basis:100%; order:9; font-size:13px; color:var(--gold); }
+.slip.invoice .stamp{ display:flex; width:max-content; }
