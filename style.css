@@ -912,3 +912,4 @@ button.chip[data-tool-desc]:focus-visible{ outline:none; color:var(--accent2); b
 .team-foot .team-sample{ margin-top:0; }
 @media (max-width:1000px){ .team-grid{ grid-template-columns:1fr 1fr; } }
 @media (max-width:600px){ .team-grid{ grid-template-columns:1fr; } }
+.rebook-note{ max-width:620px; margin:0 auto 18px; text-align:center; background:var(--accent-dim); color:var(--text); border-radius:var(--radius-sm); padding:12px 16px; font-size:15px; }

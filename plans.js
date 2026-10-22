@@ -6,3 +6,12 @@
     if (topic && !topic.value.trim()) topic.value = 'Interested in: ' + a.getAttribute('data-plan');
   });
 })();
+
+// Back from "Pick another time" in a booking email: the old call is already freed
+(function(){
+  if (!/[?&]rebook=1/.test(location.search)) return;
+  var card = document.querySelector('#lets-talk .booking-card'); if (!card) return;
+  var n = document.createElement('p'); n.className = 'rebook-note';
+  n.textContent = 'Your previous time is freed. Pick a new time below.';
+  card.parentNode.insertBefore(n, card);
+})();
