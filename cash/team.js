@@ -43,8 +43,13 @@ window.CashTeam = function(db){
     fresh: x.source === 'tracker' && Date.now() - new Date(x.created_at).getTime() < 24*3600*1000,
     brief: (x.brief || '').trim(), editedAt: x.edited_at || null,
     original: x.original || null, // the shift as first sent, saved on the first edit
-    aiNote: (x.ai_note || '').trim() // a suggestion written from the brief (filled in later by the AI step)
+    aiNote: (x.ai_note || '').trim(), // a suggestion written from the brief (filled in later by the AI step)
+    // Optional numbers sent with the brief; null means not given
+    dials: x.dials != null ? Number(x.dials) : null, convos: x.conversations != null ? Number(x.conversations) : null, appts: x.appointments != null ? Number(x.appointments) : null
   });
+  const hasNums = r => r.dials != null || r.convos != null || r.appts != null;
+  const num = n => n.toLocaleString('en-US');
+  const numsText = r => [[r.dials, 'dial'], [r.convos, 'conversation'], [r.appts, 'appointment']].filter(p => p[0] != null).map(p => num(p[0]) + ' ' + p[1] + (p[0] === 1 ? '' : 's')).join(' · ');
   // "Originally Mon, Oct 19 · 09:00–16:17 · 6h 42m worked · 0h 35m break · Fortune Consultants"
   function originalText(r){
     const o = r.original; if (!o) return '';
@@ -54,7 +59,7 @@ window.CashTeam = function(db){
     if (o.company_id !== r.companyId && companyName(o.company_id)) parts.push(companyName(o.company_id));
     return 'Originally ' + parts.join(' · ') + (o.brief !== undefined && (o.brief || '') !== r.brief ? ' · brief was ' + (o.brief ? '“' + o.brief + '”' : 'empty') : '');
   }
-  const snapshot = r => ({ date: r.date, started_at: r.startedAt, ended_at: r.endedAt, work: r.work, brk: r.brk, company_id: r.companyId, brief: r.brief || '' });
+  const snapshot = r => ({ date: r.date, started_at: r.startedAt, ended_at: r.endedAt, work: r.work, brk: r.brk, company_id: r.companyId, brief: r.brief || '', dials: r.dials, conversations: r.convos, appointments: r.appts });
   const NOTE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="M9 13h6M9 17h4"/></svg>';
   const PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.8 2.8 0 0 0-4-4L4 16v4"/><path d="M13.5 6.5l4 4"/></svg>';
 
@@ -507,6 +512,7 @@ window.CashTeam = function(db){
   function renderNotes(){
     if (view !== 'notes') return;
     const rows = visible(true).slice().sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : (b.endedAt || b.createdAt || '').localeCompare(a.endedAt || a.createdAt || ''));
+    renderScore(rows);
     const withNote = rows.filter(r => r.brief), missing = rows.length - withNote.length;
     $('notesLabel').textContent = rangeLabel() + ' · ' + withNote.length + ' note' + (withNote.length === 1 ? '' : 's') + (missing ? ' · ' + missing + ' shift' + (missing === 1 ? '' : 's') + ' without one' : '');
     const box = $('notesList'); box.innerHTML = '';
@@ -521,11 +527,43 @@ window.CashTeam = function(db){
       const times = r.startedAt && r.endedAt ? hhmmIso(r.startedAt) + '–' + hhmmIso(r.endedAt) + ' · ' : '';
       card.querySelector('small').textContent = times + hm(r.work) + ' worked' + (companyName(r.companyId) ? ' · ' + companyName(r.companyId) : '') + (r.editedAt ? ' · Edited' : '');
       card.querySelector('.nc-brief').textContent = r.brief;
+      if (hasNums(r)) { const n = document.createElement('p'); n.className = 'nc-nums'; n.textContent = numsText(r); card.querySelector('.nc-brief').before(n); }
       if (r.aiNote) { const a = document.createElement('p'); a.className = 'nc-ai owner-only'; a.textContent = r.aiNote; card.appendChild(a); }
       if (r.original) { const o = document.createElement('p'); o.className = 'nc-orig'; o.textContent = originalText(r); card.appendChild(o); }
       card.querySelector('.edit').addEventListener('click', () => openEdit(r));
       box.appendChild(card);
     });
+  }
+
+  // ---------- scoreboard: each person's numbers for the period (This week starts Saturday) ----------
+  function renderScore(rows){
+    const per = new Map();
+    rows.forEach(r => {
+      const k = nameKey(r.name);
+      if (!per.has(k)) per.set(k, { name:r.name, n:0, work:0, withNums:0, numWork:0, dials:0, convos:0, appts:0 });
+      const v = per.get(k); v.n++; v.work += r.work;
+      if (hasNums(r)) { v.withNums++; v.numWork += r.work; v.dials += r.dials || 0; v.convos += r.convos || 0; v.appts += r.appts || 0; }
+    });
+    const list = [...per.values()].sort((a, b) => b.appts - a.appts || b.convos - a.convos || b.dials - a.dials || b.work - a.work);
+    const anyNums = list.some(v => v.withNums);
+    $('scoreLabel').textContent = rangeLabel() + (anyNums ? ' · from the numbers sent with each brief' : '');
+    const body = $('scoreRows'); body.innerHTML = '';
+    if (!list.length) { body.innerHTML = '<tr><td colspan="7" class="empty">No shifts in this period.</td></tr>'; return; }
+    const tot = { n:0, work:0, withNums:0, numWork:0, dials:0, convos:0, appts:0 };
+    list.forEach(v => { Object.keys(tot).forEach(k => tot[k] += v[k]); body.appendChild(scoreRow(v, false)); });
+    if (list.length > 1) body.appendChild(scoreRow(Object.assign({ name:'Team' }, tot), true));
+    if (!anyNums) { const tr = document.createElement('tr'); tr.innerHTML = '<td colspan="7" class="score-hint">No numbers yet. They come in when your team fills in Dials, Conversations and Appointments as they end a shift.</td>'; body.appendChild(tr); }
+  }
+  function scoreRow(v, total){
+    const tr = document.createElement('tr'); if (total) tr.className = 'score-total';
+    const perHour = v.numWork >= 60 && v.withNums ? (v.dials / (v.numWork / 3600)).toFixed(1) : '–';
+    const cell = (t, cls) => { const td = document.createElement('td'); td.textContent = t; if (cls) td.className = cls; tr.appendChild(td); return td; };
+    cell(v.name, 'sc-name');
+    const sh = cell(String(v.n), 'num'); if (v.withNums < v.n) sh.title = v.withNums + ' of ' + v.n + ' with numbers';
+    cell(hm(v.work), 'num');
+    [v.dials, v.convos, v.appts].forEach((x, i) => cell(v.withNums ? num(x) : '–', 'num' + (i === 2 ? ' sc-appt' : '')));
+    cell(perHour, 'num');
+    return tr;
   }
 
   // ---------- profit ----------
@@ -695,6 +733,104 @@ window.CashTeam = function(db){
     btn.removeAttribute('aria-busy'); btn.textContent = 'Download PDF';
   });
 
+  // ---------- monthly report for one client company ----------
+  // Hours, numbers and daily briefs for a month, as a PDF to send the company. No pay or rates on it.
+  let rep = null;
+  const monthOf = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  $('report').addEventListener('click', () => {
+    companyOptions($('repCo'), { current: $('company').value && $('company').value !== 'none' ? $('company').value : (companies[0] ? String(companies[0].id) : '') });
+    if (!$('repMonth').value) { const d = new Date(); if (d.getDate() <= 10) d.setMonth(d.getMonth() - 1, 1); $('repMonth').value = monthOf(d); } // early in a month, last month is the one to send
+    $('repMonth').max = monthOf(new Date());
+    rep = {};
+    drawReport();
+    $('repOverlay').hidden = false; document.body.style.overflow = 'hidden';
+    fitReport();
+  });
+  ['repCo', 'repMonth', 'repNotes'].forEach(id => $(id).addEventListener('change', () => { if (rep) { drawReport(); fitReport(); } }));
+  function drawReport(){
+    const coId = Number($('repCo').value), month = $('repMonth').value, notes = $('repNotes').checked;
+    const co = companies.find(c => c.id === coId), mDate = month ? new Date(month + '-01T00:00') : new Date();
+    const mText = mDate.toLocaleDateString('en-US', { month:'long', year:'numeric' });
+    const rows = log.filter(r => r.companyId === coId && month && r.date.slice(0, 7) === month)
+      .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.name.localeCompare(b.name));
+    rep = { rows, coName: co ? co.name : '', month };
+    const secs = rows.reduce((a, r) => a + r.work, 0), days = new Set(rows.map(r => r.date)).size;
+    const withNums = rows.filter(hasNums), anyNums = withNums.length > 0;
+    const sumOf = (list, k) => list.reduce((a, r) => a + (r[k] || 0), 0);
+    const per = new Map();
+    rows.forEach(r => {
+      const k = nameKey(r.name);
+      if (!per.has(k)) per.set(k, { name:r.name, rows:[] });
+      per.get(k).rows.push(r);
+    });
+    const people = [...per.values()].sort((a, b) => sumOf(b.rows, 'work') - sumOf(a.rows, 'work'));
+    const numCols = list => { const w = list.filter(hasNums); return w.length ? '<td class="r mono">' + num(sumOf(w, 'dials')) + '</td><td class="r mono">' + num(sumOf(w, 'convos')) + '</td><td class="r mono">' + num(sumOf(w, 'appts')) + '</td>' : '<td class="r">–</td><td class="r">–</td><td class="r">–</td>'; };
+    const dayNums = r => '<td class="r mono">' + (r.dials != null ? num(r.dials) : '–') + '</td><td class="r mono">' + (r.convos != null ? num(r.convos) : '–') + '</td><td class="r mono">' + (r.appts != null ? num(r.appts) : '–') + '</td>';
+    const numHead = anyNums ? '<th class="r">Dials</th><th class="r">Conv.</th><th class="r">Appts</th>' : '';
+    const summary = rows.length
+      ? 'In <b>' + mText + '</b>, ' + people.length + ' team member' + (people.length === 1 ? '' : 's') + ' worked <b>' + hm(secs) + '</b> for ' + escHtml(rep.coName) + ' across ' + rows.length + ' shift' + (rows.length === 1 ? '' : 's') + ' on ' + days + ' day' + (days === 1 ? '' : 's') + '.' +
+        (anyNums ? ' Together they made <b>' + num(sumOf(withNums, 'dials')) + ' dials</b>, had <b>' + num(sumOf(withNums, 'convos')) + ' conversations</b> and set <b>' + num(sumOf(withNums, 'appts')) + ' appointment' + (sumOf(withNums, 'appts') === 1 ? '' : 's') + '</b>' + (withNums.length < rows.length ? ' (from the ' + withNums.length + ' shifts where numbers were logged)' : '') + '.' : '')
+      : 'No shifts were logged for ' + escHtml(rep.coName) + ' in ' + mText + '.';
+    $('rep').innerHTML =
+      '<div class="band"></div>' +
+      '<div class="top"><div class="brand">Amr Abdelgawad<em>Talents</em><small>amrabdelgawad.site</small></div>' +
+      '<div class="doc"><h1>Monthly Report</h1><p>For <b>' + escHtml(rep.coName) + '</b></p><p>Issued <b>' + longDate(new Date()) + '</b></p></div></div>' +
+      '<div class="meta">' +
+        '<div class="box"><p>Month</p><strong>' + mText + '</strong><span>' + days + ' working day' + (days === 1 ? '' : 's') + '</span></div>' +
+        '<div class="box"><p>Hours worked</p><strong>' + hm(secs) + '</strong><span>' + rows.length + ' shift' + (rows.length === 1 ? '' : 's') + (rows.length ? ', avg ' + hm(secs / rows.length) : '') + '</span></div>' +
+        '<div class="box"><p>Team</p><strong>' + people.length + ' member' + (people.length === 1 ? '' : 's') + '</strong><span>' + escHtml(people.map(p => p.name.split(' ')[0]).join(', ') || '–') + '</span></div>' +
+      '</div>' +
+      (anyNums ? '<div class="meta nums">' +
+        '<div class="box hi"><p>Dials</p><strong>' + num(sumOf(withNums, 'dials')) + '</strong></div>' +
+        '<div class="box hi"><p>Conversations</p><strong>' + num(sumOf(withNums, 'convos')) + '</strong></div>' +
+        '<div class="box hi"><p>Appointments</p><strong>' + num(sumOf(withNums, 'appts')) + '</strong></div></div>' : '') +
+      '<p class="summary">' + summary + '</p>' +
+      (rows.length ?
+        '<h3>By team member</h3><table><thead><tr><th>Team member</th><th class="r">Shifts</th><th class="r">Hours</th><th class="r">Avg shift</th>' + numHead + '</tr></thead><tbody>' +
+        people.map(p => { const w = sumOf(p.rows, 'work'); return '<tr><td><b>' + escHtml(p.name) + '</b></td><td class="r mono">' + p.rows.length + '</td><td class="r mono">' + hm(w) + '</td><td class="r mono">' + hm(w / p.rows.length) + '</td>' + (anyNums ? numCols(p.rows) : '') + '</tr>'; }).join('') +
+        '</tbody></table>' +
+        '<h3>Day by day</h3><table class="days"><thead><tr><th>Date</th><th>Team member</th><th class="r">Hours</th>' + numHead + '</tr></thead><tbody>' +
+        rows.map(r => '<tr><td>' + new Date(r.date + 'T00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }) + '</td><td>' + escHtml(r.name) +
+          (notes && r.brief ? '<small class="brief">' + escHtml(r.brief) + '</small>' : '') + '</td><td class="r mono">' + hm(r.work) + '</td>' + (anyNums ? dayNums(r) : '') + '</tr>').join('') +
+        '</tbody></table>' : '') +
+      '<div class="foot"><div><span>Amr Abdelgawad Talents · amrabdelgawad.site</span><span>' + escHtml(rep.coName) + ' · ' + mText + '</span></div></div>';
+    $('repDownload').disabled = !rows.length;
+  }
+  function fitReport(){
+    if ($('repOverlay').hidden) return;
+    const el = $('rep'), fit = $('repFit');
+    el.style.transform = 'none';
+    const w = el.offsetWidth, h = el.offsetHeight, s = Math.min(1, ($('repStage').clientWidth - 32) / w);
+    el.style.transform = 'scale(' + s + ')'; el.style.transformOrigin = 'top left';
+    fit.style.width = (w * s) + 'px'; fit.style.height = (h * s) + 'px';
+  }
+  window.addEventListener('resize', fitReport);
+  function closeReport(){ $('repOverlay').hidden = true; document.body.style.overflow = ''; rep = null; }
+  $('repClose').addEventListener('click', closeReport);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('repOverlay').hidden) closeReport(); });
+  $('repDownload').addEventListener('click', async () => {
+    if (!rep || !rep.rows.length) return;
+    const btn = $('repDownload'); btn.setAttribute('aria-busy', 'true'); btn.textContent = 'Preparing…';
+    try {
+      const html2pdf = await loadPdfLib();
+      await document.fonts.ready;
+      const clone = $('rep').cloneNode(true);
+      clone.style.transform = 'none'; clone.style.boxShadow = 'none';
+      const file = 'Monthly-Report-' + rep.coName.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + rep.month + '.pdf';
+      await html2pdf().set({
+        margin: [10, 0, 10, 0], filename: file,
+        image: { type:'jpeg', quality:0.96 },
+        html2canvas: { scale:2, useCORS:true, backgroundColor:'#ffffff', scrollX:0, scrollY:0 },
+        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
+        pagebreak: { mode:['css', 'legacy'], avoid:['tr', '.summary', '.meta', 'h3'] }
+      }).from(clone).save();
+      toast('Report downloaded', false);
+    } catch (e) {
+      toast("Couldn't make the PDF. Check your connection and try again.", false);
+    }
+    btn.removeAttribute('aria-busy'); btn.textContent = 'Download PDF';
+  });
+
   // ---------- bulk ----------
   function updateBulk(rows){
     const n = selected.size;
@@ -813,7 +949,9 @@ window.CashTeam = function(db){
     noteDlg.querySelector('.ask-t').textContent = r.name;
     noteDlg.querySelector('.sd-sub').textContent = fmtDate(r.date) + (companyName(r.companyId) ? ' · ' + companyName(r.companyId) : '');
     const times = r.startedAt && r.endedAt ? hhmmIso(r.startedAt) + '–' + hhmmIso(r.endedAt) : 'Not clocked';
-    noteDlg.querySelector('.sd-stats').innerHTML = '<div>Worked<strong>' + hm(r.work) + '</strong></div><div>Break<strong>' + hm(r.brk) + '</strong></div><div>Shift<strong>' + times + '</strong></div>';
+    const nn = x => x == null ? '–' : num(x);
+    noteDlg.querySelector('.sd-stats').innerHTML = '<div>Worked<strong>' + hm(r.work) + '</strong></div><div>Break<strong>' + hm(r.brk) + '</strong></div><div>Shift<strong>' + times + '</strong></div>' +
+      (hasNums(r) ? '<div>Dials<strong>' + nn(r.dials) + '</strong></div><div>Conversations<strong>' + nn(r.convos) + '</strong></div><div>Appointments<strong>' + nn(r.appts) + '</strong></div>' : '');
     noteDlg.querySelector('.sd-brief').textContent = r.brief;
     const ai = noteDlg.querySelector('.sd-ai'); ai.hidden = !r.aiNote; ai.querySelector('p').textContent = r.aiNote || '';
     const og = noteDlg.querySelector('.sd-orig'); og.hidden = !r.original; og.textContent = originalText(r);
@@ -828,6 +966,7 @@ window.CashTeam = function(db){
         '<div class="sd-grid"><label>Shift date<input class="ask-i" type="date" name="date" required></label><label>Company<select class="ask-i" name="co"></select></label></div>' +
         '<div class="sd-grid three"><label>Started<input class="ask-i" type="time" name="start"></label><label>Ended<input class="ask-i" type="time" name="end"></label><label>Break (minutes)<input class="ask-i" type="number" name="brk" min="0" step="1" inputmode="numeric"></label></div>' +
         '<div class="sd-calc"><span class="sd-calc-l">Worked</span><span class="sd-wk"><input class="ask-i" type="number" name="h" min="0" max="24" step="1" inputmode="numeric" aria-label="Hours worked"><b>h</b><input class="ask-i" type="number" name="m" min="0" max="59" step="1" inputmode="numeric" aria-label="Minutes worked"><b>m</b></span><span class="sd-amt"></span></div>' +
+        '<div class="sd-grid three"><label>Dials<input class="ask-i" type="number" name="dials" min="0" step="1" inputmode="numeric" placeholder="–"></label><label>Conversations<input class="ask-i" type="number" name="convos" min="0" step="1" inputmode="numeric" placeholder="–"></label><label>Appointments<input class="ask-i" type="number" name="appts" min="0" step="1" inputmode="numeric" placeholder="–"></label></div>' +
         '<label>Brief<textarea class="ask-i ask-ta" name="brief" rows="4" placeholder="No note for this shift"></textarea></label>' +
         '<p class="ask-e" role="alert" hidden></p>' +
         '<div class="ask-b"><button type="button" data-close>Cancel</button><button type="submit" class="ask-ok">Save changes</button></div></form>');
@@ -849,6 +988,7 @@ window.CashTeam = function(db){
     f.brk.value = Math.round(r.brk / 60);
     f.h.value = Math.floor(r.work / 3600); f.m.value = Math.floor(r.work % 3600 / 60);
     f.brief.value = r.brief;
+    f.dials.value = r.dials != null ? r.dials : ''; f.convos.value = r.convos != null ? r.convos : ''; f.appts.value = r.appts != null ? r.appts : '';
     editDlg.querySelector('.ask-e').hidden = true;
     recalc();
     editDlg.showModal(); (f.start.value ? f.start : f.h).focus();
@@ -885,10 +1025,12 @@ window.CashTeam = function(db){
     if (secs < 60 || secs > 86400) return fail(secs < 60 ? 'Worked time has to be at least a minute. Check the times and the break.' : 'Worked time can’t be more than 24 hours.');
     const t = editTimes(f);
     if (t && (t.e - t.s) / 1000 < secs + bm * 60 - 59) return fail('Worked plus break is longer than the time between start and end.');
+    const nums = ['dials', 'convos', 'appts'].map(n => f[n].value.trim() === '' ? null : parseInt(f[n].value, 10));
+    if (nums.some(n => n !== null && (isNaN(n) || n < 0 || n > 100000))) return fail('Dials, conversations and appointments need whole numbers, or leave them empty.');
     const patch = {
       shift_date: f.date.value, company_id: Number(f.co.value), work_seconds: secs, break_seconds: bm * 60,
       started_at: t ? t.s.toISOString() : null, ended_at: t ? t.e.toISOString() : null,
-      brief: f.brief.value.trim() || null, edited_at: new Date().toISOString()
+      brief: f.brief.value.trim() || null, dials: nums[0], conversations: nums[1], appointments: nums[2], edited_at: new Date().toISOString()
     };
     if (!r.original) patch.original = snapshot(r); // keep the shift as it was first sent, only once
     const ok = editDlg.querySelector('.ask-ok'); ok.setAttribute('aria-busy', 'true');
@@ -923,7 +1065,8 @@ window.CashTeam = function(db){
       name: r.name, shift_date: r.date, work_seconds: r.work, break_seconds: r.brk,
       started_at: r.startedAt, ended_at: r.endedAt, company_id: r.companyId,
       paid: r.paid, paid_at: r.paidAt, paid_fx: r.paidFx, client_paid: r.clientPaid, client_paid_at: r.clientPaidAt, client_fx: r.clientFx, source: r.source, created_at: r.createdAt,
-      pay_rate: r.payRate, bill_rate: r.billRate, brief: r.brief || null, edited_at: r.editedAt, original: r.original, ai_note: r.aiNote || null
+      pay_rate: r.payRate, bill_rate: r.billRate, brief: r.brief || null, edited_at: r.editedAt, original: r.original, ai_note: r.aiNote || null,
+      dials: r.dials, conversations: r.convos, appointments: r.appts
     }).select().single();
     if (error) { showNotice("Couldn't restore that shift."); return; }
     log.splice(i, 0, toRow(data)); render();
@@ -932,11 +1075,12 @@ window.CashTeam = function(db){
   // ---------- CSV export ----------
   $('export').addEventListener('click', () => {
     const esc = v => { let s = String(v); if (/^[=+\-@]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
-    const lines = [['Name','Shift date','Worked (hours)','Break (hours)','Company','Status','Company paid you','Amount (USD)','Clock in','Clock out','Brief'].map(esc).join(',')];
+    const lines = [['Name','Shift date','Worked (hours)','Break (hours)','Company','Status','Company paid you','Amount (USD)','Clock in','Clock out','Dials','Conversations','Appointments','Brief'].map(esc).join(',')];
+    const blank = n => n == null ? '' : n;
     visible().forEach(r => lines.push([
       r.name, r.date, (r.work/3600).toFixed(2), (r.brk/3600).toFixed(2), companyName(r.companyId),
       r.paid ? 'Paid' : 'Unpaid', r.clientPaid ? 'Yes' : 'No', earned([r]).toFixed(2),
-      r.startedAt ? hhmmIso(r.startedAt) : '', r.endedAt ? hhmmIso(r.endedAt) : '', r.brief
+      r.startedAt ? hhmmIso(r.startedAt) : '', r.endedAt ? hhmmIso(r.endedAt) : '', blank(r.dials), blank(r.convos), blank(r.appts), r.brief
     ].map(esc).join(',')));
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type:'text/csv' }));

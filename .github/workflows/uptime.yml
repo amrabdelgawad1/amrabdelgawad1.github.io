@@ -1,0 +1,28 @@
+# Uptime check: every 15 minutes GitHub loads the website and the Book a Call calendar.
+# If either is down (3 tries, 1 minute apart), this run fails and GitHub emails Amr.
+name: Uptime check
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+permissions: {}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Website and booking calendar
+        run: |
+          day=$(date -u -d '+2 day' +%F)
+          check() {
+            for i in 1 2 3; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$2" || true)
+              [ "$code" = "200" ] && { echo "OK   $1 ($code)"; return 0; }
+              echo "Try $i: $1 answered $code"; [ $i -lt 3 ] && sleep 60
+            done
+            echo "::error::$1 is DOWN ($2 answered $code)"; return 1
+          }
+          ok=0
+          check "Website" "https://amrabdelgawad.site/" || ok=1
+          check "Booking calendar" "https://amr-booking-api.vercel.app/api/availability?date=$day" || ok=1
+          exit $ok

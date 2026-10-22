@@ -550,10 +550,10 @@
     table.log.mylist td.c-hrs{ grid-row:3; }
   }
 </style>
-<link rel="stylesheet" href="look.css?v=11">
+<link rel="stylesheet" href="look.css?v=12">
 <link rel="stylesheet" href="../theme-switch.css?v=2">
 <link rel="stylesheet" href="../daylight-dark.css?v=2">
-<link rel="stylesheet" href="../ask.css?v=2">
+<link rel="stylesheet" href="../ask.css?v=3">
 <link rel="stylesheet" href="../brand.css?v=2">
 <script src="../theme.js?v=2"></script>
 </head>
@@ -898,6 +898,10 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
         Export CSV
       </button>
+      <button class="btn btn-outline btn-sm" id="tm-report">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="M9 17v-3M12 17v-6M15 17v-4"/></svg>
+        Monthly report
+      </button>
     </div>
 
     <div class="notice" id="tm-notice" hidden></div>
@@ -958,6 +962,13 @@
 
     <!-- Notes view: every end-of-shift brief in the chosen period, newest first -->
     <div id="tm-notesView" hidden>
+      <section class="t-card history score-card">
+        <div class="card-title"><h2>Scoreboard</h2><span id="tm-scoreLabel"></span></div>
+        <div class="score-wrap"><table class="score">
+          <thead><tr><th>Team member</th><th class="num">Shifts</th><th class="num">Hours</th><th class="num">Dials</th><th class="num">Convos</th><th class="num">Appts</th><th class="num">Dials / h</th></tr></thead>
+          <tbody id="tm-scoreRows"></tbody>
+        </table></div>
+      </section>
       <section class="t-card history notes-card">
         <div class="card-title"><h2>Notes</h2><span id="tm-notesLabel"></span></div>
         <div class="notes-list" id="tm-notesList"></div>
@@ -1091,14 +1102,26 @@
   <div class="slip-stage" id="tm-slipStage"><div class="slip-fit" id="tm-slipFit"><div class="slip" id="tm-slip"></div></div></div>
 </div>
 
+<!-- Monthly report for one client company -->
+<div class="slip-overlay" id="tm-repOverlay" hidden>
+  <div class="slip-bar">
+    <strong>Monthly report</strong>
+    <select class="field rep-pick" id="tm-repCo" aria-label="Company"></select>
+    <input class="field rep-pick" type="month" id="tm-repMonth" aria-label="Month" />
+    <label class="check rep-check"><input type="checkbox" id="tm-repNotes" checked /> Daily notes</label>
+    <button class="btn btn-ghost btn-sm" id="tm-repClose">Close</button>
+    <button class="btn btn-primary btn-sm" id="tm-repDownload">Download PDF</button>
+  </div>
+  <div class="slip-stage" id="tm-repStage"><div class="slip-fit" id="tm-repFit"><div class="slip statement report" id="tm-rep"></div></div></div>
+</div>
 
 <div class="toast" id="tm-toast"><span id="tm-toastMsg"></span><button id="tm-undo">Undo</button></div>
 <div class="toast" id="toast"><span id="toastMsg"></span><button id="undo">Undo</button></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="../tracker/config.js"></script>
-<script src="../ask.js?v=3"></script>
-<script src="team.js?v=12"></script>
+<script src="../ask.js?v=4"></script>
+<script src="team.js?v=13"></script>
 <script src="cash.js?v=23"></script>
 </body>
 </html>

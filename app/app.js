@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id);
   const cfg = window.TRACKER_CONFIG || {};
   // v changes with each release of the cash page, so the app never shows a stale copy
-  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=29';
+  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=30';
 
   // An invite or new sign-in link lands here with its type in the address; read it before supabase-js clears it
   const linkType = new URLSearchParams(location.hash.slice(1)).get('type');
@@ -216,16 +216,16 @@
     // Count the work up to that time, never more than the clock has
     const work = Math.round(Math.max(0, Math.min(workNow(), (end - start) / 1000 - live.break_seconds)));
     if (work < 60) { $('guardErr').textContent = 'That would be less than a minute of work. Pick a later time.'; return; }
-    const note = await askBrief(work, live.break_seconds, end);
-    if (note == null || !live) return;
+    const b = await askBrief(work, live.break_seconds, end);
+    if (b == null || !live) return;
     $('guardSave').setAttribute('aria-busy', 'true');
-    const { error } = await db.rpc('member_log_shift', {
+    const { error } = await db.rpc('member_log_shift', Object.assign({
       p_shift_date: iso(start), p_work_seconds: Math.min(work, 86400), p_break_seconds: live.break_seconds,
-      p_started_at: live.started_at, p_ended_at: end.toISOString(), p_brief: note
-    });
+      p_started_at: live.started_at, p_ended_at: end.toISOString(), p_brief: b.note
+    }, numArgs(b.nums)));
     $('guardSave').removeAttribute('aria-busy');
     if (error) { $('guardErr').textContent = "Couldn't save it. Check your connection and try again."; return; }
-    live = null; keepLocal(); try { localStorage.removeItem(BRIEF_KEY); } catch(e){} $('guard').hidden = true; drawClock();
+    live = null; keepLocal(); forgetBrief(); $('guard').hidden = true; drawClock();
     toast('Shift saved: ' + hm(work) + ', ended ' + v);
     loadHistory();
   });
@@ -272,19 +272,29 @@
 
   // "End your shift?" with a required brief about the day. Resolves the brief, or null when they keep working.
   // A sent brief stays on this device until the shift saves, so a failed save doesn't make them type it again.
-  const BRIEF_KEY = 'talents-brief';
+  // Optional numbers for the day go with the brief; they feed Amr's weekly scoreboard. Empty boxes are saved as "not given".
+  const BRIEF_KEY = 'talents-brief', NUMS_KEY = 'talents-brief-nums';
+  const numBoxes = draft => [
+    { key:'dials', label:'Dials', value: draft.dials }, { key:'conversations', label:'Conversations', value: draft.conversations }, { key:'appointments', label:'Appointments', value: draft.appointments }
+  ];
+  const keepNums = n => { try { localStorage.setItem(NUMS_KEY, JSON.stringify(n || {})); } catch(e){} };
+  const draftNums = () => { try { return JSON.parse(localStorage.getItem(NUMS_KEY) || '{}') || {}; } catch(e){ return {}; } };
+  const forgetBrief = () => { try { localStorage.removeItem(BRIEF_KEY); localStorage.removeItem(NUMS_KEY); } catch(e){} };
+  const numArgs = n => ({ p_dials: n ? n.dials : null, p_conversations: n ? n.conversations : null, p_appointments: n ? n.appointments : null });
   async function askBrief(work, brk, end){
     let draft = ''; try { draft = localStorage.getItem(BRIEF_KEY) || ''; } catch(e){}
     const ans = await ask({
       title:'End your shift and send it to Amr?',
       msg:hm(work) + ' worked · ' + hm(brk) + ' break · ' + hhmm(new Date(live.started_at)) + '–' + hhmm(end),
-      input:{ multiline:true, label:'How did today go?', value:draft, placeholder:'Dials, conversations, appointments set, anything Amr should know',
+      input:{ multiline:true, label:'How did today go?', value:draft, placeholder:'Anything Amr should know: good calls, problems, follow-ups',
+        numbers: numBoxes(draftNums()),
         minLength:10, error:'Write a sentence or two about your day first.',
-        onCancel: v => { try { localStorage.setItem(BRIEF_KEY, v); } catch(e){} } },
+        onCancel: (v, n) => { try { localStorage.setItem(BRIEF_KEY, v); } catch(e){} keepNums(n); } },
       ok:'Send and end shift', cancel:'Keep working'
     });
-    if (ans != null) try { localStorage.setItem(BRIEF_KEY, ans.trim()); } catch(e){}
-    return ans == null ? null : ans.trim();
+    if (ans == null) return null;
+    try { localStorage.setItem(BRIEF_KEY, ans.text.trim()); } catch(e){} keepNums(ans.nums);
+    return { note: ans.text.trim(), nums: ans.nums };
   }
 
   // Ended somewhere else (Amr's End, or another device): if that shift has no brief yet, offer to add one
@@ -296,12 +306,12 @@
     const ans = await ask({
       title:'Your shift was ended. Add a note about your day?',
       msg:'Your hours are already saved. This note goes with them.',
-      input:{ multiline:true, label:'How did today go?', value:draft, placeholder:'Dials, conversations, appointments set, anything Amr should know' },
+      input:{ multiline:true, label:'How did today go?', value:draft, placeholder:'Anything Amr should know: good calls, problems, follow-ups', numbers: numBoxes(draftNums()) },
       ok:'Send note', cancel:'Skip'
     });
-    try { localStorage.removeItem(BRIEF_KEY); } catch(e){}
-    if (!ans || !ans.trim()) return;
-    const { error } = await db.rpc('member_add_brief', { p_started_at: startedAt, p_brief: ans.trim() });
+    forgetBrief();
+    if (!ans || !ans.text.trim()) return;
+    const { error } = await db.rpc('member_add_brief', Object.assign({ p_started_at: startedAt, p_brief: ans.text.trim() }, numArgs(ans.nums)));
     toast(error ? 'Couldn’t send your note. Check your connection.' : 'Note sent to Amr');
     if (!error) loadHistory();
   }
@@ -317,19 +327,19 @@
       if (!await ask({ title:'Discard this shift?', msg:'Less than a minute worked, so nothing will be saved.', ok:'Discard', cancel:'Keep working', danger:true })) return;
       live = null; drawClock(); await saveLive(); return;
     }
-    const note = await askBrief(work, brk, new Date());
-    if (note == null || !live) return;
+    const b = await askBrief(work, brk, new Date());
+    if (b == null || !live) return;
     $('offLbl').textContent = 'Saving…';
-    document.querySelectorAll('.ctl').forEach(b => b.setAttribute('aria-busy', 'true'));
+    document.querySelectorAll('.ctl').forEach(x => x.setAttribute('aria-busy', 'true'));
     const started = new Date(live.started_at);
-    const { error } = await db.rpc('member_log_shift', {
+    const { error } = await db.rpc('member_log_shift', Object.assign({
       p_shift_date: iso(started), p_work_seconds: Math.min(work, 86400), p_break_seconds: brk,
-      p_started_at: live.started_at, p_ended_at: new Date().toISOString(), p_brief: note
-    });
-    document.querySelectorAll('.ctl').forEach(b => b.removeAttribute('aria-busy'));
+      p_started_at: live.started_at, p_ended_at: new Date().toISOString(), p_brief: b.note
+    }, numArgs(b.nums)));
+    document.querySelectorAll('.ctl').forEach(x => x.removeAttribute('aria-busy'));
     $('offLbl').textContent = 'Off';
     if (error) { $('tErr').textContent = "Couldn't save your shift. Your time is kept; check your connection and press Off again."; return; }
-    live = null; keepLocal(); try { localStorage.removeItem(BRIEF_KEY); } catch(e){} drawClock();
+    live = null; keepLocal(); forgetBrief(); drawClock();
     toast('Shift saved: ' + hm(work));
     loadHistory();
   }

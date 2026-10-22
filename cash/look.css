@@ -207,3 +207,31 @@ html .fx-opt input[type=radio]{ width:18px; height:18px; margin:0; accent-color:
 html .fx-opt > span{ flex:1; min-width:150px; }
 html .fx-opt .field{ width:auto; min-width:0; flex:1 1 180px; max-width:340px; padding:8px 10px; }
 html .fx-opt #fFx{ flex:0 1 130px; }
+
+/* Team > Notes: scoreboard of the numbers sent with each brief */
+.score-wrap{ overflow-x:auto; }
+.score{ width:100%; border-collapse:collapse; font-size:14px; min-width:560px; }
+.score th{ text-align:left; font:600 11px "Inter", sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding:0 10px 8px; border-bottom:1px solid var(--border); }
+.score td{ padding:10px; border-bottom:1px solid var(--border); }
+.score .num{ text-align:right; font-feature-settings:"tnum" 1; white-space:nowrap; }
+.score .sc-name{ font-weight:600; }
+.score .sc-appt{ color:var(--gold); font-weight:700; }
+.score .score-total td{ font-weight:700; border-bottom:0; border-top:1.5px solid var(--text); }
+.score .score-hint{ color:var(--muted); font-size:13px; border-bottom:0; }
+.score td.empty{ color:var(--muted); text-align:center; }
+.nc-nums{ margin:0; font:600 13px "Inter", sans-serif; color:var(--gold); font-feature-settings:"tnum" 1; }
+
+/* Monthly report: brand colours, the company and month pickers in the top bar */
+.rep-pick{ width:auto; min-width:0; padding:8px 10px; font-size:14px; }
+.rep-check{ display:inline-flex; align-items:center; gap:6px; font-size:14px; color:var(--text); white-space:nowrap; }
+.slip-bar .rep-check + .btn{ margin-left:auto; }
+.slip.report .band{ background:linear-gradient(90deg, #14213D, #E3AA35); }
+.slip.report .brand em{ color:#94650C; }
+.slip.report .meta.nums{ margin:-6px 0 18px; }
+.slip.report .box.hi{ background:#FBF5E8; border-color:#EBD9B0; }
+.slip.report .box.hi strong{ color:#14213D; font-size:20px; }
+.slip.report .summary{ border-left-color:#E3AA35; }
+.slip.report td{ vertical-align:top; }
+.slip.report td small.brief{ white-space:pre-wrap; overflow-wrap:anywhere; margin-top:3px; color:#475467; font-size:11px; line-height:1.45; }
+.slip.report h3{ margin-top:20px; }
+.slip.report td.r, .slip.report .days td:first-child{ white-space:nowrap; }
