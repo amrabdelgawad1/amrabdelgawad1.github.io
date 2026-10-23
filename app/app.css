@@ -322,8 +322,14 @@ html[data-theme="dark"] .av.owner{ background:var(--brand-gold, #E3AA35); color:
 .me-rate strong span{ font-size:13px; font-weight:500; color:var(--muted); }
 .me-rate small{ color:var(--muted); font-size:12px; }
 .p-plain{ color:var(--light); border-color:var(--border2); background:var(--sunk); }
-.hmonth{ display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; align-items:baseline; padding:14px 0 6px; }
-.hmonth b{ font-size:15px; } .hmonth span{ color:var(--muted); font-size:12.5px; }
+/* each month folds: tap its header to show or hide its shifts */
+.hmonth{ width:100%; display:grid; grid-template-columns:minmax(0, 1fr) auto 20px; gap:10px; align-items:center; padding:12px; margin-top:8px; min-height:48px; text-align:left; border:1px solid var(--border); border-radius:12px; }
+.hmonth:hover{ background:var(--sunk); }
+.hmonth b{ font-size:15px; } .hmonth span{ color:var(--muted); font-size:12.5px; text-align:right; }
+.hmonth .chev{ color:var(--muted); transition:transform .15s; }
+.hmonth[aria-expanded="true"]{ border-radius:12px 12px 0 0; border-bottom-color:transparent; }
+.hmonth[aria-expanded="true"] .chev{ transform:rotate(180deg); }
+.hmonth[aria-expanded="true"] + .srows{ border-radius:0 0 12px 12px; }
 .srows{ border:1px solid var(--border); border-radius:12px; overflow:hidden; }
 .srow{ border-top:1px solid var(--border); } .srow:first-child{ border-top:0; }
 .srow.open{ background:var(--sunk); }

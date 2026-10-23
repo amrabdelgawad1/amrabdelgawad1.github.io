@@ -107,6 +107,15 @@ html .team td.c-status .status.client{ margin-top:4px; }
 @media (min-width:641px) and (max-width:1180px){ html .team table.log th:nth-child(5), html .team table.log td.c-brk{ display:none; } }
 html .team .co{ max-width:150px; }
 html .team table.log td, html .team table.log th{ padding-left:8px; padding-right:8px; }
+/* Team page inside the app gets more width, so History fits without scrolling sideways */
+html.embed #dashView:has(#teamView:not([hidden])){ max-width:1480px; padding:0 24px; }
+/* Edit and delete stay pinned at the right edge if the table still has to scroll */
+@media (min-width:641px){
+  html .team table.log td.c-del, html .team table.log th:last-child{ position:sticky; right:0; z-index:1; background:var(--bg2); }
+  html .team table.log tbody tr:hover td.c-del{ background:var(--sunk); }
+  html .team table.log tbody tr.sel-row td.c-del{ background:color-mix(in srgb, var(--accent) 8%, var(--bg2)); }
+  html .team td.c-del{ white-space:nowrap; }
+}
 
 /* Inside the app: the app's menu replaces this page's header and tabs */
 html.embed .topbar, html.embed #view, html.embed #pageTitle{ display:none !important; }

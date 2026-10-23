@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id);
   const cfg = window.TRACKER_CONFIG || {};
   // v changes with each release of the cash page, so the app never shows a stale copy
-  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=35';
+  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=36';
 
   // An invite or new sign-in link lands here with its type in the address; read it before supabase-js clears it
   const linkType = new URLSearchParams(location.hash.slice(1)).get('type');
@@ -411,16 +411,18 @@
     $('hDueEgp').textContent = fx.rate ? '= ' + egp(due * fx.rate) : '';
     const box = $('hList');
     if (!rows.length) { box.innerHTML = '<p class="empty">No shifts yet. Press Run when you start.</p>'; return; }
-    // A header per month, then one row per shift: date, hours, pay, paid or not.
+    // A folding header per month (newest open), then one row per shift: date, hours, pay, paid or not.
     // Tapping a row opens the clocked times, the pay worked out, and that day's note.
     const months = new Map();
     rows.forEach(r => { const m = r.shift_date.slice(0, 7); if (!months.has(m)) months.set(m, []); months.get(m).push(r); });
     const chev = '<svg class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+    const first = months.keys().next().value; // the newest month starts open, older ones folded
     let html = '';
     months.forEach((list, m) => {
       const secs = list.reduce((a, r) => a + r.work_seconds, 0);
       const amt = list.reduce((a, r) => a + r.work_seconds / 3600 * Number(r.pay_rate || 0), 0);
-      html += '<div class="hmonth"><b>' + esc(monthLabel(m)) + '</b><span>' + esc(plural(list.length, 'shift') + ' · ' + hm(secs) + ' · ' + usd(amt)) + '</span></div><div class="srows">';
+      const mOpen = openMonths.has(m) ? openMonths.get(m) : m === first;
+      html += '<button type="button" class="hmonth" aria-expanded="' + mOpen + '" data-month="' + esc(m) + '"><b>' + esc(monthLabel(m)) + '</b><span>' + esc(plural(list.length, 'shift') + ' · ' + hm(secs) + ' · ' + usd(amt)) + '</span>' + chev + '</button><div class="srows"' + (mOpen ? '' : ' hidden') + '>';
       list.forEach(r => {
         const id = String(r.id != null ? r.id : bkey(r)), open = openRows.has(id), a = r.work_seconds / 3600 * Number(r.pay_rate || 0), note = briefs.get(bkey(r));
         const paid = r.paid ? '<span class="pill p-ok">Paid</span>' : '<span class="pill p-due">Unpaid</span>';
@@ -441,8 +443,17 @@
     });
     box.innerHTML = html;
   }
+  const openMonths = new Map(); // months you've opened or folded stay that way when the list refreshes
   const openRows = new Set(); // shifts you've opened stay open when the list refreshes
   $('hList').addEventListener('click', e => {
+    const mb = e.target.closest('[data-month]');
+    if (mb) {
+      const open = mb.getAttribute('aria-expanded') !== 'true';
+      openMonths.set(mb.dataset.month, open);
+      mb.setAttribute('aria-expanded', String(open));
+      mb.nextElementSibling.hidden = !open;
+      return;
+    }
     const b = e.target.closest('[data-row]'); if (!b) return;
     const id = b.dataset.row, open = !openRows.has(id);
     open ? openRows.add(id) : openRows.delete(id);
