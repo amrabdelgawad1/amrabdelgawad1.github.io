@@ -294,7 +294,9 @@ window.CashTeam = function(db){
     if (!words.length) return visible();
     const text = r => [r.name, r.date, fmtDate(r.date), new Date(r.date + 'T00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }),
       Number(r.date.slice(5, 7)) + '/' + Number(r.date.slice(8)), companyName(r.companyId), r.clocked, r.brief || ''].join(' ').toLowerCase().replace(/,/g, '');
-    return log.filter(r => { const t = text(r); return words.every(w => t.includes(w.replace(/,/g, ''))); })
+    // a number has to match a whole number, so "oct 20" doesn't also find 2026 or the 120th
+    const tests = words.map(w => w.replace(/,/g, '')).filter(Boolean).map(w => /^\d+$/.test(w) ? (t => new RegExp('(^|\\D)0*' + Number(w) + '(?!\\d)').test(t)) : (t => t.includes(w)));
+    return log.filter(r => { const t = text(r); return tests.every(f => f(t)); })
       .sort((a,b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
   }
   let searchTimer = null;
