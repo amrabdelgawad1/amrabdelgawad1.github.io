@@ -1104,7 +1104,8 @@
     <strong>Payslip</strong>
     <input class="field slip-note" id="tm-slipNote" maxlength="160" placeholder="Optional note, like: Paid via Vodafone Cash" aria-label="Note on the payslip" />
     <button class="btn btn-ghost btn-sm" id="tm-slipClose">Close</button>
-    <button class="btn btn-primary btn-sm" id="tm-slipDownload">Download PDF</button>
+    <button class="btn btn-ghost btn-sm" id="tm-slipDownload">Download PDF</button>
+    <button class="btn btn-primary btn-sm" id="tm-slipSend" title="Puts this payslip straight into their Payslips in the app">Send to agent</button>
   </div>
   <div class="slip-stage" id="tm-slipStage"><div class="slip-fit" id="tm-slipFit"><div class="slip" id="tm-slip"></div></div></div>
 </div>
@@ -1131,7 +1132,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="../tracker/config.js"></script>
 <script src="../ask.js?v=4"></script>
-<script src="team.js?v=18"></script>
+<script src="team.js?v=19"></script>
 <script src="cash.js?v=25"></script>
 </body>
 </html>

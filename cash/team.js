@@ -697,6 +697,7 @@ window.CashTeam = function(db){
     const inCycle = c && rows.every(r => r.date >= c.from && r.date <= c.to);
     slip = { rows, cycle: inCycle ? c : null, number: 'PS-' + new Date().getFullYear() + '-' + String(payslipCounter + 1).padStart(4, '0'), counted:false };
     $('slipNote').value = '';
+    $('slipSend').textContent = 'Send to ' + rows[0].name.trim().split(/\s+/)[0]; $('slipSend').disabled = false;
     drawPayslip();
     $('slipOverlay').hidden = false; document.body.style.overflow = 'hidden';
     fitPayslip();
@@ -774,33 +775,65 @@ window.CashTeam = function(db){
     });
     return pdfLib;
   }
+  // The payslip as a PDF, ready to save on this computer or to send to the agent
+  async function slipPdf(){
+    const html2pdf = await loadPdfLib();
+    await document.fonts.ready;
+    const clone = $('slip').cloneNode(true);
+    clone.style.transform = 'none'; clone.style.boxShadow = 'none';
+    const first = slip.rows[0], last = slip.rows[slip.rows.length - 1];
+    const a = slip.cycle ? slip.cycle.from : first.date, z = slip.cycle ? slip.cycle.workTo : last.date;
+    const file = 'Payslip-' + first.name.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + a + (a === z ? '' : '-to-' + z) + '.pdf';
+    const worker = html2pdf().set({
+      margin: [10, 0, 10, 0], filename: file,
+      image: { type:'jpeg', quality:0.96 },
+      html2canvas: { scale:2, useCORS:true, backgroundColor:'#ffffff', scrollX:0, scrollY:0 }, // capture from the top, or a scrolled page gives a blank PDF
+      jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
+      pagebreak: { mode:['css', 'legacy'], avoid:['tr', '.bottom'] }
+    }).from(clone);
+    return { worker, from: a, to: z };
+  }
+  // A payslip number is used up the first time its PDF is saved or sent
+  async function countSlip(){
+    if (slip.counted) return;
+    slip.counted = true; payslipCounter += 1;
+    await db.from('tracker_settings').upsert({ key:'payslip_counter', value:String(payslipCounter) });
+  }
   $('slipDownload').addEventListener('click', async () => {
     if (!slip) return;
     const btn = $('slipDownload'); btn.setAttribute('aria-busy', 'true'); btn.textContent = 'Preparing…';
     try {
-      const html2pdf = await loadPdfLib();
-      await document.fonts.ready;
-      const clone = $('slip').cloneNode(true);
-      clone.style.transform = 'none'; clone.style.boxShadow = 'none';
-      const first = slip.rows[0], last = slip.rows[slip.rows.length - 1];
-      const a = slip.cycle ? slip.cycle.from : first.date, z = slip.cycle ? slip.cycle.workTo : last.date;
-      const file = 'Payslip-' + first.name.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + a + (a === z ? '' : '-to-' + z) + '.pdf';
-      await html2pdf().set({
-        margin: [10, 0, 10, 0], filename: file,
-        image: { type:'jpeg', quality:0.96 },
-        html2canvas: { scale:2, useCORS:true, backgroundColor:'#ffffff', scrollX:0, scrollY:0 }, // capture from the top, or a scrolled page gives a blank PDF
-        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
-        pagebreak: { mode:['css', 'legacy'], avoid:['tr', '.bottom'] }
-      }).from(clone).save();
-      if (!slip.counted) {
-        slip.counted = true; payslipCounter += 1;
-        await db.from('tracker_settings').upsert({ key:'payslip_counter', value:String(payslipCounter) });
-      }
+      await (await slipPdf()).worker.save();
+      await countSlip();
       toast('Payslip downloaded', false);
     } catch (e) {
       toast("Couldn't make the PDF. Check your connection and try again.", false);
     }
     btn.removeAttribute('aria-busy'); btn.textContent = 'Download PDF';
+  });
+  // Send to agent: the PDF goes straight into their Payslips in the app (same place as an upload from their profile)
+  $('slipSend').addEventListener('click', async () => {
+    if (!slip || $('slipSend').disabled) return;
+    const btn = $('slipSend'), label = btn.textContent, name = slip.rows[0].name, first = name.trim().split(/\s+/)[0];
+    const ag = await db.from('agents').select('id,name');
+    const a = (ag.data || []).find(x => nameKey(x.name) === nameKey(name));
+    if (!a) { toast(name + ' isn’t in Team › Agents, so the app has nowhere to put it. Download it instead.', false); return; }
+    btn.setAttribute('aria-busy', 'true'); btn.textContent = 'Sending…';
+    try {
+      const p = await slipPdf(), blob = await p.worker.outputPdf('blob');
+      const path = a.id + '/' + p.from + '_to_' + p.to + '-' + Date.now() + '.pdf';
+      const up = await db.storage.from('payslips').upload(path, blob, { contentType:'application/pdf' });
+      if (up.error) throw up.error;
+      const note = $('slipNote').value.trim();
+      const { error } = await db.from('payslips').insert({ agent_id: a.id, period_start: p.from, period_end: p.to, file_path: path, file_type: 'application/pdf', note: note || null });
+      if (error) { db.storage.from('payslips').remove([path]); throw error; }
+      await countSlip();
+      btn.removeAttribute('aria-busy'); btn.textContent = 'Sent to ' + first; btn.disabled = true;
+      toast('Sent. ' + first + ' sees it under Payslips in the app.', false);
+    } catch (e) {
+      btn.removeAttribute('aria-busy'); btn.textContent = label;
+      toast("Couldn't send it. Check your connection and try again.", false);
+    }
   });
 
   // ---------- monthly report for one client company ----------

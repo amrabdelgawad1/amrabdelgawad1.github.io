@@ -74,6 +74,14 @@ a{ color:inherit; text-decoration:none; }
 .co-line{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
 .clock{ font-weight:650; font-size:52px; letter-spacing:-.035em; text-align:center; line-height:1.05; margin:16px 0 4px; }
 .clock-sub{ text-align:center; color:var(--muted); font-size:13.5px; }
+/* Team emails: one card per agent with the email as they'll see it */
+.em-list{ display:grid; gap:14px; }
+.em{ display:grid; gap:10px; }
+.em-head{ display:flex; align-items:center; gap:12px; }
+.em-head .n{ flex:1; min-width:0; } .em-head .n b{ display:block; font-weight:600; } .em-head .n small{ display:block; color:var(--muted); font-size:12.5px; overflow-wrap:anywhere; }
+.em-warn{ padding:10px 12px; border-radius:10px; font-size:13.5px; color:var(--gold); background:color-mix(in srgb, var(--gold) 9%, var(--panel)); border:1px solid color-mix(in srgb, var(--gold) 35%, transparent); }
+.em-subj{ font-size:14px; font-weight:600; } .em-subj small{ display:block; color:var(--muted); font-weight:500; font-size:12px; }
+.em-prev{ width:100%; height:520px; border:1px solid var(--border); border-radius:12px; background:#FAF7F1; }
 /* weekly goal under the clock */
 .goal{ display:grid; gap:6px; margin-top:14px; padding-top:14px; border-top:1px solid var(--border); }
 .goal-top{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:13.5px; color:var(--light); }

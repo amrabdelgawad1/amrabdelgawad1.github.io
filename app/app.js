@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id);
   const cfg = window.TRACKER_CONFIG || {};
   // v changes with each release of the cash page, so the app never shows a stale copy
-  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=38';
+  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=39';
 
   // An invite or new sign-in link lands here with its type in the address; read it before supabase-js clears it
   const linkType = new URLSearchParams(location.hash.slice(1)).get('type');
@@ -482,9 +482,9 @@
   // ======================================================================
   // Owner: menu, Live now, Invite and access, and the /cash pages
   // ======================================================================
-  const OWNER_PAGES = { live:'Live now', requests:'Missed-shift requests', people:'Invite and access', visits:'Website visitors', mytime:'My time', overview:'Overview', team:'Team', income:'Income', expense:'Expenses', track:'Tracker' };
+  const OWNER_PAGES = { live:'Live now', requests:'Missed-shift requests', emails:'Team emails', people:'Invite and access', visits:'Website visitors', mytime:'My time', overview:'Overview', team:'Team', income:'Income', expense:'Expenses', track:'Tracker' };
   // Which switch in Invite and access opens each page; "owner" pages are Amr's alone
-  const SECTION = { live:'live', requests:'requests', team:'team', overview:'money', income:'money', expense:'money', mytime:'owner', people:'owner', visits:'owner', track:'track' };
+  const SECTION = { live:'live', requests:'requests', team:'team', overview:'money', income:'money', expense:'money', mytime:'owner', emails:'owner', people:'owner', visits:'owner', track:'track' };
   const SECTION_NAMES = { live:'Live now', requests:'Missed-shift requests', team:'Team', money:'Money' };
   const canSee = sec => role === 'owner' ? sec !== 'track' : role === 'member' && (sec === 'track' || access.includes(sec));
   const hasMenu = () => role === 'owner' || (role === 'member' && access.length > 0);
@@ -554,8 +554,8 @@
     markMenu();
     $('pTrack').hidden = page !== 'track';
     $('pLive').hidden = page !== 'live'; $('pPeople').hidden = page !== 'people'; $('pRequests').hidden = page !== 'requests';
-    $('pVisits').hidden = page !== 'visits';
-    const cashPage = !['live', 'people', 'requests', 'track', 'visits'].includes(page);
+    $('pVisits').hidden = page !== 'visits'; $('pEmails').hidden = page !== 'emails';
+    const cashPage = !['live', 'people', 'requests', 'track', 'visits', 'emails'].includes(page);
     $('pCash').hidden = !cashPage;
     // A person's Team page gets a bar for their payslips (Amr only; uploading is his)
     let who = ''; try { who = page === 'team' && person ? decodeURIComponent(person) : ''; } catch(e) {}
@@ -566,6 +566,7 @@
     if (page === 'people') loadPeople();
     if (page === 'requests') loadOwnerRequests();
     if (page === 'visits') loadVisits();
+    if (page === 'emails') loadEmails();
     countRequests();
     if (cashPage) openCash(here);
     closeMenu();
@@ -744,6 +745,68 @@
     $('reqCnt').hidden = !n; $('reqCnt').textContent = n + ' waiting';
     $('burgerDot').hidden = !n;
   }
+  // ---------- Team emails: each agent's weekly email, checked by Amr before it goes out ----------
+  // The database writes each email (agent_summaries); a rate that differs from today's hourly rate is flagged, and
+  // "Send all" skips flagged ones so a wrong rate never goes out without a look.
+  let emails = [];
+  const money2 = v => Number(v).toFixed(2);
+  async function loadEmails(){
+    const box = $('emList');
+    const [res, st] = await Promise.all([db.rpc('agent_summaries'), db.from('tracker_settings').select('value').eq('key', 'hourly_rate').maybeSingle()]);
+    if (res.error) { box.innerHTML = '<p class="empty">' + (/agent_summaries/.test(res.error.message || '') ? 'Not set up yet. Run the latest SQL in Supabase.' : 'Couldn’t load the emails. Pull to refresh.') + '</p>'; $('emAll').hidden = true; return; }
+    const cur = st.data && Number(st.data.value) > 0 ? money2(st.data.value) : null;
+    emails = (res.data || []).map(e => {
+      const rates = e.rates ? e.rates.split(', ') : [];
+      return Object.assign(e, { odd: cur ? rates.filter(r => r !== cur) : [], cur });
+    });
+    const wf = emails[0] && emails[0].week_from;
+    if (wf) { const a = new Date(wf + 'T00:00'), z = new Date(a); z.setDate(z.getDate() + 6); $('emWeek').textContent = 'Last week: ' + dayDate(iso(a)) + ' – ' + dayDate(iso(z)); }
+    if (!emails.length) { box.innerHTML = '<p class="empty">No active agents. Add them in Settings › Agents.</p>'; $('emAll').hidden = true; return; }
+    box.innerHTML = '';
+    emails.forEach(e => {
+      const first = e.name.trim().split(/\s+/)[0], c = document.createElement('section');
+      c.className = 'card em'; c.dataset.ag = e.agent_id;
+      c.innerHTML = '<div class="em-head"><span class="av">' + esc(initials(e.name)) + '</span><span class="n"><b>' + esc(e.name) + '</b><small>' +
+          (e.email ? 'To ' + esc(e.email) : 'No app login yet, so there’s no email to send to. Invite them in Settings › Agents.') + '</small></span>' +
+          (e.sent_at ? '<span class="pill p-ok">Sent ' + esc(new Date(e.sent_at).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' })) + '</span>' : '') + '</div>' +
+        (e.odd.length ? '<p class="em-warn"><b>Check the rate:</b> some shifts are at $' + esc(e.odd.join('/h, $')) + '/h, but your hourly rate is $' + esc(e.cur) + '/h. Fix the shifts in Team › History (Change pay rate) before sending, or send anyway if it’s right.</p>' : '') +
+        '<p class="em-subj"><small>Subject</small>' + esc(e.subject || '') + '</p>' +
+        '<iframe class="em-prev" sandbox="allow-same-origin" title="Email to ' + esc(first) + '"></iframe>' +
+        (e.email ? '<div class="acts"><button class="btn small' + (e.odd.length ? ' ghost' : '') + '" type="button" data-em-send="' + e.agent_id + '">' + (e.sent_at ? 'Send again' : 'Send to ' + esc(first)) + '</button></div>' : '');
+      const f = c.querySelector('iframe');
+      f.addEventListener('load', () => { try { f.style.height = (f.contentDocument.documentElement.scrollHeight + 4) + 'px'; } catch(x){} });
+      f.srcdoc = e.html || '';
+      box.appendChild(c);
+    });
+    const ready = emails.filter(e => e.email && !e.sent_at && !e.odd.length);
+    $('emAll').hidden = !ready.length;
+    $('emAll').textContent = 'Send all that look right (' + ready.length + ')';
+  }
+  async function sendEmail(e){
+    const { data, error } = await db.rpc('send_agent_summary', { p_agent: e.agent_id });
+    if (error) { toast(/No email/.test(error.message || '') ? e.name + ' has no email yet.' : 'Couldn’t send it. Try again.'); return false; }
+    return data;
+  }
+  $('emList').addEventListener('click', async ev => {
+    const b = ev.target.closest('[data-em-send]'); if (!b || role !== 'owner') return;
+    const e = emails.find(x => String(x.agent_id) === b.dataset.emSend); if (!e) return;
+    const ok = await ask({ title: 'Send this email to ' + e.name.split(' ')[0] + '?', msg: 'It goes to ' + e.email + (e.odd.length ? '. Some shifts are at a different rate than your hourly rate.' : '.'), ok: 'Send', cancel: 'Not yet', danger: !!e.odd.length });
+    if (!ok) return;
+    b.setAttribute('aria-busy', 'true');
+    const to = await sendEmail(e);
+    b.removeAttribute('aria-busy');
+    if (to) { toast('Sent to ' + to); loadEmails(); }
+  });
+  $('emAll').addEventListener('click', async () => {
+    const ready = emails.filter(e => e.email && !e.sent_at && !e.odd.length); if (!ready.length) return;
+    const ok = await ask({ title: 'Send ' + ready.length + ' email' + (ready.length === 1 ? '' : 's') + '?', msg: 'To ' + ready.map(e => e.name.split(' ')[0]).join(', ') + '. Emails with a rate to check are left out.', ok: 'Send', cancel: 'Not yet' });
+    if (!ok) return;
+    $('emAll').setAttribute('aria-busy', 'true');
+    let n = 0; for (const e of ready) if (await sendEmail(e)) n++;
+    $('emAll').removeAttribute('aria-busy');
+    toast(n + ' email' + (n === 1 ? '' : 's') + ' sent'); loadEmails();
+  });
+
   async function loadOwnerRequests(){
     const { data, error } = await db.from('shift_requests').select('*').order('created_at', { ascending:false }).limit(60);
     if (error) { $('reqPending').innerHTML = '<p class="empty">' + (/shift_requests/.test(error.message || '') ? 'Not set up yet. Run supabase/app-requests.sql.' : 'Couldn’t load requests.') + '</p>'; return; }
