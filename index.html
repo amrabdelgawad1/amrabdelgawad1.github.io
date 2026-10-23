@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <!-- Browser safety rules: only code from this site and the services listed here may run or load. Add a service here before using it. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/ https://cdn.jsdelivr.net/npm/lenis@1.3.25/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/; img-src 'self' data:; media-src 'self'; connect-src 'self' https://amr-booking-api.vercel.app https://ztlpgyomjuzmjmuifbbd.supabase.co https://api.country.is; frame-src 'self'; object-src 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/ https://cdn.jsdelivr.net/npm/lenis@1.3.25/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/; img-src 'self' data:; media-src 'self'; connect-src 'self' https://zgnp-zngp.maillist-manage.com https://amr-booking-api.vercel.app https://ztlpgyomjuzmjmuifbbd.supabase.co https://api.country.is; frame-src 'self'; object-src 'self'; base-uri 'self'; form-action 'self' https://zgnp-zngp.maillist-manage.com; upgrade-insecure-requests" />
 <meta name="referrer" content="strict-origin-when-cross-origin" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Amr Abdelgawad | Real Estate Acquisitions &amp; Lead Management Specialist</title>
@@ -43,7 +43,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" integrity="sha384-hs5SINUk7GPohxRis+rS7grpSWEbtOIJ3sRoseBKg3CDPIKpG55RfSenbvA6ALOt" crossorigin="anonymous">
 <link rel="icon" href="favicon.svg?v=2" type="image/svg+xml">
 <link rel="apple-touch-icon" href="app/icon-180.png?v=2">
-<link rel="stylesheet" href="style.css?v=30">
+<link rel="stylesheet" href="style.css?v=31">
 <link rel="stylesheet" href="booking.css?v=4">
 <link rel="stylesheet" href="theme-switch.css?v=2">
 <link rel="stylesheet" href="theme.css?v=3">
@@ -874,6 +874,38 @@
     </div>
   </section>
 
+  <!-- ============ NEWSLETTER ============ -->
+  <section class="section newsletter-wrap" id="newsletter">
+    <div class="container">
+      <div class="newsletter-band">
+        <div class="newsletter-copy">
+          <p class="newsletter-eyebrow">Newsletter</p>
+          <h2 class="newsletter-heading">Notes from the <em>phones.</em></h2>
+          <p class="newsletter-body">Short, practical notes on cold calling, follow-up and lead management for real estate investors. Occasional emails, never spam. Unsubscribe any time.</p>
+        </div>
+        <form class="newsletter-form" data-newsletter method="POST" action="https://zgnp-zngp.maillist-manage.com/weboptin.zc" target="_blank" novalidate>
+          <label class="sr-only" for="nlEmail">Email address</label>
+          <div class="newsletter-row">
+            <input type="email" id="nlEmail" name="CONTACT_EMAIL" placeholder="you@company.com" autocomplete="email" required>
+            <button type="submit" class="btn btn-primary">Subscribe</button>
+          </div>
+          <input type="hidden" name="submitType" value="optinCustomView">
+          <input type="hidden" name="emailReportId" value="">
+          <input type="hidden" name="formType" value="QuickForm">
+          <input type="hidden" name="zx" value="13837ac6f">
+          <input type="hidden" name="zcvers" value="3.0">
+          <input type="hidden" name="oldListIds" value="">
+          <input type="hidden" name="mode" value="OptinCreateView">
+          <input type="hidden" name="zcld" value="117eb76e31027e085">
+          <input type="hidden" name="zctd" value="">
+          <input type="hidden" name="zc_trackCode" value="ZCFORMVIEW">
+          <input type="hidden" name="zc_formIx" value="3z21d73a780e4bb11548b4603cde328b674390e496a3f6e271128985a248877721">
+          <p class="newsletter-status" data-newsletter-status role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <footer class="site-footer">
@@ -910,5 +942,6 @@
 <script src="stats.js?v=2"></script>
 <script src="work-clock.js?v=2"></script>
 <script src="plans.js?v=2"></script>
+<script src="newsletter.js?v=1"></script>
 </body>
 </html>

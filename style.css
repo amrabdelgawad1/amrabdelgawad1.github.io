@@ -923,3 +923,32 @@ button.chip[data-tool-desc]:focus-visible{ outline:none; color:var(--accent2); b
 @media (max-width:1000px){ .team-grid{ grid-template-columns:1fr 1fr; } }
 @media (max-width:600px){ .team-grid{ grid-template-columns:1fr; } }
 .rebook-note{ max-width:620px; margin:0 auto 18px; text-align:center; background:var(--accent-dim); color:var(--text); border-radius:var(--radius-sm); padding:12px 16px; font-size:15px; }
+
+/* Newsletter sign-up: navy like the emails, gold top line; same in light and dark */
+.newsletter-wrap{ padding-top:clamp(40px, 5vw, 64px); }
+.newsletter-band{
+  display:grid; grid-template-columns:1fr minmax(0, 440px); gap:clamp(24px, 4vw, 56px); align-items:center;
+  background:#14213D; border-top:4px solid #E3AA35; border-radius:20px; color:#FFFFFF;
+  padding:clamp(28px, 4vw, 48px);
+}
+.newsletter-eyebrow{ margin:0 0 10px; font-size:11px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:#E3AA35; }
+.newsletter-heading{ margin:0 0 12px; font-family:var(--font-display); font-weight:400; font-size:clamp(28px, 3.4vw, 40px); line-height:1.1; color:#FFFFFF; }
+.newsletter-heading em{ color:#E3AA35; }
+.newsletter-body{ margin:0; max-width:520px; font-size:15.5px; line-height:1.6; color:#C9D0DD; }
+.newsletter-row{ display:flex; gap:10px; }
+.newsletter-row input{
+  flex:1; min-width:0; padding:15px 18px; border-radius:10px; font:inherit; font-size:15px;
+  color:#FFFFFF; background:#1D2C4F; border:1px solid #2C3D63;
+}
+.newsletter-row input::placeholder{ color:#8E97AA; }
+.newsletter-row input:focus{ outline:2px solid #E3AA35; outline-offset:2px; border-color:#E3AA35; }
+.newsletter-row .btn-primary{ background:#E3AA35; color:#14213D; white-space:nowrap; }
+.newsletter-status{ min-height:20px; margin:10px 2px 0; font-size:14px; color:#C9D0DD; }
+.newsletter-status.is-error{ color:#F5B7A8; }
+.newsletter-status.is-done{ color:#E3AA35; font-weight:600; }
+@media (max-width: 860px){
+  .newsletter-band{ grid-template-columns:minmax(0, 1fr); }
+}
+@media (max-width: 420px){
+  .newsletter-row{ flex-direction:column; }
+}
