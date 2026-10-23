@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=16" />
+<link rel="stylesheet" href="app.css?v=17" />
 <link rel="stylesheet" href="../theme-switch.css?v=2">
 <link rel="stylesheet" href="../daylight-dark.css?v=2">
 <link rel="stylesheet" href="../ask.css?v=3">
@@ -125,6 +125,12 @@
             <button class="ctl off" data-m="off" aria-disabled="true"><svg class="i" viewBox="0 0 24 24"><path d="M12 4v7"/><path d="M7 7.5a7 7 0 1 0 10 0"/></svg><span id="offLbl">Off</span></button>
           </div>
           <p class="err" id="tErr"></p>
+          <!-- weekly goal Amr sets in Settings › Agents (hidden without one) -->
+          <div class="goal" id="tGoal" hidden>
+            <div class="goal-top"><span>This week</span><b class="num" id="tGoalTxt"></b></div>
+            <div class="goal-bar" role="progressbar" aria-label="Hours this week" aria-valuemin="0" aria-valuemax="100" id="tGoalBarBox"><i id="tGoalBar"></i></div>
+            <small id="tGoalSub"></small>
+          </div>
         </section>
         <div class="stack">
           <div class="tiles">
@@ -283,7 +289,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="../tracker/config.js"></script>
 <script src="../ask.js?v=4"></script>
-<script src="app.js?v=35"></script>
-<script src="account.js?v=7"></script>
+<script src="app.js?v=36"></script>
+<script src="account.js?v=8"></script>
 </body>
 </html>

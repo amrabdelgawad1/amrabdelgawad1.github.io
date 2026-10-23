@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id);
   const cfg = window.TRACKER_CONFIG || {};
   // v changes with each release of the cash page, so the app never shows a stale copy
-  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=36';
+  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=37';
 
   // An invite or new sign-in link lands here with its type in the address; read it before supabase-js clears it
   const linkType = new URLSearchParams(location.hash.slice(1)).get('type');
@@ -46,6 +46,7 @@
     get role(){ return role; }, get user(){ return user; }, get profile(){ return profile; }, get access(){ return access; },
     signOut: () => signOut(),
     agentsChanged: () => { if (canSee('team')) loadTeamMenu(); liveSig = ''; },
+    setGoal: h => { weekGoal = Number(h) > 0 ? Number(h) : 0; drawGoal(); },
     fxChanged: () => { loadFx(); try { const w = $('cashFrame').contentWindow; if (w && w.reloadFx) w.reloadFx(); } catch(e){} }
   };
   const signedIn = () => document.dispatchEvent(new Event('talents-signed-in'));
@@ -230,8 +231,23 @@
     loadHistory();
   });
 
+  // Weekly goal: hours from Monday (saved shifts plus the running clock) against the hours Amr set
+  let weekGoal = 0, weekDone = 0;
+  function weekStart(){ const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return iso(d); }
+  function drawGoal(){
+    $('tGoal').hidden = !weekGoal; if (!weekGoal) return;
+    const secs = weekDone + workNow(), pct = Math.min(100, secs / (weekGoal * 36));
+    $('tGoalTxt').textContent = hm(secs) + ' of ' + weekGoal + 'h';
+    $('tGoalBar').style.width = pct + '%';
+    $('tGoalBarBox').setAttribute('aria-valuenow', String(Math.round(pct)));
+    $('tGoal').classList.toggle('done', pct >= 100);
+    const left = weekGoal * 3600 - secs;
+    $('tGoalSub').textContent = left > 0 ? hm(left) + ' to go · resets Monday' : 'Goal reached. Nice work!';
+  }
+
   function drawClock(){
     drawGuard();
+    drawGoal();
     const mode = live ? live.mode : 'off';
     $('tStatus').className = 'status ' + LBL[mode][1]; $('tStatus').querySelector('span').textContent = LBL[mode][0];
     $('tClock').textContent = clock(workNow());
@@ -402,7 +418,8 @@
     const bkey = r => r.shift_date + '|' + r.work_seconds + '|' + (r.started_at ? new Date(r.started_at).getTime() : '');
     const briefs = new Map(((!br.error && br.data) || []).filter(r => r.brief).map(r => [bkey(r), r.brief]));
     if (error) { $('hList').innerHTML = '<p class="empty">Couldn’t load your history. Pull to refresh.</p>'; return; }
-    const rows = data || [], month = iso(new Date()).slice(0, 7);
+    const rows = data || [], month = iso(new Date()).slice(0, 7), wk = weekStart();
+    weekDone = rows.filter(r => r.shift_date >= wk).reduce((a, r) => a + r.work_seconds, 0); drawGoal();
     const mine = rows.filter(r => r.shift_date.slice(0, 7) === month);
     $('hMonth').textContent = hm(mine.reduce((a, r) => a + r.work_seconds, 0));
     $('hShifts').textContent = plural(mine.length, 'shift');

@@ -78,6 +78,7 @@
       $('mcPay').innerHTML = usd(pay) + '<span> / hour</span>';
       $('mcPayEgp').textContent = rate ? '= EGP ' + Math.round(pay * rate).toLocaleString('en-US') + ' at today’s rate' : '';
     }
+    if (T.setGoal) T.setGoal(card && card.weekly_goal);
     drawCircle();
   }
   $('mcSettings').addEventListener('click', () => openSettings('profile'));
@@ -296,7 +297,7 @@
   // ---------- Agents (owner) ----------
   async function loadAgents(){
     const [a, l, c, m] = await Promise.all([
-      db.from('agents').select('id,name,active,role,phone,notes,photo_path,created_at').order('id'),
+      db.from('agents').select('id,name,active,role,phone,notes,photo_path,created_at,weekly_goal').order('id'),
       db.from('agent_companies').select('agent_id,company_id'),
       db.from('companies').select('id,name').order('name'),
       db.from('members').select('user_id,name,email,active,agent_id,created_at')
@@ -350,6 +351,7 @@
             '<label class="label">Name<input class="field" maxlength="80" value="' + esc(a.name) + '" data-a-name="' + a.id + '" /></label>' +
             '<label class="label">Role<select class="field" data-a-role="' + a.id + '">' + Object.keys(ROLES).map(k => '<option value="' + k + '"' + (a.role === k ? ' selected' : '') + '>' + ROLES[k] + '</option>').join('') + '</select><small class="note">' + roleSees(a.role || 'member') + '</small></label>' +
             '<label class="label">Phone / WhatsApp<input class="field" maxlength="40" inputmode="tel" value="' + esc(a.phone || '') + '" data-a-phone="' + a.id + '" /></label>' +
+            '<label class="label">Weekly goal (hours)<input class="field" type="number" min="1" max="120" step="0.5" inputmode="decimal" placeholder="No goal" value="' + (a.weekly_goal != null ? esc(String(Number(a.weekly_goal))) : '') + '" data-a-goal="' + a.id + '" /><small class="note">They see a progress bar under their clock. Leave empty for no goal.</small></label>' +
             '<div class="label">Works for<div class="chips">' + cos.map(c => '<button type="button" class="chip" aria-pressed="' + links.some(x => x.agent_id === a.id && x.company_id === c.id) + '" data-a-co="' + a.id + ':' + c.id + '">' + esc(c.name) + '</button>').join('') + '</div></div>' +
           '</div>' + loginBox(a) + '<div class="ag-foot"><button type="button" class="switch" role="switch" aria-checked="' + a.active + '" aria-label="' + esc(a.name) + ' active" data-a-active="' + a.id + '"></button><span>' + (a.active ? 'Active on /tracker' : 'Switched off') + '</span>' +
           '<label class="btn ghost small file-btn">' + ICON.cam + 'Photo<input type="file" accept="image/*" data-photo="' + a.id + '" hidden /></label>' +
@@ -586,6 +588,14 @@
       const { error } = await db.from('agents').update({ phone: t.value.trim() || null }).eq('id', a.id);
       toast(error ? 'Couldn’t save the phone number.' : 'Phone saved'); if (!error) a.phone = t.value.trim() || null;
       return;
+    }
+    if (d.aGoal) {
+      const a = agents.find(x => x.id === Number(d.aGoal)), raw = t.value.trim(), v = raw === '' ? null : Math.round(parseFloat(raw) * 2) / 2;
+      if (v !== null && !(v >= 1 && v <= 120)) { t.value = a.weekly_goal != null ? Number(a.weekly_goal) : ''; toast('Type hours between 1 and 120, or leave it empty.'); return; }
+      const { error } = await db.from('agents').update({ weekly_goal: v }).eq('id', a.id);
+      if (error) { t.value = a.weekly_goal != null ? Number(a.weekly_goal) : ''; toast('Couldn’t save the goal. Try again.'); return; }
+      a.weekly_goal = v; t.value = v == null ? '' : v;
+      toast(v == null ? 'Weekly goal removed' : a.name.split(' ')[0] + '’s goal: ' + v + ' hours a week'); return;
     }
     if (d.aNotes) {
       const a = agents.find(x => x.id === Number(d.aNotes));

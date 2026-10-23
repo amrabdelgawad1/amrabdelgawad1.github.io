@@ -286,6 +286,21 @@ window.CashTeam = function(db){
     ).sort((a,b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
   }
 
+  // History search: typing looks through every shift (name, date, company, clocked times, note),
+  // not just the period picked above; clearing it brings the filtered list back
+  const searchText = () => $('search').value.trim();
+  function historyRows(){
+    const words = searchText().toLowerCase().split(/\s+/).filter(Boolean);
+    if (!words.length) return visible();
+    const text = r => [r.name, r.date, fmtDate(r.date), new Date(r.date + 'T00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }),
+      Number(r.date.slice(5, 7)) + '/' + Number(r.date.slice(8)), companyName(r.companyId), r.clocked, r.brief || ''].join(' ').toLowerCase().replace(/,/g, '');
+    return log.filter(r => { const t = text(r); return words.every(w => t.includes(w.replace(/,/g, ''))); })
+      .sort((a,b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+  }
+  let searchTimer = null;
+  $('search').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(render, 150); });
+  $('search').addEventListener('keydown', e => { if (e.key === 'Escape' && $('search').value) { $('search').value = ''; render(); } });
+
   // ---------- rates ----------
   const saveTimers = {};
   function saveSetting(key, value, note, okText){
@@ -442,7 +457,8 @@ window.CashTeam = function(db){
     setUsd('mOwed', earned(owedRows)); $('hOwed').textContent = hm(ow);
     $('rangeLabel').textContent = rangeLabel();
     $('payLabel').textContent = rangeLabel() + ' · worked hours × rate (breaks not paid)';
-    $('histCount').textContent = rows.length + ' shift' + (rows.length === 1 ? '' : 's');
+    const found = searchText() ? historyRows().length : null;
+    $('histCount').textContent = found === null ? rows.length + ' shift' + (rows.length === 1 ? '' : 's') : found + ' match' + (found === 1 ? '' : 'es') + ' in all shifts';
 
     // by person
     const per = new Map();
@@ -473,11 +489,12 @@ window.CashTeam = function(db){
     });
 
     // history
-    const visibleIds = new Set(rows.map(r => r.id));
+    const hrows = historyRows();
+    const visibleIds = new Set(hrows.map(r => r.id));
     [...selected].forEach(id => { if (!visibleIds.has(id)) selected.delete(id); });
     const body = $('rows'); body.innerHTML = '';
-    if (!rows.length) body.innerHTML = '<tr><td colspan="10" class="empty">No shifts match these filters.</td></tr>';
-    rows.forEach(r => {
+    if (!hrows.length) body.innerHTML = '<tr><td colspan="10" class="empty">' + (searchText() ? 'No shift matches “' + esc(searchText()) + '”.' : 'No shifts match these filters.') + '</td></tr>';
+    hrows.forEach(r => {
       const tr = document.createElement('tr'); if (selected.has(r.id)) tr.className = 'sel-row';
       tr.innerHTML =
         '<td class="c-sel"><input type="checkbox" aria-label="Select shift" /></td>' +
@@ -492,7 +509,7 @@ window.CashTeam = function(db){
         '<td class="c-del" style="text-align:right"><button class="del edit" aria-label="Edit shift">' + PENCIL + '</button><button class="del" aria-label="Delete shift"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></td>';
       const cb = tr.querySelector('.c-sel input');
       cb.checked = selected.has(r.id);
-      cb.addEventListener('change', () => { cb.checked ? selected.add(r.id) : selected.delete(r.id); tr.classList.toggle('sel-row', cb.checked); updateBulk(rows); });
+      cb.addEventListener('change', () => { cb.checked ? selected.add(r.id) : selected.delete(r.id); tr.classList.toggle('sel-row', cb.checked); updateBulk(hrows); });
       tr.querySelector('.av').textContent = initials(r.name);
       tr.querySelector('.nm').textContent = r.name;
       if (r.fresh) { const b = document.createElement('span'); b.className = 'new'; b.textContent = 'New'; tr.querySelector('.who').appendChild(b); }
@@ -547,7 +564,7 @@ window.CashTeam = function(db){
       tr.querySelector('.del:not(.edit)').addEventListener('click', () => remove(r));
       body.appendChild(tr);
     });
-    updateBulk(rows);
+    updateBulk(hrows);
     renderProfit();
     renderNotes();
     paint();
@@ -953,7 +970,7 @@ window.CashTeam = function(db){
     all.indeterminate = n > 0 && !all.checked;
   }
   $('selAll').addEventListener('change', () => {
-    const rows = visible();
+    const rows = historyRows();
     if ($('selAll').checked) rows.forEach(r => selected.add(r.id)); else selected.clear();
     render();
   });

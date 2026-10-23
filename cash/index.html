@@ -551,7 +551,7 @@
     table.log.mylist td.c-hrs{ grid-row:3; }
   }
 </style>
-<link rel="stylesheet" href="look.css?v=15">
+<link rel="stylesheet" href="look.css?v=16">
 <link rel="stylesheet" href="../theme-switch.css?v=2">
 <link rel="stylesheet" href="../daylight-dark.css?v=2">
 <link rel="stylesheet" href="../ask.css?v=3">
@@ -1029,7 +1029,9 @@
     </section>
 
     <section class="t-card history">
-      <div class="card-title"><h2>History</h2><span id="tm-histCount"></span></div>
+      <div class="card-title"><h2>History</h2><span id="tm-histCount"></span>
+        <input type="search" class="field hist-search" id="tm-search" placeholder="Search name, date, company or note" aria-label="Search all shifts" autocomplete="off" />
+      </div>
       <div class="bulk" id="tm-bulk" hidden>
         <strong id="tm-bulkN"></strong>
         <button class="btn btn-ghost btn-sm" data-bulk="paid">Mark paid</button>
@@ -1129,7 +1131,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="../tracker/config.js"></script>
 <script src="../ask.js?v=4"></script>
-<script src="team.js?v=16"></script>
+<script src="team.js?v=17"></script>
 <script src="cash.js?v=25"></script>
 </body>
 </html>
