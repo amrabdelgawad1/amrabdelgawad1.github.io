@@ -43,6 +43,8 @@ html body *:not(.slip):not(.slip *){ font-family:var(--body) !important; }
 html body :is(h1, h2, h3, .clock, .tile strong, .money strong, .stat strong, .me-rate strong, .set .big-num, .mon, .wordmark, .mrow .n b, .hmonth b):not(.slip *){ font-family:var(--display) !important; }
 html body :is(.label, .sec, .money p, .stat p, .tile p, .status, .pill, .btn, .ctl, .seg button, .card-title span, .mhead, table.log th, .score th, .note-day, .sd-sec h4, .flow-list h4):not(.slip *){ font-family:var(--label) !important; }
 html body .num, html body .money strong, html body .tile strong, html body .clock, html body table{ font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1; }
+/* Big Bodoni numbers use the font's small-size cut: thicker hairlines that don't vanish when zoomed out */
+html body :is(.clock, .tile strong, .money strong, .stat strong, .me-rate strong, .set .big-num, .goal-top b, .donut .d-total):not(.slip *){ font-variation-settings:"opsz" 6; font-optical-sizing:none; }
 
 /* ---------- square edges (round things stay round) ---------- */
 html body *:not(.slip):not(.slip *){ border-radius:0 !important; }
