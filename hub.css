@@ -1,0 +1,206 @@
+/* Deal Tools look for /app and /cash: champagne gold, magenta, Bodoni headings, square edges.
+   Loaded last (after brand.css) so it wins. Light = cream, dark = black; the top band is black in both.
+   PDF sheets (.slip in /cash) keep their own paper look, so most rules skip them. */
+:root{
+  --bg:#F1EBE0; --panel:#FBF8F2; --sunk:#EFE7D9; --bg2:#FBF8F2; --bg3:#FBF8F2; --bg4:#FBF8F2;
+  --border:#D8CDB9; --border2:#C4B699;
+  --text:#0B0B0B; --light:#3F3A33; --muted:#5E584F; --white:#0B0B0B;
+  --accent:#8A6A35; --accent2:#6E5228; --accent-dim:rgba(201,169,110,.2); --on-accent:#0B0B0B;
+  --green:#2E7D57; --gold:#9A6A12; --red:#C2187A;
+  --net-bg:#C9A96E; --net-bd:#C9A96E;
+  --brand-gold:#C9A96E; --brand-gold2:#E0C48E; --brand-navy:#0B0B0B;
+  --champ:#C9A96E; --mag:#C2187A; --mag-hi:#E46BB0;
+  --band:#0B0B0B; --band-ink:#F1EBE0; --band-sub:#CFC7BA; --band-line:#3A332A;
+  /* charts (cash.js reads these) */
+  --c-in:#A88A52; --c-kept:#8A6A35; --c-out:#C2187A; --c-save:#5E584F; --c-line:#0B0B0B;
+  --pal-in:#8A6A35,#C9A96E,#6E5228,#B0925C,#D9C29A,#A88A52;
+  --pal-out:#C2187A,#E46BB0,#9E1463,#D54F9C,#F0A3CF,#7A0F4D;
+  --display:"Bodoni Moda", Didot, "Bodoni 72", Georgia, serif;
+  --label:"Barlow Condensed", "Arial Narrow", sans-serif;
+  --body:"Barlow", "Helvetica Neue", Arial, sans-serif;
+  --serif:var(--display); --sans:var(--body); --font-display:var(--display); --font-body:var(--body);
+  --radius:0; --radius-sm:0; --radius-lg:0;
+}
+html[data-theme="dark"]{
+  --bg:#0B0B0B; --panel:#131211; --sunk:#0F0E0D; --bg2:#131211; --bg3:#131211; --bg4:#1A1815;
+  --border:#2C2824; --border2:#3A332A;
+  --text:#F1EBE0; --light:#CFC7BA; --muted:#A39B8E; --white:#F1EBE0;
+  --accent:#C9A96E; --accent2:#E0C48E; --accent-dim:rgba(201,169,110,.16);
+  --green:#7FC8A0; --gold:#E3B45A; --red:#E46BB0;
+  --brand-gold2:#E0C48E;
+  --mag:#E46BB0;
+  --c-in:#C9A96E; --c-kept:#E0C48E; --c-out:#E46BB0; --c-save:#A39B8E; --c-line:#F1EBE0;
+  --pal-in:#C9A96E,#E0C48E,#8A6A35,#F1DDB4,#A88A52,#D9C29A;
+  --pal-out:#E46BB0,#C2187A,#F0A3CF,#9E1463,#F7C6E2,#D54F9C;
+  color-scheme:dark;
+}
+html body{ background:var(--bg); color:var(--text); }
+
+/* ---------- type: Barlow everywhere, Bodoni for headings and big numbers ---------- */
+html body *:not(.slip):not(.slip *){ font-family:var(--body) !important; }
+html body :is(h1, h2, h3, .clock, .tile strong, .money strong, .stat strong, .me-rate strong, .set .big-num, .mon, .wordmark, .mrow .n b, .hmonth b):not(.slip *){ font-family:var(--display) !important; }
+html body :is(.label, .sec, .money p, .stat p, .tile p, .status, .pill, .btn, .ctl, .seg button, .card-title span, .mhead, table.log th, .score th, .note-day, .sd-sec h4, .flow-list h4):not(.slip *){ font-family:var(--label) !important; }
+html body .num, html body .money strong, html body .tile strong, html body .clock, html body table{ font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1; }
+
+/* ---------- square edges (round things stay round) ---------- */
+html body *:not(.slip):not(.slip *){ border-radius:0 !important; }
+html body :is(.me, .av, .theme-toggle, .spin, .status i, .dot, .switch, .nc-head .av, .photo-row .av, img.logo){ border-radius:50% !important; }
+html body .switch{ border-radius:999px !important; }
+html body :is(.card, .t-card, .tile, .money, .stat, .btn, .field, .sel, .sheet, .acct-menu, .acc-menu, .update, .toast){ box-shadow:none !important; }
+
+/* ---------- cards: a thin gold line fading along the top ---------- */
+html body :is(.card, .t-card){ position:relative; background:var(--panel); border:1px solid var(--border); }
+html body :is(.card, .t-card)::before{ content:""; position:absolute; left:-1px; right:-1px; top:-1px; height:2px; background:linear-gradient(90deg, var(--champ), transparent 70%); pointer-events:none; }
+html body .card h2, html body .card-title h2{ font-weight:700; font-size:22px; letter-spacing:0; line-height:1.15; }
+html body .card-title h2{ font-size:24px; }
+html body .card-title span{ font-size:11px; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); }
+
+/* ---------- labels ---------- */
+html body .label{ font-size:11px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+html body .sec{ font-size:10.5px; font-weight:600; letter-spacing:.28em; text-transform:uppercase; color:var(--muted); padding-top:16px; }
+
+/* ---------- buttons ---------- */
+html body .btn{ font-weight:700; font-size:12px; letter-spacing:.2em; text-transform:uppercase; padding:12px 18px; transition:background .2s, color .2s, border-color .2s; }
+html body .btn.small, html body .btn-sm{ font-size:11.5px; padding:8px 14px; }
+html body .btn.ghost, html body .btn-ghost{ background:transparent; color:var(--text); border:1px solid var(--border2); }
+html body .btn.ghost:hover, html body .btn-ghost:hover{ background:var(--sunk); border-color:var(--accent); color:var(--accent); }
+html body .btn-outline{ background:transparent; color:var(--accent); border:1px solid var(--champ); }
+html body .btn-outline:hover{ background:var(--champ); color:#0B0B0B; }
+html body .btn.danger{ background:var(--red); border-color:var(--red); color:#fff; }
+html body :focus-visible{ outline:2px solid var(--mag); outline-offset:2px; }
+::selection{ background:var(--champ); color:#0B0B0B; }
+
+/* ---------- fields ---------- */
+html body .field:focus, html body .sel:focus{ border-color:var(--champ); box-shadow:0 0 0 3px var(--accent-dim) !important; }
+
+/* ---------- top band: black, gold line art, title in Bodoni capitals ---------- */
+html body .top{ background:var(--band); color:var(--band-ink); border-bottom:1px solid var(--champ); backdrop-filter:none; -webkit-backdrop-filter:none; min-height:64px; overflow:hidden; isolation:isolate; }
+html body .top .hub-art{ position:absolute; inset:0; width:100%; height:100%; z-index:-1; pointer-events:none; opacity:.8; }
+html body .top h1{ font-weight:700; font-size:21px; letter-spacing:.06em; text-transform:uppercase; color:var(--band-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+html body .top .burger, html body .top .theme-toggle{ background:transparent; border:1px solid var(--band-line); color:var(--band-ink); }
+html body .top .burger:hover, html body .top .theme-toggle:hover{ border-color:var(--champ); color:var(--champ); }
+html body .top .burger .dot{ background:var(--mag-hi); box-shadow:0 0 0 2px var(--band); }
+html body .top .me{ background:transparent; border:1px solid var(--champ); color:var(--champ); font-family:var(--display) !important; font-weight:700; }
+html body .top .me.owner{ background:var(--champ); color:#0B0B0B; border-color:var(--champ); }
+html body .top .me[aria-expanded="true"]{ box-shadow:0 0 0 3px rgba(201,169,110,.35); }
+#pCash iframe{ height:calc(100dvh - 65px); }
+#pCash.with-bar iframe{ height:calc(100dvh - 65px - 54px); }
+
+/* ---------- side menu ---------- */
+html body .drawer{ background:var(--panel); border-right:1px solid var(--border); padding:18px 14px; gap:1px; }
+html body .drawer h3{ font-weight:700; font-size:21px; padding:0 12px; }
+html body .drawer .who{ padding:2px 12px 14px; font-size:12.5px; color:var(--muted); border-bottom:1px solid var(--border); margin-bottom:8px; }
+html body .mi{ color:var(--text); font-weight:500; padding:10px 12px; border-left:1px solid var(--border); }
+html body .mi:hover{ background:transparent; border-left-color:var(--accent); color:var(--accent); }
+html body .mi.on, html[data-theme="dark"] body .mi.on{ background:transparent; color:var(--accent); border-left:2px solid var(--champ); padding-left:11px; font-family:var(--display) !important; font-style:italic; font-weight:500; font-size:16px; }
+html body .mi .i{ color:var(--muted); }
+html body .mi.on .i, html body .mi:hover .i{ color:var(--accent); }
+html body .mi .cnt{ background:var(--accent-dim); color:var(--accent); font-family:var(--label) !important; letter-spacing:.06em; }
+html body .mi .cnt.due{ background:var(--mag); color:#fff; }
+html body .sub .mi{ padding-left:44px; font-size:14px; }
+html body .mi-tog{ color:var(--muted); }
+html body .drawer .bottom{ border-top:1px solid var(--border); padding-top:10px; }
+html body .drawer .bottom .mi{ border-left-color:transparent; color:var(--muted); }
+html body .shade{ background:rgba(11,11,11,.55); }
+
+/* on a wide screen the menu stays open on the left, under the band */
+@media (min-width:1100px){
+  body:has(#vApp:not([hidden])):has(#drawer:not([hidden])) .drawer{ transform:none; top:65px; width:250px; z-index:9; padding-top:18px; transition:none; }
+  body:has(#vApp:not([hidden])):has(#drawer:not([hidden])) .shade{ display:none; }
+  body:has(#vApp:not([hidden])):has(#drawer:not([hidden])) #burger{ display:none !important; }
+  body:has(#vApp:not([hidden])):has(#drawer:not([hidden])) #vApp{ padding-left:250px; }
+  body:has(#vApp:not([hidden])):has(#drawer:not([hidden])) #vApp > .top{ margin-left:-250px; }
+}
+
+/* ---------- tiles and numbers ---------- */
+html body .pad > *, html body .stack > *, html body .grid2 > *{ min-width:0; }
+html body .tiles{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+html body .tiles.three{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
+@media (min-width:700px){ html body .tiles.four{ grid-template-columns:repeat(4, minmax(0, 1fr)); } }
+@media (max-width:480px){
+  html body .tile{ padding:12px; }
+  html body .tile p{ letter-spacing:.14em; }
+  html body .tile strong{ font-size:24px; }
+  html body .lrow .acts{ padding-left:0; }
+}
+html body .tile{ background:var(--panel); border:1px solid var(--border); padding:14px 16px; }
+html body .tile p{ font-size:10.5px; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); }
+html body .tile strong{ font-weight:700; font-size:30px; letter-spacing:0; line-height:1.15; margin-top:4px; }
+html body .tile.in strong{ color:var(--green); }
+html body .tile.due strong{ color:var(--gold); }
+
+/* ---------- clock-in ---------- */
+html body .clock{ font-weight:900; font-size:72px; letter-spacing:-.01em; line-height:1; margin:20px 0 8px; }
+@media (max-width:420px){ html body .clock{ font-size:54px; } }
+html body .clock-sub{ font-size:14px; }
+html body .ctl{ border:1px solid var(--border2); background:transparent; color:var(--muted); font-weight:700; font-size:12px; letter-spacing:.18em; text-transform:uppercase; padding:16px 4px; gap:8px; }
+html body .ctl:hover{ background:transparent; border-color:var(--champ); color:var(--accent); }
+html body .ctl.on.run{ background:var(--champ); border-color:var(--champ); color:#0B0B0B; }
+html body .ctl.on.brk{ border-color:var(--gold); color:var(--gold); background:color-mix(in srgb, var(--gold) 10%, transparent); }
+html body .ctl.on.pau{ border-color:var(--text); color:var(--text); background:transparent; }
+html body .ctl.off:hover{ color:var(--red); border-color:var(--red); }
+html body .goal-bar{ height:6px; background:var(--border); border:0; }
+html body .goal-bar i{ background:linear-gradient(90deg, var(--champ), var(--mag)); }
+html body .goal.done .goal-bar i{ background:var(--green); }
+html body .goal-top b{ font-family:var(--display) !important; font-size:20px; font-weight:700; }
+
+/* ---------- status chips ---------- */
+html body .status, html body .pill{ font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; padding:4px 10px; background:transparent; }
+html body .status.s-run, html body .pill.p-ok{ background:transparent; }
+html body .status.s-brk, html body .pill.p-due{ background:transparent; }
+html body .has-note{ background:var(--accent-dim); color:var(--accent); }
+
+/* ---------- lists, history, settings ---------- */
+html body .list .row .n b, html body .person .n b{ font-weight:600; }
+html body .hmonth b{ font-weight:700; font-size:17px; }
+html body .hmonth:hover, html body .shead:hover, html body .slip:hover{ background:var(--sunk); }
+html body .slip-ic{ background:var(--accent-dim); color:var(--accent); }
+html body .set nav{ background:var(--sunk); }
+html body .set nav button[aria-current="true"]{ background:transparent; color:var(--accent); box-shadow:inset 2px 0 0 var(--champ); font-family:var(--display) !important; font-style:italic; }
+html body .set-head h3, html body .set nav h2{ font-weight:700; }
+html body .set .box.hi, html body .me-rate{ background:var(--accent-dim); border-color:color-mix(in srgb, var(--champ) 40%, transparent); }
+html body .acct-menu, html body .acc-menu, html body .sheet{ border-color:var(--border2); }
+html body .chip[aria-pressed="true"], html body .choice:has(input:checked){ background:var(--accent-dim); color:var(--accent); border-color:var(--champ); }
+html body .switch[aria-checked="true"]{ background:var(--champ); }
+html body .bars .bar{ background:linear-gradient(90deg, var(--champ), var(--mag)); }
+html body .toast, html body .update{ background:var(--band); color:var(--band-ink); border:1px solid var(--champ); }
+html body .linkbtn, html body #pVisits .note a{ color:var(--accent); }
+
+/* ---------- sign-in screens ---------- */
+html body .auth h1{ font-weight:900; font-size:28px; text-transform:uppercase; letter-spacing:.02em; line-height:1; }
+html body .auth .sub{ color:var(--muted); }
+
+/* ================= /cash pages (Overview, Team, Income, Expenses) ================= */
+html body .page{ background:var(--bg); }
+html body .t-card{ padding:22px 24px; }
+html body .money, html body .stat{ background:var(--panel); border:1px solid var(--border); }
+html body .money p, html body .stat p{ font-size:10.5px; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); }
+html body .money strong, html body .stat strong{ font-weight:700 !important; letter-spacing:0 !important; color:var(--text); }
+html body .money.in strong, html body .money.paid strong, html body .stat.w strong{ color:var(--text); }
+html body .money.out strong{ color:var(--red); }
+html body .money.net, html body .money.profit-big{ background:var(--champ); border-color:var(--champ); }
+html body .money.net :is(strong, p, small, .egp, .saved), html body .money.profit-big :is(strong, p, small){ color:#0B0B0B !important; }
+html body .money.net .team-add{ color:#0B0B0B; border-color:rgba(11,11,11,.35); }
+html body .money.net.neg{ background:color-mix(in srgb, var(--red) 10%, var(--panel)); border-color:color-mix(in srgb, var(--red) 40%, transparent); }
+html body .money.net.neg :is(strong, p, small){ color:var(--red) !important; }
+html body .seg{ background:transparent; border:1px solid var(--border2); padding:3px; }
+html body .seg button{ font-weight:700; font-size:11.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+html body .seg button.on{ background:transparent; color:var(--accent); box-shadow:inset 0 0 0 1px var(--champ) !important; }
+html body .nav{ background:transparent; border-color:var(--border2); color:var(--text); }
+html body .nav:hover{ border-color:var(--champ); color:var(--accent); }
+html body .co-chip[aria-pressed="true"]{ background:var(--accent-dim); border-color:var(--champ); color:var(--accent); }
+html body table.log th, html body .score th, html body .mhead{ font-size:10.5px; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); }
+html body button.mrow.on{ background:var(--accent-dim); }
+html body .mrow .net{ font-weight:700; }
+html body .flow .lbl{ fill:var(--text); }
+html body .flow .amt, html body .trend .ty, html body .donut .d-total{ font-family:var(--body) !important; }
+html body .donut .d-total{ font-family:var(--display) !important; font-weight:700; font-size:17px; }
+html body .flow .amt.in{ fill:var(--text); } html body .flow .amt.out{ fill:var(--red); } html body .flow .amt.save{ fill:var(--muted); }
+html body .flow-foot .k-in{ background:var(--c-in); opacity:.6; } html body .flow-foot .k-out{ background:var(--c-out); } html body .flow-foot .k-kept{ background:var(--c-kept); opacity:1; } html body .flow-foot .k-save{ background:var(--c-save); }
+html body .trend .tg:hover .hov, html body .trend .tg.on .hov{ fill:var(--accent-dim); }
+html body .notice.soft{ color:var(--gold); }
+html body .agent-no{ font-family:var(--display) !important; font-style:italic; color:var(--mag); background:transparent; }
+html body .note-day, html body .sd-sec h4{ color:var(--accent); letter-spacing:.22em; }
+html body .note-card{ background:var(--panel); }
+html body .score .sc-appt, html body .nc-nums{ color:var(--accent); }
+html body .score .score-total td{ border-top-color:var(--champ); }

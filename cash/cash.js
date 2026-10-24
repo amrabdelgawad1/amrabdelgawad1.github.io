@@ -444,13 +444,14 @@
       mk('line', { x1:left, x2:W, y1:y(v), y2:y(v), style:'stroke:var(--border2)', 'stroke-dasharray':v ? '3 4' : '' });
       mk('text', { x:left - 8, y:y(v) + 4, 'text-anchor':'end', class:'ty' }).textContent = short(v);
     });
-    const RED = '#ff8a8a', GREEN = getComputedStyle(el).getPropertyValue('--green').trim() || '#047857';
+    const RED = cssv('--c-out', '#ff8a8a'), GREEN = cssv('--c-in', getComputedStyle(el).getPropertyValue('--green').trim() || '#047857');
+    const LINE = cssv('--c-line', '#C99014'), SAVE = cssv('--c-save', '#C99014');
     const show = s => {
       cap.innerHTML = '';
       const add = (color, text, amt) => { const sp = document.createElement('span'); const i = document.createElement('i'); i.style.background = color; const b = document.createElement('b'); b.textContent = egp(amt); sp.append(i, text + ' ', b); cap.appendChild(sp); };
       const head = document.createElement('span'); head.textContent = monthLabel(s.m); head.style.fontWeight = '600'; cap.appendChild(head);
-      add(GREEN, 'Came in', s.came); add(RED, 'Spent', s.spent); add('#C99014', 'Net profit', s.net);
-      if (s.saved) add('#C99014', 'Saved', s.saved);
+      add(GREEN, 'Came in', s.came); add(RED, 'Spent', s.spent); add(LINE, 'Net profit', s.net);
+      if (s.saved) add(SAVE, 'Saved', s.saved);
       svg.querySelectorAll('.tg').forEach(g => g.classList.toggle('on', g.dataset.m === s.m));
     };
     const pts = [];
@@ -467,8 +468,8 @@
       g.addEventListener('click', () => { if (g.firstTap) { g.firstTap = false; show(s); return; } month = s.m; render(); window.scrollTo({ top:0, behavior:'smooth' }); });
       pts.push([cx, y(s.net)]);
     });
-    if (pts.length > 1) mk('polyline', { points:pts.map(p => p.join(',')).join(' '), fill:'none', stroke:'#C99014', 'stroke-width':2.5, 'stroke-linejoin':'round', 'pointer-events':'none' });
-    pts.forEach(p => mk('circle', { cx:p[0], cy:p[1], r:4, fill:'#C99014', style:'stroke:var(--bg3)', 'stroke-width':2, 'pointer-events':'none' }));
+    if (pts.length > 1) mk('polyline', { points:pts.map(p => p.join(',')).join(' '), fill:'none', stroke:LINE, 'stroke-width':2.5, 'stroke-linejoin':'round', 'pointer-events':'none' });
+    pts.forEach(p => mk('circle', { cx:p[0], cy:p[1], r:4, fill:LINE, style:'stroke:var(--bg3)', 'stroke-width':2, 'pointer-events':'none' }));
     svg.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') show(current); });
     el.appendChild(svg);
     // Underneath, the month you're looking at (or the latest one)
@@ -482,7 +483,12 @@
   // Income shades leave out the site's dark green, which the flow chart keeps for "Kept as profit"
   const GREENS = ['#10B981', '#6EE7B7', '#0D8F6A', '#A7F3D0', '#34D399', '#5FB59A'];
   const REDS = ['#E5484D', '#F07C7C', '#F5A3A3', '#C2373C', '#FAC9C9', '#F9B4B4'];
-  const shade = (list, pal) => list.forEach((r, i) => { r.color = pal[i % pal.length]; });
+  // the page's look (hub.css) can set its own chart colours; read them each time so light/dark both work
+  // light/dark switch: draw the charts again in the other theme's colours
+  new MutationObserver(() => { if (view === 'overview') render(); }).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme'] });
+  function cssv(name, fallback){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback; }
+  function palette(name, fallback){ const v = cssv(name, ''); return v ? v.split(',').map(s => s.trim()).filter(Boolean) : fallback; }
+  const shade = (list, pal) => { pal = pal === GREENS ? palette('--pal-in', GREENS) : pal === REDS ? palette('--pal-out', REDS) : pal; list.forEach((r, i) => { r.color = pal[i % pal.length]; }); };
   function drawDonut(el, list, word){
     el.innerHTML = '';
     const rows = list.filter(r => r.amt > 0), total = rows.reduce((a, r) => a + r.amt, 0);
@@ -535,8 +541,9 @@
   });
   function drawFlow(el, inRows, outRows, saved = 0){
     const WHO = { You:'Your work', Team:'Team’s work' };
-    const GREEN = getComputedStyle(el).getPropertyValue('--green').trim() || '#10b981', RED = '#ff8a8a', GOLD = '#C99014';
-    const fill = kind => kind === 'net' ? GREEN : kind === 'save' ? GOLD : RED;
+    const GREEN = getComputedStyle(el).getPropertyValue('--green').trim() || '#10b981', RED = cssv('--c-out', '#ff8a8a'), GOLD = cssv('--c-save', '#C99014');
+    const IN = cssv('--c-in', GREEN), KEPT = cssv('--c-kept', GREEN);
+    const fill = kind => kind === 'net' ? KEPT : kind === 'save' ? GOLD : RED;
     const sum = l => l.reduce((a, r) => a + r.amt, 0);
     const left = inRows.filter(r => r.amt > 0).map(r => ({ ...r, kind:'in' })).sort((a, b) => b.amt - a.amt);
     const right = outRows.filter(r => r.amt > 0).map(r => ({ ...r, kind:'out' }));
@@ -560,7 +567,7 @@
     const labelW = narrow ? 0 : 190, nodeW = narrow ? 12 : 10, gap = narrow ? 6 : 10, flowH = narrow ? 220 : 260, k = flowH / total;
     const lineH = 16;
     const x0 = labelW, x1 = W / 2 - nodeW / 2, x2 = W - labelW - nodeW;
-    const colorOf = n => narrow && n.color && (n.kind === 'in' || n.kind === 'out') ? n.color : n.kind === 'in' ? GREEN : n.kind === 'short' ? RED : fill(n.kind);
+    const colorOf = n => narrow && n.color && (n.kind === 'in' || n.kind === 'out') ? n.color : n.kind === 'in' ? IN : n.kind === 'short' ? RED : fill(n.kind);
 
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg');
