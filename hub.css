@@ -46,7 +46,8 @@ html body .num, html body .money strong, html body .tile strong, html body .cloc
 
 /* ---------- square edges (round things stay round) ---------- */
 html body *:not(.slip):not(.slip *){ border-radius:0 !important; }
-html body :is(.me, .av, .theme-toggle, .spin, .status i, .dot, .switch, .nc-head .av, .photo-row .av, img.logo){ border-radius:50% !important; }
+html body :is(.me, .av, .theme-toggle, .spin, .status i, .dot, .switch, .nc-head .av, .photo-row .av){ border-radius:50% !important; }
+html body img.logo{ box-shadow:0 0 0 1px var(--champ); }
 html body .switch{ border-radius:999px !important; }
 html body :is(.card, .t-card, .tile, .money, .stat, .btn, .field, .sel, .sheet, .acct-menu, .acc-menu, .update, .toast){ box-shadow:none !important; }
 
@@ -122,6 +123,11 @@ html body .pad > *, html body .stack > *, html body .grid2 > *{ min-width:0; }
 html body .tiles{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
 html body .tiles.three{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
 @media (min-width:700px){ html body .tiles.four{ grid-template-columns:repeat(4, minmax(0, 1fr)); } }
+/* Live now: label left, big number right, so the wide boxes don't look empty */
+@media (min-width:700px){
+  html body .tiles.three .tile{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 22px; }
+  html body .tiles.three .tile strong{ font-size:44px; line-height:1; margin:0; }
+}
 @media (max-width:480px){
   html body .tile{ padding:12px; }
   html body .tile p{ letter-spacing:.14em; }
@@ -205,7 +211,21 @@ html body .flow .amt, html body .trend .ty, html body .donut .d-total{ font-fami
 html body .donut .d-total{ font-family:var(--display) !important; font-weight:700; font-size:17px; }
 html body .flow .amt.in{ fill:var(--text); } html body .flow .amt.out{ fill:var(--red); } html body .flow .amt.save{ fill:var(--muted); }
 html body .flow-foot .k-in{ background:var(--c-in); opacity:1; } html body .flow-foot .k-out{ background:var(--c-out); } html body .flow-foot .k-kept{ background:var(--c-kept); opacity:1; } html body .flow-foot .k-save{ background:var(--c-save); }
-html body .trend .tg:hover .hov, html body .trend .tg.on .hov{ fill:var(--accent-dim); }
+/* month chart: the chosen month gets a faint tint and a thin gold outline, not a solid block */
+html body .trend .tg:hover .hov{ fill:color-mix(in srgb, var(--champ) 6%, transparent); }
+html body .trend .tg.on .hov{ fill:color-mix(in srgb, var(--champ) 5%, transparent); stroke:var(--champ); stroke-width:1; stroke-opacity:.6; }
+/* "You" and "Team" tags both gold */
+html body .tag, html body .tag.me{ color:var(--accent); border-color:color-mix(in srgb, var(--champ) 55%, transparent); background:transparent; font-family:var(--label) !important; letter-spacing:.14em; }
+/* "Where it came from" and "Where it went" keep their own height */
+html body .cash-split{ align-items:start; }
+/* inside the app the money pages use the same width as Team */
+html.embed body #dashView{ max-width:1480px; padding:0 24px; }
+/* Add entry sits on the month row, at the right of Monthly statement */
+@media (min-width:760px){
+  html.embed body #dashView{ position:relative; }
+  html.embed body #dashView:has(#cashTools:not([hidden])) > .head{ position:absolute; top:4px; right:24px; margin:0; z-index:2; }
+  html.embed body #dashView:has(#cashTools:not([hidden])) #cashTools{ padding-right:200px; }
+}
 html body .notice.soft{ color:var(--gold); }
 html body .agent-no{ font-family:var(--display) !important; font-style:italic; color:var(--mag); background:transparent; }
 html body .note-day, html body .sd-sec h4{ color:var(--accent); letter-spacing:.22em; }

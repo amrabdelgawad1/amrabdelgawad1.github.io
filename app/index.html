@@ -14,8 +14,8 @@
 <meta name="apple-mobile-web-app-title" content="Talents" />
 <title>Talents</title>
 <link rel="manifest" href="manifest.webmanifest" />
-<link rel="icon" href="icon-64.png" />
-<link rel="apple-touch-icon" href="icon-180.png" />
+<link rel="icon" href="icon-64.png?v=2" />
+<link rel="apple-touch-icon" href="icon-180.png?v=2" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -25,7 +25,7 @@
 <link rel="stylesheet" href="../daylight-dark.css?v=2">
 <link rel="stylesheet" href="../ask.css?v=3">
 <link rel="stylesheet" href="../brand.css?v=2">
-<link rel="stylesheet" href="../hub.css?v=2">
+<link rel="stylesheet" href="../hub.css?v=3">
 <script src="../theme.js?v=2"></script>
 </head>
 <body>
@@ -37,7 +37,7 @@
   <!-- sign in -->
   <section class="center" id="vLogin" hidden>
     <form class="card auth" id="loginForm" novalidate>
-      <img class="logo" src="icon-180.png" alt="" />
+      <img class="logo" src="icon-180.png?v=2" alt="" />
       <h1>Amr Abdelgawad Talents</h1>
       <p class="sub">Sign in to clock in and see your hours</p>
       <p class="moved" id="movedNote" hidden>The clock-in page moved here. Sign in with the email and password from Amr's invite. No login yet? Ask Amr to send you one.</p>
@@ -52,7 +52,7 @@
   <!-- set a password (from an invite or a new sign-in link) -->
   <section class="center" id="vSetPw" hidden>
     <form class="card auth" id="pwForm" novalidate>
-      <img class="logo" src="icon-180.png" alt="" />
+      <img class="logo" src="icon-180.png?v=2" alt="" />
       <h1 id="pwTitle">Welcome</h1>
       <p class="sub">Choose a password for your account. You'll use it with your email to sign in.</p>
       <label class="label">New password<input class="field" id="pw1" type="password" autocomplete="new-password" placeholder="At least 8 characters" /></label>
@@ -65,7 +65,7 @@
   <!-- owner: authenticator code -->
   <section class="center" id="vMfa" hidden>
     <form class="card auth" id="mfaForm" novalidate>
-      <img class="logo" src="icon-180.png" alt="" />
+      <img class="logo" src="icon-180.png?v=2" alt="" />
       <h1>Enter your code</h1>
       <p class="sub">Open your authenticator app and type the 6-digit code. This device stays verified until you sign out.</p>
       <label class="label" id="mfaWhichWrap" hidden>Which app are you using?<select class="field" id="mfaWhich"></select></label>
@@ -304,7 +304,7 @@
 <script src="../tracker/config.js"></script>
 <script src="../ask.js?v=4"></script>
 <script src="../hub-art.js?v=1"></script>
-<script src="app.js?v=40"></script>
+<script src="app.js?v=41"></script>
 <script src="account.js?v=9"></script>
 </body>
 </html>
