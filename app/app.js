@@ -919,9 +919,29 @@
           const first = m.name.split(' ')[0], what = SECTION_NAMES[box.value];
           if (error) { box.checked = !box.checked; toast('Couldn’t change it. Try again.'); return; }
           m.access = next; acc.querySelector('summary').textContent = sum();
+          if (box.value === 'deals') setTimeout(loadPeople, 400);
           toast(box.checked ? first + ' can now see ' + what + (/team|money/.test(box.value) ? '. They’ll set up an authenticator code the first time.' : '.') : first + ' can no longer see ' + what + '.');
         });
         d.querySelector('.acts').prepend(acc);
+        // Deal tools: optional end date and two-step, only when Deal tools is switched on
+        if (m.access.includes('deals')) {
+          const dl = document.createElement('div'); dl.className = 'deals-opts';
+          dl.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-size:13px;margin-top:8px;width:100%';
+          dl.innerHTML = '<label style="display:flex;gap:8px;align-items:center">Deal tools until <input type="date" class="field" style="width:auto" /></label><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" /> Require two-step for Deal tools</label><small style="opacity:.7">Leave the date empty for no end.</small>';
+          const [dt, mf] = dl.querySelectorAll('input'); dt.value = m.deals_until || ''; mf.checked = !!m.deals_mfa;
+          const first = m.name.split(' ')[0];
+          dt.addEventListener('change', async () => {
+            const { error } = await db.from('members').update({ deals_until: dt.value || null }).eq('user_id', m.user_id);
+            if (error) { toast(/deals_until/.test(error.message || '') ? 'Run the Deal CRM database update first.' : 'Couldn’t change it. Try again.'); dt.value = m.deals_until || ''; return; }
+            m.deals_until = dt.value || null; toast(dt.value ? first + '’s Deal tools end on ' + new Date(dt.value + 'T00:00').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + '.' : first + '’s Deal tools have no end date.');
+          });
+          mf.addEventListener('change', async () => {
+            const { error } = await db.from('members').update({ deals_mfa: mf.checked }).eq('user_id', m.user_id);
+            if (error) { toast('Couldn’t change it. Try again.'); mf.checked = !mf.checked; return; }
+            m.deals_mfa = mf.checked; toast(mf.checked ? first + ' will set up an authenticator code the next time they open Deal tools.' : first + ' no longer needs two-step for Deal tools.');
+          });
+          d.querySelector('.acts').after(dl);
+        }
       }
       const sel = d.querySelector('select'); fillCompanies(sel, m.company_id);
       sel.addEventListener('change', async () => {
