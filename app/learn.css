@@ -1,0 +1,55 @@
+/* Learning Hub (#learn). Uses the app's colours from hub.css; gold for team tracks, magenta for shared ones. */
+#pLearn{ max-width:1240px; }
+#learnBody{ display:grid; gap:22px; }
+.lh-head{ display:grid; gap:6px; }
+.lh-head .note{ max-width:62ch; margin:0; }
+html body .lh-h1{ font-size:clamp(30px, 5vw, 44px); line-height:1.1; margin:0; text-wrap:balance; }
+.lh-crumbs{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.lh-crumbs a{ color:var(--accent); text-decoration:none; font-size:13px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; }
+.lh-crumbs > span:not(.label){ color:var(--muted); }
+
+.lh-tracks{ display:grid; gap:18px; grid-template-columns:repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+.lh-track{ display:grid; gap:12px; align-content:start; text-decoration:none; color:var(--text); padding:22px; }
+html body a.lh-track:hover{ border-color:var(--border2); }
+.lh-track h2{ font-size:28px !important; margin:0; }
+.lh-track .note{ margin:0; }
+html body .card.lh-mag::before, html body .card.lh-track.lh-mag::before{ background:linear-gradient(90deg, var(--mag), transparent 70%); }
+.lh-chip{ justify-self:start; font-size:11px; letter-spacing:.14em; text-transform:uppercase; border:1px solid var(--champ); color:var(--accent); padding:3px 8px; }
+.lh-mag .lh-chip{ border-color:var(--mag); color:var(--mag); }
+.lh-meta{ display:flex; gap:18px; flex-wrap:wrap; margin:0; color:var(--muted); font-size:13px; }
+.lh-meta b{ color:var(--text); font-size:18px; margin-right:2px; }
+.lh-soon{ border:1px dashed var(--border2); color:var(--text); }
+.lh-soon h2{ color:var(--muted); }
+
+.lh-parts{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.lh-part{ display:inline-flex; gap:8px; align-items:center; border:1px solid var(--border); background:var(--sunk); padding:8px 12px; font-size:14px; }
+.lh-part b{ color:var(--accent); }
+
+.lh-sec{ display:grid; gap:12px; }
+.lh-tools{ display:grid; gap:10px; grid-template-columns:repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
+.lh-tool{ display:flex; gap:12px; align-items:center; text-align:left; background:var(--panel); border:1px solid var(--border); padding:14px; color:var(--text); text-decoration:none; cursor:pointer; font:inherit; }
+.lh-tool:hover{ border-color:var(--champ); }
+.lh-tool b{ display:block; font-size:14px; }
+.lh-tool small{ color:var(--muted); font-size:12px; }
+.lh-ic{ width:38px; height:38px; flex:none; display:grid; place-items:center; border:1px solid var(--champ); color:var(--accent); font-weight:700; font-size:17px; }
+.lh-mag .lh-ic{ border-color:var(--mag); color:var(--mag); }
+
+.lh-empty{ border:1px dashed var(--border2); background:var(--sunk); padding:20px; margin-top:12px; }
+.lh-empty h3{ margin:0 0 4px; font-size:20px; }
+.lh-empty .note{ margin:0; }
+.lh-mod{ display:grid; grid-template-columns:44px minmax(0,1fr); gap:14px; align-items:center; padding:14px 0; border-top:1px solid var(--border); }
+.lh-mod h3{ margin:0; font-size:19px; }
+.lh-mod .note{ margin:2px 0 0; }
+.lh-n{ font-size:28px; color:var(--accent); }
+
+.lh-over{ position:fixed; inset:0; z-index:60; }
+.lh-scrim{ position:absolute; inset:0; background:rgba(11,11,11,.45); }
+.lh-drawer{ position:absolute; top:0; right:0; bottom:0; width:min(420px, 100%); background:var(--panel); border-left:1px solid var(--border); overflow:auto; display:grid; gap:14px; align-content:start;
+  padding:calc(24px + env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-right, 0px)) 24px 24px; }
+.lh-drawer::before{ content:""; position:absolute; left:0; right:0; top:0; height:2px; background:linear-gradient(90deg, var(--champ), transparent 70%); }
+.lh-drawer h2{ font-size:26px !important; margin:0; }
+.lh-drawer label.label{ display:grid; gap:6px; }
+.lh-x{ justify-self:end; width:34px; height:34px; background:none; border:1px solid var(--border2); color:var(--text); cursor:pointer; }
+.lh-res{ display:grid; gap:4px; border:1px solid var(--champ); background:var(--sunk); padding:16px; }
+.lh-res strong{ font-size:34px; line-height:1.1; font-variant-numeric:tabular-nums; }
+.lh-res small{ margin:0; }
