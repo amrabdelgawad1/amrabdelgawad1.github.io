@@ -624,9 +624,9 @@
     };
     let my = midY + (midH - sumH(left)) / 2;
     const shortTip = { big:'', of:'Spent beyond what came in' };
-    left.forEach(n => { band(x0 + nodeW, n.y, x1, my, n.h, colorOf(n), narrow ? .35 : .22, n, n.kind === 'short' ? shortTip : pct(n.amt, n.kind)); my += n.h; });
+    left.forEach(n => { band(x0 + nodeW, n.y, x1, my, n.h, colorOf(n), narrow ? .35 : +cssv('--flow-in-a', .22), n, n.kind === 'short' ? shortTip : pct(n.amt, n.kind)); my += n.h; });
     my = midY + (midH - sumH(right)) / 2;
-    right.forEach(n => { band(x1 + nodeW, my, x2, n.y, n.h, colorOf(n), n.kind === 'out' && !narrow ? .2 : .3, n, pct(n.amt, n.kind)); my += n.h; });
+    right.forEach(n => { band(x1 + nodeW, my, x2, n.y, n.h, colorOf(n), n.kind === 'out' && !narrow ? +cssv('--flow-out-a', .2) : +cssv('--flow-kept-a', .3), n, pct(n.amt, n.kind)); my += n.h; });
 
     const label = (n, x, anchor, cls) => {
       if (narrow) return;
@@ -636,7 +636,7 @@
     };
     left.forEach(n => { mk('rect', { x:x0, y:n.y, width:nodeW, height:n.h, rx:3, fill:colorOf(n) }); label(n, x0 - 8, 'end', n.kind === 'short' ? 'out' : 'in'); });
     right.forEach(n => { mk('rect', { x:x2, y:n.y, width:nodeW, height:n.h, rx:3, fill:colorOf(n) }); label(n, x2 + nodeW + 8, 'start', n.kind === 'net' ? 'in' : n.kind === 'save' ? 'save' : 'out'); });
-    mk('rect', { x:x1, y:midY, width:nodeW, height:midH, rx:3, fill:'currentColor', opacity:.7 });
+    mk('rect', { x:x1, y:midY, width:nodeW, height:midH, rx:3, fill:cssv('--c-mid', 'currentColor'), opacity:+cssv('--c-mid-a', .7) });
     // Pointing at a name or its bar shows the same details as its band, so small amounts are easy to reach
     left.forEach(n => n.hover(mk('rect', { class:'hit', x:0, y:n.y + n.h / 2 - n.slot / 2, width:Math.max(x0 + nodeW, 30), height:n.slot, fill:'transparent' })));
     right.forEach(n => n.hover(mk('rect', { class:'hit', x:Math.min(x2, W - 30), y:n.y + n.h / 2 - n.slot / 2, width:W - Math.min(x2, W - 30), height:n.slot, fill:'transparent' })));
