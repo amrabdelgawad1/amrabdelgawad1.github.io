@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Deal Tools</title>
+<meta name="description" content="Amr Abdelgawad's private deal tools: land and house calculators.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;0,6..96,900;1,6..96,500&family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+:root{
+  --bg:#0B0B0B; --panel:#131211; --ink:#F1EBE0; --muted:#A39B8E; --line:#2C2824;
+  --champ:#C9A96E; --champ-ink:#C9A96E; --mag:#E46BB0; --mag-deep:#C2187A;
+  --display:"Bodoni Moda", Didot, "Bodoni 72", Georgia, serif;
+  --label:"Barlow Condensed", "Arial Narrow", sans-serif;
+  --body:"Barlow", "Helvetica Neue", Arial, sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#F1EBE0;--panel:#FBF8F2;--ink:#0B0B0B;--muted:#5E584F;--line:#D8CDB9;--champ-ink:#8A6A35;--mag:#C2187A;color-scheme:light}}
+:root[data-theme="light"]{--bg:#F1EBE0;--panel:#FBF8F2;--ink:#0B0B0B;--muted:#5E584F;--line:#D8CDB9;--champ-ink:#8A6A35;--mag:#C2187A;color-scheme:light}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.k{font-family:var(--label);font-weight:600;font-size:11px;letter-spacing:.3em;text-transform:uppercase}
+.hero{background:#0B0B0B;color:#F1EBE0;position:relative;overflow:hidden;border-bottom:1px solid var(--champ)}
+.hero canvas,.gate canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.5;pointer-events:none}
+.hero .in{position:relative;max-width:1080px;margin:0 auto;padding:24px 16px 34px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:28px}
+.brand{display:flex;align-items:center;gap:14px;text-decoration:none;color:#F1EBE0}
+.mono{width:46px;height:46px;flex:none;border:1px solid var(--champ);outline:1px solid var(--champ);outline-offset:-5px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:17px;color:var(--champ)}
+.mono i{font-weight:500;color:#E46BB0}
+.wordmark{font-family:var(--display);font-weight:700;font-size:22px;line-height:1;letter-spacing:.06em;text-transform:uppercase}
+.wordmark small{display:block;font-family:var(--label);font-weight:600;font-size:10.5px;letter-spacing:.32em;color:#A39B8E;margin-top:6px}
+.who{display:flex;align-items:center;gap:14px;font-size:13px;color:#CFC7BA;flex-wrap:wrap}
+.who b{color:var(--champ);font-weight:600}
+.who a,.linkbtn{color:#CFC7BA;font-size:13px}
+.linkbtn{background:none;border:0;padding:0;text-decoration:underline;cursor:pointer;font-family:inherit}
+.hero .k{color:var(--champ)}
+h1{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:clamp(36px,6.4vw,64px);line-height:.92;margin:10px 0 0}
+h1 i{display:block;font-weight:500;font-style:italic;text-transform:none;color:#E46BB0}
+.hero p{max-width:58ch;color:#CFC7BA;margin:14px 0 0}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 16px 48px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.card{background:var(--panel);border:1px solid var(--line);position:relative;padding:22px 22px 20px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card::before{content:"";position:absolute;left:-1px;right:-1px;top:-1px;height:2px;background:linear-gradient(90deg,var(--champ),transparent 70%)}
+.card .n{font-family:var(--display);font-style:italic;color:var(--mag);font-size:15px}
+.card h2{font-family:var(--display);font-weight:700;font-size:28px;line-height:1.05;margin:0}
+.card h2 i{font-weight:500;color:var(--mag)}
+.card p{margin:0;color:var(--muted);font-size:14px}
+.card ul{margin:0;padding:0;list-style:none;display:grid;gap:6px;font-size:14px}
+.card li{padding-left:18px;position:relative}
+.card li::before{content:"";position:absolute;left:0;top:.6em;width:8px;height:1px;background:var(--champ)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:auto;padding-top:8px}
+.btn{display:inline-block;text-decoration:none;font:700 12px var(--label);letter-spacing:.22em;text-transform:uppercase;border:1px solid var(--champ);background:transparent;color:var(--champ-ink);padding:11px 18px;cursor:pointer;transition:background .2s,color .2s}
+.btn:hover{background:var(--champ);color:#0B0B0B}
+.btn.solid{background:var(--champ);color:#0B0B0B}
+.btn.solid:hover{background:#E0C48E}
+.btn.ghost{border-color:var(--line);color:var(--muted)}
+.btn.ghost:hover{background:var(--line);color:var(--ink)}
+.btn:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--mag);outline-offset:2px}
+.notes{margin-top:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.notes div{border:1px solid var(--line);padding:14px 16px;font-size:13.5px;color:var(--muted)}
+.notes b{display:block;color:var(--ink);font-family:var(--display);font-size:16px;margin-bottom:4px}
+footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between;color:var(--champ-ink)}
+footer a{color:inherit;text-decoration:none}
+footer .tag{font-family:var(--display);font-style:italic;font-size:17px}
+.copy{font-size:12px;color:var(--muted);margin-top:10px}
+.gate{position:fixed;inset:0;z-index:50;background:#0B0B0B;color:#F1EBE0;display:flex;align-items:center;justify-content:center;padding:16px}
+.gate canvas{opacity:.4}
+.gate .gcard{position:relative;width:min(440px,100%);background:#16130F;border:1px solid var(--champ);outline:1px solid var(--champ);outline-offset:-7px;padding:30px 26px 26px}
+.gate h2{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:34px;line-height:.95;margin:12px 0 0}
+.gate h2 i{display:block;font-weight:500;font-style:italic;text-transform:none;color:#E46BB0}
+.gate p{color:#CFC7BA;font-size:14px;margin:12px 0 18px}
+.gate .k{color:var(--champ)}
+.gate label{display:grid;gap:6px;font:600 11px var(--label);letter-spacing:.16em;text-transform:uppercase;color:#A39B8E}
+.gate input{width:100%;font:500 15px var(--body);background:#0B0B0B;color:#F1EBE0;border:1px solid #3A332A;padding:9px 10px;letter-spacing:.12em;text-transform:uppercase}
+.gate .err{color:#E46BB0;font-size:13px;font-weight:600;min-height:1.4em;margin-top:8px}
+.gate .btn{width:100%;margin-top:6px;color:#0B0B0B}
+.dgw{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background:#0B0B0B}
+.dgw .gcard{width:min(440px,100%);background:#16130F;color:#F1EBE0;border:1px solid var(--champ);outline:1px solid var(--champ);outline-offset:-7px;padding:30px 26px 26px}
+.dgw h2{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:34px;line-height:.95;margin:12px 0 0}
+.dgw h2 i{display:block;font-weight:500;font-style:italic;text-transform:none;color:#E46BB0}
+.dgw p{color:#CFC7BA;font-size:14px;margin:12px 0 18px}
+.dgw .k{color:var(--champ)}
+.dgw .btn{color:#0B0B0B}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="dgw" id="dgw"><div class="gcard">
+    <div class="k">Amr Abdelgawad · Private tools</div>
+    <h2>Deal <i>Tools</i></h2>
+    <p id="dgMsg" role="status">Checking your access…</p>
+    <div id="dgActs" hidden><a class="btn solid" href="/app/">Open my app</a></div>
+  </div></main>
+
+<div class="app" id="app" hidden>
+<div class="hero">
+  <canvas id="heroArt" aria-hidden="true"></canvas>
+  <div class="in">
+    <div class="topbar">
+      <a class="brand" href="/app/" aria-label="Back to app">
+        <span class="mono" aria-hidden="true">A<i>a</i></span>
+        <span class="wordmark">Amr Abdelgawad<small>Land &amp; real estate operations</small></span>
+      </a>
+      <div class="who"><a href="/app/">← Back to app</a><span>Signed in as <b id="whoName"></b></span><button class="linkbtn" id="signout" type="button">Sign out</button></div>
+    </div>
+    <div class="k">Private · invite only</div>
+    <h1>Deal <i>Tools</i></h1>
+    <p>Run the numbers on land and houses before you call. Each calculator keeps its own encrypted practice log.</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="cards">
+    <article class="card">
+      <span class="n">Nº 01</span>
+      <h2>Land Deal <i>Calculator</i></h2>
+      <p>Score the parcel, price it from sold comps and pick your exit.</p>
+      <ul>
+        <li>Six-factor land score with red flags</li>
+        <li>Recency-weighted comps per acre</li>
+        <li>Cash resale, owner finance or assign</li>
+      </ul>
+      <div class="actions">
+        <a class="btn solid" href="/land-calculator/">Open</a>
+        <a class="btn ghost" href="/land-calculator/#new">New blank deal</a>
+      </div>
+    </article>
+    <article class="card">
+      <span class="n">Nº 02</span>
+      <h2>House Deal <i>Calculator</i></h2>
+      <p>ARV from renovated comps, repairs from simple rules, and five exits.</p>
+      <ul>
+        <li>Quick repair estimate from 13 answers</li>
+        <li>Seller read sets your opening offer</li>
+        <li>Wholesale, flip, rental, novation, seller finance</li>
+      </ul>
+      <div class="actions">
+        <a class="btn solid" href="/house-calculator/">Open</a>
+        <a class="btn ghost" href="/house-calculator/#new">New blank deal</a>
+      </div>
+    </article>
+  </div>
+  <div class="notes">
+    <div><b>One sign-in</b>Signing in to your app opens this page and both calculators. Amr switches Deal tools on per person.</div>
+    <div><b>Encrypted logs</b>Saved deals are locked with a passphrase only you know and follow you to any device.</div>
+    <div><b>Moving between tools</b>Use the Tools, Land and Houses switch at the top of each calculator.</div>
+  </div>
+  <footer><a class="k" href="https://amrabdelgawad.site">amrabdelgawad.site</a><span class="tag">Know your number before you dial.</span></footer>
+  <p class="copy">© 2026 Amr Abdelgawad. All rights reserved.</p>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+<script src="/tracker/config.js"></script>
+<script src="/deal-gate.js?v=1"></script>
+<script>
+/* Deal tools hub. (c) 2026 Amr Abdelgawad. All rights reserved. */
+(function(){
+  const $=id=>document.getElementById(id);
+  function guil(cv,x,y,Rr,rings,petals,squash,a){const r=cv.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);if(!r.width)return;cv.width=r.width*d;cv.height=r.height*d;const c=cv.getContext('2d');c.scale(d,d);c.strokeStyle='rgba(201,169,110,'+a+')';c.lineWidth=.6;const cx=x*r.width,cy=y*r.height,R=Rr*Math.max(r.width,r.height);for(let k=0;k<rings;k++){c.beginPath();const base=R*(.45+k*.55/rings),amp=R*.08,ph=k*.35;for(let t=0;t<=Math.PI*2+.01;t+=.01){const rr=base+amp*Math.sin(petals*t+ph)+amp*.18*Math.sin((petals*3+1)*t);const px=cx+rr*Math.cos(t),py=cy+rr*Math.sin(t)*squash;t?c.lineTo(px,py):c.moveTo(px,py)}c.stroke()}}
+  const art=()=>guil($('heroArt'),.85,.55,.34,18,7,.8,.55);
+  DealGateStart({onOpen(g){
+    $('dgw').hidden=true; $('app').hidden=false; $('whoName').textContent=g.name; art();
+    $('signout').addEventListener('click',async()=>{try{await g.db.auth.signOut()}catch(e){} location.href='/app/'});
+    let rt; addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(art,150)});
+  }});
+})();
+</script>
+</body>
+</html>

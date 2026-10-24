@@ -4,5 +4,7 @@ Allow: /
 Disallow: /app/
 Disallow: /cash/
 Disallow: /tracker/
+Disallow: /land-calculator/
+Disallow: /house-calculator/
 
 Sitemap: https://amrabdelgawad.site/sitemap.xml
