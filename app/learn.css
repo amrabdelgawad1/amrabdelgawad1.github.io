@@ -37,7 +37,8 @@ html body .card.lh-mag::before, html body .card.lh-track.lh-mag::before{ backgro
 .lh-empty{ border:1px dashed var(--border2); background:var(--sunk); padding:20px; margin-top:12px; }
 .lh-empty h3{ margin:0 0 4px; font-size:20px; }
 .lh-empty .note{ margin:0; }
-.lh-mod{ display:grid; grid-template-columns:44px minmax(0,1fr); gap:14px; align-items:center; padding:14px 0; border-top:1px solid var(--border); }
+.lh-mod{ display:grid; grid-template-columns:44px minmax(0,1fr) auto; gap:14px; align-items:center; padding:14px 0; border-top:1px solid var(--border); color:var(--text); text-decoration:none; }
+a.lh-mod:hover h3{ color:var(--accent); }
 .lh-mod h3{ margin:0; font-size:19px; }
 .lh-mod .note{ margin:2px 0 0; }
 .lh-n{ font-size:28px; color:var(--accent); }
@@ -53,3 +54,69 @@ html body .card.lh-mag::before, html body .card.lh-track.lh-mag::before{ backgro
 .lh-res{ display:grid; gap:4px; border:1px solid var(--champ); background:var(--sunk); padding:16px; }
 .lh-res strong{ font-size:34px; line-height:1.1; font-variant-numeric:tabular-nums; }
 .lh-res small{ margin:0; }
+
+/* progress */
+.lh-bar{ display:block; height:4px; background:var(--sunk); border:1px solid var(--border); }
+.lh-bar i{ display:block; height:100%; background:var(--champ); }
+.lh-mag .lh-bar i{ background:var(--mag); }
+.lh-lvl{ display:flex; gap:12px; align-items:baseline; margin:22px 0 4px; font-size:22px; }
+.lh-lvl:first-of-type{ margin-top:8px; }
+.lh-passed{ justify-self:start; }
+
+/* module: tabs, page and pager */
+.lh-bar2{ display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+.lh-tabs{ display:flex; gap:6px; flex-wrap:wrap; }
+.lh-tabs a{ display:inline-flex; gap:8px; align-items:center; border:1px solid var(--border); background:var(--panel); padding:9px 13px; font-size:14px; color:var(--text); text-decoration:none; }
+.lh-tabs a b{ color:var(--accent); }
+.lh-tabs a[aria-selected="true"]{ border-color:var(--champ); background:var(--sunk); }
+.lh-mag .lh-tabs a[aria-selected="true"], .lh-tabs a[aria-selected="true"]:is(.lh-mag *){ border-color:var(--mag); }
+.lh-paper{ position:relative; padding:clamp(18px, 4vw, 34px); }
+.lh-page{ display:grid; gap:22px; max-width:72ch; font-size:16.5px; line-height:1.65; }
+.lh-page h3{ font-size:23px; margin:0 0 6px; }
+.lh-page p, .lh-page ul, .lh-page ol{ margin:0 0 10px; }
+.lh-page ul, .lh-page ol{ padding-left:22px; }
+.lh-page li{ margin:4px 0; }
+.lh-case{ border-left:2px solid var(--champ); background:var(--sunk); padding:16px 18px; }
+.lh-mag .lh-case{ border-left-color:var(--mag); }
+.lh-terms{ display:grid; grid-template-columns:minmax(120px, max-content) 1fr; gap:6px 18px; margin:0; }
+.lh-terms dt{ font-weight:700; }
+.lh-terms dd{ margin:0; color:var(--light); }
+.lh-steps{ list-style:none; padding:0 !important; display:grid; gap:8px; counter-reset:st; }
+.lh-steps label{ display:flex; gap:12px; align-items:flex-start; border:1px solid var(--border); padding:12px 14px; cursor:pointer; }
+.lh-steps input{ width:18px; height:18px; margin-top:4px; accent-color:var(--champ); flex:none; }
+.lh-steps input:checked + span{ color:var(--muted); text-decoration:line-through; }
+.lh-notes{ width:100%; min-height:260px; resize:vertical; font-size:16px; line-height:1.6; }
+.lh-q{ display:grid; gap:6px; }
+.lh-q span{ font-weight:600; }
+.lh-q textarea{ width:100%; resize:vertical; font-size:15.5px; }
+.lh-padcalc{ justify-self:start; }
+.lh-pager{ display:flex; gap:12px; justify-content:space-between; flex-wrap:wrap; }
+.lh-pager .btn{ max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* exam */
+.lh-exam{ display:grid; gap:16px; }
+.lh-qz{ border:1px solid var(--border); padding:14px 16px; margin:0; display:grid; gap:6px; }
+.lh-qz legend{ padding:0 6px; font-weight:600; }
+.lh-qz.ok{ border-color:var(--green); }
+.lh-qz.no{ border-color:var(--red); }
+.lh-opt{ display:flex; gap:10px; align-items:flex-start; padding:6px 4px; cursor:pointer; }
+.lh-opt input{ margin-top:5px; accent-color:var(--champ); flex:none; }
+.lh-opt.right span{ color:var(--green); font-weight:700; }
+.lh-why{ margin:4px 0 0 !important; }
+.lh-exam-end{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+.lh-score{ margin:0 !important; font-size:18px; }
+.lh-score b{ font-family:var(--display) !important; font-size:34px; margin-right:6px; }
+.lh-score.ok b{ color:var(--green); }
+.lh-score.no b{ color:var(--red); }
+
+/* pen */
+.lh-ink{ position:absolute; left:0; top:0; z-index:2; pointer-events:none; touch-action:none; }
+.lh-drawing{ cursor:crosshair; outline:1px dashed var(--champ); outline-offset:3px; }
+.lh-drawing .lh-ink{ touch-action:none; }
+.lh-penbar{ position:sticky; top:calc(8px + env(safe-area-inset-top, 0px)); z-index:5; display:flex; gap:6px; flex-wrap:wrap; align-items:center; background:var(--panel); border:1px solid var(--champ); padding:8px; }
+.lh-penbar button{ min-height:36px; padding:0 12px; background:none; border:1px solid var(--border2); color:var(--text); cursor:pointer; font:inherit; font-size:13px; }
+.lh-penbar [data-ink]{ width:36px; padding:0; background:var(--ink); color:var(--text); }
+.lh-penbar [data-ink="2"]{ background:var(--text); }
+.lh-penbar [aria-pressed="true"]{ outline:2px solid var(--accent); outline-offset:2px; }
+.lh-pen-on[aria-pressed="true"]{ border-color:var(--accent) !important; color:var(--accent) !important; }
+@media (max-width:560px){ .lh-terms{ grid-template-columns:1fr; } .lh-terms dd{ margin-bottom:8px; } .lh-tabs a{ padding:8px 10px; font-size:13px; } }

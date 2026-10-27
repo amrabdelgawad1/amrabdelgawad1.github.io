@@ -484,8 +484,8 @@
   // ======================================================================
   const OWNER_PAGES = { live:'Live now', requests:'Missed-shift requests', emails:'Team emails', people:'Invite and access', visits:'Website visitors', learn:'Learning Hub', mytime:'My time', overview:'Overview', team:'Team', income:'Income', expense:'Expenses', track:'Tracker' };
   // Which switch in Invite and access opens each page; "owner" pages are Amr's alone
-  const SECTION = { live:'live', requests:'requests', team:'team', overview:'money', income:'money', expense:'money', mytime:'owner', emails:'owner', people:'owner', visits:'owner', learn:'owner', track:'track' };
-  const SECTION_NAMES = { live:'Live now', requests:'Missed-shift requests', team:'Team', money:'Money', deals:'Deal tools' };
+  const SECTION = { live:'live', requests:'requests', team:'team', overview:'money', income:'money', expense:'money', mytime:'owner', emails:'owner', people:'owner', visits:'owner', learn:'learn', track:'track' };
+  const SECTION_NAMES = { live:'Live now', requests:'Missed-shift requests', team:'Team', money:'Money', deals:'Deal tools', learn:'Learning Hub' };
   const canSee = sec => role === 'owner' ? sec !== 'track' : role === 'member' && (sec === 'track' || access.includes(sec));
   const hasMenu = () => role === 'owner' || (role === 'member' && access.length > 0);
   let companies = [];
