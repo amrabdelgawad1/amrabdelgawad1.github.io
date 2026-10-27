@@ -13,15 +13,15 @@
         { href:'/land-calculator/', ic:'L', name:'Land calculator', sub:'Your full land deal tool' },
         { href:'/house-calculator/', ic:'H', name:'House calculator', sub:'Your full house deal tool' },
         { calc:'mao', ic:'$', name:'Quick max offer', sub:'ARV × 70% − repairs − fee' },
-        { calc:'sf', ic:'%', name:'Seller-finance payment', sub:'Monthly payment on terms' }
+        { calc:'sf', ic:'%', name:'Seller-finance payment', sub:'Monthly payment on terms' },
+        { calc:'reroi', ic:'R', name:'Seller-lead ROI', sub:'Cost per deal and return' }
       ] },
-    { id:'mkt', name:'Marketing, A to Z', short:'Marketing', tone:'mag', tag:'Team track',
-      blurb:'From knowing your customer to a full growth plan: positioning, copy, content, email, ads, SEO, outbound and real estate lead generation.',
+    { id:'mkt', name:'Marketing', short:'Marketing', tone:'mag', tag:'Team track',
+      blurb:'From knowing your customer to a full growth plan: positioning, copy, brand, content, social, email, websites, SEO, ads, analytics and outbound.',
       tools:[
         { calc:'funnel', ic:'▽', name:'Funnel math', sub:'Visitors to clients and revenue' },
         { calc:'ads', ic:'$', name:'Ad numbers', sub:'CTR, CPC, CPL, CAC and ROAS' },
-        { calc:'ltv', ic:'∞', name:'Customer value', sub:'LTV, LTV:CAC and payback' },
-        { calc:'reroi', ic:'R', name:'Seller-lead ROI', sub:'Cost per deal and return' }
+        { calc:'ltv', ic:'∞', name:'Customer value', sub:'LTV, LTV:CAC and payback' }
       ] },
     { id:'psy', name:'Psychology and Therapy', short:'Psychology', tone:'mag', tag:'Shared track',
       blurb:'Core skills for working with clients: listening, CBT basics, case formulation and ethics.',
