@@ -1,5 +1,6 @@
 // Learning Hub (#learn): tracks to study, each with its tools and modules.
-// #learn shows the tracks, #learn/<id> opens one, #learn/<id>/<n>/<part> opens a module on one of its parts.
+// #learn shows the tracks, #learn/<id> opens one, #learn/<id>/<n>/<part> opens a module on one of its parts,
+// and #learn/<id>/<n>/lesson/<k> opens lesson n.k.
 // A track's modules come from window.LH_COURSES[id] (course-*.js); a track without one shows "Material coming".
 // Each person's work (ticks, notes, scratch pad, exam scores, pen drawings) saves on the device at once,
 // then to the learn_progress table so it follows them to other devices (stays on the device if the table isn't there yet).
@@ -82,6 +83,9 @@
       if (location.hash.startsWith('#learn')) open();
     }
   }
+  const mins = m => m.lessons.reduce((a, l) => a + l.mins, 0);
+  const dur = n => n >= 60 ? Math.floor(n / 60) + ' h' + (n % 60 ? ' ' + n % 60 + ' min' : '') : n + ' min';
+  const readCount = (c, n, m) => m.lessons.filter((l, k) => ((data(c).mods[n] || {}).read || {})[k]).length;
   const passed = (c, n) => ((data(c).mods[n] || {}).best || 0) >= PASS;
   const doneCount = t => t.modules.filter((m, i) => passed(t.id, i)).length;
   const bar = (a, b) => `<span class="lh-bar" role="progressbar" aria-valuenow="${a}" aria-valuemax="${b}"><i style="width:${b ? Math.round(a / b * 100) : 0}%"></i></span>`;
@@ -92,7 +96,7 @@
       <span class="lh-chip">${t.tag}</span>
       <h2>${t.name}</h2>
       <p class="note">${t.blurb}</p>
-      <p class="lh-meta"><span><b>${t.modules.length}</b> modules</span><span><b>${t.tools.length}</b> tools</span>${t.modules.length ? `<span><b>${d}</b> passed</span>` : ''}</p>
+      <p class="lh-meta"><span><b>${t.modules.length}</b> modules</span>${t.modules.length ? `<span><b>${t.modules.reduce((a, m) => a + m.lessons.length, 0)}</b> lessons</span><span><b>${Math.round(t.modules.reduce((a, m) => a + mins(m), 0) / 60)}</b> hours</span>` : ''}<span><b>${t.tools.length}</b> tools</span>${t.modules.length ? `<span><b>${d}</b> passed</span>` : ''}</p>
       ${t.modules.length ? bar(d, t.modules.length) : ''}
       <span class="label">${t.modules.length ? (d ? 'Continue' : 'Start') : 'Material coming'}</span>
     </a>`; }).join('') + `
@@ -113,6 +117,14 @@
       : `<button class="lh-tool" type="button" data-calc="${x.calc}"><span class="lh-ic">${x.ic}</span><span><b>${x.name}</b><small>${x.sub}</small></span></button>`).join('')}</div>`
     : '<p class="note">Tools for this track come with its material.</p>';
 
+  // The course's own introduction: who it's for, how to study it and what you'll be able to do
+  function introHtml(t){
+    const i = COURSES[t.id] && COURSES[t.id].intro; if (!i) return '';
+    return `<section class="card lh-${t.tone} lh-intro"><h2>About this course</h2><p>${i.who}</p>
+      <div class="lh-intro-cols"><div><h3>How to study it</h3><ol>${i.how.map(x => `<li>${x}</li>`).join('')}</ol></div>
+      <div><h3>By the end you can</h3><ul>${i.outcomes.map(x => `<li>${x}</li>`).join('')}</ul></div></div></section>`;
+  }
+
   function track(t){
     let mods;
     if (!t.modules.length) mods = `<div class="lh-empty"><h3>No modules yet</h3><p class="note">The material for this track goes here. Each module will open into ${PARTS.join(', ').replace(/, ([^,]+)$/, ' and $1')}.</p></div>`;
@@ -123,7 +135,9 @@
         const list = t.modules.map((m, i) => [m, i]).filter(([m]) => m.lvl === li);
         return list.length ? `<h3 class="lh-lvl"><span class="label">Level ${li + 1}</span>${lv}</h3>` + list.map(([m, i]) => {
           const s = data(t.id).mods[i] || {}, st = passed(t.id, i) ? `<span class="pill p-ok">Passed ${s.best}%</span>` : i === next ? '<span class="pill p-due">Up next</span>' : s.last != null ? `<span class="pill p-due">Last try ${s.last}%</span>` : '';
-          return `<a class="lh-mod" href="#learn/${t.id}/${i + 1}"><span class="lh-n">${i + 1}</span><span><h3>${m.t}</h3><p class="note">${m.d} · ${m.mins} min</p></span>${st}</a>`;
+          return `<a class="lh-mod" href="#learn/${t.id}/${i + 1}"><span class="lh-n">${i + 1}</span><span><h3>${m.t}</h3><p class="note">${m.d}</p>
+            <ol class="lh-sub">${m.lessons.map((l, k) => `<li${(s.read || {})[k] ? ' class="done"' : ''}><b>${i + 1}.${k + 1}</b> ${l.t}</li>`).join('')}</ol>
+            <p class="lh-meta"><span><b>${m.lessons.length}</b> lessons</span><span>${dur(mins(m))}</span><span><b>${readCount(t.id, i, m)}</b> read</span></p></span>${st}</a>`;
         }).join('') : '';
       }).join('');
     }
@@ -132,6 +146,7 @@
     <nav class="lh-crumbs"><a href="#learn">Learning Hub</a><span>/</span><span class="label">${t.short}</span></nav>
     <section class="lh-head lh-${t.tone}"><span class="label">${t.tag}</span><h2 class="lh-h1">${t.name}</h2><p class="note">${t.blurb}</p>
       ${t.modules.length ? `<p class="lh-meta"><span><b>${d}</b> of ${t.modules.length} modules passed</span></p>${bar(d, t.modules.length)}` : ''}</section>
+    ${introHtml(t)}
     <section class="lh-sec lh-${t.tone}"><span class="label">Tools and calculators</span>${toolsHtml(t)}</section>
     <section class="card lh-${t.tone}"><h2>Modules</h2>${mods}</section>`;
   }
@@ -142,11 +157,14 @@
     let x = (n + 1) * 7919 + (q + 1) * 104729; const r = () => (x = (x * 48271) % 2147483647) / 2147483647;
     const a = [...Array(len).keys()]; for (let i = len - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a;
   }
-  function partHtml(t, n, m, part){
+  function partHtml(t, n, m, part, k){
     const s = mod(t.id, n);
-    if (part === 'lesson') return m.lesson.map(([h, b]) => `<section class="lh-sec-lesson"><h3>${h}</h3>${b}</section>`).join('') +
-      `<section class="lh-case"><span class="label">Worked example</span>${m.example}</section>` +
-      `<section><h3>Key terms</h3><dl class="lh-terms">${m.terms.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl></section>`;
+    if (part === 'lesson') { const l = m.lessons[k], rd = (s.read || {})[k], last = k === m.lessons.length - 1;
+      return `<header class="lh-lhead"><span class="label">Lesson ${n + 1}.${k + 1} · ${l.mins} min</span><h3 class="lh-ltitle">${l.t}</h3></header>` +
+      l.s.map(([h, b]) => `<section class="lh-sec-lesson"><h3>${h}</h3>${b}</section>`).join('') +
+      (l.ex ? `<section class="lh-case"><span class="label">Worked example</span>${l.ex}</section>` : '') +
+      (l.terms && l.terms.length ? `<section><h3>Key terms</h3><dl class="lh-terms">${l.terms.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl></section>` : '') +
+      `<div class="lh-readrow">${rd ? '<span class="pill p-ok">Read ✓</span>' : ''}<a class="btn" href="#learn/${t.id}/${n + 1}/${last ? 'playbook' : 'lesson/' + (k + 2)}" data-read="${k}">${rd ? '' : 'Mark as read · '}${last ? 'Go to the playbook' : 'Next: lesson ' + (n + 1) + '.' + (k + 2)} →</a></div>`; }
     if (part === 'playbook') { const k = s.ticks || {}, d = m.playbook.steps.filter((x, i) => k[i]).length; return `<h3>${m.playbook.t}</h3>
       <p class="note">${d} of ${m.playbook.steps.length} done. Tick each step as you do it for real.</p>
       <ol class="lh-steps">${m.playbook.steps.map((x, i) => `<li><label><input type="checkbox" data-tick="${i}"${k[i] ? ' checked' : ''} /><span>${x}</span></label></li>`).join('')}</ol>`; }
@@ -154,7 +172,8 @@
     if (part === 'pad') return `<h3>Scratch pad</h3><p class="note">Work through these for your own business or a client. They save as you type${m.calc ? '; the calculator helps with the numbers' : ''}.</p>
       ${m.calc ? `<button class="lh-tool lh-padcalc" type="button" data-calc="${m.calc}"><span class="lh-ic">=</span><span><b>${CALCS[m.calc].t}</b><small>Open the calculator</small></span></button>` : ''}
       ${m.pad.map((q, i) => `<label class="lh-q"><span>${q}</span><textarea class="field" rows="4" data-pad="${i}"></textarea></label>`).join('')}`;
-    // exam
+    // exam (an answer sheet from an older version of the exam is dropped)
+    if (s.review && s.review.length !== m.exam.length) delete s.review;
     const r = s.review;
     return `<h3>Exam</h3><p class="note">${m.exam.length} questions. Pass with ${PASS}% or more to complete the module.${s.best != null ? ' Your best so far: <b>' + s.best + '%</b>.' : ''}</p>
       <form class="lh-exam" data-exam>${m.exam.map(([q, opts, right, why], i) => `<fieldset class="lh-qz${r ? (r[i] === right ? ' ok' : ' no') : ''}"><legend><b>${i + 1}.</b> ${q}</legend>
@@ -163,23 +182,27 @@
         <div class="lh-exam-end">${r ? `<p class="lh-score ${s.last >= PASS ? 'ok' : 'no'}"><b>${s.last}%</b> ${s.last >= PASS ? 'Passed. Well done.' : 'Not yet. Read the lesson again and retry.'}</p><button class="btn ghost" type="button" data-retry>Try again</button>` : '<button class="btn" type="submit">Check my answers</button>'}</div></form>`;
   }
 
-  function module(t, n, part){
+  function module(t, n, part, k){
     const m = t.modules[n], i = Math.max(0, SLUGS.indexOf(part)), lv = (COURSES[t.id].levels || [])[m.lvl] || '';
-    const base = `#learn/${t.id}/${n + 1}/`;
+    const base = `#learn/${t.id}/${n + 1}/`, rd = mod(t.id, n).read || {};
+    k = Math.min(Math.max(0, k || 0), m.lessons.length - 1);
     return `
     <nav class="lh-crumbs"><a href="#learn">Learning Hub</a><span>/</span><a href="#learn/${t.id}">${t.short}</a><span>/</span><span class="label">Module ${n + 1}</span></nav>
-    <section class="lh-head lh-${t.tone}"><span class="label">Level ${m.lvl + 1} · ${lv} · ${m.mins} min</span><h2 class="lh-h1">${m.t}</h2><p class="note">${m.d}</p>
+    <section class="lh-head lh-${t.tone}"><span class="label">Module ${n + 1} · Level ${m.lvl + 1} · ${lv} · ${m.lessons.length} lessons · ${dur(mins(m))}</span><h2 class="lh-h1">${m.t}</h2><p class="note">${m.d}</p>
+      <details class="lh-out"${i === 0 && k === 0 ? ' open' : ''}><summary>What you’ll be able to do</summary><ul>${m.outcomes.map(x => `<li>${x}</li>`).join('')}</ul></details>
       ${passed(t.id, n) ? `<span class="pill p-ok lh-passed">Passed ${mod(t.id, n).best}%</span>` : ''}</section>
     <div class="lh-bar2"><nav class="lh-tabs" role="tablist">${PARTS.map((p, k) => `<a role="tab" href="${base + SLUGS[k]}" aria-selected="${k === i}"><b>${k + 1}</b>${p}</a>`).join('')}</nav>
       <button class="btn ghost small lh-pen-on" type="button" data-pen aria-pressed="false">✎ Pen</button></div>
-    <section class="card lh-${t.tone} lh-paper" data-part="${SLUGS[i]}"><div class="lh-page">${partHtml(t, n, m, SLUGS[i])}</div></section>
-    <nav class="lh-pager">${n > 0 ? `<a class="btn ghost small" href="#learn/${t.id}/${n}">← ${esc(t.modules[n - 1].t)}</a>` : '<span></span>'}
-      ${i < 4 ? `<a class="btn small" href="${base + SLUGS[i + 1]}">Next: ${PARTS[i + 1]} →</a>` : n < t.modules.length - 1 ? `<a class="btn small" href="#learn/${t.id}/${n + 2}">Next module →</a>` : `<a class="btn small" href="#learn/${t.id}">Back to the track</a>`}</nav>`;
+    ${i === 0 ? `<nav class="lh-lessons" aria-label="Lessons">${m.lessons.map((l, j) => `<a href="${base}lesson/${j + 1}"${j === k ? ' aria-current="page"' : ''}${rd[j] ? ' class="done"' : ''}><b>${n + 1}.${j + 1}</b><span>${l.t}</span></a>`).join('')}</nav>` : ''}
+    <section class="card lh-${t.tone} lh-paper" data-part="${i === 0 ? 'lesson-' + (k + 1) : SLUGS[i]}"><div class="lh-page">${partHtml(t, n, m, SLUGS[i], k)}</div></section>
+    <nav class="lh-pager">${i === 0 && k > 0 ? `<a class="btn ghost small" href="${base}lesson/${k}">← Lesson ${n + 1}.${k}</a>` : n > 0 ? `<a class="btn ghost small" href="#learn/${t.id}/${n}">← ${esc(t.modules[n - 1].t)}</a>` : '<span></span>'}
+      ${i === 0 ? '' : i < 4 ? `<a class="btn small" href="${base + SLUGS[i + 1]}">Next: ${PARTS[i + 1]} →</a>` : n < t.modules.length - 1 ? `<a class="btn small" href="#learn/${t.id}/${n + 2}">Next module →</a>` : `<a class="btn small" href="#learn/${t.id}">Back to the track</a>`}</nav>`;
   }
 
   // Fills saved text into the page and wires saving (values go in as text, never as HTML)
   function wire(t, n){
     const box = $('learnBody'), s = mod(t.id, n), c = t.id;
+    box.querySelectorAll('[data-read]').forEach(a => a.addEventListener('click', () => { (s.read = s.read || {})[a.dataset.read] = true; save(c); }));
     const notes = box.querySelector('[data-notes]');
     if (notes) { notes.value = s.notes || ''; notes.addEventListener('input', () => { s.notes = notes.value; save(c); }); }
     box.querySelectorAll('[data-pad]').forEach(a => { const k = a.dataset.pad; a.value = (s.pad || {})[k] || ''; a.addEventListener('input', () => { (s.pad = s.pad || {})[k] = a.value; save(c); }); });
@@ -263,10 +286,10 @@
   })();
 
   function open(){
-    const [, id, n, part] = location.hash.slice(1).split('/');
+    const [, id, n, part, k] = location.hash.slice(1).split('/');
     const t = TRACKS.find(x => x.id === id), i = parseInt(n, 10) - 1;
     const box = $('learnBody'), y = window.scrollY, same = box.dataset.at === location.hash;
-    if (t && t.modules[i]) { box.innerHTML = module(t, i, part || 'lesson'); wire(t, i); }
+    if (t && t.modules[i]) { box.innerHTML = module(t, i, part || 'lesson', (parseInt(k, 10) || 1) - 1); wire(t, i); }
     else box.innerHTML = t ? track(t) : home();
     if (!same) window.scrollTo(0, 0); else window.scrollTo(0, y);
     box.dataset.at = location.hash;
