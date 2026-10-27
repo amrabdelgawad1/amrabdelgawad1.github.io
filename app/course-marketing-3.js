@@ -160,7 +160,7 @@ window.LH_COURSES.mkt.modules.push(
     ['Quality Score is based on expected CTR, ad relevance and…', ['Budget','Landing page experience','Logo','Account age'], 1, 'All three are levers you control.'],
     ['A negative keyword…', ['Is a rude word','Blocks your ad from irrelevant searches','Lowers your rank','Is required'], 1, 'It stops wasted clicks.'],
     ['What does the Conversions API do?', ['Designs ads','Sends conversion events server-side to Meta','Writes copy','Sets budgets'], 1, 'It keeps data flowing when browsers block tracking.'],
-    ['Real estate ads on Meta usually need…', ['No changes','The housing special ad category','A bigger budget','TikTok'], 1, 'Housing ads have limited targeting.'],
+    ['Ads about housing, jobs or credit on Meta must…', ['Run without changes','Use a special ad category with limited targeting','Double the budget','Run only on Instagram'], 1, 'These categories restrict targeting to prevent discrimination.'],
     ['Instant lead forms on Meta usually give…', ['Fewer, better leads','Cheaper but often lower-quality leads','No leads','Only sales'], 1, 'Add qualifying questions and judge by cost per customer.'],
     ['$500 spent, 20 leads. CPL?', ['$10','$25','$50','$100'], 1, '500 ÷ 20 = $25.'],
     ['$1,000 spend, $4,000 revenue. ROAS?', ['0.25','4','40','1,000'], 1, '4,000 ÷ 1,000 = 4×.'],
