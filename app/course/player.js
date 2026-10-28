@@ -96,7 +96,7 @@
     chev:'<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>' };
   function side(here){
     const [mid, k] = here;
-    let h = '<h2>Course content</h2>', st = -1;
+    let h = '<h2>Course content</h2>' + (owner ? `<label class="cp-sideview"><input type="checkbox" data-learner${asLearner ? ' checked' : ''}> View as learner (test the locks)</label>` : ''), st = -1;
     C.plan.forEach((p, i) => {
       if (p.stage !== st) { st = p.stage; h += `<div class="cp-stage">${esc(C.stages[st])}</div>`; }
       const m = C.modules[p.id], open = m && isOpen(m), on = p.id === mid;
@@ -110,6 +110,7 @@
     });
     $('cpSide').innerHTML = h;
   }
+  $('cpSide').addEventListener('change', e => { if (e.target.matches('[data-learner]')) { asLearner = e.target.checked; $('cpAsLearner').checked = asLearner; route(); } });
   $('cpSide').addEventListener('click', e => {
     const b = e.target.closest('.cp-mod > button'); if (b) { const box = b.parentElement; box.classList.toggle('open'); b.setAttribute('aria-expanded', box.classList.contains('open')); return; }
     if (e.target.closest('.cp-item')) menu(false);
@@ -189,7 +190,7 @@
   }
 
   // Type-and-check: the answer is checked for each key point, then the model answer and the why are shown
-  const norm = s => ' ' + String(s).toLowerCase().replace(/[’‘`]/g, "'").replace(/(\d),(?=\d)/g, '$1').replace(/[^a-z0-9.%'\s]/g, ' ').replace(/\.(?!\d)/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
+  const norm = s => ' ' + String(s).toLowerCase().replace(/[’‘`']/g, ' ').replace(/(\d),(?=\d)/g, '$1').replace(/[^a-z0-9.%\s]/g, ' ').replace(/\.(?!\d)/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
   function hit(ans, w){
     const t = norm(w).trim();
     if (/^[\d.]+%?$/.test(t)) return new RegExp('(^|[^\\d.])' + t.replace(/[.%]/g, m => '\\' + m) + '(?![\\d])').test(ans);
@@ -278,7 +279,7 @@
     else html = overview(m);
     if (!(m && k === 'quiz' && Q && Q.m === m)) Q = null;
     const same = location.hash === lastHash, y = window.scrollY; lastHash = location.hash;
-    $('cpMain').innerHTML = html; side([mid, k]); bar(); wire(m, k);
+    $('cpMain').innerHTML = html; side([mid, k]); bar(); wire(m, k); if (!same) menu(false);
     window.scrollTo(0, same ? y : 0); Pen.mount(pageKey());
     document.title = (m ? 'Module ' + m.n + ' · ' : '') + 'Marketing course';
   }

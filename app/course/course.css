@@ -40,6 +40,7 @@ svg{ fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; strok
 
 /* ---------- sidebar (course content) ---------- */
 .cp-side h2{ font-size:13px; font-family:var(--body); font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding:4px 18px 10px; }
+.cp-sideview{ display:flex; gap:8px; align-items:center; margin:0 18px 8px; padding:8px 10px; border:1px dashed var(--line2); border-radius:8px; font-size:13px; color:var(--ink2); cursor:pointer; }
 .cp-stage{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); padding:14px 18px 6px; }
 .cp-mod{ border-top:1px solid var(--line); }
 .cp-mod > button{ width:100%; display:grid; grid-template-columns:30px 1fr 18px; gap:10px; align-items:center; text-align:left; padding:12px 18px; background:none; border:0; cursor:pointer; }
@@ -109,7 +110,9 @@ svg{ fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; strok
 .cp-crumb a{ color:var(--muted); text-decoration:none; }
 .cp-crumb a:hover{ color:var(--accent); }
 .cp-lesson{ position:relative; }
-.cp-lesson .cp-page{ display:grid; gap:26px; font-size:17px; line-height:1.7; }
+.cp-lesson .cp-page{ display:grid; grid-template-columns:minmax(0, 1fr); gap:26px; font-size:17px; line-height:1.7; }
+.cp-page > *, .cp-wrap > *{ min-width:0; }
+.cp-wrap{ grid-template-columns:minmax(0, 1fr); }
 .cp-sec h3{ font-size:22px; margin-bottom:8px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
 .cp-sec h3 .chip{ font-family:var(--body); font-weight:600; }
 .cp-sec p, .cp-sec ul, .cp-sec ol{ margin:0 0 12px; }
@@ -122,7 +125,7 @@ svg{ fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; strok
 .cp-box.case{ background:var(--accent-soft); border-color:#F5C3A8; }
 .cp-box .cp-kick{ display:block; margin-bottom:6px; }
 .cp-box p:last-child, .cp-box ul:last-child{ margin-bottom:0; }
-.cp-table{ width:100%; border-collapse:collapse; font-size:14px; margin:6px 0 12px; display:block; overflow-x:auto; }
+.cp-table{ width:100%; max-width:100%; border-collapse:collapse; font-size:14px; margin:6px 0 12px; display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; }
 .cp-table th, .cp-table td{ border-bottom:1px solid var(--line2); padding:7px 8px; text-align:left; white-space:nowrap; }
 .cp-table td:first-child{ white-space:normal; min-width:180px; }
 .cp-tools{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; }

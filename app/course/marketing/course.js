@@ -26,7 +26,14 @@ window.COURSE = {
     SIR: { t:'SiriusDecisions', d:'The Demand Waterfall (2006), which made MQL and SQL standard lead stages.' },
     RIE: { t:'Eric Ries', d:'The Lean Startup (2011): vanity metrics vs actionable metrics.' },
     PTW: { t:'A.G. Lafley and Roger Martin', d:'Playing to Win (2013): strategy as where to play and how to win.' },
-    GOO: { t:'Google', d:'Google Maps user-contributed content policy: no rewards or incentives for reviews.' }
+    GOO: { t:'Google', d:'Google Maps user-contributed content policy: no rewards or incentives for reviews.' },
+    CEN: { t:'US Census Bureau', d:'American Community Survey: households, owner-occupied homes and year each home was built, by area.' },
+    CHR: { t:'Clayton Christensen', d:'Competing Against Luck (2016): jobs to be done.' },
+    MOE: { t:'Bob Moesta and Chris Spiek', d:'The forces of progress (push, pull, anxiety, habit) and switch interviews, from their jobs-to-be-done work.' },
+    COO: { t:'Alan Cooper', d:'The Inmates Are Running the Asylum (1999): personas.' },
+    GAR: { t:'Gartner', d:'Research on B2B buying groups: a typical complex purchase involves six to ten decision makers.' },
+    FIT: { t:'Rob Fitzpatrick', d:'The Mom Test (2013): ask about past behaviour, not opinions about the future.' },
+    SWO: { t:'SWOT analysis', d:'Origin debated; often credited to Albert Humphrey’s team at the Stanford Research Institute in the 1960s.' }
   },
 
   // The running cases. Kestrel is the main one; BrightLine shows how B2B differs.
@@ -35,6 +42,7 @@ window.COURSE = {
       about:'A family-owned heating and air conditioning company in Ashford, a made-up mid-size US city, serving homes within 25 miles. Founded in 2011 by Dana Kestrel, who still runs it. You join as its first marketing coordinator.',
       facts:[
         ['Team', 'Dana (owner), 8 technicians, 2 office staff (calls and dispatch), and you'],
+        ['Install capacity', '2 install crews, about 1.5 installs a week each: about 150 a year at full stretch'],
         ['Revenue last year', 'About $1.9 million: repairs $640k, replacements $1.06M, Comfort Club plans $180k'],
         ['Average repair job', '$420, about 60% gross margin'],
         ['Diagnostic visit', '$89, waived if the customer goes ahead with the repair'],
@@ -44,7 +52,9 @@ window.COURSE = {
         ['Reputation', '4.6 stars from 310 Google reviews'],
         ['A typical month (May)', '200 leads (calls and forms) → 140 booked (70%) → 126 jobs run (90%); 24 replacement quotes → 8 sold (33%)'],
         ['Google Ads in May', '$4,800 spend, 1,600 clicks, 80 leads, 56 booked, 50 jobs run'],
-        ['Competition', 'A national franchise brand and two other local companies']
+        ['Service area', 'About 120,000 households within 25 miles; about 66,000 are owner-occupied homes with central heating and air'],
+        ['Replacements in the area', 'Systems last about 15 years, so roughly 4,400 homes replace one each year; Kestrel installs about 96 (about 2%)'],
+        ['Competition', 'Summit Air (national franchise: 4.3 stars from 1,900 reviews, 24/7, financing, replacements average $13,000); Ridley & Sons (local, 30 years: 4.8 stars from 140 reviews, no online booking, premium); QuickCool (local budget firm: 4.1 stars from 420 reviews, replacements average $8,500). All made up.']
       ] },
     b2b:{ name:'BrightLine Calls', short:'BrightLine',
       about:'A made-up B2B company: a managed cold-calling team that books seller appointments for US land investors. Used where business-to-business marketing works differently.',
@@ -60,7 +70,7 @@ window.COURSE = {
   // (the Learning Hub card counts these, and the player checks they match the files it loaded).
   plan:[
     { id:'m01', stage:0, t:'Foundations and the language of marketing', ready:true },
-    { id:'m02', stage:0, t:'Know your customer' },
+    { id:'m02', stage:0, t:'Know your customer', ready:true },
     { id:'m03', stage:0, t:'Positioning, offer and pricing' },
     { id:'m04', stage:0, t:'Messaging and copywriting' },
     { id:'m05', stage:1, t:'Brand' },
