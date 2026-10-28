@@ -78,6 +78,9 @@ window.COURSE = {
     GLR: { t:'Google Business Profile Help', d:'How to improve your local ranking on Google: relevance, distance and prominence.' },
     GSP: { t:'Google Search Central', d:'Spam policies for Google web search: link spam (buying or selling links that pass ranking credit), scaled content abuse, keyword stuffing.' },
     SCO: { t:'Schema.org', d:'Shared vocabulary for structured data, such as LocalBusiness and HVACBusiness.' },
+    GQS: { t:'Google Ads Help', d:'How the ad auction and Ad Rank work; Quality Score (1 to 10) from expected click-through rate, ad relevance and landing page experience; keyword match types and negative keywords.' },
+    GLS: { t:'Google Local Services Ads Help', d:'Local Services Ads: pay per lead for eligible service businesses after Google’s screening checks, with a process to dispute invalid leads.' },
+    MSA: { t:'Meta Business Help Center', d:'Custom and lookalike audiences, lead ads, and special ad categories (housing, employment, financial products and services, and social issues) that limit targeting.' },
     GHC: { t:'Google Search Central', d:'Guidance on helpful, people-first content, and E-E-A-T from the Search Quality Rater Guidelines; guidance on AI-generated content.' }
   },
 
@@ -130,7 +133,7 @@ window.COURSE = {
     { id:'m08', stage:1, t:'Email and text marketing', ready:true },
     { id:'m09', stage:1, t:'Websites, landing pages and funnels', ready:true },
     { id:'m10', stage:1, t:'SEO and local search', ready:true },
-    { id:'m11', stage:1, t:'Paid ads' },
+    { id:'m11', stage:1, t:'Paid ads', ready:true },
     { id:'m12', stage:1, t:'Outbound and partnerships' },
     { id:'m13', stage:2, t:'Analytics, tracking and testing' },
     { id:'m14', stage:2, t:'Planning and running the growth system' },
