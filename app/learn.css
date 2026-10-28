@@ -144,3 +144,4 @@ html body .lh-page .lh-ltitle{ font-size:clamp(24px, 3.4vw, 30px); margin:0; }
 .lh-intro-cols{ display:grid; gap:22px; grid-template-columns:repeat(auto-fit, minmax(min(100%, 300px), 1fr)); margin-top:8px; }
 .lh-intro h3{ font-size:19px; margin:0 0 6px; }
 .lh-intro ol, .lh-intro ul{ margin:0; padding-left:20px; display:grid; gap:5px; }
+.lh-prev{ margin:-4px 0 0; } .lh-prev a{ color:var(--text); }
