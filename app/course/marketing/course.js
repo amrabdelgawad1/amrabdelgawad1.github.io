@@ -90,6 +90,12 @@ window.COURSE = {
     DOE: { t:'John Doerr', d:'Measure What Matters (2018): objectives and key results (OKRs), building on Andy Grove’s practice at Intel.' },
     ICE: { t:'Sean Ellis', d:'The ICE score (impact, confidence, ease) for ranking growth ideas; described in Hacking Growth (2017, with Morgan Brown).' },
     COL: { t:'Jim Collins', d:'Good to Great (2001) and Turning the Flywheel (2019): growth as a flywheel where each part pushes the next.' },
+    FTA: { t:'Federal Trade Commission', d:'FTC Act Section 5, the Policy Statement on Deception (1983) and the Advertising Substantiation policy (1984): ads must be truthful, not misleading, and backed by evidence before they run.' },
+    FRE: { t:'Federal Trade Commission', d:'Guide Concerning Use of the Word “Free” (16 CFR Part 251): “free” must really be free, with conditions stated clearly.' },
+    TIL: { t:'Consumer Financial Protection Bureau', d:'Truth in Lending Act and Regulation Z: ads that state certain credit terms (such as a monthly payment) must also state the APR and other key terms.' },
+    PRV: { t:'US state privacy laws', d:'California’s Consumer Privacy Act (as amended) and similar laws in many other states: notices, rights to access and delete data, and limits on selling or sharing it.' },
+    COR: { t:'Federal Trade Commission', d:'Cooling-Off Rule (16 CFR Part 429): three business days to cancel certain sales of $25 or more made at the buyer’s home.' },
+    PGL: { t:'US state price-gouging laws', d:'Many states restrict excessive price increases on essential goods and services during a declared emergency; rules differ by state.' },
     GHC: { t:'Google Search Central', d:'Guidance on helpful, people-first content, and E-E-A-T from the Search Quality Rater Guidelines; guidance on AI-generated content.' }
   },
 
@@ -146,7 +152,7 @@ window.COURSE = {
     { id:'m12', stage:1, t:'Outbound and partnerships', ready:true },
     { id:'m13', stage:2, t:'Analytics, tracking and testing', ready:true },
     { id:'m14', stage:2, t:'Planning and running the growth system', ready:true },
-    { id:'m15', stage:2, t:'Rules, risk and edge cases' },
+    { id:'m15', stage:2, t:'Rules, risk and edge cases', ready:true },
     { id:'m16', stage:3, t:'Becoming a pro' }
   ],
   modules:{}
