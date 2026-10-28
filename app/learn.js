@@ -123,7 +123,7 @@
     const P = window.PSY_COURSE || { modules:27, sub:'' }; let done = 0, total = P.modules;
     try {
       const d = JSON.parse(localStorage.getItem('lh-psy-sync:' + uid()) || 'null'), kv = (d && d.kv) || {};
-      done = Object.keys(kv).filter(k => /^exam:m\d+$/.test(k) && +kv[k] >= 16).length;   // modules whose last exam score passed (16 of 20)
+      done = Object.keys(kv).filter(k => /^exam:m\d+$/.test(k) && Math.max(+kv[k] || 0, +kv['best:' + k.slice(5)] || 0) >= 16).length;   // modules whose exam was passed (16 of 20)
     } catch(e){}
     return `
     <a class="card lh-track lh-mag" href="/app/psychology/">
