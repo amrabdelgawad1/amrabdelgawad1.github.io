@@ -106,10 +106,9 @@
     const rtl = PL === 'ar', max = o.num ? 820 : 1060; let size = 84, lines = wrap(o.title, size, max);
     while ((lines.length > 3 || lines.some(l => (ctx.measureText(l).width > max))) && size > 50) { size -= 4; lines = wrap(o.title, size, max); }
     const lh = Math.round(size * (rtl ? 1.3 : 1.08)), top = 360 - (lines.length * lh) / 2 + size * .8;
-    const grid = []; for (let x = 0; x <= 1280; x += 40) grid.push(`<path d="M${x} 0V720"/>`); for (let y = 0; y <= 720; y += 40) grid.push(`<path d="M0 ${y}H1280"/>`);
     const X = rtl ? 1184 : 96, dir = rtl ? ' direction="rtl"' : ' direction="ltr"', disp = rtl ? 'IBM Plex Sans Arabic, sans-serif' : 'Bricolage Grotesque, sans-serif', body = rtl ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif';
     return `<svg viewBox="0 0 1280 720" role="img" aria-label="${esc(o.kick + ': ' + o.title)}" xmlns="http://www.w3.org/2000/svg">
-      <rect width="1280" height="720" fill="#14161B"/><g stroke="rgba(255,255,255,.045)" stroke-width="1">${grid.join('')}</g>
+      <rect width="1280" height="720" fill="#14161B"/>
       <rect x="${rtl ? 1120 : 96}" y="96" width="64" height="8" rx="4" fill="#FF5A1F" stroke="none"/>
       <text x="${X}" y="150"${dir} fill="#FF5A1F" stroke="none" font-family="${body}" font-weight="700" font-size="26"${rtl ? '' : ' letter-spacing="4"'}>${esc(rtl ? o.kick : o.kick.toUpperCase())}</text>
       ${o.num ? `<text x="${rtl ? 96 : 1184}" y="640" direction="ltr" text-anchor="${rtl ? 'start' : 'end'}" fill="#FF5A1F" stroke="none" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="230" opacity=".95">${esc(o.num)}</text>` : ''}
@@ -607,6 +606,7 @@
     chrome();
     const msg = k => { PL = lang; $('cpMain').innerHTML = `<div class="cp-msg cp-card"><p>${t(k)}</p><p><a class="btn" href="/app/">${t('openApp')}</a></p></div>`; };
     PL = lang; $('cpMain').innerHTML = `<p class="cp-msg">${t('checking')}</p>`;
+    let body = null;
     if (window.COURSE_TEST) { uid = 'test'; owner = !!window.COURSE_TEST.owner; }
     else {
       if (!window.supabase || !/^https:\/\//.test(cfg.supabaseUrl || '')) return msg('connect');
@@ -614,31 +614,37 @@
       const { data:{ session } } = await db.auth.getSession();
       if (!session) return msg('signIn');
       uid = session.user.id;
-      const own = await db.rpc('is_tracker_admin'); owner = own.data === true;
+      // Ask everything at once: the access checks, the locked content and saved progress. The storage bucket
+      // refuses the content on its own to anyone without access, so starting the download early gives nothing away.
+      let own, ok, f;
+      try {
+        [own, ok, f] = await Promise.all([
+          db.rpc('is_tracker_admin'),
+          db.rpc('learn_can_open', { p_course:C.access }),       // Learning Hub plus this course's own switch (always true for Amr)
+          db.storage.from('course-content').download(C.access + '/content.json').catch(e => ({ error:e })),
+          pull()
+        ]);
+      } catch(e) { return msg('loadFail'); }   // a dropped connection mid-request: say so instead of hanging on "Checking"
+      owner = own.data === true;
       if (!owner) {
         if (OWNER_ONLY) return msg('noAccess');
-        // Learning Hub plus this course's own switch; the storage bucket checks the same thing on the server
-        const ok = await db.rpc('learn_can_open', { p_course:C.access });
         if (ok.error) return msg(/not find|404|does not exist/i.test(ok.error.message || '') ? 'notSetUp' : 'loadFail');
         if (ok.data !== true) return msg('noAccess');
       }
+      if (f.error || !f.data) return msg(f.error && /not found|404/i.test(f.error.message || '') ? 'notSetUp' : 'loadFail');
+      $('cpMain').innerHTML = `<p class="cp-msg">${t('loading')}</p>`;
+      try { body = JSON.parse(await f.data.text()); } catch(e) { return msg('loadFail'); }
     }
-    // The lessons aren't on the website: download them now, as data (never run as code)
-    $('cpMain').innerHTML = `<p class="cp-msg">${t('loading')}</p>`;
-    let body = null;
-    try {
-      if (window.COURSE_TEST) body = await (await fetch(window.COURSE_TEST.content || '_test-content.json', { cache:'no-store' })).json();
-      else {
-        const f = await db.storage.from('course-content').download(C.access + '/content.json');
-        if (f.error || !f.data) return msg(f.error && /not found|404/i.test(f.error.message || '') ? 'notSetUp' : 'loadFail');
-        body = JSON.parse(await f.data.text());
-      }
-    } catch(e) { return msg('loadFail'); }
+    // Test mode: the content comes from the local build instead of the bucket
+    if (window.COURSE_TEST) {
+      try { body = await (await fetch(window.COURSE_TEST.content || '_test-content.json', { cache:'no-store' })).json(); } catch(e) { return msg('loadFail'); }
+      await pull();
+    }
+    // The lessons are data, never run as code
     if (!body || !body.modules) return msg('loadFail');
     const pub = new Set(['id', 'title', 'pass', 'team', 'access', 'sub', 'stages', 'plan']);
     Object.keys(body).forEach(k => { if (!pub.has(k)) C[k] = body[k]; });
     AR = C.ar || { modules:{} };
-    await pull();
     let chosen = null; try { chosen = localStorage.getItem('cp-lang'); } catch(e){}
     if (!chosen && D.lang) { lang = D.lang; chrome(); }
     if (owner) { $('cpView').hidden = false; $('cpAsLearner').addEventListener('change', e => { asLearner = e.target.checked; route(); }); }

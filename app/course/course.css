@@ -11,7 +11,7 @@
 *{ box-sizing:border-box; }
 [hidden]{ display:none !important; }
 html, body{ margin:0; }
-body{ background:var(--paper); background-image:linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size:32px 32px;
+body{ background:var(--paper);
   color:var(--ink); font:16px/1.6 var(--body); -webkit-font-smoothing:antialiased; }
 a{ color:var(--accent); }
 h1, h2, h3, h4{ font-family:var(--display); font-weight:800; letter-spacing:-.01em; line-height:1.15; margin:0; color:var(--ink); text-wrap:balance; }
