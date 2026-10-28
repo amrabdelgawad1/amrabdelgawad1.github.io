@@ -485,7 +485,10 @@
   const OWNER_PAGES = { live:'Live now', requests:'Missed-shift requests', emails:'Team emails', people:'Invite and access', visits:'Website visitors', learn:'Learning Hub', mytime:'My time', overview:'Overview', team:'Team', income:'Income', expense:'Expenses', track:'Tracker' };
   // Which switch in Invite and access opens each page; "owner" pages are Amr's alone
   const SECTION = { live:'live', requests:'requests', team:'team', overview:'money', income:'money', expense:'money', mytime:'owner', emails:'owner', people:'owner', visits:'owner', learn:'learn', track:'track' };
-  const SECTION_NAMES = { live:'Live now', requests:'Missed-shift requests', team:'Team', money:'Money', deals:'Deal tools', learn:'Learning Hub', course:'Acquisitions course' };
+  const SECTION_NAMES = { live:'Live now', requests:'Missed-shift requests', team:'Team', money:'Money', deals:'Deal tools', learn:'Learning Hub', mkt:'Marketing course', course:'Acquisitions course' };
+  // Course switches sit under Learning Hub: a course opens only when Learning Hub is on too.
+  // New course? Add its switch here and in SECTION_NAMES, and give its track the same key in learn.js (TRACKS[].key).
+  const COURSE_KEYS = ['mkt', 'course'];
   const canSee = sec => role === 'owner' ? sec !== 'track' : role === 'member' && (sec === 'track' || access.includes(sec));
   const hasMenu = () => role === 'owner' || (role === 'member' && access.length > 0);
   let companies = [];
@@ -909,9 +912,14 @@
         // One Access dropdown: the button sums it up, the list inside has a tick per section
         const acc = document.createElement('details'); acc.className = 'acc';
         const sum = () => 'Access: ' + (m.access.length ? m.access.map(s => SECTION_NAMES[s]).join(', ') : 'tracker only');
-        acc.innerHTML = '<summary></summary><div class="acc-menu">' + Object.keys(SECTION_NAMES).map(s => '<label><input type="checkbox" value="' + s + '"' + (m.access.includes(s) ? ' checked' : '') + ' />' + esc(SECTION_NAMES[s]) + '</label>').join('') +
-          '<p>Look only: they can’t add, change or approve anything. Team and Money ask them for an authenticator code.</p></div>';
+        const sub = s => COURSE_KEYS.includes(s);
+        acc.innerHTML = '<summary></summary><div class="acc-menu">' + Object.keys(SECTION_NAMES).map(s => (s === COURSE_KEYS[0] ? '<small style="display:block;margin:6px 0 2px 26px;opacity:.75">Courses inside the Learning Hub</small>' : '') +
+            '<label' + (sub(s) ? ' style="padding-left:26px"' : '') + '><input type="checkbox" value="' + s + '"' + (m.access.includes(s) ? ' checked' : '') + ' />' + esc(SECTION_NAMES[s]) + '</label>').join('') +
+          '<p>Look only: they can’t add, change or approve anything. Team and Money ask them for an authenticator code. A course opens only when Learning Hub is on too.</p></div>';
         acc.querySelector('summary').textContent = sum();
+        // Course switches do nothing without Learning Hub, so they're greyed out until it's on
+        const dim = () => { const hub = acc.querySelector('input[value="learn"]').checked; COURSE_KEYS.forEach(k => { const i = acc.querySelector('input[value="' + k + '"]'); if (i) i.closest('label').style.opacity = hub ? '' : '.5'; }); };
+        dim();
         acc.addEventListener('change', async e => {
           const box = e.target, next = [...acc.querySelectorAll('input:checked')].map(i => i.value);
           acc.querySelectorAll('input').forEach(i => i.disabled = true);
@@ -919,9 +927,11 @@
           acc.querySelectorAll('input').forEach(i => i.disabled = false);
           const first = m.name.split(' ')[0], what = SECTION_NAMES[box.value];
           if (error) { box.checked = !box.checked; toast('Couldn’t change it. Try again.'); return; }
-          m.access = next; acc.querySelector('summary').textContent = sum();
+          m.access = next; acc.querySelector('summary').textContent = sum(); dim();
           if (box.value === 'deals') setTimeout(loadPeople, 400);
-          toast(box.checked ? first + ' can now see ' + what + (/team|money/.test(box.value) ? '. They’ll set up an authenticator code the first time.' : '.') : first + ' can no longer see ' + what + '.');
+          const needHub = box.checked && COURSE_KEYS.includes(box.value) && !next.includes('learn');
+          toast(needHub ? first + ' has ' + what + ' ticked, but it opens only once Learning Hub is on too.'
+            : box.checked ? first + ' can now see ' + what + (/team|money/.test(box.value) ? '. They’ll set up an authenticator code the first time.' : box.value === 'learn' && !next.some(k => COURSE_KEYS.includes(k)) ? '. Tick the courses they should open too.' : '.') : first + ' can no longer see ' + what + '.');
         });
         d.querySelector('.acts').prepend(acc);
         // Deal tools: optional end date and two-step, only when Deal tools is switched on

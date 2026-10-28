@@ -285,6 +285,11 @@ html[lang="ar"] body{ font-family:var(--body); }
 .cp-recap ul{ margin:0; padding-inline-start:22px; }
 .cp-recap li{ margin:6px 0; }
 .cp-recap .cp-terms{ margin-top:10px; }
+.cp-tdet > summary{ cursor:pointer; list-style:none; display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; }
+.cp-tdet > summary::-webkit-details-marker{ display:none; }
+.cp-tdet > summary h2{ margin:0; }
+.cp-tdet > summary .cp-sub{ margin:0; color:var(--accent); font-weight:600; }
+.cp-tdet[open] > summary .cp-sub{ display:none; }
 .cp-rlink{ display:inline-block; font-size:12px; font-weight:700; line-height:1; padding:4px 7px; border-radius:999px; background:var(--accent-soft); color:var(--accent); text-decoration:none; vertical-align:1px; white-space:nowrap; direction:ltr; }
 .cp-rlink:hover{ background:var(--accent); color:#fff; }
 .cp-checks{ display:grid; gap:8px; margin-top:10px; }

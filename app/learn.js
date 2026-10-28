@@ -2,12 +2,14 @@
 // #learn shows the tracks, #learn/<id> opens one, #learn/<id>/<n>/<part> opens a module on one of its parts,
 // and #learn/<id>/<n>/lesson/<k> opens lesson n.k.
 // A track's modules come from window.LH_COURSES[id] (course-*.js); a track without one shows "Material coming".
+// Marketing is the course at /app/course/ (window.COURSE). Each track with a "key" opens only for people with that
+// course switched on in Invite and access (plus Learning Hub); everyone else sees its card locked. Amr sees everything.
 // Each person's work (ticks, notes, scratch pad, exam scores, pen drawings) saves on the device at once,
 // then to the learn_progress table so it follows them to other devices (stays on the device if the table isn't there yet).
 (function(){
   const COURSES = window.LH_COURSES || {};
   const TRACKS = [
-    { id:'acq', name:'Real Estate Acquisitions', short:'Acquisitions', tone:'gold', tag:'Team track',
+    { id:'acq', key:'course', name:'Real Estate Acquisitions', short:'Acquisitions', tone:'gold', tag:'Team track',
       blurb:'From the first cold call to a signed contract: finding sellers, running numbers, making offers.',
       tools:[
         { href:'/land-calculator/', ic:'L', name:'Land calculator', sub:'Your full land deal tool' },
@@ -16,7 +18,7 @@
         { calc:'sf', ic:'%', name:'Seller-finance payment', sub:'Monthly payment on terms' },
         { calc:'reroi', ic:'R', name:'Seller-lead ROI', sub:'Cost per deal and return' }
       ] },
-    { id:'mkt', name:'Marketing', short:'Marketing', tone:'mag', tag:'Current version',
+    { id:'mkt', key:'mkt', name:'Marketing', short:'Marketing', tone:'mag', tag:'Team track',
       blurb:'From knowing your customer to a full growth plan: positioning, copy, brand, content, social, email, websites, SEO, ads, analytics and outbound.',
       tools:[
         { calc:'funnel', ic:'▽', name:'Funnel math', sub:'Visitors to clients and revenue' },
@@ -91,15 +93,24 @@
   const bar = (a, b) => `<span class="lh-bar" role="progressbar" aria-valuenow="${a}" aria-valuemax="${b}"><i style="width:${b ? Math.round(a / b * 100) : 0}%"></i></span>`;
 
   // ---------- home and track pages ----------
-  // Marketing opens the rebuilt course (/app/course/) once COURSE.team is on (the owner sees it first as a preview);
-  // the old track stays at #learn/mkt as the previous version
-  const newOn = () => !!window.COURSE && (window.COURSE.team || (window.TalentsApp || {}).role === 'owner');
+  // Who may open a track: Amr always; a team member only with that track's course switch on
+  const isOwner = () => app().role === 'owner';
+  const canOpen = t => !t.key || isOwner() || (app().access || []).includes(t.key);
+  // Marketing opens the course at /app/course/ once COURSE.team is on (until then only Amr sees it, as a preview)
+  const newOn = () => !!window.COURSE && (window.COURSE.team || isOwner());
+  function locked(t){ return `
+    <div class="lh-track lh-${t.tone} lh-soon" aria-disabled="true">
+      <span class="lh-chip">Locked</span>
+      <h2>${t.name}</h2>
+      <p class="note">${t.blurb}</p>
+      <span class="label">Ask Amr for access to this course</span>
+    </div>`; }
   function newMkt(){
     const C = window.COURSE; let done = 0;
     try { const d = JSON.parse(localStorage.getItem('cp1:' + uid() + ':mkt2') || 'null'); done = d && d.m ? Object.values(d.m).filter(m => ((m.quiz || {}).best || 0) >= (C.pass || PASS)).length : 0; } catch(e){}
     return `
     <a class="card lh-track lh-mag" href="/app/course/">
-      <span class="lh-chip">${C.team ? 'New version' : 'Owner preview'}</span>
+      <span class="lh-chip">${C.team ? 'Team track' : 'Owner preview'}</span>
       <h2>Marketing</h2>
       <p class="note">${esc(C.sub || 'From the first idea to running a full growth system, on one realistic business.')} In English and Arabic.</p>
       <p class="lh-meta"><span><b>${C.plan.length}</b> modules</span><span><b>${done}</b> passed</span></p>
@@ -107,7 +118,7 @@
       <span class="label">${done ? 'Continue' : 'Start'}</span>
     </a>`;
   }
-  const tracksHtml = () => TRACKS.map(t => { if (t.id === 'mkt' && newOn()) return newMkt(); const d = t.modules.length ? doneCount(t) : 0; return `
+  const tracksHtml = () => TRACKS.filter(t => t.id !== 'mkt' || newOn()).map(t => { if (!canOpen(t)) return locked(t); if (t.id === 'mkt') return newMkt(); const d = t.modules.length ? doneCount(t) : 0; return `
     <a class="card lh-track lh-${t.tone}" href="#learn/${t.id}">
       <span class="lh-chip">${t.tag}</span>
       <h2>${t.name}</h2>
@@ -123,7 +134,6 @@
     <section class="lh-head"><span class="label">Learning Hub</span><h2 class="lh-h1">Pick a track</h2>
       <p class="note">Each track has its modules and the tools that go with it. Your notes, drawings and progress are yours only.</p></section>
     <div class="lh-tracks">${tracksHtml()}</div>
-    <p class="note lh-prev"${newOn() ? '' : ' hidden'}>Looking for the earlier Marketing course? <a href="#learn/mkt">Open the previous version</a>. Its notes and exam scores are still there.</p>
     <section class="card"><h2>What every module has</h2>
       <p class="note">Read the lesson, use the playbook, keep notes, practise on the scratch pad, then pass the exam (${PASS}% or more) to complete the module. Use the pen to draw or highlight on any page.</p>
       <div class="lh-parts">${PARTS.map((p, i) => `<span class="lh-part"><b>${i + 1}</b>${p}</span>`).join('')}</div></section>`;
@@ -304,7 +314,7 @@
 
   function open(){
     const [, id, n, part, k] = location.hash.slice(1).split('/');
-    const t = TRACKS.find(x => x.id === id), i = parseInt(n, 10) - 1;
+    const t = TRACKS.find(x => x.id === id && x.id !== 'mkt' && canOpen(x)), i = parseInt(n, 10) - 1;
     const box = $('learnBody'), y = window.scrollY, same = box.dataset.at === location.hash;
     if (t && t.modules[i]) { box.innerHTML = module(t, i, part || 'lesson', (parseInt(k, 10) || 1) - 1); wire(t, i); }
     else box.innerHTML = t ? track(t) : home();
