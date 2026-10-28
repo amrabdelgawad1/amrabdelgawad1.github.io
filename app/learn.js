@@ -25,8 +25,8 @@
         { calc:'ads', ic:'$', name:'Ad numbers', sub:'CTR, CPC, CPL, CAC and ROAS' },
         { calc:'ltv', ic:'∞', name:'Customer value', sub:'LTV, LTV:CAC and payback' }
       ] },
-    { id:'psy', name:'Psychology and Therapy', short:'Psychology', tone:'mag', tag:'Shared track',
-      blurb:'Core skills for working with clients: listening, CBT basics, case formulation and ethics.',
+    { id:'psy', key:'psy', name:'Psychology and Therapy', short:'Psychology', tone:'mag', tag:'Team track',
+      blurb:'From the foundations of psychology to therapy models, crisis skills, ethics and coaching practice. In English and Arabic.',
       tools:[] }
   ];
   TRACKS.forEach(t => t.modules = (COURSES[t.id] && COURSES[t.id].modules) || []);
@@ -118,7 +118,24 @@
       <span class="label">${done ? 'Continue' : 'Start'}</span>
     </a>`;
   }
-  const tracksHtml = () => TRACKS.filter(t => t.id !== 'mkt' || newOn()).map(t => { if (!canOpen(t)) return locked(t); if (t.id === 'mkt') return newMkt(); const d = t.modules.length ? doneCount(t) : 0; return `
+  // Psychology opens its own player at /app/psychology/ (lessons load there only after the access check)
+  function psyCard(){
+    const P = window.PSY_COURSE || { modules:27, sub:'' }; let done = 0, total = P.modules;
+    try {
+      const d = JSON.parse(localStorage.getItem('lh-psy-sync:' + uid()) || 'null'), kv = (d && d.kv) || {};
+      done = Object.keys(kv).filter(k => /^done:m\d+:exam$/.test(k) && kv[k] === '1').length;   // modules whose exam was passed
+    } catch(e){}
+    return `
+    <a class="card lh-track lh-mag" href="/app/psychology/">
+      <span class="lh-chip">Team track</span>
+      <h2>Psychology and Therapy</h2>
+      <p class="note">${esc(P.sub)} In English and Arabic.</p>
+      <p class="lh-meta"><span><b>${total}</b> modules</span><span><b>${done}</b> passed</span></p>
+      ${bar(done, total)}
+      <span class="label">${done ? 'Continue' : 'Start'}</span>
+    </a>`;
+  }
+  const tracksHtml = () => TRACKS.filter(t => t.id !== 'mkt' || newOn()).map(t => { if (!canOpen(t)) return locked(t); if (t.id === 'mkt') return newMkt(); if (t.id === 'psy') return psyCard(); const d = t.modules.length ? doneCount(t) : 0; return `
     <a class="card lh-track lh-${t.tone}" href="#learn/${t.id}">
       <span class="lh-chip">${t.tag}</span>
       <h2>${t.name}</h2>
@@ -314,7 +331,7 @@
 
   function open(){
     const [, id, n, part, k] = location.hash.slice(1).split('/');
-    const t = TRACKS.find(x => x.id === id && x.id !== 'mkt' && canOpen(x)), i = parseInt(n, 10) - 1;
+    const t = TRACKS.find(x => x.id === id && x.id !== 'mkt' && x.id !== 'psy' && canOpen(x)), i = parseInt(n, 10) - 1;
     const box = $('learnBody'), y = window.scrollY, same = box.dataset.at === location.hash;
     if (t && t.modules[i]) { box.innerHTML = module(t, i, part || 'lesson', (parseInt(k, 10) || 1) - 1); wire(t, i); }
     else box.innerHTML = t ? track(t) : home();
