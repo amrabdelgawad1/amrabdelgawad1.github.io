@@ -62,6 +62,9 @@ window.COURSE = {
     SHE: { t:'Marcus Sheridan', d:'They Ask, You Answer (2017): answer buyers’ real questions, including the “Big 5”: cost, problems, comparisons, reviews and best-of.' },
     HHH: { t:'Google / YouTube', d:'YouTube Creator Playbook (around 2014): Hero, Hub and Hygiene content; “Hygiene” is now usually called “Help”.' },
     PIL: { t:'HubSpot', d:'Pillar pages and topic clusters (2017).' },
+    PEW: { t:'Pew Research Center', d:'Social media use fact sheets: which US adults use which platforms, by age.' },
+    FTI: { t:'Federal Trade Commission', d:'Disclosures 101 for Social Media Influencers (2019, updated 2023): disclose any material connection clearly.' },
+    UTM: { t:'Google Analytics', d:'Campaign URL parameters (utm_source, utm_medium, utm_campaign) for tracking where visits come from.' },
     GHC: { t:'Google Search Central', d:'Guidance on helpful, people-first content, and E-E-A-T from the Search Quality Rater Guidelines; guidance on AI-generated content.' }
   },
 
@@ -82,6 +85,7 @@ window.COURSE = {
         ['Marketing spend', '$6,000 a month: $4,800 Google Ads plus $1,200 agency fee (about 3.8% of revenue)'],
         ['Reputation', '4.6 stars from 310 Google reviews; about 4 new reviews a month arrive without asking'],
         ['Website and content', 'About 3,000 website visits a month, about 65% on phones; 12 blog posts, the newest from 2019, with titles like “Spring News”'],
+        ['Social media', 'A Facebook page with about 1,100 followers, posted on about once a month (posts reach about 150 people each); an Instagram account with about 300 followers; nothing else'],
         ['Brand look', 'Deep blue and sunflower yellow, a small kestrel-bird mark, 6 wrapped service vans; the logo and colours have been the same since 2011'],
         ['A typical month (May)', '200 leads (calls and forms) → 140 booked (70%) → 126 jobs run (90%); 24 replacement quotes → 8 sold (33%)'],
         ['Google Ads in May', '$4,800 spend, 1,600 clicks, 80 leads, 56 booked, 50 jobs run'],
@@ -108,7 +112,7 @@ window.COURSE = {
     { id:'m04', stage:0, t:'Messaging and copywriting', ready:true },
     { id:'m05', stage:1, t:'Brand', ready:true },
     { id:'m06', stage:1, t:'Content marketing', ready:true },
-    { id:'m07', stage:1, t:'Social media' },
+    { id:'m07', stage:1, t:'Social media', ready:true },
     { id:'m08', stage:1, t:'Email and text marketing' },
     { id:'m09', stage:1, t:'Websites, landing pages and funnels' },
     { id:'m10', stage:1, t:'SEO and local search' },

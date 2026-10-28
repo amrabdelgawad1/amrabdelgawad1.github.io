@@ -193,6 +193,7 @@
   const norm = s => ' ' + String(s).toLowerCase().replace(/[’‘`']/g, ' ').replace(/(\d),(?=\d)/g, '$1').replace(/[^a-z0-9.%\s]/g, ' ').replace(/\.(?!\d)/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
   function hit(ans, w){
     const t = norm(w).trim();
+    if (w[0] === '=') return ans.includes(' ' + t + ' ');   // "=ad": whole word only
     if (/^[\d.]+%?$/.test(t)) return new RegExp('(^|[^\\d.])' + t.replace(/[.%]/g, m => '\\' + m) + '(?![\\d])').test(ans);
     return ans.includes(t);
   }

@@ -219,3 +219,4 @@ svg{ fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; strok
   .cp-foot{ position:fixed; left:0; right:0; bottom:0; z-index:25; background:var(--card); padding:10px 12px calc(10px + env(safe-area-inset-bottom, 0px)); margin:0; border-top:1px solid var(--line); }
   .cp-foot .btn{ flex:1; padding:10px 8px; font-size:14px; }
 }
+.cp-page code{ overflow-wrap:anywhere; word-break:break-word; }
