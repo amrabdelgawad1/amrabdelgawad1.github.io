@@ -487,8 +487,8 @@
       '</div></div></main>' +
       '<div class="bar-foot"><div class="col">' +
         '<a class="btn line lg" href="#/m/' + esc(mod.id) + '/q/' + esc(it.id) + '">Continue where I left off</a>' +
-        '<a class="btn orange lg wider" href="#/m/' + esc(mod.id) + '/q/' + esc(it.id) + '/new/ok">Start over</a>' +
-      '</div></div>', { title:'Start over?' });
+        '<button class="btn orange lg wider" type="button" data-act="restart">Start over</button>' +
+      '</div></div>', { title:'Start over?', acts:{ restart: () => location.replace('#/m/' + mod.id + '/q/' + it.id + '/new/ok') } });
   }
   let resultCache = null;
   async function quizFinish(){
@@ -524,7 +524,7 @@
     let nx = us.slice(i + 1).find(u => !u.locked);
     let nextHref, nextLabel;
     if (isCp) { nextHref = nextMod && nextMod.open ? '#/m/' + nextMod.id : '#/'; nextLabel = nextMod && nextMod.open ? 'Next: Module ' + nextMod.number : 'Course home'; }
-    else if (nx) { nextHref = nx.href; nextLabel = 'Next: ' + (nx.e.group && nx.kind === 'lesson' && e.group && nx.e.group.id === e.group.id ? inGroupLabel(nx.e) : nx.label); }
+    else if (nx) { nextHref = nx.href; nextLabel = 'Next: ' + (nx.e.group && nx.kind === 'lesson' && e.group && nx.e.group.id === e.group.id ? (nx.e.it.shortTitle || inGroupLabel(nx.e)) : nx.label); }
     else { nextHref = '#/m/' + mod.id; nextLabel = 'Back to Module ' + mod.number; }
     const review = r.review.map(x => '<li class="rv' + (x.right ? '' : ' wrong') + '"><div class="between"><span class="q">Q' + x.number + ' · ' + esc(x.prompt) + '</span><span class="v ' + (x.right ? 'ok' : 'no') + '">' + (x.right ? 'Right' : 'Wrong') + '</span></div><p class="e">' + esc(x.explanation || '') + '</p></li>').join('');
     mount(header({ back:'#/m/' + mod.id, backLabel:'Back to Module ' + mod.number, ctx:isCp ? 'Module ' + mod.number + ' checkpoint' : 'Quiz · ' + idLabel(e), title:'Your result' }) +
@@ -837,8 +837,10 @@
       if (parts[2] === 'q' && e.it.quiz) {
         if (e.it.type === 'checkpoint' && !mod.checkpointOpen) { location.replace('#/m/' + mod.id + '/c/' + e.it.id); return; }
         if (Q && Q.attempt && Q.e.it.id === e.it.id && parts[4] !== 'new') return questionView();
-        if (parts[4] === 'new' && qState(mod, e.it).open && parts[5] !== 'ok') return startOverView(mod, e);
-        return quizStart(mod, e, parts[4] === 'new');
+        const openTry = qState(mod, e.it).open;
+        // Start over only asks when there are answers to give up; an empty unfinished try is simply resumed
+        if (parts[4] === 'new' && openTry && openTry.answered > 0 && parts[5] !== 'ok') return startOverView(mod, e);
+        return quizStart(mod, e, parts[4] === 'new' && !(openTry && openTry.answered === 0));
       }
       if (parts[2] === 'c' && e.it.type === 'checkpoint') return checkpointView(mod, e);
       if (parts[2] === 'a' && e.it.type === 'assignment') return assignmentView(mod, e);
