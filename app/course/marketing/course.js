@@ -57,7 +57,12 @@ window.COURSE = {
     W3C: { t:'W3C WCAG 2.1', d:'Web Content Accessibility Guidelines: contrast of at least 4.5:1 for normal text and 3:1 for large text.' },
     NNG: { t:'Nielsen Norman Group', d:'The four dimensions of tone of voice (2016): funny–serious, formal–casual, respectful–irreverent, enthusiastic–matter-of-fact.' },
     SBR: { t:'Donald Miller', d:'Building a StoryBrand (2017): the customer as hero, the brand as guide.' },
-    GRV: { t:'Google', d:'Google Business Profile review policies: no fake reviews, no rewards, and no selectively asking only happy customers (review gating).' }
+    GRV: { t:'Google', d:'Google Business Profile review policies: no fake reviews, no rewards, and no selectively asking only happy customers (review gating).' },
+    CMI: { t:'Content Marketing Institute', d:'Definition of content marketing: valuable, relevant, consistent content for a clearly defined audience, to drive profitable action.' },
+    SHE: { t:'Marcus Sheridan', d:'They Ask, You Answer (2017): answer buyers’ real questions, including the “Big 5”: cost, problems, comparisons, reviews and best-of.' },
+    HHH: { t:'Google / YouTube', d:'YouTube Creator Playbook (around 2014): Hero, Hub and Hygiene content; “Hygiene” is now usually called “Help”.' },
+    PIL: { t:'HubSpot', d:'Pillar pages and topic clusters (2017).' },
+    GHC: { t:'Google Search Central', d:'Guidance on helpful, people-first content, and E-E-A-T from the Search Quality Rater Guidelines; guidance on AI-generated content.' }
   },
 
   // The running cases. Kestrel is the main one; BrightLine shows how B2B differs.
@@ -76,6 +81,7 @@ window.COURSE = {
         ['Past customers on file', 'About 6,000 households in the field-service software, with phone numbers; about 4,000 have an email address; almost none have ever been emailed'],
         ['Marketing spend', '$6,000 a month: $4,800 Google Ads plus $1,200 agency fee (about 3.8% of revenue)'],
         ['Reputation', '4.6 stars from 310 Google reviews; about 4 new reviews a month arrive without asking'],
+        ['Website and content', 'About 3,000 website visits a month, about 65% on phones; 12 blog posts, the newest from 2019, with titles like “Spring News”'],
         ['Brand look', 'Deep blue and sunflower yellow, a small kestrel-bird mark, 6 wrapped service vans; the logo and colours have been the same since 2011'],
         ['A typical month (May)', '200 leads (calls and forms) → 140 booked (70%) → 126 jobs run (90%); 24 replacement quotes → 8 sold (33%)'],
         ['Google Ads in May', '$4,800 spend, 1,600 clicks, 80 leads, 56 booked, 50 jobs run'],
@@ -101,7 +107,7 @@ window.COURSE = {
     { id:'m03', stage:0, t:'Positioning, offer and pricing', ready:true },
     { id:'m04', stage:0, t:'Messaging and copywriting', ready:true },
     { id:'m05', stage:1, t:'Brand', ready:true },
-    { id:'m06', stage:1, t:'Content marketing' },
+    { id:'m06', stage:1, t:'Content marketing', ready:true },
     { id:'m07', stage:1, t:'Social media' },
     { id:'m08', stage:1, t:'Email and text marketing' },
     { id:'m09', stage:1, t:'Websites, landing pages and funnels' },
