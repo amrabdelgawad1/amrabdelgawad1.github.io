@@ -67,6 +67,8 @@
   ['em', 'pw'].forEach(id => $(id).addEventListener('input', () => $('loginErr').textContent = ''));
   document.querySelectorAll('[data-signout]').forEach(b => b.addEventListener('click', signOut));
   async function signOut(){
+    // private course-tool entries and psychology progress kept on this device: remove them on a shared computer
+    try { Object.keys(localStorage).forEach(k => { if (k.indexOf('lh-tools:') === 0 || k.indexOf('lh-psy-sync:') === 0) localStorage.removeItem(k); }); } catch(e){}
     stopTimers();
     await db.auth.signOut();
     role = null; profile = null; closeMenu();

@@ -123,6 +123,7 @@
     let state = 'idle', noTable = false, onState = null;
     const k = (c, tool) => 'lh-tools:' + uid() + ':' + c + ':' + tool;
     const setState = s => { state = s; if (onState) onState(s); };
+    const missing = e => e && (e.code === '42P01' || /relation .*learn_notes.* does not exist/i.test(e.message || ''));   // migration not run yet
     function local(c, tool) { try { const d = JSON.parse(localStorage.getItem(k(c, tool)) || 'null'); return d && 'v' in d ? d : null; } catch (e) { return null; } }
     function keep(c, tool, d) { try { localStorage.setItem(k(c, tool), JSON.stringify(d)); } catch (e) {} }
     async function push(c, tool) {
@@ -130,7 +131,7 @@
       const d = mem[c + ':' + tool];
       if (!db() || noTable || !d) { setState('here'); return; }
       const { error } = await db().from('learn_notes').upsert({ user_id: uid(), course: c, tool, data: d, updated_at: new Date().toISOString() });
-      if (error) { if (/learn_notes|does not exist|permission/i.test(error.message || '')) noTable = true; setState('here'); return; }
+      if (error) { if (missing(error)) noTable = true; setState('here'); return; }
       setState('saved');
     }
     return {
@@ -139,14 +140,17 @@
         const id = c + ':' + tool;
         if (mem[id]) return mem[id].v;
         let d = local(c, tool);
+        let readOk = false;
         if (db() && !noTable) {
           const { data: row, error } = await db().from('learn_notes').select('data').eq('user_id', uid()).eq('course', c).eq('tool', tool).maybeSingle();
-          if (error) { if (/learn_notes|does not exist|permission/i.test(error.message || '')) noTable = true; }
+          if (error) { if (missing(error)) noTable = true; }     // offline or refused: keep this device's copy, say so
+          else readOk = true;
+          if (error) { /* nothing to compare */ }
           else if (row && row.data && 'v' in row.data && (row.data.at || 0) > ((d && d.at) || 0)) { d = row.data; keep(c, tool, d); }
           else if (d && (!row || ((row.data && row.data.at) || 0) < (d.at || 0))) { mem[id] = d; push(c, tool); }   // this device has newer work
         }
         mem[id] = d || { v: blank(), at: 0 };
-        setState(db() && !noTable ? 'saved' : 'here');
+        setState(readOk ? 'saved' : 'here');
         return mem[id].v;
       },
       put(c, tool, v) {
@@ -228,9 +232,9 @@
   function cpdChannel(c, i, cur) {
     const f = (k, label, mode) => `<label class="lt-field"><span>${esc(label)}</span><input data-k="${k}" inputmode="${mode || 'decimal'}" value="${esc(c[k])}" autocomplete="off" dir="ltr"></label>`;
     const r = calc(c);
-    return `<section class="cp-card lt-ch" data-ch="${c.id}">
+    return `<section class="cp-card lt-ch" data-ch="${esc(c.id)}">
       <div class="lt-chhead"><span class="lt-n">${i + 1}</span><input class="lt-name" data-k="name" value="${esc(c.name)}" placeholder="${esc(t('chName'))}" aria-label="${esc(t('chName'))}" dir="auto">
-        <button class="lt-x" type="button" data-rm="${c.id}" aria-label="${esc(t('rmCh'))}" title="${esc(t('rmCh'))}"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+        <button class="lt-x" type="button" data-rm="${esc(c.id)}" aria-label="${esc(t('rmCh'))}" title="${esc(t('rmCh'))}"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
       <div class="lt-grid">${f('spend', t('spend'))}${f('leads', t('leads'), 'numeric')}${f('appts', t('appts'), 'numeric')}${f('deals', t('deals'), 'numeric')}${f('profit', t('profit'))}</div>
       <div class="lt-res" data-res>${cpdResults(r, cur, false)}</div>
       <details class="lt-plan-box"${c.target ? ' open' : ''}><summary>${esc(t('planT'))}</summary>
@@ -247,6 +251,7 @@
 
   async function cpd(el) {
     const st = await Notes.get('mkt', 'cpd', blankCpd);
+    if (!el.isConnected) return;          // the learner moved on while this was loading
     const draw = () => {
       const tot = totalOf(st);
       el.innerHTML = `<div class="cp-wrap lt">
@@ -315,7 +320,7 @@
       <header><span class="cp-kick">${esc(t('tools'))}</span><h1 class="cp-h1">${esc(t(cfg.title))}</h1><p class="cp-sub">${esc(t(cfg.desc))}</p>${status()}</header>
       ${safety()}
       <p><a class="btn" href="#/tools/${tool}/new">${esc(t('add'))}</a></p>
-      ${items.length ? `<div class="lt-list">${items.map(x => `<a class="cp-card lt-entry" href="#/tools/${tool}/${x.id}"><span class="lt-date">${esc(dateF(x.at))}</span><b dir="auto">${esc(cfg.head(x) || t('untitled'))}</b>${cfg.meta(x) ? `<span class="lt-meta" dir="auto">${cfg.meta(x)}</span>` : ''}</a>`).join('')}</div>` : `<p class="cp-sub">${esc(t('empty'))}</p>`}
+      ${items.length ? `<div class="lt-list">${items.map(x => `<a class="cp-card lt-entry" href="#/tools/${tool}/${esc(x.id)}"><span class="lt-date">${esc(dateF(x.at))}</span><b dir="auto">${esc(cfg.head(x) || t('untitled'))}</b>${cfg.meta(x) ? `<span class="lt-meta" dir="auto">${cfg.meta(x)}</span>` : ''}</a>`).join('')}</div>` : `<p class="cp-sub">${esc(t('empty'))}</p>`}
     </div>`;
     bindStatus();
   }
@@ -406,6 +411,7 @@
 
   async function listTool(el, course, tool, cfg, id) {
     const st = await Notes.get(course, tool, blankList);
+    if (!el.isConnected) return;          // the learner moved on while this was loading
     if (!Array.isArray(st.items)) st.items = [];
     if (id) formPage(el, course, tool, st, id, cfg); else listPage(el, course, tool, st, cfg);
   }
@@ -426,8 +432,11 @@
     // path: what follows #/tools/ in the address, for example ['cpd'] or ['thought', 'new']
     render: async function (el, opt) {
       lang = opt.lang === 'ar' ? 'ar' : 'en';
+      // Draw inside a wrapper, never on the player's own main area: when a lesson replaces it, the wrapper's
+      // handlers and language settings go with it, and a slow load can tell it is no longer on the page.
+      const host = el; el = document.createElement('div'); el.className = 'lt-root';
       el.lang = lang; el.dir = lang === 'ar' ? 'rtl' : 'ltr';
-      el.oninput = el.onchange = el.onclick = null;
+      host.replaceChildren(el);
       const [tool, id] = (opt.path || []).filter(Boolean);
       course = opt.course;
       if (!TOOLS[course]) { el.innerHTML = ''; return; }

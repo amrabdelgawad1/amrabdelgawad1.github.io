@@ -17,7 +17,7 @@
 <script>
   const q = new URLSearchParams(location.search), course = q.get('course') || 'mkt', lang = q.get('lang') === 'ar' ? 'ar' : 'en';
   document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-  window.LH_DB = { db: null, uid: 'test' };
+  window.LH_DB = window.LH_DB || { db: null, uid: 'test' };   // check.mjs can put a stand-in for Supabase here first
   const go = () => LH_TOOLS.render(document.getElementById('cpMain'), { course, lang, path: location.hash.replace(/^#\/?/, '').split('/').slice(1) });
   if (!location.hash) location.hash = '#/tools';
   window.addEventListener('hashchange', go); go();

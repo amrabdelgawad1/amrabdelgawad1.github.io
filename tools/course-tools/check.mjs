@@ -62,7 +62,7 @@ for (const lang of ['en', 'ar']) for (const [w, h, tag] of [[390, 844, 'phone'],
   ok(await first.locator('.lt-plan').count() === 1, `mkt ${lang} ${tag}: plan backward shows for the channel with a target`);
   const scroll = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   ok(scroll <= 0, `mkt ${lang} ${tag}: no sideways scrolling`);
-  if (lang === 'ar') ok(await p.locator('#cpMain').getAttribute('dir') === 'rtl', `mkt ar ${tag}: page is right to left`);
+  if (lang === 'ar') ok(await p.locator('#cpMain .lt-root').getAttribute('dir') === 'rtl', `mkt ar ${tag}: page is right to left`);
   await p.screenshot({ path: `${SHOTS}mkt-${lang}-${tag}.png`, fullPage: true });
   await p.reload(); await p.waitForSelector('.lt-ch');
   ok(await p.locator('.lt-ch').first().locator('[data-k="spend"]').inputValue() === '9000', `mkt ${lang} ${tag}: numbers are still there after a reload`);
@@ -112,6 +112,33 @@ for (const lang of ['en', 'ar']) for (const [w, h, tag] of [[390, 844, 'phone'],
   const scroll = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   ok(scroll <= 0, `psy ${lang} ${tag}: no sideways scrolling`);
   await p.context().close();
+}
+
+// ---------- 4. living inside a player (from the review of PR #22) ----------
+{
+  // A stand-in for Supabase whose read takes 600 ms (or fails like an offline phone), set before the page loads.
+  const fakeDb = fail => `window.LH_DB = { uid:'u1', db:{ from:() => { const q = { select:() => q, eq:() => q,
+      maybeSingle:() => new Promise(r => setTimeout(() => r(${fail ? "{ data:null, error:{ code:'', message:'Failed to fetch' } }" : '{ data:null, error:null }'}), 600)),
+      upsert:() => Promise.resolve({ error:null }) }; return q; } } };`;
+  const withDb = async (fail, url) => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await ctx.addInitScript(fakeDb(fail));
+    const p = await ctx.newPage(); p.on('pageerror', e => errs.push(e.message)); await p.goto(url); return p;
+  };
+  // the learner opens a tool, then a lesson replaces the page before the account read comes back
+  const p = await withDb(false, `${BASE}?course=psy#/tools/thought`);
+  await p.evaluate(() => { document.getElementById('cpMain').innerHTML = '<p id="lesson">A lesson</p>'; });
+  await p.waitForTimeout(1000);
+  ok(await p.locator('#lesson').count() === 1 && await p.locator('.lt-form, .lt-entry, .lt-safe').count() === 0, 'slow account read: the tool does not draw over a lesson opened meanwhile');
+  await p.evaluate(() => { location.hash = '#/tools'; }); await p.waitForSelector('.lt-safe');
+  const main = await p.evaluate(() => { const m = document.getElementById('cpMain'); return { h: !!(m.onclick || m.oninput || m.onchange), dir: m.getAttribute('dir'), lang: m.getAttribute('lang') }; });
+  ok(!main.h && main.dir === null && main.lang === null, 'tools leave no click/typing handlers and no language settings on the lesson area');
+  await p.context().close();
+  const q = await withDb(true, `${BASE}?course=mkt#/tools/cpd`);
+  await q.waitForSelector('.lt-ch'); await q.waitForTimeout(200);
+  const st = await q.locator('#ltStatus').textContent();
+  ok(!/account/i.test(st) && /device/i.test(st), `offline read says "saved on this device", not "to your account" ("${st.trim()}")`);
+  await q.context().close();
 }
 
 ok(errs.length === 0, 'no errors in the browser console' + (errs.length ? ': ' + [...new Set(errs)].join(' | ') : ''));
