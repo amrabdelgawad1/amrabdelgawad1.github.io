@@ -67,7 +67,8 @@
   function startPlayer(course){
     window.COURSE = course;
     window.LH_STORE = store();
-    const s = document.createElement('script'); s.src = 'player.js?v=3';
+    window.LH_DB = { db, uid };   // the course tools save private entries to learn_notes with this (db is null in test mode)
+    const s = document.createElement('script'); s.src = 'player.js?v=4';
     s.onerror = () => stop('loadFail');
     document.body.appendChild(s);
   }
