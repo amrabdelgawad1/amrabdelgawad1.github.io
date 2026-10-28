@@ -191,6 +191,7 @@
 
   // Type-and-check: the answer is checked for each key point, then the model answer and the why are shown
   const norm = s => ' ' + String(s).toLowerCase().replace(/[’‘`']/g, ' ').replace(/(\d),(?=\d)/g, '$1').replace(/[^a-z0-9.%\s]/g, ' ').replace(/\.(?!\d)/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
+  const BLANK = / (i )?(don t|do not) know | no idea | not sure /g;   // filler that never earns a point
   function hit(ans, w){
     const t = norm(w).trim();
     if (w[0] === '=') return ans.includes(' ' + t + ' ');   // "=ad": whole word only
@@ -198,7 +199,7 @@
     return ans.includes(t);
   }
   function feedback(q, text, self){
-    const ans = norm(text), hits = q.k.map(([label, any]) => [label, any.some(w => hit(ans, w))]), n = hits.filter(x => x[1]).length;
+    const ans = norm(text).replace(BLANK, ' '), hits = q.k.map(([label, any]) => [label, any.some(w => hit(ans, w))]), n = hits.filter(x => x[1]).length;
     return `<p><b>You covered ${n} of ${q.k.length} key points.</b></p><ul class="cp-keys">${hits.map(([l, h]) => `<li class="${h ? 'hit' : ''}">${esc(l)}</li>`).join('')}</ul>
       <div class="cp-model"><b>Model answer:</b> ${esc(q.a)}</div><p class="cp-why"><b>Why:</b> ${esc(q.why)}</p>
       <div class="row"><span class="cp-meta">How did you do?</span><button class="btn ${self === 'yes' ? 'ok' : 'ghost'}" type="button" data-self="yes" aria-pressed="${self === 'yes'}">I had it</button><button class="btn ghost" type="button" data-self="no" aria-pressed="${self === 'no'}">${self === 'no' ? 'Marked: review again' : 'Review again'}</button></div>`;

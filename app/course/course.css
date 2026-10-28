@@ -220,3 +220,4 @@ svg{ fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; strok
   .cp-foot .btn{ flex:1; padding:10px 8px; font-size:14px; }
 }
 .cp-page code{ overflow-wrap:anywhere; word-break:break-word; }
+.cp-page table:not(.cp-table){ display:block; max-width:100%; overflow-x:auto; }

@@ -74,6 +74,10 @@ window.COURSE = {
     CWV: { t:'Google (web.dev)', d:'Core Web Vitals: Largest Contentful Paint within 2.5 seconds, Interaction to Next Paint within 200 milliseconds, Cumulative Layout Shift under 0.1.' },
     HBR: { t:'Oldroyd, McElheran and Elkington', d:'“The Short Life of Online Sales Leads”, Harvard Business Review (2011): firms that tried to contact leads within an hour were nearly seven times as likely to qualify them as firms that waited longer.' },
     LEH: { t:'Robert Lehr', d:'Rule of thumb for sample size (1992): about 16 × p × (1 − p) ÷ d² per group, for 80% power at 5% significance.' },
+    GSW: { t:'Google Search Central', d:'How Google Search works (crawling, indexing, serving) and the SEO Starter Guide: titles, descriptions, headings, links, mobile-first indexing.' },
+    GLR: { t:'Google Business Profile Help', d:'How to improve your local ranking on Google: relevance, distance and prominence.' },
+    GSP: { t:'Google Search Central', d:'Spam policies for Google web search: link spam (buying or selling links that pass ranking credit), scaled content abuse, keyword stuffing.' },
+    SCO: { t:'Schema.org', d:'Shared vocabulary for structured data, such as LocalBusiness and HVACBusiness.' },
     GHC: { t:'Google Search Central', d:'Guidance on helpful, people-first content, and E-E-A-T from the Search Quality Rater Guidelines; guidance on AI-generated content.' }
   },
 
@@ -125,7 +129,7 @@ window.COURSE = {
     { id:'m07', stage:1, t:'Social media', ready:true },
     { id:'m08', stage:1, t:'Email and text marketing', ready:true },
     { id:'m09', stage:1, t:'Websites, landing pages and funnels', ready:true },
-    { id:'m10', stage:1, t:'SEO and local search' },
+    { id:'m10', stage:1, t:'SEO and local search', ready:true },
     { id:'m11', stage:1, t:'Paid ads' },
     { id:'m12', stage:1, t:'Outbound and partnerships' },
     { id:'m13', stage:2, t:'Analytics, tracking and testing' },
