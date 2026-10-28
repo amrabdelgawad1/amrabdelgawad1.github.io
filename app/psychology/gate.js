@@ -67,7 +67,7 @@
   function startPlayer(course){
     window.COURSE = course;
     window.LH_STORE = store();
-    const s = document.createElement('script'); s.src = 'player.js?v=2';
+    const s = document.createElement('script'); s.src = 'player.js?v=3';
     s.onerror = () => stop('loadFail');
     document.body.appendChild(s);
   }

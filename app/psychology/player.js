@@ -116,7 +116,7 @@ var STAGES = [[0, 1, 2, 3], [4, 5, 6, 7, 8, 9], [10, 11, 12], [13, 14, 15, 16, 1
 function stageOf(m) { for (var i = 0; i < STAGES.length; i++) if (STAGES[i].indexOf(m.num) >= 0) return i; return STAGES.length - 1; }
 function examItem(m) { for (var i = 0; i < m.items.length; i++) if (m.items[i].type === 'exam') return m.items[i]; return null; }
 function examBest(m) { return Math.max(+Store.get('best:' + m.id) || 0, +Store.get('exam:' + m.id) || 0); }
-function passedMod(m) { var e = examItem(m); return !!e && examBest(m) >= e.exam.pass; }
+function passedMod(m) { var e = examItem(m); return !!e && (isDone(m, e) || examBest(m) >= e.exam.pass); }   /* the exam's done mark is only ever set by passing */
 function isOpen(m) { if (OWNER && !asLearner) return true; var i = C.modules.indexOf(m); return i <= 0 || passedMod(C.modules[i - 1]); }
 function itemDone(m, it) { return (it.type === 'exam' || it.type === 'quiz') ? (isDone(m, it) || (+Store.get(scoreKey(m, it)) || 0) >= it.exam.pass) : isDone(m, it); }
 function doneN(m) { var d = 0; m.items.forEach(function (it) { if (itemDone(m, it)) d++; }); return d; }
@@ -253,7 +253,8 @@ function renderItem(m, it) {
   var S = seqAll(), k = 0; S.forEach(function (x, i) { if (x[1] === it) k = i; });
   var prev = S[k - 1], next = S[k + 1];
   var href = function (x) { return x ? '#/' + x[0].id + (x[1] ? '/' + x[1].id : '') : '#/'; };
-  var nextLabel = !next ? t('backToModule') : next[0] !== m ? t('nextModule') : next[1] && next[1].part !== it.part ? fmt(t('nextPart'), { p: partName(findPart(m, next[1].part)) }) : t('next');
+  var nextLocked = next && next[0] !== m && !isOpen(next[0]);
+  var nextLabel = !next || nextLocked ? t('backToModule') : next[0] !== m ? t('nextModule') : next[1] && next[1].part !== it.part ? fmt(t('nextPart'), { p: partName(findPart(m, next[1].part)) }) : t('next');
   var body = isQ ? examHTML(m, it) : L(it.html);
   var h = '<div class="cp-wrap cp-lesson">' + crumbs([[fmt(t('moduleN'), { n: m.num }), '#/' + m.id], [partName(p)]]) +
     (isFirst ? '<span class="cp-thumb">' + partThumb(m, p) + '</span>' : '') +
@@ -262,7 +263,7 @@ function renderItem(m, it) {
     '<div class="content' + (lang === 'ar' && !isQ && !has(it.html) ? ' fallback-en" lang="en' : '') + '" id="content">' + body + '</div>' +
     '<div class="cp-foot"><a class="btn ghost" href="' + href(prev) + '">' + esc(t('prev')) + '</a>' +
     (isQ ? '' : '<button class="btn ' + (done ? 'ok' : 'ghost') + '" id="doneBtn" type="button">' + esc(done ? t('completed') : t('markComplete')) + '</button>') +
-    '<a class="btn" id="nextBtn" href="' + (next && next[0] !== m && !isOpen(next[0]) ? '#/' + m.id : href(next)) + '">' + esc(nextLabel) + '</a></div></div>';
+    '<a class="btn" id="nextBtn" href="' + (nextLocked ? '#/' + m.id : href(next)) + '">' + esc(nextLabel) + '</a></div></div>';
   var tools = it.type === 'section' || it.type === 'playbook';
   if (tools) h += '<div class="fabs"><button class="fab ink' + (Ink.has(m, it) ? ' has' : '') + '" id="inkBtn" type="button" aria-label="' + esc(t('pen')) + '">' + I.marker + '<span class="lbl">' + esc(t('pen')) + '</span><span class="dot"></span></button>' +
     '<button class="fab' + (Pad.hasInk(m, it) ? ' has' : '') + '" id="fab" type="button" aria-label="' + esc(t('scratch')) + '">' + I.pen + '<span class="lbl">' + esc(t('scratch')) + '</span><span class="dot"></span></button></div>';
@@ -436,7 +437,7 @@ function bindExam(m, it) {
     var ok = n >= pass;
     res.textContent = fmt(t('score'), { n: n, total: qs.length }) + ' ' + (ok ? t(it.type === 'quiz' ? 'quizPass' : 'passMsg') : t(it.type === 'quiz' ? 'quizFail' : 'fail'));
     if (!ok || isDone(m, it)) refreshSide(m, it);
-    if (ok && !isDone(m, it)) { setDone(m, it, true); var b = document.getElementById('doneBtn'); if (b) { b.classList.add('ok'); b.textContent = t('completed'); } refreshSide(m, it); }
+    if (ok && !isDone(m, it)) { setDone(m, it, true); var b = document.getElementById('doneBtn'); if (b) { b.classList.add('ok'); b.textContent = t('completed'); } refreshSide(m, it); if (it.type === 'exam') { var nb = document.getElementById('nextBtn'), nm = C.modules[C.modules.indexOf(m) + 1]; if (nb && nm) { nb.href = '#/' + nm.id; nb.textContent = t('nextModule'); } } }
   };
   document.getElementById('resetBtn').onclick = function () {
     qs.forEach(function (q) { delete q._rec; q.classList.remove('done', 'right', 'wrong'); q.querySelectorAll('input').forEach(function (i) { i.checked = false; }); });
