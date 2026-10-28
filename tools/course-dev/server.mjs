@@ -115,7 +115,7 @@ async function handleSb(req, res, url){
       return `${n} => ${v}`;
     });
     try {
-      const r = await asUser(claims, c => c.query(`select to_jsonb(public.${m[1]}(${exprs.join(', ')})) as r`, [JSON.stringify(body)]));
+      const r = await asUser(claims, c => c.query(`select to_jsonb(public.${m[1]}(${exprs.join(', ')})) as r`, exprs.length ? [JSON.stringify(body)] : []));
       return send(res, 200, r.rows[0].r);
     } catch(e){ return pgError(res, e); }
   }
@@ -126,6 +126,19 @@ async function handleSb(req, res, url){
   // fetch signed:  GET  /storage/v1/object/sign/course/<path>?token=
   // upload:        POST /storage/v1/object/course/<path>   (multipart)
   // remove:        DELETE /storage/v1/object/course {prefixes}
+  // list a folder:   POST /storage/v1/object/list/course {prefix}
+  if (p === '/storage/v1/object/list/course' && req.method === 'POST') {
+    const body = JSON.parse((await readBody(req)).toString() || '{}');
+    const pre = String(body.prefix || '').replace(/\/?$/, '/');
+    const r = await asUser(claims, c => c.query("select name, id, created_at from storage.objects where bucket_id = 'course' and name like $1 || '%'", [pre]));
+    const seen = new Map();
+    for (const row of r.rows) {
+      const rest = row.name.slice(pre.length), slash = rest.indexOf('/');
+      if (slash < 0) seen.set(rest, { name:rest, id:row.id, created_at:row.created_at, metadata:{} });
+      else if (!seen.has(rest.slice(0, slash))) seen.set(rest.slice(0, slash), { name:rest.slice(0, slash), id:null, metadata:null });
+    }
+    return send(res, 200, [...seen.values()]);
+  }
   const s = p.match(/^\/storage\/v1\/object(\/sign)?\/course(?:\/(.+))?$/);
   if (s) {
     const isSign = !!s[1], objPath = s[2] ? decodeURIComponent(s[2]) : null;
@@ -172,13 +185,16 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, ORIGIN);
     if (req.method === 'OPTIONS') { res.writeHead(204, { 'access-control-allow-origin':'*', 'access-control-allow-headers':'*', 'access-control-allow-methods':'GET,POST,PUT,PATCH,DELETE,OPTIONS' }); return res.end(); }
     if (url.pathname.startsWith('/sb/')) return await handleSb(req, res, url);
+    if (url.pathname === '/__dev/supabase.js') return send(res, 200, await fs.readFile(path.join(import.meta.dirname, 'node_modules/@supabase/supabase-js/dist/umd/supabase.js')), TYPES['.js']);
     if (url.pathname === '/tracker/config.js') return send(res, 200, `window.TRACKER_CONFIG = { supabaseUrl: '${ORIGIN}/sb', supabaseKey: 'local-test-key' };`, TYPES['.js']);
     let f = path.join(ROOT, decodeURIComponent(url.pathname));
     if (!f.startsWith(ROOT)) return send(res, 403, 'no', 'text/plain');
     if ((await fs.stat(f).catch(() => null))?.isDirectory()) f = path.join(f, 'index.html');
     let body = await fs.readFile(f);
     const ext = path.extname(f);
-    if (ext === '.html') body = Buffer.from(body.toString().split(LIVE_SB).join(ORIGIN).replace(/\s*upgrade-insecure-requests/, '').replace(/wss:\/\/ztlpgyomjuzmjmuifbbd\.supabase\.co/g, ''));
+    // Test mode: point the page at /sb, and load supabase-js (same version) from node_modules, since the CDN may be unreachable
+    if (ext === '.html') body = Buffer.from(body.toString().split(LIVE_SB).join(ORIGIN).replace(/\s*upgrade-insecure-requests/, '').replace(/wss:\/\/ztlpgyomjuzmjmuifbbd\.supabase\.co/g, '')
+      .replace(/<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js@2\.45\.4\/dist\/umd\/supabase\.min\.js"[^>]*><\/script>/, '<script src="/__dev/supabase.js"></script>'));
     res.writeHead(200, { 'content-type': TYPES[ext] || 'application/octet-stream', 'cache-control':'no-store' });
     res.end(body);
   } catch(e){

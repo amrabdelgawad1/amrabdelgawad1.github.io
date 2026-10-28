@@ -25,10 +25,10 @@ const one = async (u, sql, args) => (await as(u, sql, args))[0].r;
 const fails = async (p, re) => { try { await p; } catch(e){ assert.match(e.message, re); return; } assert.fail('expected an error matching ' + re); };
 let n = 0; const ok = async (name, fn) => { await fn(); n++; console.log('ok', n, name); };
 
-await ok('no course switch: turned away', () => fails(one(NOCOURSE, 'select public.course_state() as r'), /no access/));
-await ok('signed out: turned away', () => fails(one(null, 'select public.course_state() as r'), /no access|invalid input/));
+await ok('no course switch: turned away', () => fails(one(NOCOURSE, 'select public.course_state(true) as r'), /no access/));
+await ok('signed out: turned away', () => fails(one(null, 'select public.course_state(true) as r'), /no access|invalid input/));
 
-const st = await one(LEARNER, 'select public.course_state() as r');
+const st = await one(LEARNER, 'select public.course_state(true) as r');
 await ok('state has no answers, explanations or answer key', async () => {
   const s = JSON.stringify(st);
   assert.ok(!/"correct"\s*:/.test(s), 'correct leaked'); assert.ok(!/"explanation"/.test(s), 'explanation leaked'); assert.ok(!/reviewerAnswerKey/.test(s), 'answer key leaked');
@@ -52,7 +52,7 @@ await ok('admin functions refused for learners', async () => {
 });
 await ok('checkpoint locked until lessons passed and drill submitted', async () => {
   await fails(one(LEARNER, 'select public.course_quiz_start($1, $2) as r', ['m1', cp.id]), /checkpoint locked/);
-  const o = await one(OMAR, 'select public.course_state() as r'); assert.equal(o.modules[0].checkpointOpen, true);
+  const o = await one(OMAR, 'select public.course_state(true) as r'); assert.equal(o.modules[0].checkpointOpen, true);
 });
 await ok('progress: Maya 4 of 24, Omar 23 of 24', async () => {
   const r = await one(AMR, 'select public.course_admin_learners() as r');
@@ -111,7 +111,7 @@ await ok('module 2 opens after the module 1 checkpoint, and stays open', async (
   const m2 = structuredClone(mod); m2.id = 'm2-test'; m2.number = 2; m2.title = 'Test Module Two';
   (function re(items){ for (const it of items) { it.id = 'T' + it.id; if (it.quiz) it.quiz.questions.forEach(q => q.id = 'T' + q.id); if (it.items) re(it.items); } })(m2.items);
   await one(AMR, 'select public.course_add_module($1::jsonb) as r', [JSON.stringify({ course:{ title:file.course.title, totalModules:14, modules:[m2] } })]);
-  const o = await one(OMAR, 'select public.course_state() as r'), l = await one(LEARNER, 'select public.course_state() as r');
+  const o = await one(OMAR, 'select public.course_state(true) as r'), l = await one(LEARNER, 'select public.course_state() as r');
   assert.equal(o.modules[1].open, true, 'Omar passed the checkpoint once, so module 2 is open');
   assert.equal(l.modules[1].open, false);
   assert.ok(!l.modules[1].items.some(i => i.bodyMarkdown), 'locked module: outline only');
@@ -132,7 +132,7 @@ await ok('drill: draft, submit, return, resubmit, approve, then locked', async (
   assert.equal((await one(LEARNER, 'select public.course_save_answers($1, $2, $3::jsonb, true) as r', ['m1', drill.id, JSON.stringify(ans)])).status, 'submitted');
   await fails(one(AMR, 'select public.course_review($1, $2, $3, false, $4) as r', [LEARNER, 'm1', drill.id, '  ']), /add a comment/);
   assert.equal((await one(AMR, 'select public.course_review($1, $2, $3, false, $4) as r', [LEARNER, 'm1', drill.id, 'Task 4: redo the MAO.'])).status, 'needs_changes');
-  const s1 = await one(LEARNER, 'select public.course_state() as r');
+  const s1 = await one(LEARNER, 'select public.course_state(true) as r');
   assert.equal(s1.submissions['m1/' + drill.id].status, 'needs_changes'); assert.equal(s1.submissions['m1/' + drill.id].comment, 'Task 4: redo the MAO.');
   await one(LEARNER, 'select public.course_save_answers($1, $2, $3::jsonb, true) as r', ['m1', drill.id, JSON.stringify(ans)]);
   const sub = await one(AMR, 'select public.course_admin_submission($1, $2, $3) as r', [LEARNER, 'm1', drill.id]);

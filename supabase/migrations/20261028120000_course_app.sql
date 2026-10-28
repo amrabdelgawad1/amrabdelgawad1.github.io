@@ -22,6 +22,8 @@
 -- Tables
 -- ---------------------------------------------------------------------------
 
+drop function if exists public.course_state();
+
 create table if not exists public.course_meta (
   id boolean primary key default true check (id),
   title text not null,
@@ -261,10 +263,11 @@ language sql stable security definer set search_path = public, pg_temp as $$
 $$;
 
 -- ---------------------------------------------------------------------------
--- What the app loads: the course, the modules (answers stripped) and the learner's own progress
+-- What the app loads: the course, the modules (answers stripped) and the learner's own progress.
+-- p_content = false leaves out the lessons and questions, for the quick refresh after each action.
 -- ---------------------------------------------------------------------------
 
-create or replace function public.course_state()
+create or replace function public.course_state(p_content boolean default true)
 returns jsonb language plpgsql stable security definer set search_path = public, pg_temp as $$
 declare
   uid uuid := public.course_require_access();
@@ -281,8 +284,8 @@ begin
              'open', m.id = any(open_ids),
              'openForLearners', public.course_module_open(uid, m.id),
              'checkpointOpen', admin or public.course_checkpoint_open(uid, m.id),
-             'items', coalesce((select jsonb_agg(public.course_public_item(i.value, m.id = any(open_ids)) order by i.ordinality)
-                                  from jsonb_array_elements(coalesce(m.content -> 'items', '[]'::jsonb)) with ordinality i), '[]'::jsonb))
+             'items', case when p_content then coalesce((select jsonb_agg(public.course_public_item(i.value, m.id = any(open_ids)) order by i.ordinality)
+                                  from jsonb_array_elements(coalesce(m.content -> 'items', '[]'::jsonb)) with ordinality i), '[]'::jsonb) end)
            order by m.number), '[]'::jsonb)
     into mods from public.course_modules m;
 
@@ -589,6 +592,24 @@ begin
   ), '[]'::jsonb);
 end $$;
 
+-- Drills waiting for review, oldest first.
+create or replace function public.course_admin_waiting()
+returns jsonb language plpgsql stable security definer set search_path = public, pg_temp as $$
+begin
+  perform public.course_require_admin();
+  return coalesce((
+    select jsonb_agg(jsonb_build_object(
+             'userId', s.user_id, 'moduleId', s.module_id, 'itemId', s.item_id,
+             'name', coalesce(mem.name, u.email), 'module', m.number, 'title', f.item ->> 'title',
+             'submittedAt', s.last_submitted_at) order by s.last_submitted_at)
+      from public.course_submissions s
+      join auth.users u on u.id = s.user_id
+      left join public.members mem on mem.user_id = s.user_id
+      left join public.course_modules m on m.id = s.module_id
+      left join lateral public.course_flat(m.content) f on f.item_id = s.item_id
+     where s.status = 'submitted'), '[]'::jsonb);
+end $$;
+
 -- One learner: attempts and submissions, newest first.
 create or replace function public.course_admin_learner(p_user uuid)
 returns jsonb language plpgsql stable security definer set search_path = public, pg_temp as $$
@@ -602,7 +623,7 @@ begin
                                    'open', public.course_module_open(p_user, m.id), 'done', pr.done, 'total', pr.total) order by m.number)
                            from public.course_modules m, public.course_module_progress(p_user, m.id) pr), '[]'::jsonb),
     'attempts', coalesce((select jsonb_agg(jsonb_build_object('id', a.id, 'moduleId', a.module_id, 'itemId', a.item_id,
-                                   'title', coalesce(f.item -> 'quiz' ->> 'title', f.item ->> 'title'), 'kind', f.kind,
+                                   'title', coalesce(f.item -> 'quiz' ->> 'title', f.item ->> 'title'), 'lessonTitle', f.item ->> 'title', 'kind', f.kind,
                                    'score', a.score, 'correct', a.correct, 'total', a.total, 'passed', a.passed,
                                    'startedAt', a.started_at, 'finishedAt', a.finished_at) order by a.finished_at desc)
                             from public.course_attempts a
@@ -632,6 +653,9 @@ begin
     'startedAt', att.started_at, 'finishedAt', att.finished_at,
     'title', (select coalesce(f.item -> 'quiz' ->> 'title', f.item ->> 'title') from public.course_modules m, public.course_flat(m.content) f
                where m.id = att.module_id and f.item_id = att.item_id),
+    'lessonTitle', (select f.item ->> 'title' from public.course_modules m, public.course_flat(m.content) f
+                     where m.id = att.module_id and f.item_id = att.item_id), 'kind', (select f.kind from public.course_modules m, public.course_flat(m.content) f
+                     where m.id = att.module_id and f.item_id = att.item_id),
     'questions', (select coalesce(jsonb_agg(qq.value || jsonb_build_object('answer', att.answers -> (qq.value ->> 'id')) order by qq.ordinality), '[]'::jsonb)
                     from public.course_modules m, public.course_flat(m.content) f,
                          jsonb_array_elements(f.item -> 'quiz' -> 'questions') with ordinality qq
@@ -767,10 +791,10 @@ begin
     'course_is_admin()', 'course_has_access()', 'course_require_access()', 'course_require_admin()',
     'course_flat(jsonb)', 'course_public_quiz(jsonb)', 'course_public_item(jsonb, boolean)',
     'course_quiz_passed(uuid, text, text)', 'course_checkpoint_open(uuid, text)', 'course_module_open(uuid, text)',
-    'course_module_progress(uuid, text)', 'course_state()', 'course_open_item(uuid, text, text, text[])',
+    'course_module_progress(uuid, text)', 'course_state(boolean)', 'course_open_item(uuid, text, text, text[])',
     'course_mark_done(text, text, boolean)', 'course_quiz_start(text, text, boolean)', 'course_quiz_answer(uuid, text, text[])',
     'course_attempt_result(uuid)', 'course_quiz_finish(uuid)', 'course_save_answers(text, text, jsonb, boolean)',
-    'course_set_file(text, text, text, text)', 'course_admin_learners()', 'course_admin_learner(uuid)',
+    'course_set_file(text, text, text, text)', 'course_admin_learners()', 'course_admin_waiting()', 'course_admin_learner(uuid)',
     'course_admin_attempt(uuid)', 'course_admin_submission(uuid, text, text)', 'course_review(uuid, text, text, boolean, text)',
     'course_add_module(jsonb)']
   loop
