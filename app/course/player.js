@@ -5,7 +5,7 @@
 // Progress (parts got, assignments, quizzes) is shared by both languages; typed answers and drawings are kept per language.
 (function(){
   const C = window.COURSE, cfg = window.TRACKER_CONFIG || {}, UI = window.COURSE_UI;
-  const OWNER_ONLY = false; // true hides the course from everyone but Amr
+  const OWNER_ONLY = !C.team; // COURSE.team in marketing/course.js switches it on for the team
   const $ = id => document.getElementById(id);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
   let db = null, uid = 'me', owner = false, asLearner = false;

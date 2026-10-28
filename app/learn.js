@@ -91,13 +91,15 @@
   const bar = (a, b) => `<span class="lh-bar" role="progressbar" aria-valuenow="${a}" aria-valuemax="${b}"><i style="width:${b ? Math.round(a / b * 100) : 0}%"></i></span>`;
 
   // ---------- home and track pages ----------
-  // Marketing now opens the rebuilt course (/app/course/); the old track stays at #learn/mkt as the previous version
+  // Marketing opens the rebuilt course (/app/course/) once COURSE.team is on (the owner sees it first as a preview);
+  // the old track stays at #learn/mkt as the previous version
+  const newOn = () => !!window.COURSE && (window.COURSE.team || (window.TalentsApp || {}).role === 'owner');
   function newMkt(){
     const C = window.COURSE; let done = 0;
     try { const d = JSON.parse(localStorage.getItem('cp1:' + uid() + ':mkt2') || 'null'); done = d && d.m ? Object.values(d.m).filter(m => ((m.quiz || {}).best || 0) >= (C.pass || PASS)).length : 0; } catch(e){}
     return `
     <a class="card lh-track lh-mag" href="/app/course/">
-      <span class="lh-chip">New version</span>
+      <span class="lh-chip">${C.team ? 'New version' : 'Owner preview'}</span>
       <h2>Marketing</h2>
       <p class="note">${esc(C.sub || 'From the first idea to running a full growth system, on one realistic business.')} In English and Arabic.</p>
       <p class="lh-meta"><span><b>${C.plan.length}</b> modules</span><span><b>${done}</b> passed</span></p>
@@ -105,7 +107,7 @@
       <span class="label">${done ? 'Continue' : 'Start'}</span>
     </a>`;
   }
-  const tracksHtml = () => TRACKS.map(t => { if (t.id === 'mkt' && window.COURSE) return newMkt(); const d = t.modules.length ? doneCount(t) : 0; return `
+  const tracksHtml = () => TRACKS.map(t => { if (t.id === 'mkt' && newOn()) return newMkt(); const d = t.modules.length ? doneCount(t) : 0; return `
     <a class="card lh-track lh-${t.tone}" href="#learn/${t.id}">
       <span class="lh-chip">${t.tag}</span>
       <h2>${t.name}</h2>
@@ -121,7 +123,7 @@
     <section class="lh-head"><span class="label">Learning Hub</span><h2 class="lh-h1">Pick a track</h2>
       <p class="note">Each track has its modules and the tools that go with it. Your notes, drawings and progress are yours only.</p></section>
     <div class="lh-tracks">${tracksHtml()}</div>
-    <p class="note lh-prev">Looking for the earlier Marketing course? <a href="#learn/mkt">Open the previous version</a>. Its notes and exam scores are still there.</p>
+    <p class="note lh-prev"${newOn() ? '' : ' hidden'}>Looking for the earlier Marketing course? <a href="#learn/mkt">Open the previous version</a>. Its notes and exam scores are still there.</p>
     <section class="card"><h2>What every module has</h2>
       <p class="note">Read the lesson, use the playbook, keep notes, practise on the scratch pad, then pass the exam (${PASS}% or more) to complete the module. Use the pen to draw or highlight on any page.</p>
       <div class="lh-parts">${PARTS.map((p, i) => `<span class="lh-part"><b>${i + 1}</b>${p}</span>`).join('')}</div></section>`;
