@@ -65,6 +65,11 @@ window.COURSE = {
     PEW: { t:'Pew Research Center', d:'Social media use fact sheets: which US adults use which platforms, by age.' },
     FTI: { t:'Federal Trade Commission', d:'Disclosures 101 for Social Media Influencers (2019, updated 2023): disclose any material connection clearly.' },
     UTM: { t:'Google Analytics', d:'Campaign URL parameters (utm_source, utm_medium, utm_campaign) for tracking where visits come from.' },
+    CSP: { t:'Federal Trade Commission', d:'CAN-SPAM Act: A Compliance Guide for Business: honest headers and subject lines, a physical address, a clear opt-out honoured within 10 business days.' },
+    TCP: { t:'Federal Communications Commission', d:'Telephone Consumer Protection Act (TCPA) rules: prior express written consent for marketing texts sent with automated systems; the 2024 order on revoking consent (in force April 2025).' },
+    CTI: { t:'CTIA and US mobile carriers', d:'Messaging Principles and Best Practices; 10DLC registration for business texting from ordinary 10-digit numbers.' },
+    GYS: { t:'Google and Yahoo', d:'Email sender requirements (from February 2024): SPF, DKIM and DMARC, one-click unsubscribe, and low spam complaint rates for bulk senders.' },
+    AMP: { t:'Apple', d:'Mail Privacy Protection (2021): preloads email images, which makes open rates unreliable.' },
     GHC: { t:'Google Search Central', d:'Guidance on helpful, people-first content, and E-E-A-T from the Search Quality Rater Guidelines; guidance on AI-generated content.' }
   },
 
@@ -81,6 +86,7 @@ window.COURSE = {
         ['Average system replacement', '$11,000, about 35% gross margin'],
         ['Replacement options (from Module 3)', 'Good $9,200 · Better $11,000 · Best $14,500; most buyers pick Better, so the average stays about $11,000'],
         ['Comfort Club plan', '$15 a month ($180 a year), about 70% margin, 1,000 members, 75% renew each year; includes two tune-ups a year and priority booking'],
+        ['Tune-up (non-members)', '$129 a visit; Comfort Club members get two a year included'],
         ['Past customers on file', 'About 6,000 households in the field-service software, with phone numbers; about 4,000 have an email address; almost none have ever been emailed'],
         ['Marketing spend', '$6,000 a month: $4,800 Google Ads plus $1,200 agency fee (about 3.8% of revenue)'],
         ['Reputation', '4.6 stars from 310 Google reviews; about 4 new reviews a month arrive without asking'],
@@ -113,7 +119,7 @@ window.COURSE = {
     { id:'m05', stage:1, t:'Brand', ready:true },
     { id:'m06', stage:1, t:'Content marketing', ready:true },
     { id:'m07', stage:1, t:'Social media', ready:true },
-    { id:'m08', stage:1, t:'Email and text marketing' },
+    { id:'m08', stage:1, t:'Email and text marketing', ready:true },
     { id:'m09', stage:1, t:'Websites, landing pages and funnels' },
     { id:'m10', stage:1, t:'SEO and local search' },
     { id:'m11', stage:1, t:'Paid ads' },
