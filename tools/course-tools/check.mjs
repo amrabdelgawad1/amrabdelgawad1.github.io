@@ -29,7 +29,7 @@ const page = async (w, h, url) => {
       blank: calc({ spend: '', leads: '', appts: '', deals: '', profit: '' }),
       noDeals: calc({ spend: '3000', leads: '120', appts: '12', deals: '0', profit: '10000' }),
       commas: calc({ spend: '$4,500', leads: '180', appts: '36', deals: '3', profit: '12,000' }),
-      v: [verdict(4000, 12000), verdict(8000, 12000), verdict(13000, 12000), verdict(NaN, 1000), verdict(500, 0)],
+      v: [verdict(4200, 12000), verdict(4300, 12000), verdict(13000, 12000), verdict(NaN, 1000), verdict(500, 0), verdict(12000, 12000)],
       tot: totalOf({ ch: [{ spend: '4500', leads: '180', appts: '36', deals: '3', profit: '12000' }, { spend: '6000', leads: '90', appts: '27', deals: '2', profit: '15000' }] })
     };
   });
@@ -41,7 +41,7 @@ const page = async (w, h, url) => {
   ok(r.noDeals.cpd === null || Number.isNaN(r.noDeals.cpd), 'no deals: cost per deal is left blank, not infinite');
   ok(r.noDeals.net === -3000, 'no deals: profit after marketing is minus the spend');
   ok(r.commas.cpl === 25, 'typed "$4,500" and "12,000" read as numbers');
-  ok(JSON.stringify(r.v) === JSON.stringify(['healthy', 'thin', 'losing', null, null]), 'verdict: healthy, thin, losing, and none without numbers');
+  ok(JSON.stringify(r.v) === JSON.stringify(['healthy', 'thin', 'losing', null, null, 'losing']), 'verdict: healthy up to 35% of profit, thin above, losing at 100% or more, none without numbers');
   ok(r.tot.spend === 10500 && r.tot.deals === 5 && r.tot.cpd === 2100 && r.tot.profit === 13200, 'all channels: 10,500 spent, 5 deals, 2,100 per deal, blended profit 13,200');
   await p.context().close();
 }
