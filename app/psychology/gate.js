@@ -49,7 +49,10 @@
     if (d && d.kv && (d.at || 0) > at) { kv = d.kv; at = d.at || 0; keepLocal(); }
     else if (l && (!d || (d.at || 0) < at)) push();          // this device has newer work: send it up
   }
-  window.addEventListener('pagehide', () => { if (timer) { clearTimeout(timer); push(); } });
+  // Phones often skip pagehide when an app is closed from the background, so also send on hide
+  const flushNow = () => { if (timer) { clearTimeout(timer); push(); } };
+  window.addEventListener('pagehide', flushNow);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushNow(); });
   function store(){
     return {
       load: () => Promise.resolve(Object.assign({}, kv)),
