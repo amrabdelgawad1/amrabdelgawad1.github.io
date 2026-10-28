@@ -109,15 +109,18 @@
   const qState = (mod, it) => S.quizzes[key(mod, it)] || {};
   const sub = (mod, it) => S.submissions[key(mod, it)] || null;
   const isDone = (mod, it) => !!S.done[key(mod, it)];
-  const quizPassed = (mod, it) => !!(qState(mod, it).latest && qState(mod, it).latest.passed);
+  const quizPassed = (mod, it) => { const q = qState(mod, it); return !!(q.passed || (q.latest && q.latest.passed)); }; // passed once = stays passed
   const qCount = it => it.quiz ? (it.quiz.questions ? it.quiz.questions.length : it.quiz.count || 0) : 0;
   const passMark = it => (it.quiz && it.quiz.passMark) || 80;
+  const needCount = (mark, total) => Math.ceil(mark * total / 100); // scores round down, so 85% of 25 needs 22
+  const passText = it => 'Pass: ' + needCount(passMark(it), qCount(it)) + ' of ' + qCount(it);
 
   // Labels: "1.1", "1.2 Session 2", and the lesson heading without its number
-  const shortLabel = (e) => e.it.type === 'lesson' ? (e.group ? e.it.title.split(':')[0].trim() : e.it.id) : e.it.title;
+  const idLabel = (e) => e.it.type === 'lesson' ? (e.group ? e.it.title.split(':')[0].trim() : e.it.id) : e.it.title;
+  const shortLabel = (e) => e.it.shortTitle || idLabel(e);
   const inGroupLabel = e => e.it.title.replace(/^[\d.]+\s+/, '').split(':')[0].trim();
   const heading = it => it.title.includes(':') ? it.title.split(':').slice(1).join(':').trim() : it.title.replace(/^[\d.]+\s+/, '');
-  const quizLabel = e => 'Quiz ' + shortLabel(e);
+  const quizLabel = e => 'Quiz ' + idLabel(e);
 
   // The 24 things that count toward a module (each lesson, each lesson quiz, the drill, the checkpoint)
   function units(mod){
@@ -285,13 +288,13 @@
       '<span class="txt"><span class="n">' + esc(title) + '</span><span class="m">' + esc(meta) + '</span></span>' + status + '</a></li>';
     const quizTile = '<span class="quiz-tile" aria-hidden="true">' + IC.quiz + '</span>';
     const lessonStatus = (it, isCur) => isDone(mod, it) ? chip('Done', 'ok') : isCur ? chip('In progress', 'warm') : chip('Not started');
-    const quizStatus = it => { const q = qState(mod, it); return q.latest && q.latest.passed ? chip('Passed', 'ok') : (q.open || q.latest) ? chip('In progress', 'warm') : chip('Not started'); };
-    const quizMeta = it => { const q = qState(mod, it); return plural(qCount(it), 'question') + (q.latest ? ' · scored ' + q.latest.score + '%' : q.open ? ' · ' + q.open.answered + ' answered' : ''); };
+    const quizStatus = it => { const q = qState(mod, it); return quizPassed(mod, it) ? chip('Passed', 'ok') : (q.open || q.latest) ? chip('In progress', 'warm') : chip('Not started'); };
+    const quizMeta = it => { const q = qState(mod, it); return plural(qCount(it), 'question') + (q.latest ? ' · scored ' + q.latest.score + '%' + (q.best > q.latest.score ? ' · best ' + q.best + '%' : '') : q.open ? ' · ' + q.open.answered + ' answered' : ''); };
     // A lesson's quiz gets its own row once the lesson is started; before that it's folded into the lesson's line
     const showQuizRow = it => isDone(mod, it) || curHref === '#/m/' + mod.id + '/l/' + it.id || !!(qState(mod, it).latest || qState(mod, it).open) || (nx && nx.e.it.id === it.id);
     const lessonLines = (e, cls) => {
       const it = e.it, lessonHref = '#/m/' + mod.id + '/l/' + it.id, isCur = curHref === lessonHref, sep = showQuizRow(it);
-      const title = cls === 'srow' ? inGroupLabel(e) + ': ' + heading(it) : it.title;
+      const title = it.shortTitle || (cls === 'srow' ? inGroupLabel(e) + ': ' + heading(it) : it.title);
       const meta = sep || !it.quiz ? 'Lesson' + (cls === 'srow' ? '' : ' · ' + (it.source || '')) : 'Lesson + ' + qCount(it) + '-question quiz' + (cls === 'srow' ? '' : ' · ' + (it.source || ''));
       let h = row(cls, lessonHref, img(contentPath(mod, it.thumbnail), 'thumb', ''), title, meta, lessonStatus(it, isCur), isCur);
       if (it.quiz && sep) {
@@ -320,9 +323,9 @@
       } else if (it.type === 'checkpoint') {
         const href = '#/m/' + mod.id + '/c/' + it.id, locked = !mod.checkpointOpen;
         const q = qState(mod, it);
-        const st = locked ? chip('Locked') : q.latest && q.latest.passed ? chip('Passed', 'ok') : (q.open || q.latest) ? chip('In progress', 'warm') : chip('Not started');
+        const st = locked ? chip('Locked') : quizPassed(mod, it) ? chip('Passed', 'ok') : (q.open || q.latest) ? chip('In progress', 'warm') : chip('Not started');
         parts.push(row('item' + (locked ? ' locked' : ''), href, img(contentPath(mod, it.thumbnail), 'thumb', ''), it.title,
-          'Quiz · ' + plural(qCount(it), 'question') + ' · pass at ' + passMark(it) + '%' + (q.latest ? ' · scored ' + q.latest.score + '%' : ''), st, curHref === href));
+          'Quiz · ' + plural(qCount(it), 'question') + ' · ' + passText(it).toLowerCase() + (q.latest ? ' · scored ' + q.latest.score + '%' : ''), st, curHref === href));
       }
     });
     mount(header({ back:'#/', backLabel:'Back to course home', title:'Module ' + mod.number }) +
@@ -330,7 +333,7 @@
         '<div class="stack" data-s="g8">' +
           '<span class="label o">Skill focus · ' + esc(mod.skillFocus || '') + '</span>' +
           '<h1 class="display">' + esc(mod.title) + '</h1>' +
-          '<p class="lead">' + esc(mod.description || '') + '</p>' +
+          '<p class="lead">' + esc(mod.shortDescription || mod.description || '') + '</p>' +
           '<div class="row" role="progressbar" aria-label="Module progress" aria-valuemin="0" aria-valuemax="' + p.total + '" aria-valuenow="' + p.done + '">' + bar(pct(p.done, p.total)) + '<span class="small muted">' + p.done + ' of ' + p.total + '</span></div>' +
           (S.isAdmin && !mod.openForLearners ? '<p class="note">Admin view: this module is still locked for you as a learner.</p>' : '') +
         '</div>' +
@@ -362,7 +365,7 @@
     mount(header({ back:'#/m/' + mod.id, backLabel:'Back to Module ' + mod.number, ctx:'Module ' + mod.number + (e.group ? ' · ' + e.group.title : ''), title:e.group ? inGroupLabel(e) : 'Lesson ' + it.id }) +
       '<main id="main" class="col">' + img(contentPath(mod, it.thumbnail), 'banner', it.title) +
       '<article class="lesson page has-bar">' +
-        '<span class="label o">Lesson ' + n + ' of ' + ls.length + (it.source ? ' · ' + esc(it.source) : '') + '</span>' +
+        '<span class="label o">Lesson ' + n + ' of ' + ls.length + ((it.subtitle || it.source) ? ' · ' + esc(it.subtitle || it.source) : '') + '</span>' +
         '<h1>' + esc(heading(it)) + '</h1>' +
         '<div class="prose">' + MD.render(it.bodyMarkdown) + '</div>' +
         (files.length ? '<section class="stack" aria-labelledby="filesH"><h2 class="sub" id="filesH" data-s="fs16">Files</h2><p class="note">Original guide page. Where it differs from the lesson, the lesson is correct.</p><div class="files">' + files.join('') + '</div></section>' : '') +
@@ -426,7 +429,7 @@
     const { mod, e } = Q, it = e.it, qs = it.quiz.questions, q = qs[Q.idx], multi = q.type === 'multiple';
     const fb = Q.submitted ? Q.answered[q.id] : null;
     const back = it.type === 'checkpoint' ? '#/m/' + mod.id + '/c/' + it.id : '#/m/' + mod.id + '/l/' + it.id;
-    const ctx = it.type === 'checkpoint' ? 'Module ' + mod.number + ' checkpoint' : 'Quiz · ' + shortLabel(e);
+    const ctx = it.type === 'checkpoint' ? 'Module ' + mod.number + ' checkpoint' : 'Quiz · ' + idLabel(e);
     const opts = q.options.map(o => {
       const sel = fb ? fb.picks.includes(o.id) : Q.picks.has(o.id);
       const cls = fb && sel ? (fb.right ? ' right' : ' wrong') : sel ? ' sel' : '';
@@ -434,7 +437,7 @@
         '<span class="bdg" aria-hidden="true">' + esc(o.id) + '</span><span><span class="vh">Option ' + esc(o.id) + ': </span>' + esc(o.text) + '</span></label>';
     }).join('');
     const last = Q.idx === qs.length - 1;
-    mount(header({ back, close:true, backLabel:'Leave the quiz. Your answers so far are saved.', ctx, title:'Question ' + (Q.idx + 1) + ' of ' + qs.length, aside:'Pass ' + passMark(it) + '%' }) +
+    mount(header({ back, close:true, backLabel:'Leave the quiz. Your answers so far are saved.', ctx, title:'Question ' + (Q.idx + 1) + ' of ' + qs.length, aside:passText(it) }) +
       bar(pct(Q.idx + 1, qs.length), 'qbar') +
       '<main id="main" class="col"><div class="page has-bar" data-s="quizpage">' +
         '<span class="label">' + (multi ? 'Multiple choice' : 'Single choice') + '</span>' +
@@ -473,6 +476,20 @@
       $('qSubmit').disabled = !Q.picks.size;
     });
   }
+  // Starting over with an unfinished attempt: the server keeps that attempt on record (it never counts)
+  function startOverView(mod, e){
+    const it = e.it, q = qState(mod, it), isCp = it.type === 'checkpoint';
+    const name = isCp ? 'the checkpoint' : 'this quiz';
+    mount(header({ back:isCp ? '#/m/' + mod.id + '/c/' + it.id : '#/m/' + mod.id + '/l/' + it.id, backLabel:'Back', ctx:isCp ? 'Module ' + mod.number + ' checkpoint' : 'Quiz · ' + idLabel(e), title:'Start over?' }) +
+      '<main id="main" class="col"><div class="page has-bar"><div class="stack" data-s="g8">' +
+        '<h1 data-s="h22">Start ' + name + ' over?</h1>' +
+        '<p class="lead" data-s="fs15">You’ve answered ' + plural(q.open.answered, 'question') + ' so far. Your answers so far stay on record but won’t count. You’ll start again from question 1.</p>' +
+      '</div></div></main>' +
+      '<div class="bar-foot"><div class="col">' +
+        '<a class="btn line lg" href="#/m/' + esc(mod.id) + '/q/' + esc(it.id) + '">Continue where I left off</a>' +
+        '<button class="btn orange lg wider" type="button" data-act="restart">Start over</button>' +
+      '</div></div>', { title:'Start over?', acts:{ restart: () => location.replace('#/m/' + mod.id + '/q/' + it.id + '/new/ok') } });
+  }
   let resultCache = null;
   async function quizFinish(){
     const { mod } = Q;
@@ -500,22 +517,23 @@
     const nextMod = S.modules.find(m => m.number === mod.number + 1);
     const msg = r.passed
       ? (isCp ? (nextMod && nextMod.open ? 'Passed. Module ' + (mod.number + 1) + ' is open.' : 'Passed. You’ve finished Module ' + mod.number + '.') : 'Passed. Move to the next lesson.')
-      : 'Not passed yet. You need ' + r.passMark + '%.';
+      : quizPassed(mod, it) ? 'This try was under ' + r.passMark + '%. You already passed this quiz, so nothing is locked.'
+      : 'Not passed yet. You need ' + needCount(r.passMark, r.total) + ' of ' + r.total + '.';
     // Next: the unit after this quiz (or the next module after the checkpoint)
     const us = units(mod), i = us.findIndex(u => (u.kind === 'quiz' || u.kind === 'checkpoint') && u.e.it.id === it.id);
     let nx = us.slice(i + 1).find(u => !u.locked);
     let nextHref, nextLabel;
     if (isCp) { nextHref = nextMod && nextMod.open ? '#/m/' + nextMod.id : '#/'; nextLabel = nextMod && nextMod.open ? 'Next: Module ' + nextMod.number : 'Course home'; }
-    else if (nx) { nextHref = nx.href; nextLabel = 'Next: ' + (nx.e.group && nx.kind === 'lesson' && e.group && nx.e.group.id === e.group.id ? inGroupLabel(nx.e) : nx.label); }
+    else if (nx) { nextHref = nx.href; nextLabel = 'Next: ' + (nx.e.group && nx.kind === 'lesson' && e.group && nx.e.group.id === e.group.id ? (nx.e.it.shortTitle || inGroupLabel(nx.e)) : nx.label); }
     else { nextHref = '#/m/' + mod.id; nextLabel = 'Back to Module ' + mod.number; }
     const review = r.review.map(x => '<li class="rv' + (x.right ? '' : ' wrong') + '"><div class="between"><span class="q">Q' + x.number + ' · ' + esc(x.prompt) + '</span><span class="v ' + (x.right ? 'ok' : 'no') + '">' + (x.right ? 'Right' : 'Wrong') + '</span></div><p class="e">' + esc(x.explanation || '') + '</p></li>').join('');
-    mount(header({ back:'#/m/' + mod.id, backLabel:'Back to Module ' + mod.number, ctx:isCp ? 'Module ' + mod.number + ' checkpoint' : 'Quiz · ' + shortLabel(e), title:'Your result' }) +
+    mount(header({ back:'#/m/' + mod.id, backLabel:'Back to Module ' + mod.number, ctx:isCp ? 'Module ' + mod.number + ' checkpoint' : 'Quiz · ' + idLabel(e), title:'Your result' }) +
       '<main id="main" class="col"><div class="page has-bar" data-s="pt22">' +
         '<section class="score" aria-labelledby="scoreMsg">' +
           '<span class="label">' + r.correct + ' of ' + r.total + ' correct · Pass mark ' + r.passMark + '%</span>' +
           '<span class="num" aria-hidden="true">' + r.score + '%</span>' +
           '<h1 class="msg" id="scoreMsg" data-s="m0"><span class="vh">You scored ' + r.score + '%. </span>' + esc(msg) + '</h1>' +
-          '<span class="fine">' + (r.passed ? 'You can retake anytime. Your latest score is what counts.' : 'Review the lesson, then retake it. Your latest score is what counts.') + '</span>' +
+          '<span class="fine">' + (r.passed || quizPassed(mod, it) ? 'Retake it anytime to practise. Once you’ve passed, a lower score won’t lock anything.' : 'Review the lesson, then retake it.') + '</span>' +
         '</section>' +
         '<section class="stack" aria-labelledby="rvH"><h2 class="sub" id="rvH">Review</h2><ol class="stack" data-s="list">' + review + '</ol>' +
           '<p class="note">Each answer is marked right or wrong. The correct option isn’t shown, but every explanation is.</p></section>' +
@@ -545,15 +563,15 @@
           (x.ok ? '<span><span class="vh">Done: </span>' + esc(x.text) + '</span>' : '<a href="' + esc(x.href) + '"><span class="vh">Not done yet: </span>' + esc(x.text) + '</a>') + '</li>').join('') + '</ul></section>';
       body += '</div></main><div class="bar-foot"><div class="col"><a class="btn dark lg go" href="' + esc(left[0] ? left[0].href : '#/m/' + mod.id) + '"><span>' + esc(left[0] ? 'Next: ' + left[0].text : 'Back to the module') + '</span>' + IC.next + '</a></div></div>';
     } else {
-      body = '<p class="lead" data-s="fs15">' + plural(qCount(it), 'mixed question') + ' from the whole module. Pass at ' + passMark(it) + '% to unlock ' + nextMod + '. Retake it as often as you like; your latest score counts.</p>' +
-        (q.latest ? '<section class="card stack"><span class="label">Your last try</span><p data-s="p15"><b>' + q.latest.score + '%</b> · ' + (q.latest.passed ? 'Passed' : 'Not passed yet') + ' · ' + when(q.latest.finishedAt) + '</p><a href="#/m/' + esc(mod.id) + '/r/' + esc(q.latest.id) + '">See that result</a></section>' : '') +
+      body = '<p class="lead" data-s="fs15">' + plural(qCount(it), 'mixed question') + ' from the whole module. Get ' + needCount(passMark(it), qCount(it)) + ' of ' + qCount(it) + ' right (' + passMark(it) + '%) to unlock ' + nextMod + '. Retake it as often as you like.</p>' +
+        (q.latest ? '<section class="card stack"><span class="label">Your last try</span><p data-s="p15"><b>' + q.latest.score + '%</b> · ' + (q.latest.passed ? 'Passed' : quizPassed(mod, it) ? 'Under the mark, but you’ve already passed' : 'Not passed yet') + ' · ' + when(q.latest.finishedAt) + '</p><a href="#/m/' + esc(mod.id) + '/r/' + esc(q.latest.id) + '">See that result</a></section>' : '') +
         '</div></main><div class="bar-foot"><div class="col"><a class="btn dark lg" href="#/m/' + esc(mod.id) + '/q/' + esc(it.id) + (q.open ? '' : q.latest ? '/new' : '') + '">' +
         (q.open ? 'Continue the checkpoint (' + q.open.answered + ' of ' + qCount(it) + ' answered)' : q.latest ? 'Take it again' : 'Start the checkpoint') + '</a></div></div>';
     }
     mount(header({ back:'#/m/' + mod.id, backLabel:'Back to Module ' + mod.number, ctx:'Module ' + mod.number, title:'Checkpoint' }) +
       '<main id="main" class="col"><div class="page gate has-bar">' +
         img(contentPath(mod, it.thumbnail), open ? 'hero-img' : 'faded', '') +
-        '<span class="label o">Checkpoint · ' + plural(qCount(it), 'question') + ' · Pass ' + passMark(it) + '%</span>' +
+        '<span class="label o">Checkpoint · ' + plural(qCount(it), 'question') + ' · ' + passText(it) + '</span>' +
         '<h1 class="display" data-s="fs30">' + esc(it.title) + '</h1>' +
         (open ? '' : '<p class="lead" data-s="fs15">' + IC.lock.replace('<svg', '<svg width="16" height="16" data-s="va"') + ' Locked for now. Pass every lesson quiz and submit the written drill to open it.</p>') +
         body,
@@ -819,7 +837,10 @@
       if (parts[2] === 'q' && e.it.quiz) {
         if (e.it.type === 'checkpoint' && !mod.checkpointOpen) { location.replace('#/m/' + mod.id + '/c/' + e.it.id); return; }
         if (Q && Q.attempt && Q.e.it.id === e.it.id && parts[4] !== 'new') return questionView();
-        return quizStart(mod, e, parts[4] === 'new');
+        const openTry = qState(mod, e.it).open;
+        // Start over only asks when there are answers to give up; an empty unfinished try is simply resumed
+        if (parts[4] === 'new' && openTry && openTry.answered > 0 && parts[5] !== 'ok') return startOverView(mod, e);
+        return quizStart(mod, e, parts[4] === 'new' && !(openTry && openTry.answered === 0));
       }
       if (parts[2] === 'c' && e.it.type === 'checkpoint') return checkpointView(mod, e);
       if (parts[2] === 'a' && e.it.type === 'assignment') return assignmentView(mod, e);
