@@ -579,7 +579,11 @@
       // Their app login gets the sections that come with the role
       const m = loginOf(a);
       if (m) {
-        const { error: e2 } = await db.from('members').update({ access: ROLE_ACCESS[t.value] }).eq('user_id', m.user_id);
+        // Keep switches that aren't part of a role (Deal tools, Learning Hub, Acquisitions course); swap only the role's sections
+        const cur = await db.from('members').select('access').eq('user_id', m.user_id).maybeSingle();
+        const roleParts = new Set(Object.values(ROLE_ACCESS).flat());
+        const keep = Array.isArray(cur.data && cur.data.access) ? cur.data.access.filter(s => !roleParts.has(s)) : [];
+        const { error: e2 } = cur.error ? cur : await db.from('members').update({ access: [...new Set([...ROLE_ACCESS[t.value], ...keep])] }).eq('user_id', m.user_id);
         if (e2) { toast(a.name + ' is now ' + ROLES[t.value] + ', but their access couldn’t be changed. Set it in Invite and access.'); return drawAgents(); }
       }
       toast(a.name + ' is now ' + ROLES[t.value] + '. ' + roleSees(t.value)); return drawAgents();

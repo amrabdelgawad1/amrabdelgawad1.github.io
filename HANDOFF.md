@@ -247,3 +247,21 @@ Course access already depends only on `course_has_access()`, and every course ta
 4. Add an invite path. It must run with the service-role key, so put it in an edge function like `team-access`, without creating a `members` row. Show a "Students" list on the course Admin page.
 
 No progress tables change, and team members aren't affected.
+
+## 12. Review of round 1 (reviewer)
+
+Reviewed on branch `review/course-round1`, after round 1 was merged to `main`.
+
+**Checked and fine**
+- No course content, answers, explanations or answer key in the repo or its history. `.gitignore` blocks the kit and `module-*.json`.
+- The migration runs cleanly on a fresh Postgres and again on top of itself. With Module 1 loaded, a learner's `course_state()` has no `correct` flags, explanations or answer key, and `course_modules` can't be read directly.
+- Colors, fonts, radii and the status chips in `course/course.css` match the approved mockup.
+
+**Fixed in this branch**
+1. **Answers could be found by trial and error, with no trace.** `course_quiz_start(..., p_restart => true)` deleted the unfinished attempt. A learner could answer, see "wrong", start over, and try the next option until they knew every answer, checkpoint included. Now a started-over attempt is closed and kept with `abandoned = true`, scored on what was answered. It never counts as the latest score or toward passing, so honest learners see no change, and Admin shows it with a "Started over" chip. New column: `course_attempts.abandoned`. The migration hasn't been run on the live project yet, so the change is in the same file.
+2. **Changing an agent's role wiped their other access.** In `app/account.js`, a role change replaced `members.access` with only the role's sections, which silently removed Deal tools, Learning Hub and the Acquisitions course switch. It now swaps only the role sections and keeps the rest.
+3. Version bumps: `account.js?v=10`, `talents-v57`, `admin.js?v=2`, `course-v2`.
+
+**For the next round**
+- Add a test for the started-over rule to `test-sql.mjs`. I couldn't run the test scripts in my session because its package registry is blocked. I tested the rule directly in Postgres.
+- Round 1 went to `main` before review. Keep later rounds on a branch with an open pull request until they've been reviewed.

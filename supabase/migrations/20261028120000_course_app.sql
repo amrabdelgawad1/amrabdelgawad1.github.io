@@ -60,10 +60,12 @@ create table if not exists public.course_attempts (
   correct int,
   score int,                                   -- percent, set when finished
   passed boolean,
+  abandoned boolean not null default false,    -- started over before finishing: kept on record, never counts as the latest score
   started_at timestamptz not null default now(),
   finished_at timestamptz,
   updated_at timestamptz not null default now()
 );
+alter table public.course_attempts add column if not exists abandoned boolean not null default false;
 create index if not exists course_attempts_user_item on public.course_attempts (user_id, module_id, item_id, finished_at desc);
 
 -- The written drill. answers: { "1": "text", "2": "text", ... } keyed by task number.
@@ -211,7 +213,7 @@ end $$;
 create or replace function public.course_quiz_passed(p_user uuid, p_module text, p_item text)
 returns boolean language sql stable security definer set search_path = public, pg_temp as $$
   select coalesce((select a.passed from public.course_attempts a
-                    where a.user_id = p_user and a.module_id = p_module and a.item_id = p_item and a.finished_at is not null
+                    where a.user_id = p_user and a.module_id = p_module and a.item_id = p_item and a.finished_at is not null and not a.abandoned
                     order by a.finished_at desc limit 1), false)
 $$;
 
@@ -300,9 +302,9 @@ begin
     'quizzes', coalesce((
       select jsonb_object_agg(k.key, jsonb_build_object(
                'latest', (select jsonb_build_object('id', a.id, 'score', a.score, 'correct', a.correct, 'total', a.total, 'passed', a.passed, 'finishedAt', a.finished_at)
-                            from public.course_attempts a where a.user_id = uid and a.module_id = k.module_id and a.item_id = k.item_id and a.finished_at is not null
+                            from public.course_attempts a where a.user_id = uid and a.module_id = k.module_id and a.item_id = k.item_id and a.finished_at is not null and not a.abandoned
                             order by a.finished_at desc limit 1),
-               'tries', (select count(*) from public.course_attempts a where a.user_id = uid and a.module_id = k.module_id and a.item_id = k.item_id and a.finished_at is not null),
+               'tries', (select count(*) from public.course_attempts a where a.user_id = uid and a.module_id = k.module_id and a.item_id = k.item_id and a.finished_at is not null and not a.abandoned),
                'open', (select jsonb_build_object('id', a.id, 'answered', (select count(*) from jsonb_object_keys(a.answers)))
                           from public.course_attempts a where a.user_id = uid and a.module_id = k.module_id and a.item_id = k.item_id and a.finished_at is null
                           order by a.started_at desc limit 1)))
@@ -361,7 +363,10 @@ end $$;
 -- Quizzes (graded here, never in the browser)
 -- ---------------------------------------------------------------------------
 
--- Starts an attempt, or resumes the unfinished one. p_restart throws away an unfinished attempt.
+-- Starts an attempt, or resumes the unfinished one. p_restart closes an unfinished attempt as abandoned
+-- (scored on what was answered, kept on record for Amr, never the latest score) and starts a new one.
+-- Deleting it instead would let someone try an option, see "wrong", start over and try the next one,
+-- with no trace.
 -- Returns the attempt id and, for questions already answered, the picks and their feedback.
 create or replace function public.course_quiz_start(p_module text, p_item text, p_restart boolean default false)
 returns jsonb language plpgsql volatile security definer set search_path = public, pg_temp as $$
@@ -373,7 +378,11 @@ declare
 begin
   if q is null then raise exception 'course: no quiz here' using errcode = 'P0002'; end if;
   if p_restart then
-    delete from public.course_attempts where user_id = uid and module_id = p_module and item_id = p_item and finished_at is null;
+    update public.course_attempts a
+       set correct = (select count(*) from jsonb_each(a.answers) e where (e.value ->> 'right')::boolean),
+           score = floor((select count(*) from jsonb_each(a.answers) e where (e.value ->> 'right')::boolean) * 100.0 / greatest(a.total, 1)),
+           passed = false, abandoned = true, finished_at = now(), updated_at = now()
+     where a.user_id = uid and a.module_id = p_module and a.item_id = p_item and a.finished_at is null;
   end if;
   select * into att from public.course_attempts
    where user_id = uid and module_id = p_module and item_id = p_item and finished_at is null
@@ -581,7 +590,7 @@ begin
              'checkpoint', (select jsonb_build_object('module', m.number, 'score', a.score, 'passed', a.passed, 'at', a.finished_at)
                               from public.course_attempts a join public.course_modules m on m.id = a.module_id
                               join lateral public.course_flat(m.content) f on f.item_id = a.item_id and f.kind = 'checkpoint'
-                             where a.user_id = c.user_id and a.finished_at is not null
+                             where a.user_id = c.user_id and a.finished_at is not null and not a.abandoned
                              order by a.finished_at desc limit 1),
              'waiting', (select count(*) from public.course_submissions s where s.user_id = c.user_id and s.status = 'submitted'))
            order by coalesce(mem.name, u.email))
@@ -624,7 +633,7 @@ begin
                            from public.course_modules m, public.course_module_progress(p_user, m.id) pr), '[]'::jsonb),
     'attempts', coalesce((select jsonb_agg(jsonb_build_object('id', a.id, 'moduleId', a.module_id, 'itemId', a.item_id,
                                    'title', coalesce(f.item -> 'quiz' ->> 'title', f.item ->> 'title'), 'lessonTitle', f.item ->> 'title', 'kind', f.kind,
-                                   'score', a.score, 'correct', a.correct, 'total', a.total, 'passed', a.passed,
+                                   'score', a.score, 'correct', a.correct, 'total', a.total, 'passed', a.passed, 'abandoned', a.abandoned,
                                    'startedAt', a.started_at, 'finishedAt', a.finished_at) order by a.finished_at desc)
                             from public.course_attempts a
                             left join public.course_modules m on m.id = a.module_id
@@ -650,7 +659,7 @@ begin
   return jsonb_build_object(
     'attempt', att.id, 'userId', att.user_id, 'moduleId', att.module_id, 'itemId', att.item_id,
     'score', att.score, 'correct', att.correct, 'total', att.total, 'passed', att.passed, 'passMark', att.pass_mark,
-    'startedAt', att.started_at, 'finishedAt', att.finished_at,
+    'abandoned', att.abandoned, 'startedAt', att.started_at, 'finishedAt', att.finished_at,
     'title', (select coalesce(f.item -> 'quiz' ->> 'title', f.item ->> 'title') from public.course_modules m, public.course_flat(m.content) f
                where m.id = att.module_id and f.item_id = att.item_id),
     'lessonTitle', (select f.item ->> 'title' from public.course_modules m, public.course_flat(m.content) f

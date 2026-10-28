@@ -63,7 +63,7 @@
       '<span class="m">' + (s.submittedAt ? 'Sent ' + dateTime(s.submittedAt) : 'Not sent yet') + (s.fileName ? ' · file attached' : '') + '</span></span>' + statusChip(s.status) + '</a></li>').join('');
     const atts = L.attempts.map(a => '<li><a class="item" href="#/admin/u/' + esc(uid) + '/a/' + esc(a.id) + '"><span class="txt"><span class="n">' + esc(quizName(a)) + '</span>' +
       '<span class="m">' + a.score + '% · ' + a.correct + ' of ' + a.total + ' · ' + dateTime(a.finishedAt) + ' · ' + duration(a.startedAt, a.finishedAt) + '</span></span>' +
-      chip(a.passed ? 'Passed' : 'Not passed', a.passed ? 'ok' : 'err') + '</a></li>').join('');
+      (a.abandoned ? chip('Started over', 'err') : chip(a.passed ? 'Passed' : 'Not passed', a.passed ? 'ok' : 'err')) + '</a></li>').join('');
     mount(header(Object.assign(back('#/admin', 'Back to learners'), { ctx:'Admin', title:L.name })) +
       '<main id="main" class="col"><div class="page">' +
         '<div class="stack" data-s="g4"><h1 data-s="h22">' + esc(L.name) + '</h1><span class="small muted">' + esc(L.email || '') + '</span></div>' +
