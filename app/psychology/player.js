@@ -4,7 +4,7 @@
 (function () {
 'use strict';
 var C = window.COURSE, T = window.I18N;
-var root = document.documentElement, app = document.getElementById('app');
+var root = document.documentElement, app = document.getElementById('cpMain');
 
 /* ---------- storage: localStorage by default, or the Learning Hub's own store ---------- */
 var Store = (function () {
@@ -110,101 +110,166 @@ function itemLabel(m, it) {
 }
 function firstOpen(m, items) { for (var i = 0; i < items.length; i++) if (!isDone(m, items[i])) return items[i]; return items[0]; }
 
+/* ---------- Marketing-style layout: top bar, course-content sidebar, lesson pane ---------- */
+var OWNER = !!window.PSY_OWNER, asLearner = false;
+var STAGES = [[0, 1, 2, 3], [4, 5, 6, 7, 8, 9], [10, 11, 12], [13, 14, 15, 16, 17, 18, 19, 20], [21, 22, 23, 24, 25, 26]];
+function stageOf(m) { for (var i = 0; i < STAGES.length; i++) if (STAGES[i].indexOf(m.num) >= 0) return i; return STAGES.length - 1; }
+function examItem(m) { for (var i = 0; i < m.items.length; i++) if (m.items[i].type === 'exam') return m.items[i]; return null; }
+function examBest(m) { return Math.max(+Store.get('best:' + m.id) || 0, +Store.get('exam:' + m.id) || 0); }
+function passedMod(m) { var e = examItem(m); return !!e && (isDone(m, e) || examBest(m) >= e.exam.pass); }   /* the exam's done mark is only ever set by passing */
+function isOpen(m) { if (OWNER && !asLearner) return true; var i = C.modules.indexOf(m); return i <= 0 || passedMod(C.modules[i - 1]); }
+function itemDone(m, it) { return (it.type === 'exam' || it.type === 'quiz') ? (isDone(m, it) || (+Store.get(scoreKey(m, it)) || 0) >= it.exam.pass) : isDone(m, it); }
+function doneN(m) { var d = 0; m.items.forEach(function (it) { if (itemDone(m, it)) d++; }); return d; }
+function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+/* one 1280x720 template for the course, every module and every part (the Marketing course's template) */
+var mctx = document.createElement('canvas').getContext('2d');
+function mwrap(text, size, max) {
+  mctx.font = (lang === 'ar' ? 700 : 800) + ' ' + size + 'px ' + (lang === 'ar' ? '"IBM Plex Sans Arabic"' : '"Bricolage Grotesque"');
+  var words = text.split(' '), lines = [], line = '';
+  words.forEach(function (w) { var s = line ? line + ' ' + w : w; if (mctx.measureText(s).width > max && line) { lines.push(line); line = w; } else line = s; });
+  if (line) lines.push(line);
+  return lines;
+}
+function mthumb(o) {
+  var rtl = lang === 'ar', max = o.num ? 820 : 1060, size = 84, lines = mwrap(o.title, size, max);
+  while ((lines.length > 3 || lines.some(function (l) { return mctx.measureText(l).width > max; })) && size > 50) { size -= 4; lines = mwrap(o.title, size, max); }
+  var lh = Math.round(size * (rtl ? 1.3 : 1.08)), top = 360 - (lines.length * lh) / 2 + size * .8;
+  var X = rtl ? 1184 : 96, dir = rtl ? ' direction="rtl"' : ' direction="ltr"', disp = rtl ? 'IBM Plex Sans Arabic, sans-serif' : 'Bricolage Grotesque, sans-serif', body = rtl ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif';
+  return '<svg viewBox="0 0 1280 720" role="img" aria-label="' + esc(o.kick + ': ' + o.title) + '" xmlns="http://www.w3.org/2000/svg">' +
+    '<rect width="1280" height="720" fill="#14161B"/><rect x="' + (rtl ? 1120 : 96) + '" y="96" width="64" height="8" rx="4" fill="#FF5A1F" stroke="none"/>' +
+    '<text x="' + X + '" y="150"' + dir + ' fill="#FF5A1F" stroke="none" font-family="' + body + '" font-weight="700" font-size="26"' + (rtl ? '' : ' letter-spacing="4"') + '>' + esc(rtl ? o.kick : o.kick.toUpperCase()) + '</text>' +
+    (o.num ? '<text x="' + (rtl ? 96 : 1184) + '" y="640" direction="ltr" text-anchor="' + (rtl ? 'start' : 'end') + '" fill="#FF5A1F" stroke="none" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="230" opacity=".95">' + esc(o.num) + '</text>' : '') +
+    '<g fill="#FFFFFF" stroke="none" font-family="' + disp + '" font-weight="' + (rtl ? 700 : 800) + '" font-size="' + size + '">' + lines.map(function (l, i) { return '<text x="' + X + '" y="' + Math.round(top + i * lh) + '"' + dir + '>' + esc(l) + '</text>'; }).join('') + '</g>' +
+    (o.foot ? '<text x="' + X + '" y="636"' + dir + ' fill="#B9BDC6" stroke="none" font-family="' + body + '" font-weight="500" font-size="28">' + esc(o.foot) + '</text>' : '') + '</svg>';
+}
+function numParts(m) { return m.parts.filter(function (x) { return /^\d+$/.test(String(x.n)); }).length; }
+function numSecs(m) { return m.items.filter(function (x) { return x.type === 'section'; }).length; }
+function modThumb(m) { return mthumb({ kick: fmt(t('moduleN'), { n: m.num }), num: pad2(m.num), title: L(m.title), foot: numParts(m) + ' ' + t('partsL') + ' · ' + numSecs(m) + ' ' + t('sectionsL') }); }
+function partThumb(m, p) {
+  var its = partItems(m, p);
+  return mthumb({ kick: fmt(t('moduleN'), { n: m.num }) + ' · ' + partName(p), num: /^\d+$/.test(String(p.n)) ? m.num + '.' + p.n : '', title: L(p.title), foot: fmt(t('of'), { d: its.filter(function (x) { return itemDone(m, x); }).length, n: its.length }) });
+}
+
 /* ---------- router ---------- */
 function go(h) { if (location.hash === h) render(); else location.hash = h; }
-window.addEventListener('hashchange', function () { Pad.close(); Find.close(); Ink.detach(); render(); window.scrollTo(0, 0); });
+window.addEventListener('hashchange', function () { Pad.close(); Find.close(); Ink.detach(); menu(false); render(); window.scrollTo(0, 0); });
 
 function render() {
   Ink.detach();
   var parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
+  var m = parts[0] ? findMod(parts[0]) : null, it = null;
+  if (m && parts[1]) m.items.forEach(function (x) { if (x.id === parts[1]) it = x; });
+  side(m, it); topProg();
   if (parts[0] === 'review' || parts[0] === 'mistakes') return Rev.render(parts[0], parts[1] || '', parts[2] || '');
   if (parts[0] === 'glossary') return Find.glossary();
-  var m = parts[0] ? findMod(parts[0]) : null;
   if (!m) return renderHome();
+  if (!isOpen(m)) return renderLocked(m);
   Store.set('last', location.hash);
-  var it = null;
-  if (parts[1]) m.items.forEach(function (x) { if (x.id === parts[1]) it = x; });
   if (!it) return renderModule(m);
   return renderItem(m, it);
 }
+function topProg() { var p = allProgL(); var b = document.getElementById('cpProg'); if (b) { b.querySelector('i').style.width = p + '%'; b.querySelector('b').textContent = p + '%'; } }
+function allProgL() { var d = 0, n = 0; C.modules.forEach(function (m) { d += doneN(m); n += m.items.length; }); return n ? Math.round(100 * d / n) : 0; }
+function crumbs(list) { return '<nav class="cp-crumb"><a href="#/">' + esc(t('brand')) + '</a>' + list.map(function (x) { return '<span>/</span>' + (x[1] ? '<a href="' + x[1] + '">' + esc(x[0]) + '</a>' : '<span>' + esc(x[0]) + '</span>'); }).join('') + '</nav>'; }
+function nextModule() { for (var i = 0; i < C.modules.length; i++) { var m = C.modules[i]; if (isOpen(m) && doneN(m) < m.items.length) return m; } return C.modules[0]; }
+
+var ICON = { done: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"/><path d="M7.5 12.5l3 3 6-6.5" stroke="#fff"/></svg>',
+  todo: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>', lock: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  chev: '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>' };
+function side(cm, cit) {
+  var h = '<h2>' + esc(t('content')) + '</h2>' + (OWNER ? '<label class="cp-sideview"><input type="checkbox" data-learner' + (asLearner ? ' checked' : '') + '> ' + esc(t('asLearnerSide')) + '</label>' : '');
+  STAGES.forEach(function (list, si) {
+    h += '<div class="cp-stage">' + esc(t('stage' + si)) + '</div>';
+    list.forEach(function (n) {
+      var m = null; C.modules.forEach(function (z) { if (z.num === n) m = z; }); if (!m) return;
+      var open = isOpen(m), on = m === cm;
+      h += '<div class="cp-mod' + (on ? ' on open' : '') + '"><button type="button" aria-expanded="' + on + '"><span class="n">' + m.num + '</span><span><b>' + esc(L(m.title)) + '</b><small>' + esc(open ? fmt(t('ofDone'), { d: doneN(m), n: m.items.length }) : t('locked')) + '</small></span>' + ICON.chev + '</button><div class="cp-items">';
+      if (on || !open) {
+        var row = function (href, label, em, done, cur) { return '<a class="cp-item' + (open ? '' : ' locked') + '" href="' + href + '"' + (cur ? ' aria-current="page"' : '') + '><span class="st ' + (open ? (done ? 'done' : '') : 'lock') + '">' + (open ? (done ? ICON.done : ICON.todo) : ICON.lock) + '</span><span>' + (em ? '<em>' + esc(em) + '</em>' : '') + esc(label) + '</span></a>'; };
+        h += row('#/' + m.id, t('overview'), '', false, on && !cit);
+        if (open) m.parts.forEach(function (p) {
+          h += '<div class="cp-psub">' + esc(partName(p)) + ' · ' + esc(L(p.title)) + '</div>';
+          partItems(m, p).forEach(function (it) { h += row('#/' + m.id + '/' + it.id, L(it.title), it.type === 'section' ? it.label : '', itemDone(m, it), it === cit); });
+        });
+      } else h += '<a class="cp-item" href="#/' + m.id + '"><span class="st">' + ICON.todo + '</span><span>' + esc(t('overview')) + '</span></a>';
+      h += '</div></div>';
+    });
+  });
+  var s = document.getElementById('cpSide'); s.innerHTML = h;
+  var cur = s.querySelector('.cp-mod.on'); if (cur && window.innerWidth > 1024) { var r = cur.getBoundingClientRect(); if (r.top > s.clientHeight || r.top < 0) s.scrollTop = cur.offsetTop - 60; }
+}
+function menu(on) { var s = document.getElementById('cpSide'); if (!s) return; s.classList.toggle('open', on); document.getElementById('cpScrim').hidden = !on; document.getElementById('cpMenu').setAttribute('aria-expanded', on); }
 
 function renderHome() {
-  var p = allProg(), last = Store.get('last');
-  var h = '<div class="wrap"><section class="hero"><div><p class="eyebrow mag">' + esc(L(C.track)) + '</p><h1>' + esc(L(C.title)) + '</h1><p class="lede">' + esc(L(C.desc)) + '</p></div>' +
-    '<div>' + progHTML(p, true) + '<div class="resume"><button class="btn" id="resume" type="button">' + esc(last ? t('cont') : t('start')) + '</button>' + Rev.buttons('') + '<span class="revbtns"><button class="btn ghost" type="button" data-go="#/glossary">' + esc(t('glossary')) + '</button></span></div></div></section>';
-  h += '<div class="grid-mods">';
-  var cards = C.modules.map(function (m) { return { n: m.num, m: m }; }).concat(C.upcoming.map(function (u) { return { n: u.num, u: u }; }));
-  cards.sort(function (a, b) { return a.n - b.n; });
-  cards.forEach(function (c) {
-    if (c.u) { var u = c.u; h += '<div class="mcard soon" aria-disabled="true"><div class="ph">' + esc(t('soon')) + '</div><div class="body"><span class="eyebrow">' + esc(fmt(t('moduleN'), { n: u.num })) + '</span><span class="mt">' + esc(L(u.title)) + '</span></div></div>'; return; }
-    var m = c.m, mp = modProg(m), np = m.parts.filter(function (x) { return /^\d+$/.test(String(x.n)); }).length;
-    h += '<button class="mcard" type="button" data-go="#/' + m.id + '">' + thumb(m.thumb) + '<div class="body"><span class="eyebrow">' + esc(fmt(t('moduleN'), { n: m.num })) + ' · ' + esc(m.code) + '</span><span class="mt">' + esc(L(m.title)) + '</span><span class="meta">' + esc(fmt(t('meta'), { p: np, s: m.items.filter(function (x) { return x.type === 'section'; }).length })) + '</span>' + progHTML(mp) + '</div></button>';
+  var nx = nextModule(), started = doneN(nx) > 0;
+  var h = '<div class="cp-wrap"><section class="cp-hero"><span class="cp-thumb">' + mthumb({ kick: t('courseKick'), title: L(C.title), foot: fmt(t('homeFoot'), { n: C.modules.length }) }) + '</span>' +
+    '<h1 class="cp-h1">' + esc(L(C.title)) + '</h1><p class="cp-sub">' + esc(L(C.desc)) + '</p>' +
+    '<div class="row"><a class="btn" href="#/' + nx.id + '">' + esc(fmt(t(started ? 'contN' : 'startN'), { n: nx.num })) + '</a><span class="cp-meta"><span><b>' + C.modules.length + '</b> ' + esc(t('modulesL')) + '</span><span>' + esc(t('passMark')) + '</span></span></div>' +
+    '<div class="row">' + Rev.buttons('') + '<a class="btn ghost" href="#/glossary">' + esc(t('glossary')) + '</a></div></section>';
+  STAGES.forEach(function (list, si) {
+    h += '<h2 class="cp-stagehead">' + esc(t('stage' + si)) + '</h2><div class="cp-grid">';
+    list.forEach(function (n) {
+      var m = null; C.modules.forEach(function (z) { if (z.num === n) m = z; }); if (!m) return;
+      var open = isOpen(m), d = doneN(m), tot = m.items.length;
+      h += '<a class="cp-mcard' + (open ? '' : ' locked') + '" href="#/' + m.id + '"><span class="cp-thumb">' + modThumb(m) + '</span><h3>' + esc(L(m.title)) + '</h3>' +
+        '<p class="cp-meta"><span><b>' + numParts(m) + '</b> ' + esc(t('partsL')) + '</span><span><b>' + numSecs(m) + '</b> ' + esc(t('sectionsL')) + '</span><span>' + esc(open ? fmt(t('ofDone'), { d: d, n: tot }) : t('locked')) + '</span></p><span class="pbar"><i style="width:' + Math.round(d / tot * 100) + '%"></i></span></a>';
+    });
+    h += '</div>';
   });
-  h += '</div><p class="license">' + esc(t('license')) + '</p></div>';
-  app.innerHTML = h;
-  document.getElementById('resume').onclick = function () { go(last || '#/' + C.modules[0].id); };
-  bindGo();
+  h += '<p class="license">' + esc(t('license')) + '</p></div>';
+  app.innerHTML = h; bindGo();
 }
 
-function sideHTML(m, cur) {
-  var mp = modProg(m), curPart = cur ? cur.part : null;
-  var h = '<aside class="side" id="side"><div class="sh"><p class="eyebrow">' + esc(fmt(t('moduleN'), { n: m.num })) + ' · ' + esc(m.code) + '</p><div class="mt" data-go="#/' + m.id + '">' + esc(L(m.title)) + '</div>' + progHTML(mp, true) + '</div>';
-  h += '<a class="it ov' + (!cur ? ' cur' : '') + '" data-go="#/' + m.id + '"><span class="n">○</span><span>' + esc(t('overview')) + '</span></a>';
-  m.parts.forEach(function (p) {
-    var its = partItems(m, p), pc = cnt(m, its), open = p.id === curPart;
-    h += '<div class="part' + (open ? ' open' : '') + (pc.d === pc.n ? ' pdone' : '') + '"><button class="ph" type="button" data-part="' + p.id + '"><span class="pn">' + esc(partName(p)) + '</span><span class="pt">' + esc(L(p.title)) + '</span><span class="pc">' + pc.d + '/' + pc.n + '</span></button><div class="pis">';
-    its.forEach(function (it) {
-      h += '<a class="it' + (isDone(m, it) ? ' done' : '') + (cur === it ? ' cur' : '') + '" data-go="#/' + m.id + '/' + it.id + '"><span class="st"></span>' + (it.type === 'section' ? '<span class="n">' + esc(it.label) + '</span>' : '') + '<span>' + esc(L(it.title)) + '</span></a>';
-    });
-    h += '</div></div>';
-  });
-  h += '<a class="back" data-go="#/">' + esc(t('allModules')) + '</a></aside><div class="drawer-bg" id="dbg"></div>';
-  return h;
+function renderLocked(m) {
+  var i = C.modules.indexOf(m), prev = C.modules[i - 1], ex = examItem(prev);
+  app.innerHTML = '<div class="cp-wrap">' + crumbs([[fmt(t('moduleN'), { n: m.num })]]) + '<span class="cp-thumb">' + modThumb(m) + '</span><div class="cp-card"><h1 class="cp-h1">' + esc(fmt(t('lockedH'), { n: m.num })) + '</h1>' +
+    '<p class="cp-sub">' + esc(fmt(t('lockedP'), { p: prev.num, s: ex ? ex.exam.pass : 16 })) + '</p><p><a class="btn" href="#/' + prev.id + (ex ? '/' + ex.id : '') + '">' + esc(fmt(t('lockedBtn'), { p: prev.num })) + '</a></p></div></div>';
 }
 
 function renderModule(m) {
-  var mp = modProg(m), first = firstOpen(m, m.items);
-  var h = '<div class="wrap"><div class="layout">' + sideHTML(m, null) + '<div class="main">' +
-    '<button class="btn ghost sm mobile-toc" id="toc" type="button">' + I.menu + '&nbsp;' + esc(t('contents')) + '</button>' +
-    '<div class="crumbs"><a data-go="#/">' + esc(t('course')) + '</a><span class="sep">/</span><span>' + esc(fmt(t('moduleN'), { n: m.num })) + '</span></div>' +
-    '<div class="thumbwrap">' + thumb(m.thumb) + '</div>' +
-    '<div class="item-head"><p class="eyebrow mag">' + esc(fmt(t('moduleN'), { n: m.num })) + ' · ' + esc(m.code) + '</p><h1>' + esc(L(m.title)) + '</h1><p class="lede">' + esc(L(m.desc)) + '</p>' + (m.checked ? '<p class="checked">' + esc(fmt(t('checked'), { d: monthName(m.checked) })) + '</p>' : '') + '</div>' +
-    '<div class="content">' + progHTML(mp, true) + '<p style="margin:14px 0 22px"><button class="btn" type="button" data-go="#/' + m.id + '/' + first.id + '">' + esc(mp.d ? t('cont') : t('begin')) + '</button>' + Rev.buttons(m.id) + '</p>' +
-    (has(m.overview) || lang === 'en' ? L(m.overview) : '<div class="note-ar">' + esc(t('arPending')) + '</div><div class="fallback-en" lang="en">' + L(m.overview) + '</div>') + '</div>' +
-    '<h2 class="sec-title" id="parts">' + esc(t('partsTitle')) + '</h2><div class="pcards">';
+  var d = doneN(m), tot = m.items.length, first = null;
+  m.items.forEach(function (x) { if (!first && !itemDone(m, x)) first = x; }); first = first || m.items[0];
+  var h = '<div class="cp-wrap">' + crumbs([[fmt(t('moduleN'), { n: m.num })]]) +
+    '<span class="cp-thumb">' + modThumb(m) + '</span>' +
+    '<span class="cp-kick">' + esc(fmt(t('moduleN'), { n: m.num }) + ' · ' + t('stage' + stageOf(m))) + '</span><h1 class="cp-h1">' + esc(L(m.title)) + '</h1><p class="cp-sub">' + esc(L(m.desc)) + '</p>' +
+    (m.checked ? '<p class="cp-meta">' + esc(fmt(t('checked'), { d: monthName(m.checked) })) + '</p>' : '') +
+    '<div class="cp-card cp-hero"><div class="row"><span class="pbar" style="flex:1;min-width:160px"><i style="width:' + Math.round(d / tot * 100) + '%"></i></span><span class="cp-meta">' + esc(fmt(t('ofDone'), { d: d, n: tot })) + '</span></div>' +
+    '<div class="row"><a class="btn" href="#/' + m.id + '/' + first.id + '">' + esc(d ? t('cont') : t('begin')) + '</a>' + Rev.buttons(m.id) + '</div></div>' +
+    '<div class="cp-card"><div class="content">' + (has(m.overview) || lang === 'en' ? L(m.overview) : '<div class="note-ar">' + esc(t('arPending')) + '</div><div class="fallback-en" lang="en">' + L(m.overview) + '</div>') + '</div></div>' +
+    '<h2 class="cp-stagehead">' + esc(t('partsTitle')) + '</h2><div class="cp-grid">';
   m.parts.forEach(function (p) {
-    var its = partItems(m, p), pc = cnt(m, its), nxt = firstOpen(m, its);
-    h += '<button class="pcard" type="button" data-go="#/' + m.id + '/' + nxt.id + '"><div class="pthumb">' + thumb(p.thumb) + '</div><div class="pbody"><span class="eyebrow mag">' + esc(partName(p)) + '</span><span class="mt">' + esc(L(p.title)) + '</span><span class="meta">' + esc(L(p.desc)) + '</span>' +
-      (its.length > 1 ? '<span class="secs">' + its.map(function (x) { return '<i class="' + (isDone(m, x) ? 'd' : '') + '">' + esc(x.type === 'section' ? x.label : L(x.title)) + '</i>'; }).join('') + '</span>' : '') + progHTML(pc) + '</div></button>';
+    var its = partItems(m, p), pd = its.filter(function (x) { return itemDone(m, x); }).length, nxt = null;
+    its.forEach(function (x) { if (!nxt && !itemDone(m, x)) nxt = x; }); nxt = nxt || its[0];
+    h += '<a class="cp-mcard" href="#/' + m.id + '/' + nxt.id + '"><span class="cp-thumb">' + partThumb(m, p) + '</span><h3>' + esc(partName(p) + ' · ' + L(p.title)) + '</h3><p class="cp-meta"><span>' + esc(L(p.desc)) + '</span></p><span class="pbar"><i style="width:' + Math.round(pd / its.length * 100) + '%"></i></span></a>';
   });
-  h += '</div></div></div></div>';
-  app.innerHTML = h;
-  bindGo(); bindDrawer(); bindSide();
+  h += '</div></div>';
+  app.innerHTML = h; bindGo();
 }
 
+function seqAll() { var out = []; C.modules.forEach(function (m) { out.push([m, null]); m.items.forEach(function (it) { out.push([m, it]); }); }); return out; }
 function renderItem(m, it) {
-  var idx = m.items.indexOf(it), prev = m.items[idx - 1], next = m.items[idx + 1], p = findPart(m, it.part);
-  var pits = partItems(m, p), isFirst = pits[0] === it, done = isDone(m, it);
-  var isQ = it.type === 'exam' || it.type === 'quiz';
+  var p = findPart(m, it.part), pits = partItems(m, p), isFirst = pits[0] === it, isQ = it.type === 'exam' || it.type === 'quiz', done = itemDone(m, it);
+  var S = seqAll(), k = 0; S.forEach(function (x, i) { if (x[1] === it) k = i; });
+  var prev = S[k - 1], next = S[k + 1];
+  var href = function (x) { return x ? '#/' + x[0].id + (x[1] ? '/' + x[1].id : '') : '#/'; };
+  var nextLocked = next && next[0] !== m && !isOpen(next[0]);
+  var nextLabel = !next || nextLocked ? t('backToModule') : next[0] !== m ? t('nextModule') : next[1] && next[1].part !== it.part ? fmt(t('nextPart'), { p: partName(findPart(m, next[1].part)) }) : t('next');
   var body = isQ ? examHTML(m, it) : L(it.html);
-  var nextLabel = next ? (next.part !== it.part ? fmt(t('nextPart'), { p: partName(findPart(m, next.part)) }) : t('next')) : t('backToModule');
-  var h = '<div class="wrap"><div class="layout">' + sideHTML(m, it) + '<div class="main">' +
-    '<button class="btn ghost sm mobile-toc" id="toc" type="button">' + I.menu + '&nbsp;' + esc(t('contents')) + '</button>' +
-    '<div class="crumbs"><a data-go="#/">' + esc(t('course')) + '</a><span class="sep">/</span><a data-go="#/' + m.id + '">' + esc(fmt(t('moduleN'), { n: m.num })) + '</a><span class="sep">/</span><span>' + esc(partName(p)) + '</span></div>' +
-    (isFirst ? '<div class="thumbwrap sm">' + thumb(p.thumb) + '</div>' : '<div class="partstrip"><span class="eyebrow">' + esc(partName(p)) + '</span><span>' + esc(L(p.title)) + '</span></div>') +
-    '<div class="item-head"><p class="eyebrow mag">' + esc(itemLabel(m, it)) + '</p><h1>' + esc(L(it.title)) + '</h1></div>' +
+  var h = '<div class="cp-wrap cp-lesson">' + crumbs([[fmt(t('moduleN'), { n: m.num }), '#/' + m.id], [partName(p)]]) +
+    (isFirst ? '<span class="cp-thumb">' + partThumb(m, p) + '</span>' : '') +
+    '<span class="cp-kick">' + esc(itemLabel(m, it)) + '</span><h1 class="cp-h1">' + esc(L(it.title)) + '</h1>' +
     (has(it.html) || isQ || lang === 'en' ? '' : '<div class="note-ar">' + esc(t('arPending')) + '</div>') +
     '<div class="content' + (lang === 'ar' && !isQ && !has(it.html) ? ' fallback-en" lang="en' : '') + '" id="content">' + body + '</div>' +
-    '<div class="itemnav"><button class="btn ghost sm" type="button" ' + (prev ? 'data-go="#/' + m.id + '/' + prev.id + '"' : 'data-go="#/' + m.id + '"') + '>' + esc(prev ? t('prev') : t('overview')) + '</button>' +
-    '<div class="mid"><button class="btn' + (done ? ' done' : '') + '" id="doneBtn" type="button">' + esc(done ? t('completed') : t('markComplete')) + '</button></div>' +
-    '<button class="btn sm" type="button" id="nextBtn" data-go="' + (next ? '#/' + m.id + '/' + next.id : '#/' + m.id) + '">' + esc(nextLabel) + '</button></div>' +
-    '</div></div></div>';
+    '<div class="cp-foot"><a class="btn ghost" href="' + href(prev) + '">' + esc(t('prev')) + '</a>' +
+    (isQ ? '' : '<button class="btn ' + (done ? 'ok' : 'ghost') + '" id="doneBtn" type="button">' + esc(done ? t('completed') : t('markComplete')) + '</button>') +
+    '<a class="btn" id="nextBtn" href="' + (nextLocked ? '#/' + m.id : href(next)) + '">' + esc(nextLabel) + '</a></div></div>';
   var tools = it.type === 'section' || it.type === 'playbook';
   if (tools) h += '<div class="fabs"><button class="fab ink' + (Ink.has(m, it) ? ' has' : '') + '" id="inkBtn" type="button" aria-label="' + esc(t('pen')) + '">' + I.marker + '<span class="lbl">' + esc(t('pen')) + '</span><span class="dot"></span></button>' +
     '<button class="fab' + (Pad.hasInk(m, it) ? ' has' : '') + '" id="fab" type="button" aria-label="' + esc(t('scratch')) + '">' + I.pen + '<span class="lbl">' + esc(t('scratch')) + '</span><span class="dot"></span></button></div>';
   app.innerHTML = h;
-  bindGo(); bindDrawer(); bindSide(); enhance(m, it);
-  document.getElementById('doneBtn').onclick = function () { setDone(m, it, !isDone(m, it)); render(); };
+  bindGo(); enhance(m, it);
+  var db = document.getElementById('doneBtn'); if (db) db.onclick = function () { setDone(m, it, !isDone(m, it)); render(); };
   document.getElementById('nextBtn').addEventListener('click', function () { if (!isQ && !isDone(m, it)) setDone(m, it, true); }, true);
   if (isQ) bindExam(m, it);
   Find.highlight();
@@ -220,18 +285,7 @@ function bindGo() {
     el.addEventListener('click', function (e) { e.preventDefault(); go(el.getAttribute('data-go')); });
   });
 }
-function bindSide() {
-  app.querySelectorAll('.side .part > .ph').forEach(function (b) {
-    b.addEventListener('click', function () { b.parentElement.classList.toggle('open'); });
-  });
-}
-function bindDrawer() {
-  var b = document.getElementById('toc'), s = document.getElementById('side'), bg = document.getElementById('dbg');
-  if (!b) return;
-  function close() { s.classList.remove('open'); bg.classList.remove('open'); }
-  b.onclick = function () { s.classList.add('open'); bg.classList.add('open'); };
-  bg.onclick = close;
-}
+
 function enhance(m, it) {
   app.querySelectorAll('.content [data-k]').forEach(function (el) {
     var k = 'f:' + m.id + ':' + el.getAttribute('data-k'), v = Store.get(k);
@@ -379,9 +433,11 @@ function bindExam(m, it) {
     var n = 0;
     qs.forEach(function (q) { var c = q.querySelector('input:checked').value === q.getAttribute('data-ans'); if (c) n++; q.classList.add('done'); q.classList.toggle('right', c); q.classList.toggle('wrong', !c); if (it.type === 'exam') Rev.record(m.id, it.id, q.getAttribute('data-i'), c, q); });
     Store.set(scoreKey(m, it), String(n));
+    if (it.type === 'exam' && n > (+Store.get('best:' + m.id) || 0)) Store.set('best:' + m.id, String(n));
     var ok = n >= pass;
     res.textContent = fmt(t('score'), { n: n, total: qs.length }) + ' ' + (ok ? t(it.type === 'quiz' ? 'quizPass' : 'passMsg') : t(it.type === 'quiz' ? 'quizFail' : 'fail'));
-    if (ok && !isDone(m, it)) { setDone(m, it, true); var b = document.getElementById('doneBtn'); b.classList.add('done'); b.textContent = t('completed'); refreshSide(m, it); }
+    if (!ok || isDone(m, it)) refreshSide(m, it);
+    if (ok && !isDone(m, it)) { setDone(m, it, true); var b = document.getElementById('doneBtn'); if (b) { b.classList.add('ok'); b.textContent = t('completed'); } refreshSide(m, it); if (it.type === 'exam') { var nb = document.getElementById('nextBtn'), nm = C.modules[C.modules.indexOf(m) + 1]; if (nb && nm) { nb.href = '#/' + nm.id; nb.textContent = t('nextModule'); } } }
   };
   document.getElementById('resetBtn').onclick = function () {
     qs.forEach(function (q) { delete q._rec; q.classList.remove('done', 'right', 'wrong'); q.querySelectorAll('input').forEach(function (i) { i.checked = false; }); });
@@ -398,11 +454,7 @@ function bindExam(m, it) {
   }
 }
 function scoreKey(m, it) { return it.type === 'quiz' ? 'quiz:' + m.id + ':' + it.id : 'exam:' + m.id; }
-function refreshSide(m, it) {
-  var s = document.getElementById('side'); if (!s) return;
-  var tmp = document.createElement('div'); tmp.innerHTML = sideHTML(m, it);
-  s.replaceWith(tmp.firstChild); bindGo();
-}
+function refreshSide(m, it) { side(m, it); topProg(); }
 
 
 
@@ -819,24 +871,31 @@ function applyLang() {
   lang = Store.get('lang') === 'ar' ? 'ar' : 'en';
   root.lang = lang; root.dir = lang === 'ar' ? 'rtl' : 'ltr';
   document.title = L(C.title);
-  document.getElementById('crumb').textContent = t('crumb');
-  var lb = document.getElementById('langBtn'); lb.textContent = t('langBtn'); lb.title = t('langTitle'); lb.setAttribute('aria-label', t('langTitle'));
-  var sb = document.getElementById('searchBtn'); sb.title = t('search'); sb.setAttribute('aria-label', t('search'));
-  var tb = document.getElementById('themeBtn'); tb.title = t('theme'); tb.setAttribute('aria-label', t('theme'));
-  var bb = document.getElementById('backBtn'); if (bb) { bb.title = t('back'); bb.setAttribute('aria-label', t('back')); }
+  document.getElementById('cpBrandName').textContent = t('brand');
+  document.querySelectorAll('#cpLangs button').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-lang') === lang); });
+  var q = document.getElementById('cpQ'); q.placeholder = t('searchCourse'); q.setAttribute('aria-label', t('searchCourse'));
+  document.getElementById('cpFindBtn').setAttribute('aria-label', t('search'));
+  document.getElementById('cpBack').textContent = t('backApp');
+  document.getElementById('cpViewText').textContent = ' ' + t('asLearner');
+  document.getElementById('cpMenu').setAttribute('aria-label', t('menu'));
+  document.getElementById('cpSide').setAttribute('aria-label', t('content'));
 }
-document.getElementById('themeBtn').innerHTML = I.moon;
-document.getElementById('themeBtn').onclick = function () {
-  var cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-  Store.set('theme', cur === 'dark' ? 'light' : 'dark'); applyTheme(); Ink.redraw();
-};
-document.getElementById('langBtn').onclick = function () {
-  Store.set('lang', lang === 'ar' ? 'en' : 'ar'); applyLang(); render();
-};
-document.getElementById('crumb').onclick = function () { go('#/'); };
-if (document.getElementById('backBtn')) document.getElementById('backBtn').onclick = function () { location.href = '/app/#learn'; };
-document.getElementById('searchBtn').innerHTML = I.search;
-document.getElementById('searchBtn').onclick = function () { Find.open(); };
+function applyTheme() { root.removeAttribute('data-theme'); }   /* one light look, like the Marketing course */
+document.querySelectorAll('#cpLangs button').forEach(function (b) {
+  b.onclick = function () { if (b.getAttribute('data-lang') === lang) return; Store.set('lang', b.getAttribute('data-lang')); applyLang(); render(); };
+});
+function openFind() { var q = document.getElementById('cpQ'); try { if (q.value.trim()) sessionStorage.setItem('lh-find', q.value); } catch (e) {} q.value = ''; q.blur(); Find.open(); }
+document.getElementById('cpQ').addEventListener('focus', openFind);
+document.getElementById('cpQ').addEventListener('keydown', function (e) { if (e.key === 'Enter') openFind(); });
+document.getElementById('cpFindBtn').onclick = openFind;
+document.getElementById('cpMenu').onclick = function () { menu(!document.getElementById('cpSide').classList.contains('open')); };
+document.getElementById('cpScrim').onclick = function () { menu(false); };
+document.getElementById('cpSide').addEventListener('click', function (e) {
+  var b = e.target.closest('.cp-mod > button'); if (b) { var box = b.parentElement; box.classList.toggle('open'); b.setAttribute('aria-expanded', box.classList.contains('open')); return; }
+  if (e.target.closest('.cp-item')) menu(false);
+});
+document.getElementById('cpSide').addEventListener('change', function (e) { if (e.target.matches('[data-learner]')) { asLearner = e.target.checked; document.getElementById('cpAsLearner').checked = asLearner; render(); } });
+if (OWNER) { document.getElementById('cpView').hidden = false; document.getElementById('cpAsLearner').addEventListener('change', function (e) { asLearner = e.target.checked; render(); }); }
 
 /* One-time move: the mood module used to be "m3" and is now "m4"; keep that progress and free "m3" for Core Helping Skills. */
 function migrate() {
@@ -850,5 +909,8 @@ function migrate() {
   var last = Store.get('last'); if (last && /^#\/m3(\/|$)/.test(last)) Store.set('last', last.replace('#/m3', '#/m4'));
   Store.set('mig:m3m4', '1');
 }
-Store.init().then(function () { migrate(); applyTheme(); applyLang(); render(); });
+Store.init().then(function () {
+  migrate(); applyTheme(); applyLang();
+  var f = document.fonts; Promise.race([Promise.all(f ? [f.load('800 80px "Bricolage Grotesque"'), f.load('700 26px Inter'), f.load('700 80px "IBM Plex Sans Arabic"')] : []), new Promise(function (r) { setTimeout(r, 2500); })]).then(render, render);
+});
 })();

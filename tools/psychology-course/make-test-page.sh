@@ -4,6 +4,6 @@
 set -e
 cd "$(dirname "$0")/../.."
 cp "$1" app/psychology/_test-content.json
-sed -e 's#<script src="gate.js?v=1"></script>#<script>window.PSY_TEST = { content:"_test-content.json" };</script>\n<script src="gate.js?v=1"></script>#' \
+sed -e 's#<script src="gate.js\(?v=[0-9]*\)"></script>#<script>window.PSY_TEST = { content:"_test-content.json", owner:location.search.indexOf("owner") >= 0 };</script>\n<script src="gate.js\1"></script>#' \
     -e 's#<script src="https://cdn.jsdelivr.net[^<]*</script>##' -e '/Content-Security-Policy/d' app/psychology/index.html > app/psychology/_test.html
 echo "Test page ready: app/psychology/_test.html"

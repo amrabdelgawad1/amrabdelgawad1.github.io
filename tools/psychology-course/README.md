@@ -4,7 +4,7 @@
 
 The lessons, quizzes, exams, playbooks and glossary are **not in this repo**. The repo is public, so anything here can be read by anyone.
 
-- The player (`app/psychology/`: `index.html`, `gate.js`, `player.js`, `psy.css`, `strings.js`) and a small public `app/psychology/course.js` (title, access switch, module count) stay here.
+- The player (`app/psychology/`: `index.html`, `gate.js`, `player.js`, `psy-content.css`, `strings.js`) uses the Marketing course's look and layout (`app/course/course.css`): top bar, course-content sidebar, lesson pane. Each module opens once the previous module's exam is passed (16 of 20); Amr sees everything and can tick "View as learner" to test the locks. The player and a small public `app/psychology/course.js` (title, access switch, module count) stay here.
 - All lesson content is one file, `psy/content.json`, in the private Supabase storage bucket `course-content`.
 - `gate.js` downloads it only after `learn_can_open('psy')` says yes: Amr, or active team members with both **Learning Hub** and **Psychology course** switched on in /app > Invite and access. The bucket rules refuse the file to everyone else on their own.
 - The editable source (the single-file player with everything inside, `Psychology-Course-Player.html`) is kept as `_src/psy-player.html` in the same bucket. Only Amr can read that folder.

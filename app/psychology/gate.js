@@ -24,7 +24,7 @@
   const w = k => W[lang][k];
   function show(k, link){
     document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    $('app').innerHTML = `<div class="gate"><p>${w(k)}</p>${link ? `<a href="/app/">${w('openApp')}</a>` : ''}</div>`;
+    $('cpMain').innerHTML = `<div class="cp-msg cp-card"><p>${w(k)}</p>${link ? `<p><a class="btn" href="/app/">${w('openApp')}</a></p>` : ''}</div>`;
   }
   const stop = k => show(k, true);
 
@@ -67,8 +67,7 @@
   function startPlayer(course){
     window.COURSE = course;
     window.LH_STORE = store();
-    $('app').innerHTML = '';
-    const s = document.createElement('script'); s.src = 'player.js?v=1';
+    const s = document.createElement('script'); s.src = 'player.js?v=3';
     s.onerror = () => stop('loadFail');
     document.body.appendChild(s);
   }
@@ -77,7 +76,7 @@
     show('checking');
     // Test mode (tools/psychology-course): content comes from a local file, nothing is sent anywhere
     if (window.PSY_TEST) {
-      uid = 'test';
+      uid = 'test'; window.PSY_OWNER = !!window.PSY_TEST.owner;
       try { const body = await (await fetch(window.PSY_TEST.content || '_test-content.json', { cache:'no-store' })).json(); await pull(); return startPlayer(body); }
       catch(e) { return stop('loadFail'); }
     }
@@ -90,11 +89,14 @@
     try {
       // Ask everything at once. The bucket refuses the file on its own to anyone without access,
       // so starting the download early gives nothing away.
-      [ok, f] = await Promise.all([
+      let own;
+      [ok, f, own] = await Promise.all([
         db.rpc('learn_can_open', { p_course:C.access }),
         db.storage.from('course-content').download(C.access + '/content.json').catch(e => ({ error:e })),
+        db.rpc('is_tracker_admin'),
         pull()
       ]);
+      window.PSY_OWNER = !!(own && own.data === true);   // Amr: every module open, plus "View as learner" to test the locks
     } catch(e) { return stop('loadFail'); }
     if (ok.error) return stop(/not find|404|does not exist/i.test(ok.error.message || '') ? 'notSetUp' : 'loadFail');
     if (ok.data !== true) return stop('noAccess');
