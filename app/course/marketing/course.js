@@ -3,7 +3,7 @@
 // Numbers about Kestrel and BrightLine come only from CASE below, so every module tells the same story.
 window.COURSE = {
   id:'mkt2', title:'Marketing', pass:80,
-  team:false,   // false: only the owner sees the course (the Hub card and /app/course/); true: everyone with Learning Hub access
+  team:true,   // false: only the owner sees the course (the Hub card and /app/course/); true: everyone with Learning Hub access
   sub:'Learn marketing from the first idea to running a full growth system, on one real-feeling business.',
   stages:['Foundations and language', 'Core skills', 'Advanced and edge cases', 'Becoming a pro'],
 
