@@ -4,3 +4,4 @@ tools/course-dev/node_modules/
 # The course kit (answers and the reviewer key) must never be committed
 course-kit/
 **/module-*.json
+app/course/_test.html
