@@ -164,9 +164,11 @@
 
   function part(m, i){
     const p = m.parts[i], s = P(m.id, i), done = Object.values(s.qa).filter(x => x.checked).length;
+    const on = q => q.on === 'ex' ? 'Kestrel case' : (p.s[q.on] || {}).h || '';
+    const cnt = l => p.q.filter(q => q.l === l).length, doneL = l => p.q.filter((q, j) => q.l === l && (s.qa[j] || {}).checked).length;
     const qs = p.q.map((q, j) => {
       const a = s.qa[j] || {};
-      return `<div class="cp-q${a.checked ? ' done' : ''}" data-q="${j}"><div class="row"><span class="chip ${q.l}">${LV[q.l]}</span><span class="cp-meta">Question ${j + 1} of ${p.q.length}</span></div>
+      return `<div class="cp-q${a.checked ? ' done' : ''}" data-q="${j}" data-l="${q.l}"><div class="row"><span class="chip ${q.l}">${LV[q.l]}</span><span class="cp-meta">Question ${j + 1} of ${p.q.length}${on(q) ? ' · On: ' + esc(on(q)) : ''}</span></div>
         <p>${esc(q.q)}</p><textarea data-ans="${j}" placeholder="Type your answer, then check it" aria-label="Your answer"></textarea>
         <div class="row"><button class="btn" type="button" data-check="${j}">${a.checked ? 'Check again' : 'Check my answer'}</button></div>
         <div class="cp-fb" data-fb="${j}"${a.checked ? '' : ' hidden'}>${a.checked ? feedback(q, a.text || '', a.self) : ''}</div></div>`;
@@ -174,14 +176,15 @@
     return `<div class="cp-wrap"><nav class="cp-crumb"><a href="#/">Marketing</a><span>›</span><a href="#/${m.id}">Module ${m.n}</a><span>›</span><span>Part ${m.n}.${i + 1}</span></nav>
       <span class="cp-thumb">${partThumb(m, i)}</span>
       <div><span class="cp-kick">Part ${m.n}.${i + 1} of ${m.n}.${m.parts.length} · ${p.mins} min</span><h1 class="cp-h1">${esc(p.t)}</h1></div>
-      <div class="cp-tools"><span class="cp-meta"><span><b>${done}</b> of ${p.q.length} questions checked</span>${s.got ? '<span class="chip b">Got it ✓</span>' : ''}</span><button class="btn ghost" type="button" data-pen aria-pressed="false">✎ Scratch pad</button></div>
-      <article class="cp-card cp-lesson" data-ink="${m.id}-${i}"><div class="cp-page">
+      <div class="cp-tools"><span class="cp-meta"><span><b>${done}</b> of ${p.q.length} questions checked</span>${s.got ? '<span class="chip b">Got it ✓</span>' : ''}</span></div>
+      <article class="cp-card cp-lesson"><div class="cp-page">
         ${p.s.map(x => `<section class="cp-sec"><h3>${esc(x.h)} ${srcChips(x.src)}</h3>${x.b}</section>`).join('')}
         <section class="cp-box case"><span class="cp-kick">Kestrel case</span>${p.ex}</section>
         ${p.b2b ? `<section class="cp-box"><span class="cp-kick">B2B angle · BrightLine</span>${p.b2b}</section>` : ''}
         <section class="cp-sec"><h3>Key terms</h3><dl class="cp-terms">${p.terms.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl></section>
       </div></article>
-      <section class="cp-qs"><div class="cp-qhead"><h2>Playbook questions</h2><span class="cp-meta">Simple to toughest: <span class="chip b">Basic</span> know it cold · <span class="chip a">Applied</span> use it on real work · <span class="chip t">Tough</span> judgment calls</span></div>${qs}</section>
+      <section class="cp-qs"><div class="cp-qhead"><h2>Playbook questions</h2><span class="cp-meta">${p.q.length} questions, simple to toughest. <span class="chip b">Basic</span> know it cold · <span class="chip a">Applied</span> use it on real work · <span class="chip t">Tough</span> judgment calls and edge cases</span></div>
+        <div class="cp-filter" role="group" aria-label="Show questions">${[['all', 'All', p.q.length, Object.values(s.qa).filter(x => x.checked).length], ['b', 'Basic', cnt('b'), doneL('b')], ['a', 'Applied', cnt('a'), doneL('a')], ['t', 'Tough', cnt('t'), doneL('t')]].map(([k, t, n, d]) => `<button type="button" data-lv="${k}" aria-pressed="${k === 'all'}">${t} <small>${d}/${n}</small></button>`).join('')}</div>${qs}</section>
       ${foot(m, String(i + 1))}</div>`;
   }
 
@@ -206,7 +209,7 @@
       <span class="cp-thumb">${thumb({ kick:'Module ' + m.n + ' · Written assignment', title:a.t, foot:a.tasks.length + ' tasks · answer key after you submit' })}</span>
       <div><span class="cp-kick">Module ${m.n} written assignment</span><h1 class="cp-h1">${esc(a.t)}</h1></div>
       <div class="cp-card">${a.brief}<ol>${a.tasks.map(t => `<li>${esc(t)}</li>`).join('')}</ol></div>
-      <article class="cp-card cp-lesson" data-ink="${m.id}-asg"><div class="cp-page">${a.tasks.map((t, i) => `<label class="cp-task"><span>${i + 1}. ${esc(t)}</span><textarea data-task="${i}"></textarea></label>`).join('')}
+      <article class="cp-card cp-lesson"><div class="cp-page">${a.tasks.map((t, i) => `<label class="cp-task"><span>${i + 1}. ${esc(t)}</span><textarea data-task="${i}"></textarea></label>`).join('')}
         <div class="row">${s.done ? '<span class="chip b">Submitted ✓</span>' : '<button class="btn" type="button" data-submit>Submit and show the answer key</button>'}</div></div></article>
       ${s.done ? `<div class="cp-card"><h2>Answer key</h2>${a.key}</div>
         <div class="cp-card"><h2>Mark yourself</h2><p class="cp-sub">Score each part against the answer key. 70 or more is a strong memo.</p>
@@ -276,10 +279,11 @@
     if (!(m && k === 'quiz' && Q && Q.m === m)) Q = null;
     const same = location.hash === lastHash, y = window.scrollY; lastHash = location.hash;
     $('cpMain').innerHTML = html; side([mid, k]); bar(); wire(m, k);
-    window.scrollTo(0, same ? y : 0);
+    window.scrollTo(0, same ? y : 0); Pen.mount(pageKey());
     document.title = (m ? 'Module ' + m.n + ' · ' : '') + 'Marketing course';
   }
-  function show(){ const y = window.scrollY; $('cpMain').innerHTML = quizQ(); window.scrollTo(0, y); wire(Q.m, 'quiz'); }
+  function show(){ const y = window.scrollY; $('cpMain').innerHTML = quizQ(); window.scrollTo(0, y); wire(Q.m, 'quiz'); Pen.mount(pageKey()); }
+  const pageKey = () => location.hash.replace(/^#\/?/, '').replace(/\/(quiz|results)$/, '/$1') || 'home';
 
   let CUR = null; // the part on screen, for the self-mark buttons
   $('cpMain').addEventListener('click', e => {
@@ -296,6 +300,10 @@
         const j = b.dataset.check, a = s.qa[j] = s.qa[j] || {}, card = b.closest('.cp-q'), fb = card.querySelector('[data-fb]');
         if (!(a.text || '').trim()) { card.querySelector('textarea').focus(); card.querySelector('textarea').placeholder = 'Type your answer first, then check it'; return; }
         a.checked = true; save(); fb.hidden = false; fb.innerHTML = feedback(p.q[j], a.text, a.self); card.classList.add('done'); b.textContent = 'Check again'; counts();
+      }));
+      box.querySelectorAll('[data-lv]').forEach(f => f.addEventListener('click', () => {
+        box.querySelectorAll('[data-lv]').forEach(x => x.setAttribute('aria-pressed', x === f));
+        box.querySelectorAll('.cp-q').forEach(c => c.hidden = f.dataset.lv !== 'all' && c.dataset.l !== f.dataset.lv);
       }));
       const got = box.querySelector('[data-got]'); if (got) got.addEventListener('click', () => { s.got = !s.got; save(); route(); });
       const counts = () => { const n = Object.values(s.qa).filter(x => x.checked).length; const el = box.querySelector('.cp-tools .cp-meta b'); if (el) el.textContent = n; };
@@ -332,43 +340,57 @@
         });
       }
     }
-    const art = box.querySelector('.cp-lesson'); if (art) Pen.attach(art, box.querySelector('[data-pen]'));
   }
 
-  // ---------- pen and eraser over the lesson, saved per person and per page ----------
+  // ---------- scratch pad: pen, highlighter and eraser over the whole page, margins included ----------
+  // Points are stored against the content column (its centre line, its top, and its width as the unit),
+  // so drawings scroll with the lesson and stay next to the same content, in the margins too.
+  // Saved per person and per page (D.pg[page]).
   const Pen = (() => {
-    const INKS = [['Ink', '#14161B'], ['Orange', '#FF5A1F'], ['Highlight', 'rgba(255,90,31,.28)']];
-    let paper, cv, c2, strokes, on = false, ink = 0, erase = false, cur = null, ro, id;
-    const W = () => paper.clientWidth;
-    const rec = () => { const k = id; return (D.ink = D.ink || {})[k] || (D.ink[k] = []); };
-    function size(){ const r = window.devicePixelRatio || 1, w = W(), h = paper.clientHeight; cv.style.width = w + 'px'; cv.style.height = h + 'px'; cv.width = w * r; cv.height = h * r; c2.setTransform(r, 0, 0, r, 0, 0); draw(); }
-    function line(s){ const w = W(); c2.strokeStyle = INKS[s.k][1]; c2.lineWidth = s.k === 2 ? 18 : 2.6; c2.lineCap = c2.lineJoin = 'round'; c2.beginPath(); s.p.forEach(([x, y], i) => i ? c2.lineTo(x * w, y * w) : c2.moveTo(x * w, y * w)); if (s.p.length === 1) c2.lineTo(s.p[0][0] * w + .1, s.p[0][1] * w); c2.stroke(); }
-    function draw(){ c2.clearRect(0, 0, cv.width, cv.height); strokes.forEach(line); }
-    // Points are stored as fractions of the page width, so drawings stay in place when the screen size changes
-    const pt = e => { const r = cv.getBoundingClientRect(), w = W(); return [Math.round((e.clientX - r.left) / w * 1e4) / 1e4, Math.round((e.clientY - r.top) / w * 1e4) / 1e4]; };
-    function hitDel(p){ const w = W(); for (let i = strokes.length - 1; i >= 0; i--) if (strokes[i].p.some(([x, y]) => Math.hypot((x - p[0]) * w, (y - p[1]) * w) < 14)) { strokes.splice(i, 1); save(); draw(); return; } }
-    function down(e){ if (!on) return; e.preventDefault(); cv.setPointerCapture(e.pointerId); const p = pt(e); if (erase) { cur = 'x'; hitDel(p); return; } cur = { k:ink, p:[p] }; strokes.push(cur); draw(); }
-    function move(e){ if (!on || !cur) return; const p = pt(e); if (cur === 'x') return hitDel(p); cur.p.push(p); draw(); }
-    function up(){ if (cur && cur !== 'x') save(); cur = null; }
-    function toggle(v, btn, bar){ on = v; paper.classList.toggle('cp-drawing', on); cv.style.pointerEvents = on ? 'auto' : 'none'; btn.setAttribute('aria-pressed', on); btn.textContent = on ? '✎ Drawing on' : '✎ Scratch pad'; bar.hidden = !on; }
-    function attach(p, btn){
-      if (ro) ro.disconnect(); on = false; erase = false; paper = p; id = p.dataset.ink; strokes = rec();
-      cv = document.createElement('canvas'); cv.className = 'cp-ink'; cv.setAttribute('aria-hidden', 'true'); c2 = cv.getContext('2d'); paper.appendChild(cv);
-      const bar = document.createElement('div'); bar.className = 'cp-pen'; bar.hidden = true;
-      bar.innerHTML = INKS.map(([n, col], i) => `<button type="button" data-ink="${i}" style="--ink-c:${col}" aria-label="${n}" title="${n}" aria-pressed="${i === 0}"></button>`).join('') + '<button type="button" data-erase aria-pressed="false">Eraser</button><button type="button" data-undo>Undo</button><button type="button" data-clear>Clear page</button><button type="button" data-done>Done</button>';
-      paper.before(bar);
-      bar.addEventListener('click', e => { const x = e.target.closest('button'); if (!x) return;
-        if (x.dataset.ink) { ink = +x.dataset.ink; erase = false; }
-        if (x.hasAttribute('data-erase')) erase = !erase;
-        if (x.hasAttribute('data-undo')) { strokes.pop(); save(); draw(); }
-        if (x.hasAttribute('data-clear') && strokes.length && confirm('Clear your drawings on this page?')) { strokes.length = 0; save(); draw(); }
-        if (x.hasAttribute('data-done') && btn) toggle(false, btn, bar);
-        bar.querySelectorAll('[data-ink]').forEach(y => y.setAttribute('aria-pressed', +y.dataset.ink === ink && !erase)); bar.querySelector('[data-erase]').setAttribute('aria-pressed', erase); });
-      cv.addEventListener('pointerdown', down); cv.addEventListener('pointermove', move); cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
-      ro = new ResizeObserver(size); ro.observe(paper); size();
-      if (btn) btn.addEventListener('click', () => toggle(!on, btn, bar));
+    const INKS = [['Black', '#14161B', 2.6], ['Red', '#DC2626', 2.6], ['Orange', '#FF5A1F', 2.6], ['Highlight', 'rgba(255,214,0,.45)', 20]];
+    const main = $('cpMain'), btn = $('cpPen');
+    let cv, c2, strokes = [], on = false, ink = 0, mode = 'draw', cur = null, key = null, ro;
+    const col = () => main.querySelector('.cp-wrap') || main;
+    function frame(){ const w = col(), r = main.getBoundingClientRect(), c = w.getBoundingClientRect(); return { cx:c.left - r.left + c.width / 2, top:c.top - r.top, u:Math.max(c.width, 1) }; }
+    function size(){
+      if (!cv) return; const dpr = window.devicePixelRatio || 1, w = main.clientWidth, h = main.clientHeight; // the canvas is positioned, so it never stretches main itself
+      cv.style.width = w + 'px'; cv.style.height = h + 'px'; cv.width = w * dpr; cv.height = h * dpr; c2.setTransform(dpr, 0, 0, dpr, 0, 0); draw();
     }
-    return { attach };
+    function line(s, f){ const [, colr, wd] = INKS[s.k]; c2.strokeStyle = colr; c2.lineWidth = wd; c2.lineCap = c2.lineJoin = 'round'; c2.beginPath();
+      s.p.forEach(([x, y], i) => { const X = f.cx + x * f.u, Y = f.top + y * f.u; i ? c2.lineTo(X, Y) : c2.moveTo(X, Y); }); if (s.p.length === 1) c2.lineTo(f.cx + s.p[0][0] * f.u + .1, f.top + s.p[0][1] * f.u); c2.stroke(); }
+    function draw(){ if (!cv) return; c2.clearRect(0, 0, cv.width, cv.height); const f = frame(); strokes.forEach(s => line(s, f)); }
+    const pt = e => { const f = frame(), r = main.getBoundingClientRect(); return [Math.round((e.clientX - r.left - f.cx) / f.u * 1e4) / 1e4, Math.round((e.clientY - r.top - f.top) / f.u * 1e4) / 1e4]; };
+    function rub(p){ const f = frame(); for (let i = strokes.length - 1; i >= 0; i--) if (strokes[i].p.some(([x, y]) => Math.hypot((x - p[0]) * f.u, (y - p[1]) * f.u) < 14)) { strokes.splice(i, 1); save(); draw(); return; } }
+    function down(e){ if (!on || mode === 'scroll') return; e.preventDefault(); cv.setPointerCapture(e.pointerId); const p = pt(e); if (mode === 'erase') { cur = 'x'; rub(p); return; } cur = { k:ink, p:[p] }; strokes.push(cur); draw(); }
+    function move(e){ if (!on || !cur) return; const p = pt(e); if (cur === 'x') return rub(p); cur.p.push(p); draw(); }
+    function up(){ if (cur && cur !== 'x') save(); cur = null; }
+    function apply(){
+      if (!cv) return; const live = on && mode !== 'scroll';
+      cv.style.pointerEvents = live ? 'auto' : 'none'; cv.style.touchAction = live ? 'none' : 'auto'; main.classList.toggle('cp-drawing', on);
+      btn.setAttribute('aria-pressed', on); btn.lastChild.textContent = on ? ' Drawing' : ' Scratch pad'; tools.hidden = !on;
+      tools.querySelectorAll('[data-ink]').forEach(b => b.setAttribute('aria-pressed', mode === 'draw' && +b.dataset.ink === ink));
+      tools.querySelector('[data-mode="erase"]').setAttribute('aria-pressed', mode === 'erase'); tools.querySelector('[data-mode="scroll"]').setAttribute('aria-pressed', mode === 'scroll');
+    }
+    const tools = document.createElement('div'); tools.className = 'cp-pen'; tools.hidden = true; tools.setAttribute('role', 'toolbar'); tools.setAttribute('aria-label', 'Scratch pad tools');
+    tools.innerHTML = INKS.map(([n, c], i) => `<button type="button" data-ink="${i}" style="--ink-c:${c}" aria-label="${n} pen" title="${n}"></button>`).join('') +
+      '<button type="button" data-mode="erase">Eraser</button><button type="button" data-mode="scroll" title="Scroll the page without drawing">Scroll</button><button type="button" data-undo>Undo</button><button type="button" data-clear>Clear page</button><button type="button" data-done>Done</button>';
+    document.body.appendChild(tools);
+    tools.addEventListener('click', e => { const x = e.target.closest('button'); if (!x) return;
+      if (x.dataset.ink) { ink = +x.dataset.ink; mode = 'draw'; }
+      if (x.dataset.mode) mode = mode === x.dataset.mode ? 'draw' : x.dataset.mode;
+      if (x.hasAttribute('data-undo') && strokes.length) { strokes.pop(); save(); draw(); }
+      if (x.hasAttribute('data-clear') && strokes.length && confirm('Clear your drawings on this page?')) { strokes.length = 0; save(); draw(); }
+      if (x.hasAttribute('data-done')) on = false;
+      apply(); });
+    btn.addEventListener('click', () => { on = !on; if (on) mode = 'draw'; apply(); });
+    function mount(k){
+      key = k; on = false; mode = 'draw'; if (ro) ro.disconnect();
+      strokes = (D.pg = D.pg || {})[k] || (D.pg[k] = []);
+      cv = document.createElement('canvas'); cv.className = 'cp-ink'; cv.setAttribute('aria-hidden', 'true'); c2 = cv.getContext('2d'); main.appendChild(cv);
+      cv.addEventListener('pointerdown', down); cv.addEventListener('pointermove', move); cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+      ro = new ResizeObserver(size); ro.observe(main); ro.observe(col()); size(); apply();
+    }
+    return { mount };
   })();
 
   // ---------- start: sign-in and access ----------

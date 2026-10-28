@@ -10,7 +10,7 @@
 <link rel="icon" href="/app/icon-64.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="course.css?v=1">
+<link rel="stylesheet" href="course.css?v=2">
 </head>
 <body>
 <div class="cp" id="cp">
@@ -18,6 +18,7 @@
     <button class="cp-menu" type="button" id="cpMenu" aria-label="Course content" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
     <a class="cp-brand" href="#/"><span class="cp-logo" aria-hidden="true">M</span><span>Marketing</span></a>
     <div class="cp-prog" id="cpProg" title="Course progress"><span class="cp-bar"><i></i></span><b>0%</b></div>
+    <button class="cp-penbtn" type="button" id="cpPen" aria-pressed="false" title="Draw and write anywhere on this page"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span> Scratch pad</span></button>
     <label class="cp-view" id="cpView" hidden><input type="checkbox" id="cpAsLearner"> View as learner</label>
     <a class="cp-back" href="/app/#learn">Back to app</a>
   </header>
@@ -29,8 +30,9 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="/tracker/config.js"></script>
-<script src="marketing/course.js?v=1"></script>
-<script src="marketing/m01.js?v=1"></script>
-<script src="player.js?v=1"></script>
+<script src="marketing/course.js?v=2"></script>
+<script src="marketing/m01.js?v=2"></script>
+<script src="marketing/m01q.js?v=1"></script>
+<script src="player.js?v=2"></script>
 </body>
 </html>

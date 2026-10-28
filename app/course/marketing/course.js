@@ -18,7 +18,15 @@ window.COURSE = {
     LEW: { t:'E. St. Elmo Lewis', d:'The AIDA model of how people buy (around 1898).' },
     AAR: { t:'Dave McClure', d:'Startup Metrics for Pirates (2007): AARRR.' },
     EBI: { t:'Ehrenberg-Bass Institute', d:'John Dawes, the 95-5 rule for B2B buyers (2021).' },
-    FTC: { t:'US Federal Trade Commission', d:'Rule on Consumer Reviews and Testimonials (in force since October 2024).' }
+    FTC: { t:'US Federal Trade Commission', d:'Rule on Consumer Reviews and Testimonials (in force since October 2024).' },
+    BEZ: { t:'Commonly credited to Jeff Bezos', d:'Widely quoted as said by Amazon’s founder. No verified original source has been found, so treat it as a saying, not a quote.' },
+    FST: { t:'Five-second test (UX research)', d:'Usability method popularised by Christine Perfetti of User Interface Engineering (around 2005). The ten-second test here is adapted from it.' },
+    CWK: { t:'Chris Walker, Refine Labs', d:'Popularised the split between demand capture and demand creation in B2B marketing (around 2020).' },
+    FOR: { t:'Forrester Research', d:'Owned, earned and paid media, defined by Sean Corcoran (2009).' },
+    SIR: { t:'SiriusDecisions', d:'The Demand Waterfall (2006), which made MQL and SQL standard lead stages.' },
+    RIE: { t:'Eric Ries', d:'The Lean Startup (2011): vanity metrics vs actionable metrics.' },
+    PTW: { t:'A.G. Lafley and Roger Martin', d:'Playing to Win (2013): strategy as where to play and how to win.' },
+    GOO: { t:'Google', d:'Google Maps user-contributed content policy: no rewards or incentives for reviews.' }
   },
 
   // The running cases. Kestrel is the main one; BrightLine shows how B2B differs.
@@ -48,9 +56,10 @@ window.COURSE = {
       ] }
   },
 
-  // The full plan. Modules with content are filled in by their own file.
+  // The full plan. Modules with content are filled in by their own file; ready:true marks the ones published
+  // (the Learning Hub card counts these, and the player checks they match the files it loaded).
   plan:[
-    { id:'m01', stage:0, t:'Foundations and the language of marketing' },
+    { id:'m01', stage:0, t:'Foundations and the language of marketing', ready:true },
     { id:'m02', stage:0, t:'Know your customer' },
     { id:'m03', stage:0, t:'Positioning, offer and pricing' },
     { id:'m04', stage:0, t:'Messaging and copywriting' },
