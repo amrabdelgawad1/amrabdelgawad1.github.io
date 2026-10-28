@@ -205,14 +205,14 @@
   }
 
   // How healthy a channel is: compares what one deal cost to win with what one deal earns.
-  // TODO(Amr): these cut-offs are a starting point. From your cold-calling and lead-manager years, where would you
-  // draw the lines? For example, some wholesalers want marketing to eat no more than 20–30% of a deal's profit.
-  // Return 'healthy', 'thin' or 'losing' (or null when there isn't enough to judge). Five to ten lines is plenty.
+  // Wholesaling rule of thumb: marketing should take about a third of a deal's profit or less, which leaves room
+  // for caller pay, dialer and data costs, dispositions and closing. Above that the margin gets thin;
+  // at 100% or more the channel costs more than the deal makes.
   function verdict(costPerDeal, profitPerDeal) {
     if (!isFinite(costPerDeal) || !(profitPerDeal > 0)) return null;
     const share = costPerDeal / profitPerDeal;   // the part of each deal's profit that marketing used up
     if (share >= 1) return 'losing';
-    if (share > 0.5) return 'thin';
+    if (share > 0.35) return 'thin';
     return 'healthy';
   }
 
