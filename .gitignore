@@ -1,0 +1,6 @@
+# Local test mode for /course: its data and packages never go in the repo
+tools/course-dev/data/
+tools/course-dev/node_modules/
+# The course kit (answers and the reviewer key) must never be committed
+course-kit/
+**/module-*.json

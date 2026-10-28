@@ -1,0 +1,8 @@
+{
+  "name": "course-dev",
+  "private": true,
+  "description": "Local test mode for /course: a stand-in for Supabase on a local Postgres. Not deployed, not used by the site.",
+  "type": "module",
+  "scripts": { "start": "node server.mjs", "seed": "node seed.mjs" },
+  "dependencies": { "pg": "8.13.1" }
+}
