@@ -1,5 +1,5 @@
 // Course player (/app/course): a GoHighLevel-style course in the Marketing look, in English and Arabic.
-// Routes: #/ home · #/m01 module overview · #/m01/2 part 1.2 · #/m01/assignment · #/m01/quiz · #/m01/results
+// Routes: #/ home · #/m01 module overview · #/m01/2 part 1.2 · #/m01/recap · #/m01/assignment · #/m01/quiz · #/m01/results
 // Each person's progress saves on the device at once and to the learn_progress table (course "mkt2"),
 // so it follows them to other devices. Module n+1 opens once module n's checkpoint quiz is passed.
 // Progress (parts got, assignments, quizzes) is shared by both languages; typed answers and drawings are kept per language.
@@ -30,6 +30,9 @@
       return Object.assign({}, p, { t:x.t, ex:x.ex, b2b:x.b2b, terms:x.terms, s:p.s.map((s, j) => Object.assign({}, s, x.s[j])), q:p.q.map((q, j) => Object.assign({}, q, x.q[j])) }); });
     o.assignment = Object.assign({}, m.assignment, { t:a.assignment.t, brief:a.assignment.brief, tasks:a.assignment.tasks, key:a.assignment.key, rubric:m.assignment.rubric.map((r, i) => [a.assignment.rubric[i], r[1]]) });
     o.quiz = m.quiz.map((q, i) => Object.assign({}, q, a.quiz[i]));
+    const r = m.recap, ra = a.recap;                         // a recap not translated yet stays in English
+    if (r && ra) o.recap = { ideas:r.ideas.map((pt, i) => pt.map((x, j) => [ra.ideas[i][j]].concat(x.slice(1)))), nums:r.nums.map((x, i) => ra.nums[i].concat(x.slice(2))),
+      traps:r.traps.map((x, i) => [ra.traps[i]].concat(x.slice(1))), check:r.check.map((x, i) => ra.check[i].concat(x.slice(2))) };
     return cache[m.id] = o;
   }
 
@@ -64,11 +67,13 @@
   // ---------- course structure and progress ----------
   const built = () => C.plan.filter(p => C.modules[p.id]).map(p => C.modules[p.id]);
   const qCount = m => m.parts.reduce((a, p) => a + p.q.length, 0) + m.quiz.length;
-  const items = m => { const L = loc(m); return [{ k:'overview', t:t('overviewItem') }].concat(L.parts.map((p, i) => ({ k:String(i + 1), t:p.t, n:m.n + '.' + (i + 1) })), [{ k:'assignment', t:t('asgItem') }, { k:'quiz', t:t('quizItem') }]); };
+  const keys = m => ['overview'].concat(m.parts.map((p, i) => String(i + 1)), m.recap ? ['recap'] : [], ['assignment', 'quiz']);
+  const items = m => { const L = loc(m); return [{ k:'overview', t:t('overviewItem') }].concat(L.parts.map((p, i) => ({ k:String(i + 1), t:p.t, n:m.n + '.' + (i + 1) })), m.recap ? [{ k:'recap', t:t('recapItem') }] : [], [{ k:'assignment', t:t('asgItem') }, { k:'quiz', t:t('quizItem') }]); };
   const passed = m => (M(m.id).quiz.best || 0) >= C.pass;
   function itemDone(m, k){
     const s = M(m.id);
     if (k === 'overview') return !!s.seen;
+    if (k === 'recap') return !!s.recap;
     if (k === 'assignment') return !!s.asg.done;
     if (k === 'quiz' || k === 'results') return passed(m);
     return !!(s.parts[+k - 1] && s.parts[+k - 1].got);
@@ -82,7 +87,7 @@
     return !!prev && passed(prev);
   }
   function bar(){
-    const ms = built(), all = ms.reduce((a, m) => a + m.parts.length + 3, 0), done = ms.reduce((a, m) => a + ['overview', 'assignment', 'quiz'].concat(m.parts.map((p, i) => String(i + 1))).filter(k => itemDone(m, k)).length, 0);
+    const ms = built(), all = ms.reduce((a, m) => a + keys(m).length, 0), done = ms.reduce((a, m) => a + keys(m).filter(k => itemDone(m, k)).length, 0);
     const pc = all ? Math.round(done / all * 100) : 0;
     $('cpProg').querySelector('i').style.width = pc + '%'; $('cpProg').querySelector('b').textContent = pc + '%';
   }
@@ -185,7 +190,7 @@
       <span class="cp-thumb">${modThumb(m)}</span>
       <span class="cp-kick">${t('ovKick', m.n, stageT(m.stage))}</span><h1 class="cp-h1" data-a="top">${esc(L.t)}</h1>
       <div class="cp-card cp-cols" data-a="ov"><div><h3>${t('covers')}</h3><p class="cp-sub">${esc(L.covers)}</p><h3 style="margin-top:14px">${t('skill')}</h3><p class="cp-sub">${esc(L.skill)}</p></div>
-        <div><h3>${t('glance')}</h3><ul><li>${t('gl1', m.parts.length)}</li><li>${t('gl2', pq)}</li><li>${t('gl3')}</li><li>${t('gl4', m.quiz.length, C.pass)}</li><li>${t('gl5', qCount(m), m.parts.reduce((a, p) => a + p.mins, 0))}</li></ul></div></div>
+        <div><h3>${t('glance')}</h3><ul><li>${t('gl1', m.parts.length)}</li><li>${t('gl2', pq)}</li><li>${t('gl3')}</li>${m.recap ? '<li>' + t('gl6') + '</li>' : ''}<li>${t('gl4', m.quiz.length, C.pass)}</li><li>${t('gl5', qCount(m), m.parts.reduce((a, p) => a + p.mins, 0))}</li></ul></div></div>
       <div class="cp-card" data-a="out"><h3>${t('byEnd')}</h3><ul>${L.outcomes.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
       <div class="cp-card" data-a="parts"><h3>${t('partsH')}</h3><ol>${L.parts.map((p, i) => `<li><a href="#/${m.id}/${i + 1}">${m.n}.${i + 1} ${esc(p.t)}</a> <span class="cp-meta" style="display:inline">${t('partLine', p.mins, p.q.length)}</span></li>`).join('')}</ol></div>
       ${foot(m, 'overview')}</div>`;
@@ -249,6 +254,32 @@
       <div class="row"><span class="cp-meta">${t('how')}</span><button class="btn ${self === 'yes' ? 'ok' : 'ghost'}" type="button" data-self="yes" aria-pressed="${self === 'yes'}">${t('hadIt')}</button><button class="btn ghost" type="button" data-self="no" aria-pressed="${self === 'no'}">${self === 'no' ? t('reviewMarked') : t('review')}</button></div>`;
   }
 
+  // ---------- recap: the module on one page, each point linked to where it's taught ----------
+  // Data (marketing/m01r.js): ideas[part][j] = [text, section], nums[i] = [label, value, part, section],
+  // traps[i] = [text, part, section], check[i] = [question, answer, part, section]. Parts count from 1; section is j or 'ex'.
+  function recap(m){
+    M(m.id).recap = true; save();
+    const L = loc(m), r = L.recap || m.recap;
+    const to = (p, sec) => `<a class="cp-rlink" href="#/${m.id}/${p}" data-go="${sec === 'ex' ? 'ex' : 's' + sec}" title="${esc(t('seeIt') + m.n + '.' + p)}">${m.n}.${p}</a>`;
+    return `<div class="cp-wrap">${crumb([[t('module', m.n), '#/' + m.id], [t('recapCrumb')]])}
+      <span class="cp-thumb">${thumb({ kick:t('recapKick', m.n), title:t('recapThumb', L.t), foot:t('recapFoot') })}</span>
+      <div data-a="top"><span class="cp-kick">${t('recapTitleKick', m.n)}</span><h1 class="cp-h1">${esc(L.t)}</h1><p class="cp-sub">${t('recapSub')}</p></div>
+      <section class="cp-card cp-recap" data-a="ideas"><h2>${t('ideasH')}</h2>${r.ideas.map((pt, i) => `<h3><a href="#/${m.id}/${i + 1}">${m.n}.${i + 1} ${esc(L.parts[i].t)}</a></h3>
+        <ul>${pt.map((x, j) => `<li data-a="i${i}_${j}">${esc(x[0])} ${to(i + 1, x[1])}</li>`).join('')}</ul>`).join('')}</section>
+      <section class="cp-card cp-recap" data-a="nums"><h2>${t('numsH')}</h2><dl class="cp-terms">${r.nums.map((x, i) => `<dt data-a="n${i}">${esc(x[0])}</dt><dd>${esc(x[1])} ${to(x[2], x[3])}</dd>`).join('')}</dl></section>
+      <section class="cp-card cp-recap" data-a="traps"><h2>${t('trapsH')}</h2><ul>${r.traps.map((x, i) => `<li data-a="x${i}">${esc(x[0])} ${to(x[1], x[2])}</li>`).join('')}</ul></section>
+      <section class="cp-card cp-recap" data-a="rterms"><h2>${t('allTermsH')}</h2><dl class="cp-terms">${L.parts.map((p, i) => p.terms.map(([a, b], j) => `<dt>${esc(a)}</dt><dd>${esc(b)} <a class="cp-rlink" href="#/${m.id}/${i + 1}" data-go="t${j}">${m.n}.${i + 1}</a></dd>`).join('')).join('')}</dl></section>
+      <section class="cp-card cp-recap" data-a="check"><h2>${t('checkH')}</h2><p class="cp-sub">${t('checkP')}</p>
+        <div class="cp-checks">${r.check.map((x, i) => `<details data-a="c${i}"><summary>${esc(x[0])}</summary><p>${esc(x[1])} ${to(x[2], x[3])}</p></details>`).join('')}</div></section>
+      ${foot(m, 'recap')}</div>`;
+  }
+  // A recap link opens the part and lands on the section it came from.
+  $('cpMain').addEventListener('click', e => {
+    const a = e.target.closest('a[data-go]'); if (!a) return;
+    e.preventDefault(); const j = { a:a.dataset.go, q:'' };
+    if (location.hash === a.getAttribute('href')) land(j); else { jump = j; location.hash = a.getAttribute('href'); }
+  });
+
   function assignment(m){
     const a = loc(m).assignment, s = M(m.id).asg, total = a.rubric.reduce((x, r) => x + r[1], 0);
     const got = a.rubric.reduce((x, r, i) => x + (Number((s.score || {})[i]) || 0), 0);
@@ -301,7 +332,7 @@
   }
 
   // ---------- footer: previous / mark complete / next across the whole course ----------
-  function seq(){ const out = []; built().forEach(m => ['overview'].concat(m.parts.map((p, i) => String(i + 1)), ['assignment', 'quiz']).forEach(k => out.push([m, k]))); return out; }
+  function seq(){ const out = []; built().forEach(m => keys(m).forEach(k => out.push([m, k]))); return out; }
   function foot(m, k){
     const all = seq(), i = all.findIndex(([a, b]) => a.id === m.id && b === k), prev = all[i - 1], next = all[i + 1];
     const href = x => '#/' + x[0].id + (x[1] === 'overview' ? '' : '/' + x[1]);
@@ -320,6 +351,7 @@
     else if (!isOpen(m)) html = locked(m);
     else if (!k) html = overview(m);
     else if (k === 'assignment') html = assignment(m);
+    else if (k === 'recap' && m.recap) html = recap(m);
     else if (k === 'quiz') html = Q && Q.m === m ? quizQ() : quizStart(m);
     else if (k === 'results') html = results(m);
     else if (m.parts[+k - 1]) html = part(m, +k - 1);
@@ -407,7 +439,8 @@
   }
   function setLang(l){
     if (l === lang) return;
-    const spot = (() => { for (const el of $('cpMain').querySelectorAll('[data-a]')) { const r = el.getBoundingClientRect(); if (r.bottom > 70) return { a:el.dataset.a, off:r.top }; } return null; })();
+    // the innermost marked spot on screen (a single recap point rather than its whole card)
+    const spot = (() => { let best = null; for (const el of $('cpMain').querySelectorAll('[data-a]')) { if (el.getBoundingClientRect().bottom <= 70) continue; if (!best || best.contains(el)) best = el; else break; } return best && { a:best.dataset.a, off:best.getBoundingClientRect().top }; })();
     lang = l; try { localStorage.setItem('cp-lang', l); } catch(e){}
     D.lang = l; save(); chrome(); closeFind();
     if (Q) { show(); } else { lastHash = location.hash; route(); }
@@ -435,6 +468,11 @@
         if (p.b2b) entry(list, { mid:m.id, k:pk, a:'b2b', kind:'b2b', title:t('b2bBox'), where, text:textOf(p.b2b), w:1 });
         p.q.forEach((q, j) => entry(list, { mid:m.id, k:pk, a:'q' + j, kind:'q', title:t('qOf', j + 1, p.q.length), where, text:q.q, w:1 }));
       });
+      const r = L.recap || m.recap;
+      if (r) { r.ideas.forEach((pt, i) => pt.forEach((x, j) => entry(list, { mid:m.id, k:'recap', a:'i' + i + '_' + j, kind:'recap', title:t('recapCrumb'), where:mk, text:x[0], w:1 })));
+        r.nums.forEach((x, i) => entry(list, { mid:m.id, k:'recap', a:'n' + i, kind:'recap', title:x[0], where:mk, text:x[0] + ': ' + x[1], w:1 }));
+        r.traps.forEach((x, i) => entry(list, { mid:m.id, k:'recap', a:'x' + i, kind:'recap', title:t('trapsH'), where:mk, text:x[0], w:1 }));
+        r.check.forEach((x, i) => entry(list, { mid:m.id, k:'recap', a:'c' + i, kind:'recap', title:t('checkH'), where:mk, text:x[0], w:1 })); }
       entry(list, { mid:m.id, k:'assignment', a:'top', kind:'asg', title:L.assignment.t, where:mk, text:L.assignment.t + '. ' + L.assignment.tasks.join(' '), w:1 });
       PL = lang;
     });
@@ -477,6 +515,7 @@
   function land(j){
     const main = $('cpMain'), el = main.querySelector(`[data-a="${j.a}"]`) || main;
     if (el.matches('.cp-q') && el.hidden) el.hidden = false;
+    if (el.matches('details')) el.open = true;
     window.scrollTo(0, Math.max(0, el.getBoundingClientRect().top + window.scrollY - 84));
     el.classList.remove('cp-flash'); void el.offsetWidth; el.classList.add('cp-flash');
     const fq = fold(j.q).replace(/\s+/g, ' ').trim(); if (!fq) return;

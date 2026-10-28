@@ -276,3 +276,20 @@ html[lang="ar"] body{ font-family:var(--body); }
   body.cp-finding .cp-find{ flex-direction:column; align-items:stretch; }
   body.cp-finding .cp-find > svg{ top:21px; }
 }
+
+/* recap: the module on one page */
+.cp-recap h2{ margin:0 0 6px; }
+.cp-recap h3{ font-size:18px; margin:18px 0 6px; }
+.cp-recap h3 a{ color:inherit; text-decoration:none; }
+.cp-recap h3 a:hover{ color:var(--accent); }
+.cp-recap ul{ margin:0; padding-inline-start:22px; }
+.cp-recap li{ margin:6px 0; }
+.cp-recap .cp-terms{ margin-top:10px; }
+.cp-rlink{ display:inline-block; font-size:12px; font-weight:700; line-height:1; padding:4px 7px; border-radius:999px; background:var(--accent-soft); color:var(--accent); text-decoration:none; vertical-align:1px; white-space:nowrap; direction:ltr; }
+.cp-rlink:hover{ background:var(--accent); color:#fff; }
+.cp-checks{ display:grid; gap:8px; margin-top:10px; }
+.cp-checks details{ border:1px solid var(--line); border-radius:8px; background:var(--card); }
+.cp-checks summary{ cursor:pointer; padding:12px 14px; font-weight:600; list-style-position:inside; }
+.cp-checks details[open] summary{ border-bottom:1px solid var(--line); }
+.cp-checks details p{ margin:0; padding:12px 14px; background:var(--ok-soft); border-radius:0 0 8px 8px; }
+.cp-recap dd, .cp-recap li, .cp-checks p{ overflow-wrap:anywhere; }
