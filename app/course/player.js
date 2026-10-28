@@ -194,6 +194,7 @@
   const BLANK = / (i )?(don t|do not) know | no idea | not sure /g;   // filler that never earns a point
   function hit(ans, w){
     const t = norm(w).trim();
+    if (!t) return false;                                    // a key of only symbols never matches
     if (w[0] === '=') return ans.includes(' ' + t + ' ');   // "=ad": whole word only
     if (/^[\d.]+%?$/.test(t)) return new RegExp('(^|[^\\d.])' + t.replace(/[.%]/g, m => '\\' + m) + '(?![\\d])').test(ans);
     return ans.includes(t);

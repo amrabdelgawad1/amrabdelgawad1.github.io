@@ -81,6 +81,10 @@ window.COURSE = {
     GQS: { t:'Google Ads Help', d:'How the ad auction and Ad Rank work; Quality Score (1 to 10) from expected click-through rate, ad relevance and landing page experience; keyword match types and negative keywords.' },
     GLS: { t:'Google Local Services Ads Help', d:'Local Services Ads: pay per lead for eligible service businesses after Google’s screening checks, with a process to dispute invalid leads.' },
     MSA: { t:'Meta Business Help Center', d:'Custom and lookalike audiences, lead ads, and special ad categories (housing, employment, financial products and services, and social issues) that limit targeting.' },
+    TSR: { t:'Federal Trade Commission', d:'Telemarketing Sales Rule and the National Do Not Call Registry: rules for sales calls to consumers, including no calls before 8am or after 9pm local time.' },
+    REI: { t:'Frederick Reichheld', d:'“The One Number You Need to Grow”, Harvard Business Review (2003): the Net Promoter Score.' },
+    EDM: { t:'US Postal Service', d:'Every Door Direct Mail: sending mail to every address on chosen carrier routes without a mailing list.' },
+    RSP: { t:'Consumer Financial Protection Bureau', d:'The Real Estate Settlement Procedures Act (RESPA) restricts kickbacks and referral fees for settlement services in many home purchases.' },
     GHC: { t:'Google Search Central', d:'Guidance on helpful, people-first content, and E-E-A-T from the Search Quality Rater Guidelines; guidance on AI-generated content.' }
   },
 
@@ -134,7 +138,7 @@ window.COURSE = {
     { id:'m09', stage:1, t:'Websites, landing pages and funnels', ready:true },
     { id:'m10', stage:1, t:'SEO and local search', ready:true },
     { id:'m11', stage:1, t:'Paid ads', ready:true },
-    { id:'m12', stage:1, t:'Outbound and partnerships' },
+    { id:'m12', stage:1, t:'Outbound and partnerships', ready:true },
     { id:'m13', stage:2, t:'Analytics, tracking and testing' },
     { id:'m14', stage:2, t:'Planning and running the growth system' },
     { id:'m15', stage:2, t:'Rules, risk and edge cases' },
