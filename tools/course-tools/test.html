@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Course tools test page</title>
+<!-- Local test page for app/course/tools.js. No sign-in and no Supabase: entries save on this device only.
+     Serve the repo root (python3 -m http.server 8765) and open
+     http://localhost:8765/tools/course-tools/test.html?course=mkt   (or ?course=psy, add &lang=ar for Arabic) -->
+<link rel="stylesheet" href="../../app/course/course.css">
+<link rel="stylesheet" href="../../app/course/tools.css">
+<style>.cp-main{ margin:0 auto; max-width:1000px; padding:20px 16px 60px; }</style>
+</head>
+<body>
+<main class="cp-main" id="cpMain"></main>
+<script src="../../app/course/tools.js"></script>
+<script>
+  const q = new URLSearchParams(location.search), course = q.get('course') || 'mkt', lang = q.get('lang') === 'ar' ? 'ar' : 'en';
+  document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  window.LH_DB = window.LH_DB || { db: null, uid: 'test' };   // check.mjs can put a stand-in for Supabase here first
+  const go = () => LH_TOOLS.render(document.getElementById('cpMain'), { course, lang, path: location.hash.replace(/^#\/?/, '').split('/').slice(1) });
+  if (!location.hash) location.hash = '#/tools';
+  window.addEventListener('hashchange', go); go();
+</script>
+</body>
+</html>

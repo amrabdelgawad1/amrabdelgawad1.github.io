@@ -123,10 +123,15 @@
   // ---------- sidebar ----------
   const ICON = { done:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"/><path d="M7.5 12.5l3 3 6-6.5" stroke="#fff"/></svg>',
     todo:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>', lock:'<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
-    chev:'<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>' };
+    chev:'<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
+    tool:'<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h2M12 12h2M8 16h2M12 16h2"/></svg>' };
   function side(here){
     const [mid, k] = here, keep = PL; PL = lang;
     let h = '<h2>' + t('content') + '</h2>' + (owner ? `<label class="cp-sideview"><input type="checkbox" data-learner${asLearner ? ' checked' : ''}> ${t('asLearnerSide')}</label>` : ''), st = -1;
+    if (window.LH_TOOLS) {           // the course tools (app/course/tools.js), open to anyone who can open the course
+      h += `<div class="cp-stage">${esc(LH_TOOLS.label(lang))}</div>`;
+      LH_TOOLS.list(C.access, lang).forEach(x => { h += `<a class="cp-item" href="${x.href}"${mid === 'tools' && k === x.href.split('/').pop() ? ' aria-current="page"' : ''}><span class="st">${ICON.tool}</span><span>${esc(x.title)}</span></a>`; });
+    }
     C.plan.forEach((p, i) => {
       if (p.stage !== st) { st = p.stage; h += `<div class="cp-stage">${esc(stageT(st))}</div>`; }
       const m = C.modules[p.id], open = m && isOpen(m), on = p.id === mid;
@@ -160,7 +165,7 @@
     let h = `<div class="cp-wrap">
       <section class="cp-hero"><span class="cp-thumb">${thumb({ kick:t('courseKick'), title, foot:t('homeFoot', C.plan.length) })}</span>
         <h1 class="cp-h1">${esc(title)}</h1><p class="cp-sub">${esc(sub)}</p>
-        <div class="row">${next ? `<a class="btn" href="#/${next.id}">${modDone(next) ? t('cont', next.n) : t('start', next.n)}</a>` : ''}<span class="cp-meta"><span><b>${C.plan.length}</b> ${t('modules')}</span><span><b>${ms.length}</b> ${t('ready')}</span><span>${t('passMark', C.pass)}</span></span></div></section>
+        <div class="row">${next ? `<a class="btn" href="#/${next.id}">${modDone(next) ? t('cont', next.n) : t('start', next.n)}</a>` : ''}${window.LH_TOOLS ? `<a class="btn ghost" href="#/tools">${esc(LH_TOOLS.label(lang))}</a>` : ''}<span class="cp-meta"><span><b>${C.plan.length}</b> ${t('modules')}</span><span><b>${ms.length}</b> ${t('ready')}</span><span>${t('passMark', C.pass)}</span></span></div></section>
       <section class="cp-card cp-case" data-a="case"><span class="cp-kick">${t('caseKick')}</span><h2>${esc(cs.main.name)}</h2><p class="cp-sub">${esc(cs.main.about)}</p>
         <dl>${cs.main.facts.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl>
         <p class="cp-sub"><b>${t('b2bCase')}</b> ${esc(cs.b2b.about)}</p></section>`;
@@ -344,6 +349,13 @@
   let lastHash = null, jump = null;
   function route(){
     const [mid, k] = location.hash.replace(/^#\/?/, '').split('/');
+    if (mid === 'tools' && window.LH_TOOLS) {
+      PL = lang; Q = null; lastHash = location.hash;
+      const main = $('cpMain'); side([mid, k]); bar(); menu(false); window.scrollTo(0, 0);
+      LH_TOOLS.render(main, { course:C.access, lang, path:location.hash.replace(/^#\/?/, '').split('/').slice(1) });
+      Pen.mount(pageKey()); document.title = LH_TOOLS.label(lang) + ' · ' + t('docTitle');
+      return;
+    }
     const m = C.modules[mid];
     PL = pageLang(m);
     let html;
@@ -640,6 +652,7 @@
       try { body = await (await fetch(window.COURSE_TEST.content || '_test-content.json', { cache:'no-store' })).json(); } catch(e) { return msg('loadFail'); }
       await pull();
     }
+    window.LH_DB = { db, uid };       // the course tools save to learn_notes with this (db is null in test mode)
     // The lessons are data, never run as code
     if (!body || !body.modules) return msg('loadFail');
     const pub = new Set(['id', 'title', 'pass', 'team', 'access', 'sub', 'stages', 'plan']);

@@ -163,6 +163,7 @@ function render() {
   side(m, it); topProg();
   if (parts[0] === 'review' || parts[0] === 'mistakes') return Rev.render(parts[0], parts[1] || '', parts[2] || '');
   if (parts[0] === 'glossary') return Find.glossary();
+  if (parts[0] === 'tools' && window.LH_TOOLS) { document.title = LH_TOOLS.label(lang) + ' · ' + L(C.title); return LH_TOOLS.render(document.getElementById('cpMain'), { course: 'psy', lang: lang, path: parts.slice(1) }); }
   if (!m) return renderHome();
   if (!isOpen(m)) return renderLocked(m);
   Store.set('last', location.hash);
@@ -176,9 +177,14 @@ function nextModule() { for (var i = 0; i < C.modules.length; i++) { var m = C.m
 
 var ICON = { done: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"/><path d="M7.5 12.5l3 3 6-6.5" stroke="#fff"/></svg>',
   todo: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>', lock: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
-  chev: '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>' };
+  chev: '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
+  tool: '<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h8M8 16h5"/></svg>' };
 function side(cm, cit) {
   var h = '<h2>' + esc(t('content')) + '</h2>' + (OWNER ? '<label class="cp-sideview"><input type="checkbox" data-learner' + (asLearner ? ' checked' : '') + '> ' + esc(t('asLearnerSide')) + '</label>' : '');
+  if (window.LH_TOOLS) {   /* the course tools (../course/tools.js), open to anyone who can open the course */
+    h += '<div class="cp-stage">' + esc(LH_TOOLS.label(lang)) + '</div>';
+    LH_TOOLS.list('psy', lang).forEach(function (x) { h += '<a class="cp-item" href="' + x.href + '"' + (location.hash.indexOf(x.href) === 0 ? ' aria-current="page"' : '') + '><span class="st">' + ICON.tool + '</span><span>' + esc(x.title) + '</span></a>'; });
+  }
   STAGES.forEach(function (list, si) {
     h += '<div class="cp-stage">' + esc(t('stage' + si)) + '</div>';
     list.forEach(function (n) {
@@ -206,7 +212,7 @@ function renderHome() {
   var h = '<div class="cp-wrap"><section class="cp-hero"><span class="cp-thumb">' + mthumb({ kick: t('courseKick'), title: L(C.title), foot: fmt(t('homeFoot'), { n: C.modules.length }) }) + '</span>' +
     '<h1 class="cp-h1">' + esc(L(C.title)) + '</h1><p class="cp-sub">' + esc(L(C.desc)) + '</p>' +
     '<div class="row"><a class="btn" href="#/' + nx.id + '">' + esc(fmt(t(started ? 'contN' : 'startN'), { n: nx.num })) + '</a><span class="cp-meta"><span><b>' + C.modules.length + '</b> ' + esc(t('modulesL')) + '</span><span>' + esc(t('passMark')) + '</span></span></div>' +
-    '<div class="row">' + Rev.buttons('') + '<a class="btn ghost" href="#/glossary">' + esc(t('glossary')) + '</a></div></section>';
+    '<div class="row">' + Rev.buttons('') + '<a class="btn ghost" href="#/glossary">' + esc(t('glossary')) + '</a>' + (window.LH_TOOLS ? '<a class="btn ghost" href="#/tools">' + esc(LH_TOOLS.label(lang)) + '</a>' : '') + '</div></section>';
   STAGES.forEach(function (list, si) {
     h += '<h2 class="cp-stagehead">' + esc(t('stage' + si)) + '</h2><div class="cp-grid">';
     list.forEach(function (n) {

@@ -9,3 +9,6 @@ app/course/_test-content.json
 app/course/_test-build/
 app/psychology/_test.html
 app/psychology/_test-content.json
+
+# course tools test screenshots
+tools/course-tools/shots/
