@@ -43,7 +43,14 @@ window.COURSE = {
     NAG: { t:'Thomas Nagle and Georg Müller', d:'The Strategy and Tactics of Pricing: value-based pricing.' },
     TVK: { t:'Amos Tversky and Daniel Kahneman', d:'Judgment under Uncertainty (1974): anchoring; Prospect Theory (1979): loss aversion.' },
     HPP: { t:'Huber, Payne and Puto', d:'The decoy (asymmetric dominance) effect, Journal of Consumer Research (1982).' },
-    FTD: { t:'US Federal Trade Commission', d:'Guides Against Deceptive Pricing (16 CFR Part 233): fake “was” prices and fake sales.' }
+    FTD: { t:'US Federal Trade Commission', d:'Guides Against Deceptive Pricing (16 CFR Part 233): fake “was” prices and fake sales.' },
+    FTE: { t:'US Federal Trade Commission', d:'Guides Concerning Endorsements and Testimonials (updated 2023).' },
+    CIA: { t:'Robert Cialdini', d:'Influence (1984): six principles of persuasion; Pre-Suasion (2016) added a seventh, unity.' },
+    KAH: { t:'Daniel Kahneman', d:'Thinking, Fast and Slow (2011): fast intuitive thinking and slow deliberate thinking.' },
+    OGI: { t:'David Ogilvy', d:'Ogilvy on Advertising (1983): on average, five times as many people read the headline as the body copy.' },
+    MAS: { t:'Michael Masterson and AWAI', d:'The 4 U’s of headlines: useful, urgent, unique, ultra-specific.' },
+    FLK: { t:'Rudolf Flesch and J. Peter Kincaid', d:'Readability formulas (Flesch 1948; Flesch-Kincaid grade level, 1975).' },
+    GAD: { t:'Google Ads Help', d:'Responsive search ads: headlines up to 30 characters, descriptions up to 90.' }
   },
 
   // The running cases. Kestrel is the main one; BrightLine shows how B2B differs.
@@ -58,7 +65,8 @@ window.COURSE = {
         ['Diagnostic visit', '$89, waived if the customer goes ahead with the repair'],
         ['Average system replacement', '$11,000, about 35% gross margin'],
         ['Replacement options (from Module 3)', 'Good $9,200 · Better $11,000 · Best $14,500; most buyers pick Better, so the average stays about $11,000'],
-        ['Comfort Club plan', '$15 a month ($180 a year), about 70% margin, 1,000 members, 75% renew each year'],
+        ['Comfort Club plan', '$15 a month ($180 a year), about 70% margin, 1,000 members, 75% renew each year; includes two tune-ups a year and priority booking'],
+        ['Past customers on file', 'About 6,000 households in the field-service software, with phone numbers; about 4,000 have an email address; almost none have ever been emailed'],
         ['Marketing spend', '$6,000 a month: $4,800 Google Ads plus $1,200 agency fee (about 3.8% of revenue)'],
         ['Reputation', '4.6 stars from 310 Google reviews'],
         ['A typical month (May)', '200 leads (calls and forms) → 140 booked (70%) → 126 jobs run (90%); 24 replacement quotes → 8 sold (33%)'],
@@ -83,7 +91,7 @@ window.COURSE = {
     { id:'m01', stage:0, t:'Foundations and the language of marketing', ready:true },
     { id:'m02', stage:0, t:'Know your customer', ready:true },
     { id:'m03', stage:0, t:'Positioning, offer and pricing', ready:true },
-    { id:'m04', stage:0, t:'Messaging and copywriting' },
+    { id:'m04', stage:0, t:'Messaging and copywriting', ready:true },
     { id:'m05', stage:1, t:'Brand' },
     { id:'m06', stage:1, t:'Content marketing' },
     { id:'m07', stage:1, t:'Social media' },
