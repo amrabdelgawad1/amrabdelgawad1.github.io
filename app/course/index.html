@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://ztlpgyomjuzmjmuifbbd.supabase.co wss://ztlpgyomjuzmjmuifbbd.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Marketing course</title>
+<script src="/guard.js?v=1"></script>
+<link rel="icon" href="/app/icon-64.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="course.css?v=1">
+</head>
+<body>
+<div class="cp" id="cp">
+  <header class="cp-top">
+    <button class="cp-menu" type="button" id="cpMenu" aria-label="Course content" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <a class="cp-brand" href="#/"><span class="cp-logo" aria-hidden="true">M</span><span>Marketing</span></a>
+    <div class="cp-prog" id="cpProg" title="Course progress"><span class="cp-bar"><i></i></span><b>0%</b></div>
+    <label class="cp-view" id="cpView" hidden><input type="checkbox" id="cpAsLearner"> View as learner</label>
+    <a class="cp-back" href="/app/#learn">Back to app</a>
+  </header>
+  <div class="cp-body">
+    <aside class="cp-side" id="cpSide" aria-label="Course content"></aside>
+    <div class="cp-scrim" id="cpScrim" hidden></div>
+    <main class="cp-main" id="cpMain"><p class="cp-msg" id="cpMsg">Checking your access…</p></main>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+<script src="/tracker/config.js"></script>
+<script src="marketing/course.js?v=1"></script>
+<script src="marketing/m01.js?v=1"></script>
+<script src="player.js?v=1"></script>
+</body>
+</html>

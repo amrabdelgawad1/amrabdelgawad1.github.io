@@ -107,6 +107,7 @@
     <section class="lh-head"><span class="label">Learning Hub</span><h2 class="lh-h1">Pick a track</h2>
       <p class="note">Each track has its modules and the tools that go with it. Your notes, drawings and progress are yours only.</p></section>
     <div class="lh-tracks">${tracksHtml()}</div>
+    ${(window.TalentsApp || {}).role === 'owner' ? `<a class="card lh-track lh-mag" href="/app/course/"><span class="lh-chip">Owner preview</span><h2>Marketing, new version</h2><p class="note">The course being rebuilt to the new standard: parts, playbook questions, assignments and checkpoint quizzes. Only you can see it until it’s finished.</p><span class="label">Open the preview</span></a>` : ''}
     <section class="card"><h2>What every module has</h2>
       <p class="note">Read the lesson, use the playbook, keep notes, practise on the scratch pad, then pass the exam (${PASS}% or more) to complete the module. Use the pen to draw or highlight on any page.</p>
       <div class="lh-parts">${PARTS.map((p, i) => `<span class="lh-part"><b>${i + 1}</b>${p}</span>`).join('')}</div></section>`;
