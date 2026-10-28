@@ -6,7 +6,7 @@ window.COURSE_UI = {
     rebuiltNote:'This module is being rebuilt to the new standard.', ofDone:(a, b) => a + ' of ' + b + ' done',
     recapItem:'Recap', recapCrumb:'Recap', recapKick:n => 'Module ' + n + ' · Recap', recapThumb:t => 'Recap: ' + t, recapFoot:'The whole module on one page · about 5 min',
     recapTitleKick:n => 'Module ' + n + ' recap', recapSub:'The module on one page. Every point links back to where it’s taught, so you can jump in for more.',
-    ideasH:'Key ideas, part by part', numsH:'Numbers and formulas to remember', trapsH:'Common mistakes', allTermsH:'Terms at a glance',
+    ideasH:'Key ideas, part by part', numsH:'Numbers and formulas to remember', trapsH:'Common mistakes', allTermsH:'Terms at a glance', showTerms:n => 'Show all ' + n + ' terms',
     checkH:'Check yourself', checkP:'Answer in your head, then tap to see the answer. These don’t count toward anything.', seeIt:'See it in ',
     overviewItem:'Module overview', asgItem:'Written assignment', quizItem:'Checkpoint quiz',
     lv:{ b:'Basic', a:'Applied', t:'Tough' },
@@ -42,7 +42,8 @@ window.COURSE_UI = {
     back:'Back to app', progress:'Course progress', find:'Search the course', findBtn:'Search', findHint:'Type a word or term, like “funnel” or “CAC”.', noHits:q => 'No matches for “' + q + '”.',
     kinds:{ term:'Glossary', sec:'Lesson', part:'Part', case:'Kestrel case', b2b:'B2B', q:'Question', mod:'Module', asg:'Assignment', home:'Case file', recap:'Recap' },
     connect:'This page couldn’t connect. Check your internet and refresh.', signIn:'Sign in to your app first, then open the course from the Learning Hub.',
-    noAccess:'Your account doesn’t have the Learning Hub yet. Ask Amr to switch it on for you.', openApp:'Open my app', checking:'Checking your access…',
+    noAccess:'Your account doesn’t have this course yet. Ask Amr to switch it on for you.', openApp:'Open my app', checking:'Checking your access…',
+    loading:'Loading the course…', loadFail:'Couldn’t load the course. Refresh to try again.', notSetUp:'The course isn’t set up yet. Ask Amr.',
     untranslated:'', docTitle:'Marketing course', langGroup:'Language'
   },
   ar:{
@@ -50,7 +51,7 @@ window.COURSE_UI = {
     rebuiltNote:'الموديول ده بيتعمل من جديد على المستوى الجديد.', ofDone:(a, b) => a + ' من ' + b + ' خلصوا',
     recapItem:'ملخّص سريع', recapCrumb:'الملخّص', recapKick:n => 'الموديول ' + n + ' · ملخّص سريع', recapThumb:t => 'ملخّص: ' + t, recapFoot:'الموديول كله في صفحة واحدة · حوالي 5 دقايق',
     recapTitleKick:n => 'ملخّص الموديول ' + n, recapSub:'الموديول كله في صفحة واحدة. كل نقطة ليها لينك للمكان اللي اتشرحت فيه، لو عايز تفاصيل أكتر.',
-    ideasH:'أهم الأفكار، جزء جزء', numsH:'أرقام ومعادلات لازم تفتكرها', trapsH:'غلطات شائعة', allTermsH:'المصطلحات في لمحة',
+    ideasH:'أهم الأفكار، جزء جزء', numsH:'أرقام ومعادلات لازم تفتكرها', trapsH:'غلطات شائعة', allTermsH:'المصطلحات في لمحة', showTerms:n => 'اعرض كل المصطلحات (' + n + ')',
     checkH:'اختبر نفسك', checkP:'جاوب في دماغك الأول، وبعدين دوس عشان تشوف الإجابة. دول مش محسوبين في أي حاجة.', seeIt:'شوفها في ',
     overviewItem:'نظرة عامة على الموديول', asgItem:'التكليف المكتوب', quizItem:'اختبار الموديول',
     lv:{ b:'أساسي', a:'تطبيقي', t:'صعب' },
@@ -86,7 +87,8 @@ window.COURSE_UI = {
     back:'ارجع للتطبيق', progress:'تقدّمك في الكورس', find:'دوّر في الكورس', findBtn:'دوّر', findHint:'اكتب كلمة أو مصطلح، زي “funnel” أو “CAC” أو “إعلان”.', noHits:q => 'مفيش نتايج لـ “' + q + '”.',
     kinds:{ term:'مصطلح', sec:'درس', part:'جزء', case:'حالة كيستريل', b2b:'B2B', q:'سؤال', mod:'موديول', asg:'تكليف', home:'ملف الحالة', recap:'ملخّص' },
     connect:'الصفحة مقدرتش تتصل. اتأكد من النت واعمل ريفرش.', signIn:'سجّل دخولك في التطبيق الأول، وبعدين افتح الكورس من الـ Learning Hub.',
-    noAccess:'حسابك لسه مفيهوش الـ Learning Hub. كلّم عمرو يفتحهولك.', openApp:'افتح التطبيق', checking:'بنتأكد من صلاحيتك…',
+    noAccess:'حسابك لسه مفيهوش الكورس ده. كلّم عمرو يفتحهولك.', openApp:'افتح التطبيق', checking:'بنتأكد من صلاحيتك…',
+    loading:'بنحمّل الكورس…', loadFail:'مقدرناش نحمّل الكورس. اعمل ريفرش وجرّب تاني.', notSetUp:'الكورس لسه مش جاهز. كلّم عمرو.',
     untranslated:'الموديول ده لسه بيتترجم للعربي، فبتقراه دلوقتي بالإنجليزي. تقدّمك محفوظ في اللغتين.', docTitle:'كورس الماركتينج', langGroup:'اللغة'
   }
 };

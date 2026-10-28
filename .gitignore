@@ -5,3 +5,5 @@ tools/course-dev/node_modules/
 course-kit/
 **/module-*.json
 app/course/_test.html
+app/course/_test-content.json
+app/course/_test-build/

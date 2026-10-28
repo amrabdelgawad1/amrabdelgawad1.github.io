@@ -15,7 +15,7 @@
   let lang = 'en', PL = 'en';
   try { lang = localStorage.getItem('cp-lang') === 'ar' ? 'ar' : 'en'; } catch(e){}
   const t = (k, ...a) => { const v = (UI[PL] || UI.en)[k]; const x = v == null ? UI.en[k] : v; return typeof x === 'function' ? x(...a) : x; };
-  const AR = C.ar || { modules:{} };
+  let AR = C.ar || { modules:{} };   // filled again once the locked content has loaded
   const hasAr = m => !!(AR.modules && AR.modules[m.id]);
   const pageLang = m => lang === 'ar' && (!m || hasAr(m)) ? 'ar' : 'en';
   const planT = p => PL === 'ar' && AR.plan && AR.plan[p.id] || p.t;
@@ -260,6 +260,7 @@
   function recap(m){
     M(m.id).recap = true; save();
     const L = loc(m), r = L.recap || m.recap;
+    const nT = L.parts.reduce((a, p) => a + p.terms.length, 0);   // the glossary is folded away at the end: the key ideas already cover the main terms
     const to = (p, sec) => `<a class="cp-rlink" href="#/${m.id}/${p}" data-go="${sec === 'ex' ? 'ex' : 's' + sec}" title="${esc(t('seeIt') + m.n + '.' + p)}">${m.n}.${p}</a>`;
     return `<div class="cp-wrap">${crumb([[t('module', m.n), '#/' + m.id], [t('recapCrumb')]])}
       <span class="cp-thumb">${thumb({ kick:t('recapKick', m.n), title:t('recapThumb', L.t), foot:t('recapFoot') })}</span>
@@ -268,9 +269,9 @@
         <ul>${pt.map((x, j) => `<li data-a="i${i}_${j}">${esc(x[0])} ${to(i + 1, x[1])}</li>`).join('')}</ul>`).join('')}</section>
       <section class="cp-card cp-recap" data-a="nums"><h2>${t('numsH')}</h2><dl class="cp-terms">${r.nums.map((x, i) => `<dt data-a="n${i}">${esc(x[0])}</dt><dd>${esc(x[1])} ${to(x[2], x[3])}</dd>`).join('')}</dl></section>
       <section class="cp-card cp-recap" data-a="traps"><h2>${t('trapsH')}</h2><ul>${r.traps.map((x, i) => `<li data-a="x${i}">${esc(x[0])} ${to(x[1], x[2])}</li>`).join('')}</ul></section>
-      <section class="cp-card cp-recap" data-a="rterms"><h2>${t('allTermsH')}</h2><dl class="cp-terms">${L.parts.map((p, i) => p.terms.map(([a, b], j) => `<dt>${esc(a)}</dt><dd>${esc(b)} <a class="cp-rlink" href="#/${m.id}/${i + 1}" data-go="t${j}">${m.n}.${i + 1}</a></dd>`).join('')).join('')}</dl></section>
       <section class="cp-card cp-recap" data-a="check"><h2>${t('checkH')}</h2><p class="cp-sub">${t('checkP')}</p>
         <div class="cp-checks">${r.check.map((x, i) => `<details data-a="c${i}"><summary>${esc(x[0])}</summary><p>${esc(x[1])} ${to(x[2], x[3])}</p></details>`).join('')}</div></section>
+      <section class="cp-card cp-recap" data-a="rterms"><details class="cp-tdet"><summary><h2>${t('allTermsH')}</h2><span class="cp-sub">${t('showTerms', nT)}</span></summary><dl class="cp-terms">${L.parts.map((p, i) => p.terms.map(([a, b], j) => `<dt>${esc(a)}</dt><dd>${esc(b)} <a class="cp-rlink" href="#/${m.id}/${i + 1}" data-go="t${j}">${m.n}.${i + 1}</a></dd>`).join('')).join('')}</dl></details></section>
       ${foot(m, 'recap')}</div>`;
   }
   // A recap link opens the part and lands on the section it came from.
@@ -616,10 +617,27 @@
       const own = await db.rpc('is_tracker_admin'); owner = own.data === true;
       if (!owner) {
         if (OWNER_ONLY) return msg('noAccess');
-        const acc = await db.from('members').select('access').eq('user_id', uid).maybeSingle();
-        if (!((acc.data && acc.data.access) || []).includes('learn')) return msg('noAccess');
+        // Learning Hub plus this course's own switch; the storage bucket checks the same thing on the server
+        const ok = await db.rpc('learn_can_open', { p_course:C.access });
+        if (ok.error) return msg(/not find|404|does not exist/i.test(ok.error.message || '') ? 'notSetUp' : 'loadFail');
+        if (ok.data !== true) return msg('noAccess');
       }
     }
+    // The lessons aren't on the website: download them now, as data (never run as code)
+    $('cpMain').innerHTML = `<p class="cp-msg">${t('loading')}</p>`;
+    let body = null;
+    try {
+      if (window.COURSE_TEST) body = await (await fetch(window.COURSE_TEST.content || '_test-content.json', { cache:'no-store' })).json();
+      else {
+        const f = await db.storage.from('course-content').download(C.access + '/content.json');
+        if (f.error || !f.data) return msg(f.error && /not found|404/i.test(f.error.message || '') ? 'notSetUp' : 'loadFail');
+        body = JSON.parse(await f.data.text());
+      }
+    } catch(e) { return msg('loadFail'); }
+    if (!body || !body.modules) return msg('loadFail');
+    const pub = new Set(['id', 'title', 'pass', 'team', 'access', 'sub', 'stages', 'plan']);
+    Object.keys(body).forEach(k => { if (!pub.has(k)) C[k] = body[k]; });
+    AR = C.ar || { modules:{} };
     await pull();
     let chosen = null; try { chosen = localStorage.getItem('cp-lang'); } catch(e){}
     if (!chosen && D.lang) { lang = D.lang; chrome(); }
