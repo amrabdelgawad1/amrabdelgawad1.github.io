@@ -87,6 +87,9 @@ window.COURSE = {
     RSP: { t:'Consumer Financial Protection Bureau', d:'The Real Estate Settlement Procedures Act (RESPA) restricts kickbacks and referral fees for settlement services in many home purchases.' },
     GA4: { t:'Google Analytics Help', d:'Google Analytics 4: events and key events (called conversions before 2024), and attribution: data-driven and last-click models (first-click, linear, time-decay and position-based were retired in 2023).' },
     GOH: { t:'Charles Goodhart and Marilyn Strathern', d:'Goodhart’s law (1975), often quoted in Strathern’s wording (1997): when a measure becomes a target, it ceases to be a good measure.' },
+    DOE: { t:'John Doerr', d:'Measure What Matters (2018): objectives and key results (OKRs), building on Andy Grove’s practice at Intel.' },
+    ICE: { t:'Sean Ellis', d:'The ICE score (impact, confidence, ease) for ranking growth ideas; described in Hacking Growth (2017, with Morgan Brown).' },
+    COL: { t:'Jim Collins', d:'Good to Great (2001) and Turning the Flywheel (2019): growth as a flywheel where each part pushes the next.' },
     GHC: { t:'Google Search Central', d:'Guidance on helpful, people-first content, and E-E-A-T from the Search Quality Rater Guidelines; guidance on AI-generated content.' }
   },
 
@@ -142,7 +145,7 @@ window.COURSE = {
     { id:'m11', stage:1, t:'Paid ads', ready:true },
     { id:'m12', stage:1, t:'Outbound and partnerships', ready:true },
     { id:'m13', stage:2, t:'Analytics, tracking and testing', ready:true },
-    { id:'m14', stage:2, t:'Planning and running the growth system' },
+    { id:'m14', stage:2, t:'Planning and running the growth system', ready:true },
     { id:'m15', stage:2, t:'Rules, risk and edge cases' },
     { id:'m16', stage:3, t:'Becoming a pro' }
   ],
