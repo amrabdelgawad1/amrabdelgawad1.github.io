@@ -33,7 +33,17 @@ window.COURSE = {
     COO: { t:'Alan Cooper', d:'The Inmates Are Running the Asylum (1999): personas.' },
     GAR: { t:'Gartner', d:'Research on B2B buying groups: a typical complex purchase involves six to ten decision makers.' },
     FIT: { t:'Rob Fitzpatrick', d:'The Mom Test (2013): ask about past behaviour, not opinions about the future.' },
-    SWO: { t:'SWOT analysis', d:'Origin debated; often credited to Albert Humphrey’s team at the Stanford Research Institute in the 1960s.' }
+    SWO: { t:'SWOT analysis', d:'Origin debated; often credited to Albert Humphrey’s team at the Stanford Research Institute in the 1960s.' },
+    DUN: { t:'April Dunford', d:'Obviously Awesome (2019): the five components of positioning.' },
+    RTR: { t:'Al Ries and Jack Trout', d:'Positioning: The Battle for Your Mind (1981).' },
+    MOO: { t:'Geoffrey Moore', d:'Crossing the Chasm (1991): the positioning statement template.' },
+    OST: { t:'Alexander Osterwalder and others', d:'Value Proposition Design (2014): the value proposition canvas.' },
+    REE: { t:'Rosser Reeves', d:'Reality in Advertising (1961): the unique selling proposition (USP).' },
+    HOR: { t:'Alex Hormozi', d:'$100M Offers (2021): the value equation.' },
+    NAG: { t:'Thomas Nagle and Georg Müller', d:'The Strategy and Tactics of Pricing: value-based pricing.' },
+    TVK: { t:'Amos Tversky and Daniel Kahneman', d:'Judgment under Uncertainty (1974): anchoring; Prospect Theory (1979): loss aversion.' },
+    HPP: { t:'Huber, Payne and Puto', d:'The decoy (asymmetric dominance) effect, Journal of Consumer Research (1982).' },
+    FTD: { t:'US Federal Trade Commission', d:'Guides Against Deceptive Pricing (16 CFR Part 233): fake “was” prices and fake sales.' }
   },
 
   // The running cases. Kestrel is the main one; BrightLine shows how B2B differs.
@@ -47,6 +57,7 @@ window.COURSE = {
         ['Average repair job', '$420, about 60% gross margin'],
         ['Diagnostic visit', '$89, waived if the customer goes ahead with the repair'],
         ['Average system replacement', '$11,000, about 35% gross margin'],
+        ['Replacement options (from Module 3)', 'Good $9,200 · Better $11,000 · Best $14,500; most buyers pick Better, so the average stays about $11,000'],
         ['Comfort Club plan', '$15 a month ($180 a year), about 70% margin, 1,000 members, 75% renew each year'],
         ['Marketing spend', '$6,000 a month: $4,800 Google Ads plus $1,200 agency fee (about 3.8% of revenue)'],
         ['Reputation', '4.6 stars from 310 Google reviews'],
@@ -71,7 +82,7 @@ window.COURSE = {
   plan:[
     { id:'m01', stage:0, t:'Foundations and the language of marketing', ready:true },
     { id:'m02', stage:0, t:'Know your customer', ready:true },
-    { id:'m03', stage:0, t:'Positioning, offer and pricing' },
+    { id:'m03', stage:0, t:'Positioning, offer and pricing', ready:true },
     { id:'m04', stage:0, t:'Messaging and copywriting' },
     { id:'m05', stage:1, t:'Brand' },
     { id:'m06', stage:1, t:'Content marketing' },
