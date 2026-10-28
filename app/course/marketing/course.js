@@ -96,6 +96,8 @@ window.COURSE = {
     PRV: { t:'US state privacy laws', d:'California’s Consumer Privacy Act (as amended) and similar laws in many other states: notices, rights to access and delete data, and limits on selling or sharing it.' },
     COR: { t:'Federal Trade Commission', d:'Cooling-Off Rule (16 CFR Part 429): three business days to cancel certain sales of $25 or more made at the buyer’s home.' },
     PGL: { t:'US state price-gouging laws', d:'Many states restrict excessive price increases on essential goods and services during a declared emergency; rules differ by state.' },
+    DUK: { t:'Annie Duke', d:'Thinking in Bets (2018): judge decisions by the quality of the thinking and information, not only by how they turned out (“resulting”).' },
+    TSK: { t:'T-shaped skills', d:'Broad knowledge across a field plus depth in one area; the idea is often traced to David Guest (1991) and was widely used for marketers from the 2010s.' },
     GHC: { t:'Google Search Central', d:'Guidance on helpful, people-first content, and E-E-A-T from the Search Quality Rater Guidelines; guidance on AI-generated content.' }
   },
 
@@ -153,7 +155,7 @@ window.COURSE = {
     { id:'m13', stage:2, t:'Analytics, tracking and testing', ready:true },
     { id:'m14', stage:2, t:'Planning and running the growth system', ready:true },
     { id:'m15', stage:2, t:'Rules, risk and edge cases', ready:true },
-    { id:'m16', stage:3, t:'Becoming a pro' }
+    { id:'m16', stage:3, t:'Becoming a pro', ready:true }
   ],
   modules:{}
 };
