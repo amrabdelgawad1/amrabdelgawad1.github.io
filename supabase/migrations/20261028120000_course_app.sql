@@ -867,7 +867,7 @@ create policy course_uploads_delete on storage.objects for delete to authenticat
 
 -- ---------------------------------------------------------------------------
 -- members.access: allow the new value 'course'
--- If a check constraint lists the allowed values, add 'course' next to 'learn'.
+-- If a check constraint limits access to a list (access <@ ARRAY[...]), add 'course' to that list.
 -- If access is an enum array, add 'course' to the enum. Otherwise nothing to do.
 -- ---------------------------------------------------------------------------
 
@@ -881,13 +881,10 @@ begin
     select con.conname, pg_get_constraintdef(con.oid) as def
       from pg_constraint con
      where con.conrelid = 'public.members'::regclass and con.contype = 'c'
-       and pg_get_constraintdef(con.oid) like '%''learn''%'
+       and pg_get_constraintdef(con.oid) ~ 'access\s*<@\s*ARRAY\['
        and pg_get_constraintdef(con.oid) not like '%''course''%'
   loop
-    def := replace(c.def, '''learn''::text', '''learn''::text, ''course''::text');
-    if def = c.def then
-      def := replace(c.def, '''learn''', '''learn'', ''course''');
-    end if;
+    def := regexp_replace(c.def, 'ARRAY\[', 'ARRAY[''course''::text, ');
     execute format('alter table public.members drop constraint %I', c.conname);
     execute format('alter table public.members add constraint %I %s', c.conname, def);
     raise notice 'members: added course to constraint %', c.conname;
