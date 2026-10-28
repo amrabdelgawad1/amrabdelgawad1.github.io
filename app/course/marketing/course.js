@@ -85,6 +85,8 @@ window.COURSE = {
     REI: { t:'Frederick Reichheld', d:'“The One Number You Need to Grow”, Harvard Business Review (2003): the Net Promoter Score.' },
     EDM: { t:'US Postal Service', d:'Every Door Direct Mail: sending mail to every address on chosen carrier routes without a mailing list.' },
     RSP: { t:'Consumer Financial Protection Bureau', d:'The Real Estate Settlement Procedures Act (RESPA) restricts kickbacks and referral fees for settlement services in many home purchases.' },
+    GA4: { t:'Google Analytics Help', d:'Google Analytics 4: events and key events (called conversions before 2024), and attribution: data-driven and last-click models (first-click, linear, time-decay and position-based were retired in 2023).' },
+    GOH: { t:'Charles Goodhart and Marilyn Strathern', d:'Goodhart’s law (1975), often quoted in Strathern’s wording (1997): when a measure becomes a target, it ceases to be a good measure.' },
     GHC: { t:'Google Search Central', d:'Guidance on helpful, people-first content, and E-E-A-T from the Search Quality Rater Guidelines; guidance on AI-generated content.' }
   },
 
@@ -139,7 +141,7 @@ window.COURSE = {
     { id:'m10', stage:1, t:'SEO and local search', ready:true },
     { id:'m11', stage:1, t:'Paid ads', ready:true },
     { id:'m12', stage:1, t:'Outbound and partnerships', ready:true },
-    { id:'m13', stage:2, t:'Analytics, tracking and testing' },
+    { id:'m13', stage:2, t:'Analytics, tracking and testing', ready:true },
     { id:'m14', stage:2, t:'Planning and running the growth system' },
     { id:'m15', stage:2, t:'Rules, risk and edge cases' },
     { id:'m16', stage:3, t:'Becoming a pro' }
