@@ -50,7 +50,14 @@ window.COURSE = {
     OGI: { t:'David Ogilvy', d:'Ogilvy on Advertising (1983): on average, five times as many people read the headline as the body copy.' },
     MAS: { t:'Michael Masterson and AWAI', d:'The 4 U’s of headlines: useful, urgent, unique, ultra-specific.' },
     FLK: { t:'Rudolf Flesch and J. Peter Kincaid', d:'Readability formulas (Flesch 1948; Flesch-Kincaid grade level, 1975).' },
-    GAD: { t:'Google Ads Help', d:'Responsive search ads: headlines up to 30 characters, descriptions up to 90.' }
+    GAD: { t:'Google Ads Help', d:'Responsive search ads: headlines up to 30 characters, descriptions up to 90.' },
+    SHA: { t:'Byron Sharp', d:'How Brands Grow (2010): mental and physical availability, and growth through reaching more buyers.' },
+    ROM: { t:'Jenni Romaniuk', d:'Building Distinctive Brand Assets (2018): colours, logos, characters and other cues that trigger the brand.' },
+    BNF: { t:'Les Binet and Peter Field', d:'The Long and the Short of It (IPA, 2013): balancing long-term brand building with short-term sales activation.' },
+    W3C: { t:'W3C WCAG 2.1', d:'Web Content Accessibility Guidelines: contrast of at least 4.5:1 for normal text and 3:1 for large text.' },
+    NNG: { t:'Nielsen Norman Group', d:'The four dimensions of tone of voice (2016): funny–serious, formal–casual, respectful–irreverent, enthusiastic–matter-of-fact.' },
+    SBR: { t:'Donald Miller', d:'Building a StoryBrand (2017): the customer as hero, the brand as guide.' },
+    GRV: { t:'Google', d:'Google Business Profile review policies: no fake reviews, no rewards, and no selectively asking only happy customers (review gating).' }
   },
 
   // The running cases. Kestrel is the main one; BrightLine shows how B2B differs.
@@ -68,7 +75,8 @@ window.COURSE = {
         ['Comfort Club plan', '$15 a month ($180 a year), about 70% margin, 1,000 members, 75% renew each year; includes two tune-ups a year and priority booking'],
         ['Past customers on file', 'About 6,000 households in the field-service software, with phone numbers; about 4,000 have an email address; almost none have ever been emailed'],
         ['Marketing spend', '$6,000 a month: $4,800 Google Ads plus $1,200 agency fee (about 3.8% of revenue)'],
-        ['Reputation', '4.6 stars from 310 Google reviews'],
+        ['Reputation', '4.6 stars from 310 Google reviews; about 4 new reviews a month arrive without asking'],
+        ['Brand look', 'Deep blue and sunflower yellow, a small kestrel-bird mark, 6 wrapped service vans; the logo and colours have been the same since 2011'],
         ['A typical month (May)', '200 leads (calls and forms) → 140 booked (70%) → 126 jobs run (90%); 24 replacement quotes → 8 sold (33%)'],
         ['Google Ads in May', '$4,800 spend, 1,600 clicks, 80 leads, 56 booked, 50 jobs run'],
         ['Service area', 'About 120,000 households within 25 miles; about 66,000 are owner-occupied homes with central heating and air'],
@@ -92,7 +100,7 @@ window.COURSE = {
     { id:'m02', stage:0, t:'Know your customer', ready:true },
     { id:'m03', stage:0, t:'Positioning, offer and pricing', ready:true },
     { id:'m04', stage:0, t:'Messaging and copywriting', ready:true },
-    { id:'m05', stage:1, t:'Brand' },
+    { id:'m05', stage:1, t:'Brand', ready:true },
     { id:'m06', stage:1, t:'Content marketing' },
     { id:'m07', stage:1, t:'Social media' },
     { id:'m08', stage:1, t:'Email and text marketing' },
