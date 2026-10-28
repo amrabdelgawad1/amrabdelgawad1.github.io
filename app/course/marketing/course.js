@@ -70,6 +70,10 @@ window.COURSE = {
     CTI: { t:'CTIA and US mobile carriers', d:'Messaging Principles and Best Practices; 10DLC registration for business texting from ordinary 10-digit numbers.' },
     GYS: { t:'Google and Yahoo', d:'Email sender requirements (from February 2024): SPF, DKIM and DMARC, one-click unsubscribe, and low spam complaint rates for bulk senders.' },
     AMP: { t:'Apple', d:'Mail Privacy Protection (2021): preloads email images, which makes open rates unreliable.' },
+    NNS: { t:'Nielsen Norman Group', d:'Research on how people read on the web: most scan rather than read word by word (Jakob Nielsen, 1997), often in an F-shaped pattern (2006).' },
+    CWV: { t:'Google (web.dev)', d:'Core Web Vitals: Largest Contentful Paint within 2.5 seconds, Interaction to Next Paint within 200 milliseconds, Cumulative Layout Shift under 0.1.' },
+    HBR: { t:'Oldroyd, McElheran and Elkington', d:'“The Short Life of Online Sales Leads”, Harvard Business Review (2011): firms that tried to contact leads within an hour were nearly seven times as likely to qualify them as firms that waited longer.' },
+    LEH: { t:'Robert Lehr', d:'Rule of thumb for sample size (1992): about 16 × p × (1 − p) ÷ d² per group, for 80% power at 5% significance.' },
     GHC: { t:'Google Search Central', d:'Guidance on helpful, people-first content, and E-E-A-T from the Search Quality Rater Guidelines; guidance on AI-generated content.' }
   },
 
@@ -120,7 +124,7 @@ window.COURSE = {
     { id:'m06', stage:1, t:'Content marketing', ready:true },
     { id:'m07', stage:1, t:'Social media', ready:true },
     { id:'m08', stage:1, t:'Email and text marketing', ready:true },
-    { id:'m09', stage:1, t:'Websites, landing pages and funnels' },
+    { id:'m09', stage:1, t:'Websites, landing pages and funnels', ready:true },
     { id:'m10', stage:1, t:'SEO and local search' },
     { id:'m11', stage:1, t:'Paid ads' },
     { id:'m12', stage:1, t:'Outbound and partnerships' },
