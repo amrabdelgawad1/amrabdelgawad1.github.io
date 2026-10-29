@@ -1,0 +1,68 @@
+/* Learning Hub home: the course players' look (course.css tokens, top bar, dark hero, orange accent) for the page
+   that lists every course. */
+.cp-top .cp-brand{ margin-inline-end:auto; }
+.lh-main{ padding:28px clamp(16px, 4vw, 48px) 80px; }
+.lh-wrap{ max-width:1180px; margin:0 auto; display:grid; gap:28px; }
+
+/* the dark hero, same as a course's home thumbnail */
+.lh-hero{ position:relative; background:var(--ink); color:#fff; border-radius:var(--r); padding:clamp(28px, 5vw, 56px) clamp(22px, 5vw, 64px); display:grid; gap:10px; overflow:hidden; }
+.lh-hero-bar{ width:40px; height:5px; border-radius:3px; background:var(--accent-hi); }
+.lh-hero-kick{ color:var(--accent-hi); font-weight:700; font-size:14px; letter-spacing:.18em; text-transform:uppercase; }
+.lh-hero h1{ color:#fff; font-size:clamp(38px, 6vw, 64px); line-height:1.02; margin-top:6px; }
+.lh-hero p{ margin:0; color:#B9BDC6; font-size:clamp(16px, 2vw, 19px); }
+
+/* course cards */
+.lh-grid{ display:grid; gap:20px; grid-template-columns:repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+.lh-course{ display:grid; grid-template-rows:auto 1fr; background:var(--card); border:1px solid var(--line); border-radius:var(--r); overflow:hidden; color:var(--ink); text-decoration:none; transition:border-color .15s, box-shadow .15s, transform .15s; }
+a.lh-course:hover{ border-color:var(--accent); box-shadow:0 10px 30px rgba(20,22,27,.08); transform:translateY(-2px); }
+a.lh-course:hover .lh-go{ filter:brightness(1.08); }
+.lh-course.is-locked{ background:var(--soft); }
+.lh-course.is-locked h2, .lh-course.is-locked .lh-sub{ color:var(--muted); }
+
+.lh-art{ position:relative; display:block; aspect-ratio:16/7; background:var(--ink); padding:22px 24px; overflow:hidden; }
+.lh-art-bar{ display:block; width:32px; height:4px; border-radius:2px; background:var(--accent-hi); }
+.lh-art-kick{ display:block; margin-top:8px; color:var(--accent-hi); font-size:12px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; }
+.lh-art-letter{ position:absolute; right:20px; bottom:-18px; font:800 128px/1 var(--display); color:var(--accent-hi); opacity:.95; }
+.lh-art.is-locked{ background:#2A2D34; }
+.lh-art.is-locked .lh-art-bar, .lh-art.is-locked .lh-art-kick{ background:none; color:#8A8F99; }
+.lh-art.is-locked .lh-art-bar{ background:#5A5F69; }
+.lh-art.is-locked .lh-art-letter{ color:#4A4F59; }
+.lh-art-lock{ position:absolute; left:24px; bottom:20px; width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.1); color:#fff; display:grid; place-items:center; }
+.lh-art-lock svg{ width:20px; height:20px; }
+
+.lh-body{ display:flex; flex-direction:column; gap:10px; padding:20px 22px 22px; }
+.lh-body h2{ font-size:24px; }
+.lh-sub{ color:var(--ink2); font-size:15px; line-height:1.55; }
+.lh-tags{ display:flex; flex-wrap:wrap; gap:6px; }
+.lh-tags span{ font-size:12px; font-weight:600; color:var(--ink2); background:var(--soft); border:1px solid var(--line); border-radius:99px; padding:3px 10px; }
+.is-locked .lh-tags span{ background:var(--card); }
+.lh-meta{ display:flex; gap:16px; color:var(--muted); font-size:14px; }
+.lh-meta b{ color:var(--ink); font-size:17px; margin-inline-end:3px; }
+.lh-prog{ display:flex; align-items:center; gap:10px; font-size:13px; }
+.lh-prog .cp-bar{ flex:1; width:auto; }
+.lh-prog b{ min-width:4ch; text-align:end; }
+.lh-go{ align-self:flex-start; margin-top:auto; }
+.lh-go svg{ width:18px; height:18px; }
+.lh-lockmsg{ display:flex; gap:10px; align-items:center; margin:auto 0 0; padding:12px 14px; border:1px dashed var(--line2); border-radius:8px; color:var(--ink2); font-size:14px; font-weight:500; background:var(--card); }
+.lh-lockmsg svg{ width:18px; height:18px; flex:none; color:var(--muted); }
+.lh-own{ font-size:13px; color:var(--muted); border-top:1px solid var(--line); padding-top:10px; }
+.lh-own b{ color:var(--ink); }
+
+/* Amr's tools under the courses */
+.lh-h2{ font-size:22px; margin-bottom:12px; }
+.lh-tools{ display:grid; gap:14px; grid-template-columns:repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+.lh-tool{ display:flex; gap:14px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:16px 18px; color:var(--ink); text-decoration:none; }
+.lh-tool:hover{ border-color:var(--accent); }
+.lh-tool b{ display:block; font-size:16px; }
+.lh-tool small{ color:var(--muted); font-size:13px; }
+.lh-ic{ width:44px; height:44px; flex:none; border-radius:10px; background:var(--ink); color:var(--accent-hi); display:grid; place-items:center; }
+.lh-ic svg{ width:22px; height:22px; }
+.lh-count{ margin-inline-start:auto; flex:none; background:var(--accent-soft); color:var(--accent); font-size:13px; font-weight:700; border-radius:99px; padding:4px 10px; }
+
+@media (max-width:640px){
+  .lh-main{ padding:16px 16px 60px; }
+  .cp-top .cp-back.lh-back{ display:inline-block; padding:7px 10px; font-size:13px; }
+  .cp-brand span:last-child{ display:inline; }
+  .lh-art{ aspect-ratio:16/6; }
+  .lh-art-letter{ font-size:104px; }
+}

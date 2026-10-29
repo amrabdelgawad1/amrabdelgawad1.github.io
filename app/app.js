@@ -491,7 +491,9 @@
   // Course switches sit under Learning Hub: a course opens only when Learning Hub is on too.
   // New course? Add its switch here and in SECTION_NAMES, and give its track the same key in learn.js (TRACKS[].key).
   const COURSE_KEYS = ['mkt', 'psy', 'course'];
-  const canSee = sec => role === 'owner' ? sec !== 'track' : role === 'member' && (sec === 'track' || access.includes(sec));
+  // 'hub' is the Learning Hub menu link (/app/learn/): shown with Learning Hub or any course switched on
+  const canSee = sec => sec === 'hub' ? role === 'owner' || (role === 'member' && (access.includes('learn') || COURSE_KEYS.some(k => access.includes(k))))
+    : role === 'owner' ? sec !== 'track' : role === 'member' && (sec === 'track' || access.includes(sec));
   const hasMenu = () => role === 'owner' || (role === 'member' && access.length > 0);
   let companies = [];
 
@@ -547,12 +549,13 @@
   // Highlights the open section (or person) in the menu; the names under Team stay open while on Team
   function markMenu(){
     const here = location.hash;
-    document.querySelectorAll('.drawer .mi[href]').forEach(a => a.classList.toggle('on', a.getAttribute('href') === here || (a.getAttribute('href') === '#learn' && here.startsWith('#learn/')) || (a.getAttribute('href') === '#review' && here.startsWith('#review/'))));
+    document.querySelectorAll('.drawer .mi[href]').forEach(a => a.classList.toggle('on', a.getAttribute('href') === here || (a.getAttribute('href') === '/app/learn/' && here.startsWith('#learn/')) || (a.getAttribute('href') === '#review' && here.startsWith('#review/'))));
     if (here.startsWith('#team') && !$('teamTog').hidden) openTeamMenu(true);
   }
   function menuRoute(){
     if (!hasMenu()) return;
     let [page, person] = location.hash.slice(1).split('/');
+    if (page === 'learn' && !person) { location.replace('/app/learn/'); return; }   // the Learning Hub home is its own page now
     if (!OWNER_PAGES[page] || !canSee(SECTION[page])) { page = role === 'owner' ? 'live' : 'track'; history.replaceState(null, '', '#' + page); }
     const here = page + (page === 'team' && person ? '/' + person : '');
     $('title').textContent = OWNER_PAGES[page];

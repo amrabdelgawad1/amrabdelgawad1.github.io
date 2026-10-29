@@ -242,7 +242,7 @@
         '<button class="cp-findbtn" type="button" id="cpFindBtn" aria-label="Search the course" aria-expanded="false" aria-controls="cpFind">' + ICK.search + '</button>' +
         '<div class="cp-prog" id="cpProg" role="progressbar" aria-label="Course progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="cp-bar"><i></i></span><b>0%</b></div>' +
         '<button class="cp-acct" type="button" data-act="menu" aria-label="Your account" aria-haspopup="dialog">' + ICK.user + '</button>' +
-        '<a class="cp-back" href="/app/#learn">Back to app</a>' +
+        '<a class="cp-back" href="/app/learn/">All courses</a>' +
       '</header>' +
       '<div class="cp-body"><aside class="cp-side" id="cpSide" aria-label="Course content"></aside><div class="cp-scrim" id="cpScrim" hidden></div>' +
       '<div class="cp-main" id="cpMain"></div></div>';
