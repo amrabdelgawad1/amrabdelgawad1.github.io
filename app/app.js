@@ -549,7 +549,7 @@
   // Highlights the open section (or person) in the menu; the names under Team stay open while on Team
   function markMenu(){
     const here = location.hash;
-    document.querySelectorAll('.drawer .mi[href]').forEach(a => a.classList.toggle('on', a.getAttribute('href') === here || (a.getAttribute('href') === '#learn' && here.startsWith('#learn/')) || (a.getAttribute('href') === '#review' && here.startsWith('#review/'))));
+    document.querySelectorAll('.drawer .mi[href]').forEach(a => a.classList.toggle('on', a.getAttribute('href') === here || (a.getAttribute('href') === '/app/learn/' && here.startsWith('#learn/')) || (a.getAttribute('href') === '#review' && here.startsWith('#review/'))));
     if (here.startsWith('#team') && !$('teamTog').hidden) openTeamMenu(true);
   }
   function menuRoute(){

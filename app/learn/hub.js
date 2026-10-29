@@ -13,10 +13,10 @@
     { id:'acq', key:'course', letter:'A', title:'Real Estate Acquisitions', href:'/course/', modules:15,
       sub:'From the first cold call to a signed contract: finding sellers, running the numbers, making offers and closing.',
       tags:['Calls and scripts', 'Deal math', 'Land and house calculators'] },
-    { id:'mkt', key:MKT.access || 'mkt', letter:'M', title:'Marketing', href:'/app/course/', modules:(MKT.plan || []).length || 16,
+    { id:'mkt', key:MKT.access || 'mkt', team:MKT.team !== false, letter:'M', title:'Marketing', href:'/app/course/', modules:(MKT.plan || []).length || 16,
       sub:'From knowing your customer to running a full growth system: positioning, copy, brand, content, ads and analytics.',
       tags:['English and Arabic', 'Cost per deal calculator'] },
-    { id:'psy', key:PSY.access || 'psy', letter:'P', title:'Psychology and Therapy', href:'/app/psychology/', modules:PSY.modules || 27,
+    { id:'psy', key:PSY.access || 'psy', team:PSY.team !== false, letter:'P', title:'Psychology and Therapy', href:'/app/psychology/', modules:PSY.modules || 27,
       sub:'From the foundations of psychology to therapy models, crisis skills, ethics and coaching practice.',
       tags:['English and Arabic', 'Thought record', 'Goal planner'] }
   ];
@@ -68,7 +68,8 @@
       db.from('hub_uploads').select('id', { count:'exact', head:true }).eq('status', 'waiting').then(r => r, () => ({})),
       db.rpc('course_admin_waiting').then(r => r, () => ({}))
     ]);
-    (m.data || []).filter(x => x.active && (x.access || []).includes('learn')).forEach(x => COURSES.forEach(c => { if ((x.access || []).includes(c.key)) people[c.id] = (people[c.id] || 0) + 1; }));
+    // Same rules as the access checks above: Acquisitions needs only its own switch, the others need Learning Hub too
+    (m.data || []).filter(x => x.active).forEach(x => { const a = x.access || []; COURSES.forEach(c => { if (a.includes(c.key) && (c.id === 'acq' || a.includes('learn'))) people[c.id] = (people[c.id] || 0) + 1; }); });
     if (u.count != null || w.data) waiting = (u.count || 0) + ((w.data || []).length);
   }
 
@@ -146,7 +147,8 @@
       try { res = await Promise.all([db.rpc('is_tracker_admin'), db.rpc('learn_can_open', { p_course:'learn' }), ...COURSES.map(check)]); }
       catch(e) { return msg('Couldn’t load the Learning Hub. Check your internet and reload.'); }
       owner = res[0].data === true;
-      COURSES.forEach((c, i) => open[c.id] = owner || res[i + 2].data === true);
+      // A course with team:false in its course.js is Amr-only for now (its player refuses everyone else)
+      COURSES.forEach((c, i) => open[c.id] = owner || (c.team !== false && res[i + 2].data === true));
       if (!owner && res[1].data !== true && !COURSES.some(c => open[c.id])) return msg('The Learning Hub isn’t switched on for you yet. Ask Amr to open it.', ['/app/', 'Back to app']);
     }
     if (owner) { $('lhView').hidden = false; $('lhAsLearner').addEventListener('change', e => { asLearner = e.target.checked; draw(); }); }
