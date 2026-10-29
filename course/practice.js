@@ -18,7 +18,7 @@
 
 
   // Drills shown above the recorder, so the words are on screen while the learner records.
-  // A lesson's "practice" is { intro, drills:[...] } or a single drill. Each drill has a level:
+  // A lesson's "practice" is { prompt, drills:[...] } or a single drill (prompt replaces the note at the top). Each drill has a level:
   //   read    lines:[{who:'you'|'seller', say}]      read the script out loud, word for word
   //   respond pairs:[{them, you, why}]                 answer the seller's line; the model answer stays hidden until asked
   //   run     brief:{who, know:[], goal, hidden:[]}   no script; run the whole call from a brief
@@ -28,21 +28,24 @@
     respond:'Press record, read the seller’s line out loud, then answer it in your own voice before you look at the model answer. Move to the next line without stopping the recording.',
     run:'No script. Read the brief, have a colleague (or Claude) play the seller using the secret notes, and run the full call. Amr scores it on the 50-point scorecard.'
   };
+  const arr = a => Array.isArray(a) ? a : [];
+  const txt = v => (v == null || typeof v === 'object') ? '' : String(v);
   function drillsOf(pr){
-    if (!pr) return [];
+    if (!pr || typeof pr !== 'object') return [];
     const list = Array.isArray(pr.drills) ? pr.drills : (pr.level ? [pr] : []);
-    return list.filter(d => d && LEVELS[d.level]);
+    return list.filter(d => d && typeof d === 'object' && Object.hasOwn(LEVELS, d.level) &&
+      (d.level === 'read' ? arr(d.lines).length : d.level === 'respond' ? arr(d.pairs).length : d.brief && typeof d.brief === 'object'));
   }
   function drillHtml(d, i, n){
-    const md = CourseMarkdown.inline, esc = CourseMarkdown.esc, lv = LEVELS[d.level];
+    const md = v => CourseMarkdown.inline(txt(v)), esc = v => CourseMarkdown.esc(txt(v)), lv = LEVELS[d.level];
     let body = '';
     if (d.level === 'read') {
-      body = '<ol class="dr-script">' + (d.lines || []).map(l => {
-        const you = (l.who || 'you') === 'you';
+      body = '<ol class="dr-script">' + arr(d.lines).map(l => {
+        l = l || {}; const you = (l.who || 'you') !== 'seller';
         return '<li class="' + (you ? 'you' : 'them') + '"><span class="dr-who">' + (you ? 'You' : 'Seller') + '</span><p>' + md(l.say || '') + '</p></li>';
       }).join('') + '</ol>';
     } else if (d.level === 'respond') {
-      const ps = d.pairs || [];
+      const ps = arr(d.pairs).map(p => p || {});
       body = '<div class="dr-step" data-n="' + ps.length + '">' +
         '<p class="dr-count" aria-live="polite">Line <span data-dr="pos">1</span> of ' + ps.length + '</p>' +
         ps.map((p, k) => '<div class="dr-pair" data-k="' + k + '"' + (k ? ' hidden' : '') + '>' +
@@ -53,12 +56,12 @@
         '<div class="pr-row"><button class="btn line" type="button" data-pr="prev" disabled>Back</button><button class="btn dark" type="button" data-pr="next"' + (ps.length < 2 ? ' disabled' : '') + '>Next line</button><button class="btn line" type="button" data-pr="mix"' + (ps.length < 3 ? ' hidden' : '') + '>Mix the order</button></div>' +
       '</div>';
     } else {
-      const b = d.brief || {}, li = a => '<ul>' + (a || []).map(x => '<li>' + md(x) + '</li>').join('') + '</ul>';
+      const b = d.brief, li = a => '<ul>' + arr(a).map(x => '<li>' + md(x) + '</li>').join('') + '</ul>';
       body = '<div class="dr-brief">' +
         (b.who ? '<p><b>Who you’re calling:</b> ' + md(b.who) + '</p>' : '') +
-        ((b.know || []).length ? '<p><b>What you know before you dial:</b></p>' + li(b.know) : '') +
+        (arr(b.know).length ? '<p><b>What you know before you dial:</b></p>' + li(b.know) : '') +
         (b.goal ? '<p><b>Your goal on this call:</b> ' + md(b.goal) + '</p>' : '') +
-        ((b.hidden || []).length ? '<details class="dr-secret"><summary>For the person playing the seller (the caller doesn’t read this)</summary>' + li(b.hidden) + '</details>' : '') +
+        (arr(b.hidden).length ? '<details class="dr-secret"><summary>For the person playing the seller (the caller doesn’t read this)</summary>' + li(b.hidden) + '</details>' : '') +
       '</div>';
     }
     return '<div class="drill" data-i="' + i + '"' + (i ? ' hidden' : '') + '>' +
@@ -72,7 +75,7 @@
     return '<section class="practice" aria-labelledby="prH">' +
       '<div class="pr-top"><span class="label o">Practice out loud</span><h2 class="sub" id="prH">Record yourself and send it to Amr</h2>' +
       '<p class="note">' + (prompt ? CourseMarkdown.inline(prompt) : drills.length ? 'Pick a drill, press record and say it out loud. The words stay on screen while you record. Amr listens, scores it and leaves comments at the exact moments that matter.' : 'Say this lesson’s lines out loud, or run a short role-play with a colleague or with Claude playing the seller. Amr listens, scores it and leaves comments at the exact moments that matter.') + '</p></div>' +
-      (drills.length > 1 ? '<div class="dr-pick" role="group" aria-label="Choose a drill">' + drills.map((d, i) => '<button type="button" class="dr-tab" data-pr="pick" data-i="' + i + '" aria-pressed="' + (i ? 'false' : 'true') + '">' + (i + 1) + '. ' + CourseMarkdown.esc(d.title || LEVELS[d.level][1]) + '</button>').join('') + '</div>' : '') +
+      (drills.length > 1 ? '<div class="dr-pick" role="group" aria-label="Choose a drill">' + drills.map((d, i) => '<button type="button" class="dr-tab" data-pr="pick" data-i="' + i + '" aria-pressed="' + (i ? 'false' : 'true') + '">' + (i + 1) + '. ' + CourseMarkdown.esc(txt(d.title) || LEVELS[d.level][1]) + '</button>').join('') + '</div>' : '') +
       (drills.length ? '<div class="drills">' + drills.map((d, i) => drillHtml(d, i, drills.length)).join('') + '</div>' : '') +
       '<div class="pr-rec" id="prRec">' +
         '<div class="pr-row"><button class="btn orange" type="button" data-pr="start" id="prStart">Start recording</button>' +
@@ -98,11 +101,11 @@
     const { db, user, mod, it } = o;
     const $ = id => root.querySelector('#' + id);
     const drills = drillsOf(it.practice);
-    root.innerHTML = html(o.title, it.practice && it.practice.prompt, drills);
+    root.innerHTML = html(o.title, it.practice && txt(it.practice.prompt), drills);
     let cur = 0; // the drill on screen
     const titleFor = () => {
       const d = drills[cur];
-      return d ? (LEVELS[d.level][1] + ': ' + (d.title || o.title)).slice(0, 200) : 'Practice: ' + o.title;
+      return (d ? o.title + ' · ' + LEVELS[d.level][1] + (txt(d.title) ? ': ' + txt(d.title) : '') : 'Practice: ' + o.title).slice(0, 200);
     };
     const showPair = (box, k) => {
       const n = +box.dataset.n; k = Math.max(0, Math.min(n - 1, k));
@@ -128,7 +131,7 @@
     const ready = (b, m, name, seconds) => {
       blob = b; mime = (m || b.type || 'audio/webm').split(';')[0]; fileName = name; dur = seconds;
       $('prLive').hidden = true; $('prStart').hidden = true; root.querySelector('.pr-file').hidden = true; $('prReview').hidden = false;
-      $('prPreview').src = URL.createObjectURL(b); $('prTitle').value = titleFor(); lockPick(true);
+      $('prPreview').src = URL.createObjectURL(b); $('prTitle').value = titleFor(); lockPick(true); $('prPreview').focus();
       $('prMsg').textContent = seconds ? 'Recorded ' + clock(seconds) + '. Listen back, then send it.' : 'Listen back, then send it.';
     };
 
@@ -192,7 +195,7 @@
         };
         try { r.start(1000); } catch(err){ stopMic(s); stream = null; rec = null; b.disabled = false; $('prMsg').textContent = 'Recording didn’t start. Try again, or upload a recording.'; return; }
         started = Date.now(); b.disabled = false;
-        $('prStart').hidden = true; root.querySelector('.pr-file').hidden = true; $('prLive').hidden = false; $('prMsg').textContent = 'Recording…'; lockPick(true);
+        $('prStart').hidden = true; root.querySelector('.pr-file').hidden = true; $('prLive').hidden = false; $('prMsg').textContent = 'Recording…'; lockPick(true); root.querySelector('[data-pr="stop"]').focus();
         tick = setInterval(() => { const t = (Date.now() - started) / 1000; $('prClock').textContent = clock(t); if (t >= MAX_S && rec && rec.state !== 'inactive') { clearInterval(tick); rec.stop(); } }, 500);
       }
       if (act === 'stop' && rec && rec.state !== 'inactive') { clearInterval(tick); rec.stop(); }

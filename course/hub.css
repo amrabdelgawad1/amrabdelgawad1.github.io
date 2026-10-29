@@ -194,7 +194,8 @@ h1[tabindex="-1"]:focus, main[tabindex="-1"]:focus{ outline:none; }
 .practice .err:empty, .practice #prMsg:empty{ display:none; }
 .pr-item .link-btn{ justify-self:start; min-height:32px; }
 .pr-file:focus-within{ outline:2px solid var(--orange-btn); outline-offset:2px; }
-.pr-live{ position:sticky; bottom:12px; z-index:2; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 14px; box-shadow:0 6px 18px rgba(26,26,26,.08); }
+/* while recording, the Stop bar floats above the lesson footer so the learner can scroll the script */
+.pr-live{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(92px + var(--safe-b, 0px)); width:min(440px, calc(100% - 32px)); z-index:11; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 14px; box-shadow:0 6px 18px rgba(26,26,26,.08); }
 /* Drills: the words stay on screen while recording */
 .dr-pick{ display:flex; flex-wrap:wrap; gap:8px; }
 .dr-tab{ border:1px solid var(--line); background:var(--bg); color:var(--ink); border-radius:99px; padding:8px 14px; font:600 14px var(--sans); cursor:pointer; min-height:40px; text-align:left; }
