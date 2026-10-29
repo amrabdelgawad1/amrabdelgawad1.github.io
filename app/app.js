@@ -574,7 +574,7 @@
     if (page === 'visits') loadVisits();
     if (page === 'emails') loadEmails();
     if (page === 'learn' && window.TalentsLearn) window.TalentsLearn.open(person || '');
-    if (page === 'review' && window.HubReview) window.HubReview.open(person ? decodeURIComponent(person) : '');
+    if (page === 'review' && window.HubReview) { let id = ''; try { id = person ? decodeURIComponent(person) : ''; } catch(e) {} window.HubReview.open(id); }
     countRequests();
     if (role === 'owner' && window.HubReview) window.HubReview.count().catch(() => {});
     if (cashPage) openCash(here);

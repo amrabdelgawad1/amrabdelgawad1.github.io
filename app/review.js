@@ -70,9 +70,9 @@
     if (a) rows.push({ c:'Acquisitions', pct:a.total ? Math.round(a.done * 100 / a.total) : 0,
       t:(a.module ? 'Module ' + a.module + ' · ' + a.done + ' of ' + a.total : 'Not started') + (a.checkpoint ? ' · checkpoint ' + a.checkpoint.score + '%' : ''), at:a.lastActive, href:'/course/#/admin/u/' + encodeURIComponent(uid) });
     const h = hubProgress[uid] || {};
-    const mk = h.mkt2 && h.mkt2.data && h.mkt2.data.m;
+    const mk = h.mkt2 && h.mkt2.data && typeof h.mkt2.data.m === 'object' ? h.mkt2.data.m : null;
     if (mk) {
-      const ms = Object.values(mk), passed = ms.filter(m => (m.quiz && m.quiz.best || 0) >= 80).length, asg = ms.filter(m => m.asg && m.asg.done).length;
+      const ms = Object.values(mk).filter(m => m && typeof m === 'object'), passed = ms.filter(m => ((m.quiz && m.quiz.best) || 0) >= 80).length, asg = ms.filter(m => m.asg && m.asg.done).length;
       const total = (window.COURSE && window.COURSE.plan && window.COURSE.plan.length) || 16;
       rows.push({ c:'Marketing', pct:Math.round(passed * 100 / total), t:passed + ' of ' + total + ' modules passed · ' + asg + (asg === 1 ? ' assignment' : ' assignments') + ' sent', at:h.mkt2.updated_at });
     }
@@ -110,7 +110,7 @@
       (c.at_s != null ? '<button class="rv-at" type="button" data-seek="' + esc(c.at_s) + '" data-id="' + esc(u.id) + '">' + clock(c.at_s) + '</button>' : '') + esc(c.body) + '</li>').join('');
     const sc = u.score && u.score.cats ? u.score.cats : null;
     const scoreRows = CATS.map((c, i) => '<div class="rv-cat"><span>' + esc(c) + '</span><div class="rv-dots" role="radiogroup" aria-label="' + esc(c) + '">' +
-      [1, 2, 3, 4, 5].map(v => '<button type="button" role="radio" aria-checked="' + !!(sc && sc[i] === v) + '" data-cat="' + i + '" data-v="' + v + '">' + v + '</button>').join('') + '</div></div>').join('');
+      [1, 2, 3, 4, 5].map(v => '<button type="button" role="radio" aria-checked="' + !!(sc && sc[i] === v) + '" tabindex="' + ((sc ? sc[i] === v : v === 1) ? 0 : -1) + '" data-cat="' + i + '" data-v="' + v + '">' + v + '</button>').join('') + '</div></div>').join('');
     const total = sc ? sc.reduce((a, b) => a + b, 0) : null;
     return '<article class="card rv-card" data-id="' + esc(u.id) + '">' + head +
       '<h3 class="rv-t">' + esc(u.title || (u.kind === 'recording' ? 'Recording' : 'File')) + (u.real_call ? ' <span class="pill">Real call, consent given</span>' : '') + '</h3>' +
@@ -134,9 +134,9 @@
   }
   function filters(){
     return '<div class="rv-bar-top">' +
-      '<div class="rv-pick"><button class="field rv-pickbtn" type="button" id="rvPickBtn" aria-haspopup="true" aria-expanded="false" aria-controls="rvPickBox"><span>People: ' + esc(pickerLabel()) + '</span>' +
+      '<div class="rv-pick"><button class="field rv-pickbtn" type="button" id="rvPickBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="rvPickBox"><span>People: ' + esc(pickerLabel()) + '</span>' +
         '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>' +
-      '<div class="rv-pickbox card" id="rvPickBox" hidden><input class="field" type="search" id="rvPickQ" placeholder="Find a person" aria-label="Find a person">' +
+      '<div class="rv-pickbox card" id="rvPickBox" role="dialog" aria-label="Pick people" hidden><input class="field" type="search" id="rvPickQ" placeholder="Find a person" aria-label="Find a person">' +
         '<div class="rv-pickacts"><button class="btn small ghost" type="button" data-pick="all">Everyone</button><button class="btn small ghost" type="button" data-pick="done">Done</button></div>' +
         '<div class="rv-picklist" id="rvPickList">' + people.map(p => '<label class="rv-pickrow" data-name="' + esc((p.name || '').toLowerCase()) + '"><input type="checkbox" value="' + esc(p.user_id) + '"' + (pick.has(p.user_id) ? ' checked' : '') + '><span>' + esc(p.name || p.email) + '</span>' +
           (waitingOf(p.user_id) ? '<span class="pill due">' + waitingOf(p.user_id) + '</span>' : '') + '</label>').join('') + '</div></div></div>' +
@@ -167,7 +167,7 @@
   }
 
   // ---------- actions ----------
-  let current = '';
+  let current = '', pickWas = '';
   async function open(person){
     current = person || '';
     const box = $('reviewBody'); if (!box) return;
@@ -177,21 +177,31 @@
     draw(current);
   }
   async function refresh(){ await load(); draw(current); count(); }
+  // Redraw one card in place, so half-entered scores and playing audio on the other cards are kept
+  async function redrawCard(id){
+    await load();
+    const u = uploads.find(x => x.id === id), el = $('reviewBody').querySelector('.rv-card[data-id="' + CSS.escape(id) + '"]');
+    if (!u || !el) return draw(current);
+    const keep = (status === 'waiting' && u.status !== 'waiting');
+    if (keep) { el.remove(); const h = $('reviewBody').querySelector('.rv-h'); if (h) h.textContent = h.textContent.replace(/\((\d+)\)/, (m, n) => '(' + Math.max(0, n - 1) + ')'); }
+    else { await sign([u.path]); el.outerHTML = card(u); }
+    count();
+  }
   function bind(box){
     box.dataset.bound = '1';
     box.addEventListener('click', async e => {
       const t = e.target;
       const pb = t.closest('#rvPickBtn');
-      if (pb) { const open = $('rvPickBox').hidden; $('rvPickBox').hidden = !open; pb.setAttribute('aria-expanded', open); if (open) $('rvPickQ').focus(); return; }
+      if (pb) { const open = $('rvPickBox').hidden; $('rvPickBox').hidden = !open; pb.setAttribute('aria-expanded', open); if (open) { pickWas = [...pick].sort().join(); $('rvPickQ').focus(); } else closePick(); return; }
       const pa = t.closest('[data-pick]');
-      if (pa) { if (pa.dataset.pick === 'all') pick.clear(); remember(); draw(current); return; }
+      if (pa) { if (pa.dataset.pick === 'all') { pick.clear(); remember(); pickWas = '\u0000'; } closePick(true); return; }
       const st = t.closest('[data-status]');
       if (st) { status = st.dataset.status; remember(); draw(current); return; }
       const sk = t.closest('[data-seek]');
       if (sk) { const au = box.querySelector('audio[data-id="' + CSS.escape(sk.dataset.id) + '"]'); if (au) { au.currentTime = +sk.dataset.seek; au.play().catch(() => {}); } return; }
       const dot = t.closest('[data-cat]');
       if (dot) {
-        const g = dot.parentElement; g.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', b === dot));
+        const g = dot.parentElement; g.querySelectorAll('button').forEach(b => { b.setAttribute('aria-checked', b === dot); b.tabIndex = b === dot ? 0 : -1; });
         const cardEl = dot.closest('.rv-card'), vals = [...cardEl.querySelectorAll('.rv-dots')].map(d => { const on = d.querySelector('[aria-checked="true"]'); return on ? +on.dataset.v : null; });
         const tot = cardEl.querySelector('.rv-total');
         tot.textContent = vals.every(v => v) ? 'Total ' + vals.reduce((a, b) => a + b, 0) + ' of 50 · ' + band(vals.reduce((a, b) => a + b, 0)) + '. Approve or send back to save it.' : vals.filter(v => v).length + ' of 10 scored.';
@@ -208,7 +218,7 @@
         rv.removeAttribute('aria-busy');
         if (error) { A().toast('Couldn’t save that. Try again.'); return; }
         A().toast(rv.dataset.review === 'approved' ? 'Approved' : rv.dataset.review === 'redo' ? 'Sent back to redo' : 'Marked as waiting');
-        refresh();
+        redrawCard(id);
       }
     });
     box.addEventListener('change', e => {
@@ -231,10 +241,27 @@
       const { error } = await A().db.from('hub_upload_comments').insert({ upload_id:f.dataset.id, body, at_s });
       btn.removeAttribute('aria-busy');
       if (error) { A().toast('Couldn’t add the comment. Try again.'); return; }
-      ta.value = ''; refresh();
+      ta.value = ''; redrawCard(f.dataset.id);
     });
-    document.addEventListener('click', e => { const b = $('rvPickBox'); if (b && !b.hidden && !e.target.closest('.rv-pick')) { b.hidden = true; $('rvPickBtn').setAttribute('aria-expanded', 'false'); draw(current); } });
-    document.addEventListener('keydown', e => { const b = $('rvPickBox'); if (e.key === 'Escape' && b && !b.hidden) { b.hidden = true; $('rvPickBtn').setAttribute('aria-expanded', 'false'); $('rvPickBtn').focus(); draw(current); } });
+    function closePick(focus){
+      const b = $('rvPickBox'); if (!b) return;
+      b.hidden = true; $('rvPickBtn').setAttribute('aria-expanded', 'false');
+      if (focus) $('rvPickBtn').focus();
+      if ([...pick].sort().join() !== pickWas) draw(current);
+    }
+    document.addEventListener('click', e => { const b = $('rvPickBox'); if (b && !b.hidden && !e.target.closest('.rv-pick')) closePick(); });
+    document.addEventListener('keydown', e => {
+      const b = $('rvPickBox');
+      if (e.key === 'Escape' && b && !b.hidden) { closePick(true); return; }
+      // Scorecard: arrow keys move between 1 to 5 inside a category
+      const dot = e.target.closest && e.target.closest('.rv-dots button');
+      if (dot && /^Arrow(Left|Right|Up|Down)$/.test(e.key)) {
+        e.preventDefault();
+        const all = [...dot.parentElement.querySelectorAll('button')], i = all.indexOf(dot);
+        const nx = all[(i + (/Right|Down/.test(e.key) ? 1 : -1) + all.length) % all.length];
+        nx.focus(); nx.click();
+      }
+    });
   }
 
   // Waiting count for the menu

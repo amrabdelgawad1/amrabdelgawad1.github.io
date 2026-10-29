@@ -10,7 +10,7 @@
   const clock = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
   const pickMime = () => {
     if (!window.MediaRecorder) return null;
-    for (const t of ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm', 'audio/ogg;codecs=opus']) if (MediaRecorder.isTypeSupported(t)) return t;
+    for (const t of ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']) // mp4 first: it keeps the length, so seeking works if (MediaRecorder.isTypeSupported(t)) return t;
     return '';
   };
   const extOf = mime => /mp4|m4a|aac/.test(mime) ? 'm4a' : /ogg/.test(mime) ? 'ogg' : /mpeg|mp3/.test(mime) ? 'mp3' : /wav/.test(mime) ? 'wav' : 'webm';
@@ -45,9 +45,11 @@
     root.innerHTML = html(o.title, it.practice && it.practice.prompt);
     let rec = null, chunks = [], stream = null, started = 0, tick = null, blob = null, mime = '', fileName = '', dur = null;
 
+    const stopMic = s => { if (s) s.getTracks().forEach(t => t.stop()); };
     const reset = () => {
       if (tick) clearInterval(tick); tick = null;
-      if (stream) stream.getTracks().forEach(t => t.stop()); stream = null;
+      if (rec) { rec.onstop = rec.ondataavailable = null; try { if (rec.state !== 'inactive') rec.stop(); } catch(err){} }
+      stopMic(stream); stream = null;
       rec = null; chunks = []; blob = null; dur = null;
       $('prLive').hidden = true; $('prReview').hidden = true; $('prStart').hidden = false; root.querySelector('.pr-file').hidden = false;
       const p = $('prPreview'); if (p.src) { URL.revokeObjectURL(p.src); p.removeAttribute('src'); }
@@ -64,22 +66,31 @@
       const b = e.target.closest('[data-pr]'); if (!b) return;
       const act = b.dataset.pr;
       if (act === 'start') {
+        if (b.disabled || rec) return;
         const m = pickMime();
         if (m === null || !navigator.mediaDevices) { $('prMsg').textContent = 'This browser can’t record. Use “Upload a recording” instead, or try Chrome or Safari.'; return; }
-        try { stream = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:true, noiseSuppression:true } }); }
-        catch(err){ $('prMsg').textContent = 'The microphone is blocked. Allow it in your browser’s site settings, then try again.'; return; }
-        chunks = [];
-        rec = new MediaRecorder(stream, m ? { mimeType:m, audioBitsPerSecond:48000 } : undefined);
-        rec.ondataavailable = ev => { if (ev.data && ev.data.size) chunks.push(ev.data); };
-        rec.onstop = () => {
+        b.disabled = true; // one tap only while the browser asks for the microphone
+        let s;
+        try { s = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:true, noiseSuppression:true } }); }
+        catch(err){ b.disabled = false; $('prMsg').textContent = 'The microphone is blocked. Allow it in your browser’s site settings, then try again.'; return; }
+        if (!root.isConnected) { stopMic(s); return; } // they left the lesson while the browser was asking
+        let r;
+        try { r = new MediaRecorder(s, m ? { mimeType:m, audioBitsPerSecond:48000 } : undefined); }
+        catch(err){ stopMic(s); b.disabled = false; $('prMsg').textContent = 'Recording didn’t start on this browser. Use “Upload a recording” instead.'; return; }
+        stream = s; rec = r; chunks = [];
+        const mine0 = chunks;
+        r.ondataavailable = ev => { if (ev.data && ev.data.size) mine0.push(ev.data); };
+        r.onstop = () => {
           const secs = Math.round((Date.now() - started) / 1000);
-          const type = rec.mimeType || m || 'audio/webm';
-          stream.getTracks().forEach(t => t.stop()); stream = null;
-          ready(new Blob(chunks, { type }), type, 'recording.' + extOf(type), secs);
+          const type = r.mimeType || m || 'audio/webm';
+          stopMic(s); if (stream === s) stream = null;
+          if (rec === r) rec = null;
+          ready(new Blob(mine0, { type }), type, 'recording.' + extOf(type), secs);
         };
-        rec.start(1000); started = Date.now();
+        try { r.start(1000); } catch(err){ stopMic(s); stream = null; rec = null; b.disabled = false; $('prMsg').textContent = 'Recording didn’t start. Try again, or upload a recording.'; return; }
+        started = Date.now(); b.disabled = false;
         $('prStart').hidden = true; root.querySelector('.pr-file').hidden = true; $('prLive').hidden = false; $('prMsg').textContent = 'Recording…';
-        tick = setInterval(() => { const s = (Date.now() - started) / 1000; $('prClock').textContent = clock(s); if (s >= MAX_S) rec.stop(), clearInterval(tick); }, 500);
+        tick = setInterval(() => { const t = (Date.now() - started) / 1000; $('prClock').textContent = clock(t); if (t >= MAX_S && rec && rec.state !== 'inactive') { clearInterval(tick); rec.stop(); } }, 500);
       }
       if (act === 'stop' && rec && rec.state !== 'inactive') { clearInterval(tick); rec.stop(); }
       if (act === 'discard') { reset(); $('prMsg').textContent = ''; }
@@ -88,21 +99,23 @@
         const real = $('prReal').checked, consent = $('prConsent').checked;
         if (real && !consent) { $('prErr').textContent = 'For a real call, confirm that everyone agreed to be recorded.'; $('prConsent').focus(); return; }
         if (blob.size > MAX_B) { $('prErr').textContent = 'That recording is over 50 MB. Keep it under about 30 minutes.'; return; }
-        b.setAttribute('aria-busy', 'true'); $('prErr').textContent = ''; $('prMsg').textContent = 'Sending…';
+        if (b.disabled) return;
+        b.disabled = true; b.setAttribute('aria-busy', 'true'); $('prErr').textContent = ''; $('prMsg').textContent = 'Sending…';
         const safe = fileName.replace(/[^\w.\-]+/g, '_').slice(-60);
         const path = user.id + '/acq/' + Date.now() + '-' + safe;
         const up = await db.storage.from('hub-uploads').upload(path, blob, { contentType:mime, upsert:false });
-        if (up.error) { b.removeAttribute('aria-busy'); $('prMsg').textContent = ''; $('prErr').textContent = /mime|type/i.test(up.error.message || '') ? 'That kind of file isn’t allowed. Send an audio file (m4a, mp3, wav, webm).' : /size|large/i.test(up.error.message || '') ? 'That recording is too large.' : 'It didn’t send. Check your connection and try again.'; return; }
+        if (up.error) { b.disabled = false; b.removeAttribute('aria-busy'); $('prMsg').textContent = ''; $('prErr').textContent = /mime|type/i.test(up.error.message || '') ? 'That kind of file isn’t allowed. Send an audio file (m4a, mp3, wav, webm).' : /size|large/i.test(up.error.message || '') ? 'That recording is too large.' : 'It didn’t send. Check your connection and try again.'; return; }
         const row = { course:'acq', module:mod.id, item:it.id, title:($('prTitle').value || '').trim().slice(0, 200) || 'Practice', kind:'recording', path, file_name:fileName.slice(0, 200), mime, size_bytes:blob.size, duration_s:dur, note:($('prNote').value || '').trim().slice(0, 2000) || null, real_call:real, consent:real && consent };
         const ins = await db.from('hub_uploads').insert(row);
-        b.removeAttribute('aria-busy');
+        b.disabled = false; b.removeAttribute('aria-busy');
         if (ins.error) { await db.storage.from('hub-uploads').remove([path]); $('prMsg').textContent = ''; $('prErr').textContent = /hub_uploads/.test(ins.error.message || '') ? 'Recordings aren’t switched on yet. Ask Amr.' : 'It didn’t send. Try again.'; return; }
         reset(); $('prMsg').textContent = ''; if (o.toast) o.toast('Sent to Amr');
         mine();
       }
       if (act === 'del') {
         const id = b.dataset.id, p = b.dataset.path;
-        b.setAttribute('aria-busy', 'true');
+        if (b.disabled) return;
+        b.disabled = true; b.setAttribute('aria-busy', 'true');
         const r = await db.from('hub_uploads').delete().eq('id', id);
         if (!r.error) await db.storage.from('hub-uploads').remove([p]);
         mine();
