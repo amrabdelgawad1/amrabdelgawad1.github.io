@@ -193,3 +193,4 @@ h1[tabindex="-1"]:focus, main[tabindex="-1"]:focus{ outline:none; }
 .practice .err{ color:var(--err-text); font-size:14px; margin:0; }
 .practice .err:empty, .practice #prMsg:empty{ display:none; }
 .pr-item .link-btn{ justify-self:start; min-height:32px; }
+.pr-file:focus-within{ outline:2px solid var(--orange-btn); outline-offset:2px; }
