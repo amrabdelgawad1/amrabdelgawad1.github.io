@@ -2,8 +2,8 @@
 // Pages and files always come fresh from the network when there is one; the copy here is only for offline.
 // Course content, progress and images come from Supabase and are never stored here.
 // Change VERSION on every release.
-const VERSION = 'course-v7';
-const SHELL = ['./', 'index.html', 'course.css?v=2', 'hub.css?v=4', 'md.js?v=1', 'app.js?v=5', 'practice.js?v=2', 'admin.js?v=3', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-180.png', '/guard.js?v=1', '/tracker/config.js'];
+const VERSION = 'course-v8';
+const SHELL = ['./', 'index.html', 'course.css?v=2', 'hub.css?v=5', 'md.js?v=1', 'app.js?v=5', 'practice.js?v=3', 'admin.js?v=3', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-180.png', '/guard.js?v=1', '/tracker/config.js'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('course-') && k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim()));
