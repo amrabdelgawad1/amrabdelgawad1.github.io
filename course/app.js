@@ -177,7 +177,7 @@
   const thumbOf = (mod, it, cls, alt) => tcard(cls, kickerOf(mod, it), it ? (it.type === 'lesson' ? heading(it) : it.title.replace(/^[\d.]+\s+/, '')) : mod.title, alt);
 
   // ---------- rendering ----------
-  let acts = {}, lastRoute = '', onInput = null;
+  let acts = {}, lastRoute = '', onInput = null, leaving = null; // leaving: stops a recording when the page changes
   // The page's own title row, under the course top bar: a back link, where you are, and an aside (a quiz's pass mark)
   function header(o){
     // o: { back, backLabel, close, ctx, title, aside, home }
@@ -197,6 +197,7 @@
     if (o.at && o.at !== location.hash) return false;
     acts = o.acts || {};
     onInput = null;
+    if (leaving) { try { leaving(); } catch(e){} leaving = null; }
     document.body.classList.toggle('white', !!o.white);
     // Signed in with the course loaded: the Learning Hub frame (top bar, course content sidebar, page). Sign-in pages stand alone.
     const framed = !!S && !o.bare;
@@ -541,6 +542,7 @@
         '<span class="label o">Lesson ' + n + ' of ' + ls.length + (it.subtitle ? ' · ' + esc(it.subtitle) : '') + '</span>' +
         '<h1>' + esc(heading(it)) + '</h1>' +
         '<div class="prose">' + MD.render(it.bodyMarkdown) + '</div>' +
+        '<div id="practiceBox"></div>' +
         (files.length ? '<section class="stack" aria-labelledby="filesH"><h2 class="sub" id="filesH" data-s="fs16">Files</h2><p class="note">Original guide page. Where it differs from the lesson, the lesson is correct.</p><div class="files">' + files.join('') + '</div></section>' : '') +
       '</article></main>' +
       '<div class="bar-foot lesson-foot"><div class="col">' +
@@ -559,6 +561,7 @@
         },
         view: b => openViewer(contentPath(mod, b.dataset.file), b.dataset.name)
       } });
+    if (window.CoursePractice && user) CoursePractice.mount($('practiceBox'), { db, user, mod, it, title:it.shortTitle || heading(it), toast }).then(f => { leaving = f; }).catch(() => {});
   }
 
   // Guide page viewer: full screen, pinch to zoom on phones, a zoom button for everyone
