@@ -194,3 +194,33 @@ h1[tabindex="-1"]:focus, main[tabindex="-1"]:focus{ outline:none; }
 .practice .err:empty, .practice #prMsg:empty{ display:none; }
 .pr-item .link-btn{ justify-self:start; min-height:32px; }
 .pr-file:focus-within{ outline:2px solid var(--orange-btn); outline-offset:2px; }
+/* while recording, the Stop bar floats above the lesson footer so the learner can scroll the script */
+.pr-live{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(92px + var(--safe-b, 0px)); width:min(440px, calc(100% - 32px)); z-index:11; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 14px; box-shadow:0 6px 18px rgba(26,26,26,.08); }
+/* Drills: the words stay on screen while recording */
+.dr-pick{ display:flex; flex-wrap:wrap; gap:8px; }
+.dr-tab{ border:1px solid var(--line); background:var(--bg); color:var(--ink); border-radius:99px; padding:8px 14px; font:600 14px var(--sans); cursor:pointer; min-height:40px; text-align:left; }
+.dr-tab[aria-pressed="true"]{ background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.dr-tab:disabled{ opacity:.55; cursor:not-allowed; }
+.drill{ display:grid; gap:10px; padding:16px; border:1px solid var(--line); border-radius:12px; background:var(--bg); }
+.dr-level{ margin:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:14px; }
+.drill .sub{ margin:0; }
+.dr-who{ display:block; font:700 11.5px var(--sans); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-2); margin-bottom:4px; }
+.dr-script{ list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+.dr-script li{ padding:12px 14px; border-radius:10px; border:1px solid var(--line); background:var(--card); }
+.dr-script li p{ margin:0; }
+.dr-script li.you{ border-left:4px solid var(--orange-btn); }
+.dr-script li.you p{ font-size:19px; line-height:1.5; color:var(--ink); }
+.dr-script li.them p{ font-size:15.5px; color:var(--ink-2); }
+.dr-step{ display:grid; gap:10px; }
+.dr-count{ margin:0; font-size:13.5px; color:var(--ink-2); }
+.dr-pair{ display:grid; gap:8px; }
+.dr-them{ margin:0; padding:14px 16px; border-radius:10px; background:var(--card); border:1px solid var(--line); font-size:19px; line-height:1.5; }
+.dr-ans{ padding:12px 14px; border-radius:10px; border-left:4px solid var(--orange-btn); background:var(--card); }
+.dr-ans p{ margin:0 0 6px; } .dr-ans p:last-child{ margin:0; }
+.dr-pair .link-btn{ justify-self:start; min-height:36px; }
+.dr-brief{ display:grid; gap:6px; }
+.dr-brief p{ margin:0; } .dr-brief ul{ margin:0 0 4px; padding-left:20px; display:grid; gap:4px; }
+.dr-secret{ margin-top:6px; padding:10px 12px; border:1px dashed var(--line); border-radius:10px; }
+.dr-secret summary{ cursor:pointer; font-weight:600; font-size:14px; }
+.dr-secret ul{ margin-top:8px; }
+@media (max-width:560px){ .dr-script li.you p, .dr-them{ font-size:17.5px; } .drill{ padding:12px; } }

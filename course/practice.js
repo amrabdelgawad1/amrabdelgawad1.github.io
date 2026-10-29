@@ -10,22 +10,81 @@
   const clock = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
   const pickMime = () => {
     if (!window.MediaRecorder) return null;
-    for (const t of ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']) // mp4 first: it keeps the length, so seeking works if (MediaRecorder.isTypeSupported(t)) return t;
+    // mp4 first: it keeps the length, so seeking works
+    for (const t of ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']) if (MediaRecorder.isTypeSupported(t)) return t;
     return '';
   };
   const extOf = mime => /mp4|m4a|aac/.test(mime) ? 'm4a' : /ogg/.test(mime) ? 'ogg' : /mpeg|mp3/.test(mime) ? 'mp3' : /wav/.test(mime) ? 'wav' : 'webm';
 
-  function html(lessonTitle, prompt){
+
+  // Drills shown above the recorder, so the words are on screen while the learner records.
+  // A lesson's "practice" is { prompt, drills:[...] } or a single drill (prompt replaces the note at the top). Each drill has a level:
+  //   read    lines:[{who:'you'|'seller'|<label>, say}]  read the script out loud, word for word
+  //   respond pairs:[{them, you, why}], themLabel, youLabel  answer the line; the model answer stays hidden until asked
+  //           (labels default to "Seller" and "You"; e.g. "Interviewer", or "Instead of" / "Say")
+  //   run     brief:{who, know:[], goal, hidden:[]}   no script; run the whole call from a brief
+  const LEVELS = { read:['Level 1', 'Read it'], respond:['Level 2', 'Respond to it'], run:['Level 3', 'Run it'] };
+  const HOW = {
+    read:'Read every line out loud, word for word, at the pace you would use on a real call. Record the whole script in one take.',
+    respond:'Press record, read the seller’s line out loud, then answer it in your own voice before you look at the model answer. Move to the next line without stopping the recording.',
+    run:'No script. Read the brief, have a colleague (or Claude) play the seller using the secret notes, and run the full call. Amr scores it on the 50-point scorecard.'
+  };
+  const arr = a => Array.isArray(a) ? a : [];
+  const txt = v => (v == null || typeof v === 'object') ? '' : String(v);
+  function drillsOf(pr){
+    if (!pr || typeof pr !== 'object') return [];
+    const list = Array.isArray(pr.drills) ? pr.drills : (pr.level ? [pr] : []);
+    return list.filter(d => d && typeof d === 'object' && Object.hasOwn(LEVELS, d.level) &&
+      (d.level === 'read' ? arr(d.lines).length : d.level === 'respond' ? arr(d.pairs).length : d.brief && typeof d.brief === 'object'));
+  }
+  function drillHtml(d, i, n){
+    const md = v => CourseMarkdown.inline(txt(v)), esc = v => CourseMarkdown.esc(txt(v)), lv = LEVELS[d.level];
+    let body = '';
+    if (d.level === 'read') {
+      body = '<ol class="dr-script">' + arr(d.lines).map(l => {
+        l = l || {}; const who = txt(l.who) || 'you', you = who === 'you';
+        return '<li class="' + (you ? 'you' : 'them') + '"><span class="dr-who">' + (you ? 'You' : who === 'seller' ? 'Seller' : esc(who)) + '</span><p>' + md(l.say) + '</p></li>';
+      }).join('') + '</ol>';
+    } else if (d.level === 'respond') {
+      const ps = arr(d.pairs).map(p => p || {}), themL = esc(txt(d.themLabel) || 'Seller'), youL = esc(txt(d.youLabel) || 'You');
+      body = '<div class="dr-step" data-n="' + ps.length + '">' +
+        '<p class="dr-count" aria-live="polite">Line <span data-dr="pos">1</span> of ' + ps.length + '</p>' +
+        ps.map((p, k) => '<div class="dr-pair" data-k="' + k + '"' + (k ? ' hidden' : '') + '>' +
+          '<p class="dr-them"><span class="dr-who">' + themL + '</span>' + md(p.them || '') + '</p>' +
+          '<button class="link-btn" type="button" data-pr="ans" aria-expanded="false" aria-controls="drA' + i + '_' + k + '">Show the model answer</button>' +
+          '<div class="dr-ans" id="drA' + i + '_' + k + '" hidden><p><span class="dr-who">' + youL + '</span>' + md(p.you || '') + '</p>' + (p.why ? '<p class="note">' + md(p.why) + '</p>' : '') + '</div>' +
+        '</div>').join('') +
+        '<div class="pr-row"><button class="btn line" type="button" data-pr="prev" disabled>Back</button><button class="btn dark" type="button" data-pr="next"' + (ps.length < 2 ? ' disabled' : '') + '>Next line</button><button class="btn line" type="button" data-pr="mix"' + (ps.length < 3 ? ' hidden' : '') + '>Mix the order</button></div>' +
+      '</div>';
+    } else {
+      const b = d.brief, li = a => '<ul>' + arr(a).map(x => '<li>' + md(x) + '</li>').join('') + '</ul>';
+      body = '<div class="dr-brief">' +
+        (b.who ? '<p><b>Who you’re calling:</b> ' + md(b.who) + '</p>' : '') +
+        (arr(b.know).length ? '<p><b>What you know before you dial:</b></p>' + li(b.know) : '') +
+        (b.goal ? '<p><b>Your goal on this call:</b> ' + md(b.goal) + '</p>' : '') +
+        (arr(b.hidden).length ? '<details class="dr-secret"><summary>For the person playing the seller (the caller doesn’t read this)</summary>' + li(b.hidden) + '</details>' : '') +
+      '</div>';
+    }
+    return '<div class="drill" data-i="' + i + '"' + (i ? ' hidden' : '') + '>' +
+      '<p class="dr-level"><span class="chip">' + lv[0] + '</span> <b>' + lv[1] + '</b>' + (n > 1 ? ' · Drill ' + (i + 1) + ' of ' + n : '') + '</p>' +
+      '<h3 class="sub">' + esc(d.title || lv[1]) + '</h3>' +
+      '<p class="note">' + md(d.intro || HOW[d.level]) + '</p>' + body +
+    '</div>';
+  }
+
+  function html(lessonTitle, prompt, drills){
     return '<section class="practice" aria-labelledby="prH">' +
       '<div class="pr-top"><span class="label o">Practice out loud</span><h2 class="sub" id="prH">Record yourself and send it to Amr</h2>' +
-      '<p class="note">' + (prompt ? CourseMarkdown.inline(prompt) : 'Say this lesson’s lines out loud, or run a short role-play with a colleague or with Claude playing the seller. Amr listens, scores it and leaves comments at the exact moments that matter.') + '</p></div>' +
+      '<p class="note">' + (prompt ? CourseMarkdown.inline(prompt) : drills.length ? 'Pick a drill, press record and say it out loud. The words stay on screen while you record. Amr listens, scores it and leaves comments at the exact moments that matter.' : 'Say this lesson’s lines out loud, or run a short role-play with a colleague or with Claude playing the seller. Amr listens, scores it and leaves comments at the exact moments that matter.') + '</p></div>' +
+      (drills.length > 1 ? '<div class="dr-pick" role="group" aria-label="Choose a drill">' + drills.map((d, i) => '<button type="button" class="dr-tab" data-pr="pick" data-i="' + i + '" aria-pressed="' + (i ? 'false' : 'true') + '">' + (i + 1) + '. ' + CourseMarkdown.esc(txt(d.title) || LEVELS[d.level][1]) + '</button>').join('') + '</div>' : '') +
+      (drills.length ? '<div class="drills">' + drills.map((d, i) => drillHtml(d, i, drills.length)).join('') + '</div>' : '') +
       '<div class="pr-rec" id="prRec">' +
         '<div class="pr-row"><button class="btn orange" type="button" data-pr="start" id="prStart">Start recording</button>' +
           '<label class="btn line pr-file"><input type="file" class="vh" id="prFile" accept="audio/*,.m4a,.mp3,.wav,.webm,.ogg">Upload a recording</label></div>' +
         '<div class="pr-live" id="prLive" hidden><span class="pr-dot" aria-hidden="true"></span><span id="prClock" aria-live="off">0:00</span><button class="btn dark" type="button" data-pr="stop">Stop</button></div>' +
         '<div class="pr-review" id="prReview" hidden>' +
           '<audio controls id="prPreview"></audio>' +
-          '<label class="field-lbl" for="prTitle">Title</label><input type="text" id="prTitle" maxlength="200" value="' + CourseMarkdown.esc('Practice: ' + lessonTitle) + '">' +
+          '<label class="field-lbl" for="prTitle">Title</label><input type="text" id="prTitle" maxlength="200" value="">' +
           '<label class="field-lbl" for="prNote">Anything Amr should know? (optional)</label><textarea id="prNote" rows="2" maxlength="2000"></textarea>' +
           '<label class="pr-check"><input type="checkbox" id="prReal"> This is a real seller call, not a role-play</label>' +
           '<label class="pr-check" id="prConsentRow" hidden><input type="checkbox" id="prConsent"> Everyone on the call agreed to be recorded, and I’ve left out the seller’s name, phone and address</label>' +
@@ -42,7 +101,22 @@
     // o: { db, user, mod, it, title, toast }
     const { db, user, mod, it } = o;
     const $ = id => root.querySelector('#' + id);
-    root.innerHTML = html(o.title, it.practice && it.practice.prompt);
+    const drills = drillsOf(it.practice);
+    root.innerHTML = html(o.title, it.practice && txt(it.practice.prompt), drills);
+    let cur = 0; // the drill on screen
+    const titleFor = () => {
+      const d = drills[cur];
+      return (d ? o.title + ' · ' + LEVELS[d.level][1] + (txt(d.title) ? ': ' + txt(d.title) : '') : 'Practice: ' + o.title).slice(0, 200);
+    };
+    const showPair = (box, k) => {
+      const n = +box.dataset.n; k = Math.max(0, Math.min(n - 1, k));
+      box.querySelectorAll('.dr-pair').forEach(p => { p.hidden = +p.dataset.k !== k; });
+      box.dataset.at = k;
+      box.querySelector('[data-dr="pos"]').textContent = k + 1;
+      box.querySelector('[data-pr="prev"]').disabled = k === 0;
+      box.querySelector('[data-pr="next"]').disabled = k >= n - 1;
+    };
+    const lockPick = on => root.querySelectorAll('.dr-tab').forEach(t => { t.disabled = on; });
     let rec = null, chunks = [], stream = null, started = 0, tick = null, blob = null, mime = '', fileName = '', dur = null;
 
     const stopMic = s => { if (s) s.getTracks().forEach(t => t.stop()); };
@@ -51,20 +125,53 @@
       if (rec) { rec.onstop = rec.ondataavailable = null; try { if (rec.state !== 'inactive') rec.stop(); } catch(err){} }
       stopMic(stream); stream = null;
       rec = null; chunks = []; blob = null; dur = null;
-      $('prLive').hidden = true; $('prReview').hidden = true; $('prStart').hidden = false; root.querySelector('.pr-file').hidden = false;
+      $('prLive').hidden = true; $('prReview').hidden = true; $('prStart').hidden = false; root.querySelector('.pr-file').hidden = false; lockPick(false);
       const p = $('prPreview'); if (p.src) { URL.revokeObjectURL(p.src); p.removeAttribute('src'); }
       $('prErr').textContent = ''; $('prReal').checked = false; $('prConsent').checked = false; $('prConsentRow').hidden = true; $('prNote').value = '';
     };
     const ready = (b, m, name, seconds) => {
       blob = b; mime = (m || b.type || 'audio/webm').split(';')[0]; fileName = name; dur = seconds;
       $('prLive').hidden = true; $('prStart').hidden = true; root.querySelector('.pr-file').hidden = true; $('prReview').hidden = false;
-      $('prPreview').src = URL.createObjectURL(b);
+      $('prPreview').src = URL.createObjectURL(b); $('prTitle').value = titleFor(); lockPick(true); $('prPreview').focus();
       $('prMsg').textContent = seconds ? 'Recorded ' + clock(seconds) + '. Listen back, then send it.' : 'Listen back, then send it.';
     };
 
     root.addEventListener('click', async e => {
       const b = e.target.closest('[data-pr]'); if (!b) return;
       const act = b.dataset.pr;
+      if (act === 'pick') {
+        if (b.disabled) return;
+        cur = +b.dataset.i;
+        root.querySelectorAll('.dr-tab').forEach(t => t.setAttribute('aria-pressed', String(t === b)));
+        root.querySelectorAll('.drill').forEach(d => { d.hidden = +d.dataset.i !== cur; });
+        return;
+      }
+      if (act === 'ans') {
+        const a = root.querySelector('#' + CSS.escape(b.getAttribute('aria-controls')));
+        const open = b.getAttribute('aria-expanded') !== 'true';
+        a.hidden = !open; b.setAttribute('aria-expanded', String(open));
+        b.textContent = open ? 'Hide the model answer' : 'Show the model answer';
+        return;
+      }
+      if (act === 'prev' || act === 'next') {
+        const box = b.closest('.dr-step');
+        showPair(box, +(box.dataset.at || 0) + (act === 'next' ? 1 : -1));
+        if (b.disabled) box.querySelector('[data-pr="' + (act === 'next' ? 'prev' : 'next') + '"]').focus(); // keep focus on a live button at either end
+        return;
+      }
+      if (act === 'mix') {
+        const box = b.closest('.dr-step'), ps = [...box.querySelectorAll('.dr-pair')];
+        for (let k = ps.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [ps[k], ps[j]] = [ps[j], ps[k]]; }
+        const anchor = box.querySelector('.pr-row');
+        ps.forEach((p, k) => {
+          p.dataset.k = k; box.insertBefore(p, anchor);
+          const btn = p.querySelector('[data-pr="ans"]'); btn.setAttribute('aria-expanded', 'false'); btn.textContent = 'Show the model answer';
+          p.querySelector('.dr-ans').hidden = true;
+        });
+        showPair(box, 0);
+        if (o.toast) o.toast('Order mixed');
+        return;
+      }
       if (act === 'start') {
         if (b.disabled || rec) return;
         const m = pickMime();
@@ -89,7 +196,7 @@
         };
         try { r.start(1000); } catch(err){ stopMic(s); stream = null; rec = null; b.disabled = false; $('prMsg').textContent = 'Recording didn’t start. Try again, or upload a recording.'; return; }
         started = Date.now(); b.disabled = false;
-        $('prStart').hidden = true; root.querySelector('.pr-file').hidden = true; $('prLive').hidden = false; $('prMsg').textContent = 'Recording…';
+        $('prStart').hidden = true; root.querySelector('.pr-file').hidden = true; $('prLive').hidden = false; $('prMsg').textContent = 'Recording…'; lockPick(true); root.querySelector('[data-pr="stop"]').focus();
         tick = setInterval(() => { const t = (Date.now() - started) / 1000; $('prClock').textContent = clock(t); if (t >= MAX_S && rec && rec.state !== 'inactive') { clearInterval(tick); rec.stop(); } }, 500);
       }
       if (act === 'stop' && rec && rec.state !== 'inactive') { clearInterval(tick); rec.stop(); }
@@ -130,7 +237,6 @@
       if (!/^audio\//.test(f.type) && !/\.(m4a|mp3|wav|webm|ogg|aac)$/i.test(f.name)) { $('prMsg').textContent = 'Choose an audio file (m4a, mp3, wav, webm).'; return; }
       const type = f.type || ('audio/' + (extOf(f.name) === 'm4a' ? 'mp4' : extOf(f.name)));
       ready(f, type, f.name, null);
-      $('prTitle').value = 'Practice: ' + o.title;
     });
 
     // My recordings for this lesson
