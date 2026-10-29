@@ -201,7 +201,7 @@
     // Signed in with the course loaded: the Learning Hub frame (top bar, course content sidebar, page). Sign-in pages stand alone.
     const framed = !!S && !o.bare;
     document.body.classList.toggle('framed', framed);
-    if (framed) { frame(); $('cpMain').innerHTML = html; drawSide(); drawProgress(); }
+    if (framed) { frame(); if (document.body.classList.contains('side-open')) setSide(false); $('cpMain').innerHTML = html; drawSide(); drawProgress(); }
     else appEl.innerHTML = html;
     appEl.querySelectorAll('[data-w]').forEach(el => el.style.width = el.dataset.w + '%');
     document.title = (o.title ? o.title + ' · ' : '') + 'Acquisitions Playbook';
@@ -237,17 +237,17 @@
       '<header class="cp-top">' +
         '<button class="cp-menu" type="button" id="cpMenu" aria-label="Course content" aria-expanded="false" aria-controls="cpSide">' + IC.menu + '</button>' +
         '<a class="cp-brand" href="#/"><span class="cp-logo" aria-hidden="true">A</span><span class="cp-name">Acquisitions</span></a>' +
-        '<div class="cp-find" role="search">' + ICK.search + '<input type="search" id="cpQ" autocomplete="off" spellcheck="false" placeholder="Search the course" aria-label="Search the course" aria-controls="cpRes"><div class="cp-results" id="cpRes" role="listbox" hidden></div></div>' +
-        '<button class="cp-findbtn" type="button" id="cpFindBtn" aria-label="Search the course" aria-expanded="false">' + ICK.search + '</button>' +
-        '<div class="cp-prog" id="cpProg" title="Course progress"><span class="cp-bar"><i></i></span><b>0%</b></div>' +
+        '<div class="cp-find" id="cpFind" role="search">' + ICK.search + '<input type="search" id="cpQ" autocomplete="off" spellcheck="false" placeholder="Search the course" aria-label="Search the course" aria-describedby="cpCount"><div class="cp-results" id="cpRes" hidden></div><span class="vh" id="cpCount" aria-live="polite"></span></div>' +
+        '<button class="cp-findbtn" type="button" id="cpFindBtn" aria-label="Search the course" aria-expanded="false" aria-controls="cpFind">' + ICK.search + '</button>' +
+        '<div class="cp-prog" id="cpProg" role="progressbar" aria-label="Course progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="cp-bar"><i></i></span><b>0%</b></div>' +
         '<button class="cp-acct" type="button" data-act="menu" aria-label="Your account" aria-haspopup="dialog">' + ICK.user + '</button>' +
         '<a class="cp-back" href="/app/#learn">Back to app</a>' +
       '</header>' +
       '<div class="cp-body"><aside class="cp-side" id="cpSide" aria-label="Course content"></aside><div class="cp-scrim" id="cpScrim" hidden></div>' +
       '<div class="cp-main" id="cpMain"></div></div>';
-    const setSide = open => { document.body.classList.remove('find-open'); document.body.classList.toggle('side-open', open); $('cpMenu').setAttribute('aria-expanded', open); $('cpScrim').hidden = !open; };
     $('cpMenu').addEventListener('click', () => setSide(!document.body.classList.contains('side-open')));
-    $('cpScrim').addEventListener('click', () => setSide(false));
+    $('cpScrim').addEventListener('click', () => setSide(false, true));
+    setSide(false);
     $('cpSide').addEventListener('click', e => {
       const b = e.target.closest('button[data-mod]');
       if (b) {
@@ -258,10 +258,37 @@
       }
       if (e.target.closest('a')) setSide(false);
     });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('side-open')) setSide(false); });
-    $('cpFindBtn').addEventListener('click', () => { const open = !document.body.classList.contains('find-open'); document.body.classList.toggle('find-open', open); $('cpFindBtn').setAttribute('aria-expanded', open); if (open) $('cpQ').focus(); });
+    $('cpFindBtn').addEventListener('click', () => { const open = !document.body.classList.contains('find-open'); setFind(open); if (open) $('cpQ').focus(); });
     searchSetup();
   }
+  // The phone drawer: off screen and out of the Tab order when closed (inert); the page behind is inert while it's open
+  const narrow = () => window.matchMedia('(max-width:860px)').matches;
+  function setSide(open, refocus){
+    setFind(false);
+    document.body.classList.toggle('side-open', open);
+    const side = $('cpSide'), main = $('cpMain'), menu = $('cpMenu');
+    if (!side) return;
+    menu.setAttribute('aria-expanded', open); $('cpScrim').hidden = !open;
+    side.inert = narrow() && !open;
+    if (main) main.inert = narrow() && open;
+    if (open) { const f = side.querySelector('[aria-current="page"]') || side.querySelector('a,button'); if (f) f.focus({ preventScroll:false }); }
+    else if (refocus) menu.focus();
+  }
+  function setFind(open){
+    document.body.classList.toggle('find-open', open);
+    const b = $('cpFindBtn'); if (b) b.setAttribute('aria-expanded', open);
+    if (!open) { const r = $('cpRes'); if (r) r.hidden = true; }
+  }
+  // Listeners on the whole document are added once, not each time the frame is drawn
+  // Skip link: move focus to the page content without touching the hash (the hash is the router)
+  const skip = document.querySelector('.skip');
+  if (skip) skip.addEventListener('click', e => { e.preventDefault(); const m = document.getElementById('main'); if (m) { m.setAttribute('tabindex', '-1'); m.focus(); } });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (document.body.classList.contains('side-open')) setSide(false, true);
+  });
+  document.addEventListener('click', e => { if (!e.target.closest('.cp-find')) { const r = $('cpRes'); if (r) r.hidden = true; } });
+  window.addEventListener('resize', () => { if ($('cpSide') && !document.body.classList.contains('side-open')) { $('cpSide').inert = narrow(); if ($('cpMain')) $('cpMain').inert = false; } });
   // Which sidebar row is this page? Lessons, quizzes, results, drills and checkpoints all map back to one row.
   function hereKey(){
     const p = location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
@@ -290,8 +317,8 @@
       const isHere = here === 'mod:' + m.id || here.startsWith(m.id + '/');
       const open = sideOpen[m.id] != null ? sideOpen[m.id] : (isHere || (cur && cur.id === m.id));
       h += '<div class="cp-mod' + (open ? ' open' : '') + (cur && cur.id === m.id ? ' on' : '') + '">' +
-        '<button class="cp-modbtn" type="button" data-mod="' + esc(m.id) + '" aria-expanded="' + open + '"><span class="n">' + n + '</span><span><b>' + esc(m.title) + '</b><small>' + (moduleDone(m) ? 'Done · ' : '') + p.done + ' of ' + p.total + ' done</small></span>' + IC.chev + '</button>' +
-        '<div class="cp-items"><a class="cp-item ov" href="#/m/' + esc(m.id) + '"' + (here === 'mod:' + m.id ? ' aria-current="page"' : '') + '><span class="st">' + ICK.lesson + '</span><span>Module overview</span></a>' +
+        '<button class="cp-modbtn" type="button" data-mod="' + esc(m.id) + '" aria-expanded="' + open + '" aria-controls="side-' + esc(m.id) + '"><span class="n">' + n + '</span><span><b>' + esc(m.title) + '</b><small>' + (moduleDone(m) ? 'Done · ' : '') + p.done + ' of ' + p.total + ' done</small></span>' + IC.chev + '</button>' +
+        '<div class="cp-items" id="side-' + esc(m.id) + '"><a class="cp-item ov" href="#/m/' + esc(m.id) + '"' + (here === 'mod:' + m.id ? ' aria-current="page"' : '') + '><span class="st">' + ICK.lesson + '</span><span>Module overview</span></a>' +
         us.map(u => {
           const k = m.id + '/' + (u.kind === 'quiz' ? 'q' : u.kind === 'lesson' ? 'l' : u.kind === 'assignment' ? 'a' : 'c') + '/' + u.e.it.id;
           const lbl = u.kind === 'lesson' ? (u.e.it.shortTitle || heading(u.e.it)) : u.kind === 'quiz' ? 'Quiz ' + idLabel(u.e).replace(/^[\d.]+ (?=Session)/, '') : u.label;
@@ -314,7 +341,7 @@
     const all = t + Math.max(0, S.totalModules - S.modules.filter(m => m.open).length) * per;
     const v = all ? Math.floor(d * 100 / all) : 0;
     el.querySelector('i').style.width = v + '%'; el.querySelector('b').textContent = v + '%';
-    el.setAttribute('title', 'Course progress: ' + v + '%');
+    el.setAttribute('aria-valuenow', v); el.setAttribute('title', 'Course progress: ' + v + '%');
   }
   // Search: lesson titles and text in the modules you can open
   function searchSetup(){
@@ -331,7 +358,7 @@
     q.addEventListener('focus', () => { idx = index(); });
     q.addEventListener('input', () => {
       const v = q.value.trim().toLowerCase();
-      if (v.length < 2) { res.hidden = true; return; }
+      if (v.length < 2) { res.hidden = true; $('cpCount').textContent = ''; return; }
       idx = idx || index();
       const hits = idx.map(x => {
         const t = x.title.toLowerCase().indexOf(v), b = x.text.toLowerCase().indexOf(v);
@@ -339,13 +366,17 @@
       }).filter(Boolean).sort((a, b) => a.rank - b.rank).slice(0, 8);
       res.innerHTML = hits.length ? hits.map(x => {
         const snip = x.at >= 0 ? x.text.slice(Math.max(0, x.at - 40), x.at + 80) : '';
-        return '<a class="cp-hit" role="option" href="' + esc(x.href) + '"><b>' + esc(x.title) + '</b><small>Module ' + x.mod.number + (snip ? ' · …' + esc(snip) + '…' : '') + '</small></a>';
+        return '<a class="cp-hit" href="' + esc(x.href) + '"><b>' + esc(x.title) + '</b><small>Module ' + x.mod.number + (snip ? ' · …' + esc(snip) + '…' : '') + '</small></a>';
       }).join('') : '<p class="cp-none">No lessons match “' + esc(q.value.trim()) + '”.</p>';
       res.hidden = false;
+      $('cpCount').textContent = hits.length ? plural(hits.length, 'lesson') + ' found' : 'No lessons found';
     });
-    res.addEventListener('click', e => { if (e.target.closest('a')) { res.hidden = true; q.value = ''; q.blur(); document.body.classList.remove('find-open'); } });
-    document.addEventListener('click', e => { if (!e.target.closest('.cp-find')) res.hidden = true; });
-    q.addEventListener('keydown', e => { if (e.key === 'Escape') { res.hidden = true; q.blur(); document.body.classList.remove('find-open'); } if (e.key === 'Enter') { const a = res.querySelector('a'); if (a) { location.hash = a.getAttribute('href'); res.hidden = true; q.value = ''; } } });
+    const done = () => { q.value = ''; q.blur(); setFind(false); $('cpCount').textContent = ''; };
+    res.addEventListener('click', e => { if (e.target.closest('a')) done(); });
+    q.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { e.stopPropagation(); done(); }
+      if (e.key === 'Enter') { const a = res.querySelector('a'); if (a) { location.hash = a.getAttribute('href'); done(); } }
+    });
   }
 
   appEl.addEventListener('click', e => {
