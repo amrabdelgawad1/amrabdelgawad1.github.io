@@ -484,9 +484,9 @@
   // ======================================================================
   // Owner: menu, Live now, Invite and access, and the /cash pages
   // ======================================================================
-  const OWNER_PAGES = { live:'Live now', requests:'Missed-shift requests', emails:'Team emails', people:'Invite and access', visits:'Website visitors', learn:'Learning Hub', mytime:'My time', overview:'Overview', team:'Team', income:'Income', expense:'Expenses', track:'Tracker' };
+  const OWNER_PAGES = { live:'Live now', requests:'Missed-shift requests', emails:'Team emails', people:'Invite and access', visits:'Website visitors', learn:'Learning Hub', review:'Review center', mytime:'My time', overview:'Overview', team:'Team', income:'Income', expense:'Expenses', track:'Tracker' };
   // Which switch in Invite and access opens each page; "owner" pages are Amr's alone
-  const SECTION = { live:'live', requests:'requests', team:'team', overview:'money', income:'money', expense:'money', mytime:'owner', emails:'owner', people:'owner', visits:'owner', learn:'learn', track:'track' };
+  const SECTION = { live:'live', requests:'requests', team:'team', overview:'money', income:'money', expense:'money', mytime:'owner', emails:'owner', people:'owner', visits:'owner', learn:'learn', review:'owner', track:'track' };
   const SECTION_NAMES = { live:'Live now', requests:'Missed-shift requests', team:'Team', money:'Money', deals:'Deal tools', learn:'Learning Hub', mkt:'Marketing course', psy:'Psychology course', course:'Acquisitions course' };
   // Course switches sit under Learning Hub: a course opens only when Learning Hub is on too.
   // New course? Add its switch here and in SECTION_NAMES, and give its track the same key in learn.js (TRACKS[].key).
@@ -547,7 +547,7 @@
   // Highlights the open section (or person) in the menu; the names under Team stay open while on Team
   function markMenu(){
     const here = location.hash;
-    document.querySelectorAll('.drawer .mi[href]').forEach(a => a.classList.toggle('on', a.getAttribute('href') === here || (a.getAttribute('href') === '#learn' && here.startsWith('#learn/'))));
+    document.querySelectorAll('.drawer .mi[href]').forEach(a => a.classList.toggle('on', a.getAttribute('href') === here || (a.getAttribute('href') === '#learn' && here.startsWith('#learn/')) || (a.getAttribute('href') === '#review' && here.startsWith('#review/'))));
     if (here.startsWith('#team') && !$('teamTog').hidden) openTeamMenu(true);
   }
   function menuRoute(){
@@ -560,7 +560,8 @@
     $('pTrack').hidden = page !== 'track';
     $('pLive').hidden = page !== 'live'; $('pPeople').hidden = page !== 'people'; $('pRequests').hidden = page !== 'requests';
     $('pVisits').hidden = page !== 'visits'; $('pEmails').hidden = page !== 'emails'; $('pLearn').hidden = page !== 'learn';
-    const cashPage = !['live', 'people', 'requests', 'track', 'visits', 'emails', 'learn'].includes(page);
+    $('pReview').hidden = page !== 'review';
+    const cashPage = !['live', 'people', 'requests', 'track', 'visits', 'emails', 'learn', 'review'].includes(page);
     $('pCash').hidden = !cashPage;
     // A person's Team page gets a bar for their payslips (Amr only; uploading is his)
     let who = ''; try { who = page === 'team' && person ? decodeURIComponent(person) : ''; } catch(e) {}
@@ -573,7 +574,9 @@
     if (page === 'visits') loadVisits();
     if (page === 'emails') loadEmails();
     if (page === 'learn' && window.TalentsLearn) window.TalentsLearn.open(person || '');
+    if (page === 'review' && window.HubReview) window.HubReview.open(person ? decodeURIComponent(person) : '');
     countRequests();
+    if (role === 'owner' && window.HubReview) window.HubReview.count().catch(() => {});
     if (cashPage) openCash(here);
     closeMenu();
     window.scrollTo(0, 0);

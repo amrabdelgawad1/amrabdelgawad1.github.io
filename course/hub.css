@@ -86,8 +86,8 @@ body.framed .app{ min-height:0; display:block; }
 .cp-back{ font-size:14px; font-weight:600; text-decoration:none; border:1px solid #D3CFC4; border-radius:8px; padding:8px 12px; color:var(--ink); white-space:nowrap; flex:none; }
 .cp-back:hover{ border-color:var(--orange-btn); color:var(--orange-btn); }
 
-.cp-body{ display:grid; grid-template-columns:var(--side) minmax(0, 1fr); min-height:calc(100vh - var(--top)); }
-.cp-side{ position:sticky; top:var(--top); height:calc(100vh - var(--top)); overflow:auto; background:var(--card); border-inline-end:1px solid var(--line); padding:14px 0 40px; }
+.cp-body{ display:grid; grid-template-columns:var(--side) minmax(0, 1fr); min-height:calc(100vh - var(--top)); min-height:calc(100dvh - var(--top)); }
+.cp-side{ position:sticky; top:var(--top); height:calc(100vh - var(--top)); height:calc(100dvh - var(--top)); overflow:auto; background:var(--card); border-inline-end:1px solid var(--line); padding:14px 0 40px; }
 .cp-main{ min-width:0; display:flex; flex-direction:column; }
 .cp-main > main{ flex:1; }
 .framed .col{ max-width:860px; }
@@ -146,7 +146,7 @@ h1[tabindex="-1"]:focus, main[tabindex="-1"]:focus{ outline:none; }
 @media (max-width:860px){
   .cp-menu{ display:grid; }
   .cp-body{ grid-template-columns:minmax(0, 1fr); }
-  .cp-side{ position:fixed; z-index:25; top:var(--top); left:0; width:min(340px, 88vw); height:calc(100vh - var(--top)); transform:translateX(-102%); transition:transform .2s ease; box-shadow:0 0 40px rgba(20,22,27,.18); }
+  .cp-side{ position:fixed; z-index:25; top:var(--top); left:0; width:min(340px, 88vw); height:calc(100vh - var(--top)); height:calc(100dvh - var(--top)); transform:translateX(-102%); transition:transform .2s ease; box-shadow:0 0 40px rgba(20,22,27,.18); }
   body.side-open .cp-side{ transform:none; }
   .cp-find{ max-width:none; }
   .cp-prog{ display:none; }
@@ -163,3 +163,33 @@ h1[tabindex="-1"]:focus, main[tabindex="-1"]:focus{ outline:none; }
   .cp-find input{ font-size:16px; }
 }
 @media (prefers-reduced-motion:reduce){ .cp-side, .cp-bar i, .cp-modbtn > svg{ transition:none; } }
+
+/* ---------- practice out loud (practice.js) ---------- */
+.practice{ display:grid; gap:14px; margin-top:8px; padding:20px; background:var(--card); border:1px solid var(--line); border-radius:12px; }
+.pr-top{ display:grid; gap:6px; }
+.pr-row{ display:flex; flex-wrap:wrap; gap:10px; }
+.pr-row .btn{ flex:0 1 auto; padding:0 18px; }
+.pr-live{ display:flex; align-items:center; gap:12px; font:700 20px var(--display); }
+.pr-live .btn{ flex:0 0 auto; padding:0 22px; }
+.pr-dot{ width:12px; height:12px; border-radius:50%; background:#D92D20; animation:prpulse 1.2s ease-in-out infinite; }
+@keyframes prpulse{ 50%{ opacity:.35; } }
+@media (prefers-reduced-motion:reduce){ .pr-dot{ animation:none; } }
+.pr-review{ display:grid; gap:8px; }
+.pr-review audio, .pr-item audio{ width:100%; }
+.pr-review input[type=text], .pr-review textarea{ width:100%; border:1px solid var(--line); border-radius:8px; padding:10px 12px; font:inherit; background:var(--card); }
+.pr-check{ display:flex; gap:8px; align-items:flex-start; font-size:14px; color:var(--ink-2); }
+.pr-check input{ margin-top:4px; width:18px; height:18px; accent-color:var(--orange-btn); flex:none; }
+.pr-mine{ display:grid; gap:10px; }
+.pr-mine:empty{ display:none; }
+.pr-list{ list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+.pr-item{ display:grid; gap:8px; padding:12px; border:1px solid var(--line); border-radius:10px; background:var(--bg); }
+.pr-score summary{ cursor:pointer; font-size:14px; }
+.pr-score ul{ list-style:none; margin:8px 0 0; padding:0; display:grid; gap:4px; font-size:13.5px; }
+.pr-score li{ display:flex; justify-content:space-between; gap:10px; }
+.pr-cms{ list-style:none; margin:0; padding:0; display:grid; gap:6px; }
+.pr-cms li{ font-size:14px; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
+.pr-cm-who{ font-weight:700; }
+.pr-at{ border:0; background:var(--orange-btn); color:#fff; border-radius:99px; padding:1px 8px; font:700 12px var(--sans); margin-right:6px; cursor:pointer; }
+.practice .err{ color:var(--err-text); font-size:14px; margin:0; }
+.practice .err:empty, .practice #prMsg:empty{ display:none; }
+.pr-item .link-btn{ justify-self:start; min-height:32px; }

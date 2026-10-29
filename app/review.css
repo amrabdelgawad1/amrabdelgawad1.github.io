@@ -1,0 +1,63 @@
+/* Review center (#review): uses the app's own colors and type */
+#reviewBody{ display:grid; gap:16px; max-width:980px; }
+.rv-bar-top{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.rv-pick{ position:relative; flex:1 1 260px; max-width:420px; }
+.rv-pickbtn{ display:flex; align-items:center; justify-content:space-between; gap:8px; text-align:left; cursor:pointer; }
+.rv-pickbtn span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rv-pickbtn .i{ width:18px; height:18px; flex:none; fill:none; stroke:currentColor; stroke-width:2; }
+.rv-pickbox{ position:absolute; z-index:20; top:calc(100% + 6px); left:0; right:0; display:grid; gap:8px; padding:10px; box-shadow:0 14px 34px rgba(16,24,40,.16); }
+.rv-pickacts{ display:flex; gap:8px; }
+.rv-picklist{ max-height:300px; overflow:auto; display:grid; gap:2px; }
+.rv-pickrow{ display:flex; align-items:center; gap:10px; padding:8px; border-radius:8px; cursor:pointer; font-size:14.5px; }
+.rv-pickrow:hover{ background:var(--sunk); }
+.rv-pickrow input{ width:18px; height:18px; accent-color:var(--accent); }
+.rv-pickrow .pill{ margin-left:auto; }
+.rv-chips{ display:flex; gap:6px; flex-wrap:wrap; }
+.rv-course{ width:auto; flex:0 0 auto; }
+.rv-h{ font:600 17px var(--sans); margin:6px 0 0; }
+.rv-people{ display:grid; gap:12px; grid-template-columns:repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+.rv-pcard{ display:grid; gap:10px; text-decoration:none; color:var(--text); }
+.rv-pcard:hover{ border-color:var(--accent); }
+.rv-head{ display:flex; align-items:center; gap:10px; }
+.rv-av{ width:36px; height:36px; flex:none; border-radius:50%; display:grid; place-items:center; background:var(--sunk); font-weight:700; font-size:13px; color:var(--text); }
+.rv-av.big{ width:48px; height:48px; font-size:16px; }
+.rv-who{ display:grid; min-width:0; flex:1; }
+.rv-who b{ font-size:15px; }
+.rv-who b a{ color:inherit; text-decoration:none; }
+.rv-who b a:hover{ text-decoration:underline; }
+.rv-who small{ color:var(--muted); font-size:12.5px; }
+.rv-prog{ display:grid; gap:4px; }
+.rv-prog-top{ display:flex; justify-content:space-between; gap:8px; font-size:13.5px; }
+.rv-prog small{ color:var(--muted); font-size:12.5px; }
+.rv-bar{ height:7px; border-radius:99px; background:var(--sunk); overflow:hidden; }
+.rv-bar i{ display:block; height:100%; background:var(--accent); border-radius:99px; }
+.rv-progs{ display:grid; gap:12px; margin-top:14px; grid-template-columns:repeat(auto-fill, minmax(min(100%, 240px), 1fr)); }
+.rv-back{ font-size:14px; font-weight:600; }
+.rv-feed{ display:grid; gap:14px; }
+.rv-card{ display:grid; gap:10px; }
+.rv-t{ font:600 16px var(--sans); margin:0; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.rv-note{ margin:0; color:var(--muted); font-size:14px; white-space:pre-wrap; }
+.rv-audio{ width:100%; }
+.rv-score{ border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
+.rv-score summary{ cursor:pointer; font-weight:600; font-size:14px; }
+.rv-cat{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:6px 0; border-top:1px solid var(--border); font-size:14px; }
+.rv-cat:first-of-type{ margin-top:8px; }
+.rv-dots{ display:flex; gap:4px; flex:none; }
+.rv-dots button{ width:32px; height:32px; border-radius:8px; border:1px solid var(--border2); background:var(--panel); font-weight:700; font-size:13px; color:var(--text); cursor:pointer; }
+.rv-dots button[aria-checked="true"]{ background:var(--accent); border-color:var(--accent); color:#fff; }
+.rv-total{ margin:8px 0 0; font-size:14px; font-weight:600; }
+.rv-cms{ list-style:none; margin:0; padding:0; display:grid; gap:6px; }
+.rv-cms li{ font-size:14px; background:var(--sunk); border-radius:8px; padding:8px 10px; }
+.rv-cm-who{ font-weight:700; margin-right:6px; }
+.rv-at{ border:0; background:var(--accent); color:#fff; border-radius:99px; padding:1px 8px; font:700 12px var(--sans); margin-right:6px; cursor:pointer; }
+.rv-form{ display:grid; gap:8px; }
+.rv-actions{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; }
+.rv-card > .rv-actions{ justify-content:flex-start; }
+.rv-pin{ font-size:13px; color:var(--muted); display:flex; gap:6px; align-items:center; }
+.pill.ok{ color:var(--green); border-color:color-mix(in srgb, var(--green) 40%, transparent); }
+.pill.warn{ color:var(--red); border-color:color-mix(in srgb, var(--red) 40%, transparent); }
+.pill.due{ color:var(--gold); border-color:color-mix(in srgb, var(--gold) 40%, transparent); }
+.rv-person .rv-who b{ font-size:18px; }
+@media (max-width:600px){ .rv-cat{ flex-direction:column; align-items:flex-start; } .rv-course{ width:100%; } }
+.rv-vh{ position:absolute !important; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+.rv-card > a.btn{ justify-self:start; }
