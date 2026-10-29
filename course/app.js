@@ -169,21 +169,24 @@
   }
   window.CourseSigned = async path => { await signAll([path]); const s = signed.get(path); return s && s.url; };
   const img = (path, cls, alt) => '<img class="' + cls + '" data-src="' + esc(path) + '" alt="' + esc(alt || '') + '" loading="lazy" decoding="async">';
+  // Thumbnails are drawn, not loaded: a dark card with an orange rule, a kicker and the title (the Learning Hub look).
+  const tcard = (cls, kicker, title, alt) => '<span class="tcard ' + cls + '"' + (alt ? ' role="img" aria-label="' + esc(alt) + '"' : ' aria-hidden="true"') + '>' +
+    '<i></i><span class="tk">' + esc(kicker) + '</span><span class="tt">' + esc(title) + '</span></span>';
+  const kickerOf = (mod, it) => !it ? 'Module ' + mod.number : it.type === 'checkpoint' ? 'Module ' + mod.number + ' checkpoint' :
+    it.type === 'assignment' ? 'Module ' + mod.number + ' drill' : it.type === 'group' ? 'Module ' + mod.number + ' · ' + it.id : 'Lesson ' + it.id.replace(/\.s(\d+)$/, ' · Session $1');
+  const thumbOf = (mod, it, cls, alt) => tcard(cls, kickerOf(mod, it), it ? (it.type === 'lesson' ? heading(it) : it.title.replace(/^[\d.]+\s+/, '')) : mod.title, alt);
 
   // ---------- rendering ----------
   let acts = {}, lastRoute = '', onInput = null;
+  // The page's own title row, under the course top bar: a back link, where you are, and an aside (a quiz's pass mark)
   function header(o){
     // o: { back, backLabel, close, ctx, title, aside, home }
-    if (o.home) return '<header class="hdr hdr-home"><div class="col">' +
-      '<a class="icon-btn" href="/app/" aria-label="Back to the Talents app">' + IC.back + '</a>' +
-      '<span class="t">' + esc(o.title) + '</span>' +
-      '<button class="icon-btn" type="button" data-act="menu" aria-label="Course menu" aria-haspopup="dialog">' + IC.menu + '</button></div></header>';
-    return '<header class="hdr"><div class="col">' +
-      '<a class="icon-btn" href="' + esc(o.back || '#/') + '" aria-label="' + esc(o.backLabel || 'Back') + '">' + (o.close ? IC.close : IC.back) + '</a>' +
+    if (o.home) return '';
+    return '<div class="crumb"><div class="col">' +
+      '<a class="crumb-back" href="' + esc(o.back || '#/') + '" aria-label="' + esc(o.backLabel || 'Back') + '">' + (o.close ? IC.close : IC.back) + '</a>' +
       '<span class="ttl">' + (o.ctx ? '<span class="ctx">' + esc(o.ctx) + '</span>' : '') + '<span class="t">' + esc(o.title) + '</span></span>' +
       (o.aside ? '<span class="aside">' + esc(o.aside) + '</span>' : '') +
-      (o.menu ? '<button class="icon-btn" type="button" data-act="menu" aria-label="Course menu" aria-haspopup="dialog">' + IC.menu + '</button>' : '') +
-      '</div></header>';
+      '</div></div>';
   }
   const bar = (n, cls) => '<div class="' + (cls || 'progress') + '"><i data-w="' + Math.max(0, Math.min(100, n)) + '"></i></div>';
   const chip = (text, tone) => '<span class="chip' + (tone ? ' ' + tone : '') + '">' + esc(text) + '</span>';
@@ -195,7 +198,11 @@
     acts = o.acts || {};
     onInput = null;
     document.body.classList.toggle('white', !!o.white);
-    appEl.innerHTML = html;
+    // Signed in with the course loaded: the Learning Hub frame (top bar, course content sidebar, page). Sign-in pages stand alone.
+    const framed = !!S && !o.bare;
+    document.body.classList.toggle('framed', framed);
+    if (framed) { frame(); $('cpMain').innerHTML = html; drawSide(); drawProgress(); }
+    else appEl.innerHTML = html;
     appEl.querySelectorAll('[data-w]').forEach(el => el.style.width = el.dataset.w + '%');
     document.title = (o.title ? o.title + ' · ' : '') + 'Acquisitions Playbook';
     const here = location.hash;
@@ -207,6 +214,140 @@
     lastRoute = here;
     hydrateImages();
   }
+  // ---------- the Learning Hub frame ----------
+  // Stages group the modules in the sidebar, as in the Marketing course
+  const STAGES = [[1, 'Foundations'], [5, 'The call'], [8, 'Winning the deal'], [10, 'Deal types to closing'], [14, 'Career and certification']];
+  const TOOLS = [['/land-calculator/', 'Land calculator'], ['/house-calculator/', 'House calculator']];
+  const ICK = {
+    lesson: svg('<path d="M4 5a2 2 0 012-2h12v16H6a2 2 0 00-2 2z"/><path d="M4 19V5"/>'),
+    quiz: svg('<path d="M9 11l2 2 4-4"/><rect x="4" y="4" width="16" height="16" rx="3"/>'),
+    assignment: svg('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/>'),
+    checkpoint: svg('<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>'),
+    tool: svg('<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M8 15h2M12 15h2"/>'),
+    search: svg('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>'),
+    done: svg('<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.8"/>'),
+    todo: svg('<circle cx="12" cy="12" r="9"/>'),
+    user: svg('<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.4-6 8-6s6.5 2 8 6"/>')
+  };
+  let sideOpen = {};
+  try { sideOpen = JSON.parse(localStorage.getItem('ap-side') || '{}') || {}; } catch(e){}
+  function frame(){
+    if ($('cpMain')) return;
+    appEl.innerHTML =
+      '<header class="cp-top">' +
+        '<button class="cp-menu" type="button" id="cpMenu" aria-label="Course content" aria-expanded="false" aria-controls="cpSide">' + IC.menu + '</button>' +
+        '<a class="cp-brand" href="#/"><span class="cp-logo" aria-hidden="true">A</span><span class="cp-name">Acquisitions</span></a>' +
+        '<div class="cp-find" role="search">' + ICK.search + '<input type="search" id="cpQ" autocomplete="off" spellcheck="false" placeholder="Search the course" aria-label="Search the course" aria-controls="cpRes"><div class="cp-results" id="cpRes" role="listbox" hidden></div></div>' +
+        '<button class="cp-findbtn" type="button" id="cpFindBtn" aria-label="Search the course" aria-expanded="false">' + ICK.search + '</button>' +
+        '<div class="cp-prog" id="cpProg" title="Course progress"><span class="cp-bar"><i></i></span><b>0%</b></div>' +
+        '<button class="cp-acct" type="button" data-act="menu" aria-label="Your account" aria-haspopup="dialog">' + ICK.user + '</button>' +
+        '<a class="cp-back" href="/app/#learn">Back to app</a>' +
+      '</header>' +
+      '<div class="cp-body"><aside class="cp-side" id="cpSide" aria-label="Course content"></aside><div class="cp-scrim" id="cpScrim" hidden></div>' +
+      '<div class="cp-main" id="cpMain"></div></div>';
+    const setSide = open => { document.body.classList.remove('find-open'); document.body.classList.toggle('side-open', open); $('cpMenu').setAttribute('aria-expanded', open); $('cpScrim').hidden = !open; };
+    $('cpMenu').addEventListener('click', () => setSide(!document.body.classList.contains('side-open')));
+    $('cpScrim').addEventListener('click', () => setSide(false));
+    $('cpSide').addEventListener('click', e => {
+      const b = e.target.closest('button[data-mod]');
+      if (b) {
+        const open = b.getAttribute('aria-expanded') !== 'true';
+        b.setAttribute('aria-expanded', open); b.parentElement.classList.toggle('open', open);
+        sideOpen[b.dataset.mod] = open; try { localStorage.setItem('ap-side', JSON.stringify(sideOpen)); } catch(err){}
+        return;
+      }
+      if (e.target.closest('a')) setSide(false);
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('side-open')) setSide(false); });
+    $('cpFindBtn').addEventListener('click', () => { const open = !document.body.classList.contains('find-open'); document.body.classList.toggle('find-open', open); $('cpFindBtn').setAttribute('aria-expanded', open); if (open) $('cpQ').focus(); });
+    searchSetup();
+  }
+  // Which sidebar row is this page? Lessons, quizzes, results, drills and checkpoints all map back to one row.
+  function hereKey(){
+    const p = location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
+    if (p[0] !== 'm' || !p[2]) return p[0] === 'm' ? 'mod:' + p[1] : '';
+    if (p[2] === 'r') return resultCache && resultCache.attempt === p[3] ? p[1] + '/q/' + resultCache.itemId : '';
+    if (p[2] === 'q') { const mod = MOD(p[1]), e = mod && find(mod, p[3]); return p[1] + '/' + (e && e.it.type === 'checkpoint' ? 'c' : 'q') + '/' + p[3]; }
+    return p[1] + '/' + p[2] + '/' + p[3];
+  }
+  function drawSide(){
+    const side = $('cpSide'); if (!side || !S) return;
+    const here = hereKey(), cur = currentModule();
+    const top = side.scrollTop;
+    let h = '<h2>Course content</h2>';
+    if (S.isAdmin) h += '<a class="cp-tool" href="#/admin"' + (location.hash.startsWith('#/admin') ? ' aria-current="page"' : '') + '>' + IC.users + '<span>Admin: learners and reviews</span></a>';
+    h += '<div class="cp-stage">Tools</div>' + TOOLS.map(t => '<a class="cp-tool" href="' + t[0] + '">' + ICK.tool + '<span>' + esc(t[1]) + '</span></a>').join('');
+    const last = Math.max(S.totalModules, S.modules.length ? S.modules[S.modules.length - 1].number : 0);
+    for (let n = 1; n <= last; n++) {
+      const st = STAGES.find(s => s[0] === n);
+      if (st) h += '<div class="cp-stage">' + esc(st[1]) + '</div>';
+      const m = S.modules.find(x => x.number === n);
+      if (!m || !m.open) {
+        h += '<div class="cp-mod locked"><a class="cp-modbtn" href="#/locked/' + n + '"><span class="n">' + n + '</span><span><b>' + esc(m ? m.title : 'Module ' + n) + '</b><small>' + (m ? 'Locked' : 'Coming soon') + '</small></span>' + IC.lock + '</a></div>';
+        continue;
+      }
+      const us = units(m), p = { done:us.filter(u => u.done).length, total:us.length };
+      const isHere = here === 'mod:' + m.id || here.startsWith(m.id + '/');
+      const open = sideOpen[m.id] != null ? sideOpen[m.id] : (isHere || (cur && cur.id === m.id));
+      h += '<div class="cp-mod' + (open ? ' open' : '') + (cur && cur.id === m.id ? ' on' : '') + '">' +
+        '<button class="cp-modbtn" type="button" data-mod="' + esc(m.id) + '" aria-expanded="' + open + '"><span class="n">' + n + '</span><span><b>' + esc(m.title) + '</b><small>' + (moduleDone(m) ? 'Done · ' : '') + p.done + ' of ' + p.total + ' done</small></span>' + IC.chev + '</button>' +
+        '<div class="cp-items"><a class="cp-item ov" href="#/m/' + esc(m.id) + '"' + (here === 'mod:' + m.id ? ' aria-current="page"' : '') + '><span class="st">' + ICK.lesson + '</span><span>Module overview</span></a>' +
+        us.map(u => {
+          const k = m.id + '/' + (u.kind === 'quiz' ? 'q' : u.kind === 'lesson' ? 'l' : u.kind === 'assignment' ? 'a' : 'c') + '/' + u.e.it.id;
+          const lbl = u.kind === 'lesson' ? (u.e.it.shortTitle || heading(u.e.it)) : u.kind === 'quiz' ? 'Quiz ' + idLabel(u.e).replace(/^[\d.]+ (?=Session)/, '') : u.label;
+          return '<a class="cp-item k-' + u.kind + (u.locked ? ' locked' : '') + '" href="' + esc(u.href) + '"' + (here === k ? ' aria-current="page"' : '') + '>' +
+            '<span class="st' + (u.done ? ' done' : u.locked ? ' lock' : '') + '">' + (u.done ? ICK.done : u.locked ? IC.lock : ICK[u.kind]) + '</span>' +
+            '<span><span class="vh">' + (u.done ? 'Done: ' : u.locked ? 'Locked: ' : '') + '</span>' + esc(lbl) + '</span></a>';
+        }).join('') + '</div></div>';
+    }
+    side.innerHTML = h;
+    side.scrollTop = top;
+    const cur2 = side.querySelector('[aria-current="page"]');
+    if (cur2 && !top) cur2.scrollIntoView({ block:'nearest' });
+  }
+  function drawProgress(){
+    const el = $('cpProg'); if (!el || !S) return;
+    let d = 0, t = 0;
+    S.modules.forEach(m => { if (m.open) { const us = units(m); d += us.filter(u => u.done).length; t += us.length; } });
+    // Modules not open yet still count toward the whole course: estimate them at the size of the ones you can see
+    const per = S.modules.filter(m => m.open).length ? t / S.modules.filter(m => m.open).length : 24;
+    const all = t + Math.max(0, S.totalModules - S.modules.filter(m => m.open).length) * per;
+    const v = all ? Math.floor(d * 100 / all) : 0;
+    el.querySelector('i').style.width = v + '%'; el.querySelector('b').textContent = v + '%';
+    el.setAttribute('title', 'Course progress: ' + v + '%');
+  }
+  // Search: lesson titles and text in the modules you can open
+  function searchSetup(){
+    const q = $('cpQ'), res = $('cpRes');
+    const index = () => {
+      const out = [];
+      S.modules.filter(m => m.open).forEach(m => entries(m).forEach(e => {
+        if (e.it.type !== 'lesson') return;
+        out.push({ mod:m, e, title:(e.it.shortTitle || heading(e.it)), text:(e.it.bodyMarkdown || '').replace(/[*_|#\\]|-{2,}/g, ' ').replace(/\s+/g, ' '), href:'#/m/' + m.id + '/l/' + e.it.id });
+      }));
+      return out;
+    };
+    let idx = null;
+    q.addEventListener('focus', () => { idx = index(); });
+    q.addEventListener('input', () => {
+      const v = q.value.trim().toLowerCase();
+      if (v.length < 2) { res.hidden = true; return; }
+      idx = idx || index();
+      const hits = idx.map(x => {
+        const t = x.title.toLowerCase().indexOf(v), b = x.text.toLowerCase().indexOf(v);
+        return t < 0 && b < 0 ? null : Object.assign({ rank:t >= 0 ? 0 : 1, at:b }, x);
+      }).filter(Boolean).sort((a, b) => a.rank - b.rank).slice(0, 8);
+      res.innerHTML = hits.length ? hits.map(x => {
+        const snip = x.at >= 0 ? x.text.slice(Math.max(0, x.at - 40), x.at + 80) : '';
+        return '<a class="cp-hit" role="option" href="' + esc(x.href) + '"><b>' + esc(x.title) + '</b><small>Module ' + x.mod.number + (snip ? ' · …' + esc(snip) + '…' : '') + '</small></a>';
+      }).join('') : '<p class="cp-none">No lessons match “' + esc(q.value.trim()) + '”.</p>';
+      res.hidden = false;
+    });
+    res.addEventListener('click', e => { if (e.target.closest('a')) { res.hidden = true; q.value = ''; q.blur(); document.body.classList.remove('find-open'); } });
+    document.addEventListener('click', e => { if (!e.target.closest('.cp-find')) res.hidden = true; });
+    q.addEventListener('keydown', e => { if (e.key === 'Escape') { res.hidden = true; q.blur(); document.body.classList.remove('find-open'); } if (e.key === 'Enter') { const a = res.querySelector('a'); if (a) { location.hash = a.getAttribute('href'); res.hidden = true; q.value = ''; } } });
+  }
+
   appEl.addEventListener('click', e => {
     const b = e.target.closest('[data-act]');
     if (!b || !appEl.contains(b)) return;
@@ -234,8 +375,7 @@
       const p = progressOf(cur), nx = nextUnit(cur);
       const go = nx ? '<a class="btn dark go" href="' + esc(nx.href) + '"><span>' + (p.done ? 'Continue: ' : 'Start: ') + esc(nx.label) + '</span>' + IC.next + '</a>'
                     : '<a class="btn dark go" href="#/m/' + esc(cur.id) + '"><span>Review Module ' + cur.number + '</span>' + IC.next + '</a>';
-      top = img(contentPath(cur, cur.thumbnail), 'hero-img', 'Module ' + cur.number + ': ' + cur.title) +
-        '<section class="card prog-card" aria-labelledby="progLbl">' +
+      top = '<section class="card prog-card" aria-labelledby="progLbl">' +
           '<div class="between"><span class="label" id="progLbl">Your progress</span><span class="small muted">Module ' + cur.number + ' of ' + total + '</span></div>' +
           '<div class="row" data-s="baseline"><span class="big-pct">' + pct(p.done, p.total) + '%</span><span class="small" data-s="ofmod">of Module ' + cur.number + ' done · ' + p.done + ' of ' + p.total + ' items</span></div>' +
           '<div role="progressbar" aria-label="Module ' + cur.number + ' progress" aria-valuemin="0" aria-valuemax="' + p.total + '" aria-valuenow="' + p.done + '">' + bar(pct(p.done, p.total)) + '</div>' +
@@ -252,7 +392,7 @@
       if (m && m.open) {
         const p = progressOf(m), lc = lessonsOf(m).length, qz = units(m).filter(u => u.kind === 'quiz' || u.kind === 'checkpoint').length, as = units(m).filter(u => u.kind === 'assignment').length;
         const st = moduleDone(m) ? ['Done', 'ok'] : p.done ? ['In progress', 'warm'] : ['Not started', 'neutral'];
-        rows.push('<li><a class="mod' + (cur && cur.id === m.id ? ' cur' : '') + '" href="#/m/' + esc(m.id) + '">' + img(contentPath(m, m.thumbnail), 'thumb', '') +
+        rows.push('<li><a class="mod' + (cur && cur.id === m.id ? ' cur' : '') + '" href="#/m/' + esc(m.id) + '">' + thumbOf(m, null, 'thumb') +
           '<span class="txt"><span class="n">Module ' + n + ': ' + esc(m.title) + '</span><span class="m">' + [plural(lc, 'lesson'), plural(qz, 'quiz', 'quizzes'), plural(as, 'assignment')].join(' · ') + '</span>' +
           '<span class="s ' + st[1] + '">' + st[0] + '</span></span></a></li>');
         continue;
@@ -265,8 +405,10 @@
       lockedShown++;
       rows.push(row);
     }
+    const hero = '<section class="course-hero" aria-labelledby="heroT"><i></i><span class="k">Course</span>' +
+      '<h1 id="heroT">' + esc(S.title) + '</h1><p>' + total + ' modules · from the first call to a signed contract</p></section>';
     mount(header({ home:true, title:S.title }) +
-      '<main id="main" class="col"><div class="page">' + top +
+      '<main id="main" class="col"><div class="page">' + hero + top +
         '<section class="stack" aria-labelledby="modsH"><h2 class="sect" id="modsH">Modules</h2><ul class="mod-list">' + rows.join('') + '</ul>' +
         (hidden ? '<button class="link-btn more" type="button" data-act="more" aria-expanded="false">+ ' + plural(hidden, 'more module') + '</button>' : '') + '</section>' +
         installCard() +
@@ -295,8 +437,8 @@
     const lessonLines = (e, cls) => {
       const it = e.it, lessonHref = '#/m/' + mod.id + '/l/' + it.id, isCur = curHref === lessonHref, sep = showQuizRow(it);
       const title = it.shortTitle || (cls === 'srow' ? inGroupLabel(e) + ': ' + heading(it) : it.title);
-      const meta = sep || !it.quiz ? 'Lesson' + (cls === 'srow' ? '' : ' · ' + (it.source || '')) : 'Lesson + ' + qCount(it) + '-question quiz' + (cls === 'srow' ? '' : ' · ' + (it.source || ''));
-      let h = row(cls, lessonHref, img(contentPath(mod, it.thumbnail), 'thumb', ''), title, meta, lessonStatus(it, isCur), isCur);
+      const meta = sep || !it.quiz ? 'Lesson' : 'Lesson + ' + qCount(it) + '-question quiz';
+      let h = row(cls, lessonHref, thumbOf(mod, it, 'thumb'), title, meta, lessonStatus(it, isCur), isCur);
       if (it.quiz && sep) {
         const qh = quizHref(mod, it);
         h += row(cls, qh, quizTile, cls === 'srow' ? 'Quiz: ' + inGroupLabel(e) : quizLabel(e), quizMeta(it), quizStatus(it), curHref === qh);
@@ -312,19 +454,19 @@
         const open = groupOpen(mod, it, hasCur);
         const qs = kids.reduce((a, c) => a + qCount(c), 0);
         parts.push('<li class="group' + (hasCur ? ' cur' : '') + '"><button class="group-btn" type="button" data-act="group" data-id="' + esc(it.id) + '" aria-expanded="' + open + '" aria-controls="g-' + esc(it.id) + '">' +
-          img(contentPath(mod, it.thumbnail), 'thumb', '') + '<span class="txt"><span class="n">' + esc(it.title) + '</span><span class="m">' +
+          thumbOf(mod, it, 'thumb') + '<span class="txt"><span class="n">' + esc(it.title) + '</span><span class="m">' +
           [plural(kids.length, 'session'), plural(kids.filter(c => c.quiz).length, 'quiz', 'quizzes'), plural(qs, 'question')].join(' · ') + '</span></span>' +
           '<span class="chev">' + IC.chev + '</span></button>' +
           '<ul class="sub-items" id="g-' + esc(it.id) + '"' + (open ? '' : ' hidden') + '>' + kids.map(c => lessonLines({ it:c, group:it }, 'srow')).join('') + '</ul></li>');
       } else if (it.type === 'assignment') {
         const s = sub(mod, it), href = '#/m/' + mod.id + '/a/' + it.id;
         const st = !s ? chip('Not started') : s.status === 'approved' ? chip('Approved', 'ok') : s.status === 'submitted' ? chip('Submitted', 'ok') : s.status === 'needs_changes' ? chip('Needs changes', 'warm') : chip('In progress', 'warm');
-        parts.push(row('item', href, img(contentPath(mod, it.thumbnail), 'thumb', ''), it.title, 'Assignment · ' + plural((it.tasks || []).length || 12, 'task'), st, curHref === href));
+        parts.push(row('item', href, thumbOf(mod, it, 'thumb'), it.title, 'Assignment · ' + plural((it.tasks || []).length || 12, 'task'), st, curHref === href));
       } else if (it.type === 'checkpoint') {
         const href = '#/m/' + mod.id + '/c/' + it.id, locked = !mod.checkpointOpen;
         const q = qState(mod, it);
         const st = locked ? chip('Locked') : quizPassed(mod, it) ? chip('Passed', 'ok') : (q.open || q.latest) ? chip('In progress', 'warm') : chip('Not started');
-        parts.push(row('item' + (locked ? ' locked' : ''), href, img(contentPath(mod, it.thumbnail), 'thumb', ''), it.title,
+        parts.push(row('item' + (locked ? ' locked' : ''), href, thumbOf(mod, it, 'thumb'), it.title,
           'Quiz · ' + plural(qCount(it), 'question') + ' · ' + passText(it).toLowerCase() + (q.latest ? ' · scored ' + q.latest.score + '%' : ''), st, curHref === href));
       }
     });
@@ -363,9 +505,9 @@
       return '<button class="file" type="button" data-act="view" data-file="' + esc(f) + '" data-name="Guide page ' + (num || '') + '">' + IC.image + 'Guide page ' + (num || esc(f)) + (it.source ? ' · ' + esc(it.source) : '') + '</button>';
     });
     mount(header({ back:'#/m/' + mod.id, backLabel:'Back to Module ' + mod.number, ctx:'Module ' + mod.number + (e.group ? ' · ' + e.group.title : ''), title:e.group ? inGroupLabel(e) : 'Lesson ' + it.id }) +
-      '<main id="main" class="col">' + img(contentPath(mod, it.thumbnail), 'banner', it.title) +
+      '<main id="main" class="col">' + thumbOf(mod, it, 'banner', it.title) +
       '<article class="lesson page has-bar">' +
-        '<span class="label o">Lesson ' + n + ' of ' + ls.length + ((it.subtitle || it.source) ? ' · ' + esc(it.subtitle || it.source) : '') + '</span>' +
+        '<span class="label o">Lesson ' + n + ' of ' + ls.length + (it.subtitle ? ' · ' + esc(it.subtitle) : '') + '</span>' +
         '<h1>' + esc(heading(it)) + '</h1>' +
         '<div class="prose">' + MD.render(it.bodyMarkdown) + '</div>' +
         (files.length ? '<section class="stack" aria-labelledby="filesH"><h2 class="sub" id="filesH" data-s="fs16">Files</h2><p class="note">Original guide page. Where it differs from the lesson, the lesson is correct.</p><div class="files">' + files.join('') + '</div></section>' : '') +
@@ -570,7 +712,7 @@
     }
     mount(header({ back:'#/m/' + mod.id, backLabel:'Back to Module ' + mod.number, ctx:'Module ' + mod.number, title:'Checkpoint' }) +
       '<main id="main" class="col"><div class="page gate has-bar">' +
-        img(contentPath(mod, it.thumbnail), open ? 'hero-img' : 'faded', '') +
+        thumbOf(mod, it, open ? 'hero-img' : 'faded') +
         '<span class="label o">Checkpoint · ' + plural(qCount(it), 'question') + ' · ' + passText(it) + '</span>' +
         '<h1 class="display" data-s="fs30">' + esc(it.title) + '</h1>' +
         (open ? '' : '<p class="lead" data-s="fs15">' + IC.lock.replace('<svg', '<svg width="16" height="16" data-s="va"') + ' Locked for now. Pass every lesson quiz and submit the written drill to open it.</p>') +
@@ -600,7 +742,7 @@
       (ro ? '' : '<div class="acts"><label class="btn line"><input type="file" class="vh" id="upFile" accept=".pdf,.png,.jpg,.jpeg,.webp,.heic,.gif,.doc,.docx,.xls,.xlsx,application/pdf,image/*">' + (s.fileName ? 'Replace file' : 'Choose a file') + '</label>' +
         (s.fileName ? '<button class="btn line" type="button" data-act="rmfile">Remove</button>' : '') + '</div><p class="err" id="upErr" role="alert"></p>') + '</section>';
     mount(header({ back:'#/m/' + mod.id, backLabel:'Back to Module ' + mod.number, ctx:'Module ' + mod.number, title:'Written drill' }) +
-      '<main id="main" class="col">' + img(contentPath(mod, it.thumbnail), 'banner', '') +
+      '<main id="main" class="col">' + thumbOf(mod, it, 'banner') +
       '<div class="page has-bar">' +
         '<div class="stack" data-s="g8"><span class="label o">Assignment · ' + plural(tasks.length, 'task') + ' · Reviewed by Amr</span><h1 data-s="h22">' + esc(it.title) + '</h1>' +
         '<p class="lead" data-s="fs15">' + esc(it.instructions || '') + '</p></div>' +
