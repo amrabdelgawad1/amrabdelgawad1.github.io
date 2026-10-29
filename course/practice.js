@@ -19,8 +19,9 @@
 
   // Drills shown above the recorder, so the words are on screen while the learner records.
   // A lesson's "practice" is { prompt, drills:[...] } or a single drill (prompt replaces the note at the top). Each drill has a level:
-  //   read    lines:[{who:'you'|'seller', say}]      read the script out loud, word for word
-  //   respond pairs:[{them, you, why}]                 answer the seller's line; the model answer stays hidden until asked
+  //   read    lines:[{who:'you'|'seller'|<label>, say}]  read the script out loud, word for word
+  //   respond pairs:[{them, you, why}], themLabel, youLabel  answer the line; the model answer stays hidden until asked
+  //           (labels default to "Seller" and "You"; e.g. "Interviewer", or "Instead of" / "Say")
   //   run     brief:{who, know:[], goal, hidden:[]}   no script; run the whole call from a brief
   const LEVELS = { read:['Level 1', 'Read it'], respond:['Level 2', 'Respond to it'], run:['Level 3', 'Run it'] };
   const HOW = {
@@ -41,17 +42,17 @@
     let body = '';
     if (d.level === 'read') {
       body = '<ol class="dr-script">' + arr(d.lines).map(l => {
-        l = l || {}; const you = (l.who || 'you') !== 'seller';
-        return '<li class="' + (you ? 'you' : 'them') + '"><span class="dr-who">' + (you ? 'You' : 'Seller') + '</span><p>' + md(l.say || '') + '</p></li>';
+        l = l || {}; const who = txt(l.who) || 'you', you = who === 'you';
+        return '<li class="' + (you ? 'you' : 'them') + '"><span class="dr-who">' + (you ? 'You' : who === 'seller' ? 'Seller' : esc(who)) + '</span><p>' + md(l.say) + '</p></li>';
       }).join('') + '</ol>';
     } else if (d.level === 'respond') {
-      const ps = arr(d.pairs).map(p => p || {});
+      const ps = arr(d.pairs).map(p => p || {}), themL = esc(txt(d.themLabel) || 'Seller'), youL = esc(txt(d.youLabel) || 'You');
       body = '<div class="dr-step" data-n="' + ps.length + '">' +
         '<p class="dr-count" aria-live="polite">Line <span data-dr="pos">1</span> of ' + ps.length + '</p>' +
         ps.map((p, k) => '<div class="dr-pair" data-k="' + k + '"' + (k ? ' hidden' : '') + '>' +
-          '<p class="dr-them"><span class="dr-who">Seller</span>' + md(p.them || '') + '</p>' +
+          '<p class="dr-them"><span class="dr-who">' + themL + '</span>' + md(p.them || '') + '</p>' +
           '<button class="link-btn" type="button" data-pr="ans" aria-expanded="false" aria-controls="drA' + i + '_' + k + '">Show the model answer</button>' +
-          '<div class="dr-ans" id="drA' + i + '_' + k + '" hidden><p><span class="dr-who">You</span>' + md(p.you || '') + '</p>' + (p.why ? '<p class="note">' + md(p.why) + '</p>' : '') + '</div>' +
+          '<div class="dr-ans" id="drA' + i + '_' + k + '" hidden><p><span class="dr-who">' + youL + '</span>' + md(p.you || '') + '</p>' + (p.why ? '<p class="note">' + md(p.why) + '</p>' : '') + '</div>' +
         '</div>').join('') +
         '<div class="pr-row"><button class="btn line" type="button" data-pr="prev" disabled>Back</button><button class="btn dark" type="button" data-pr="next"' + (ps.length < 2 ? ' disabled' : '') + '>Next line</button><button class="btn line" type="button" data-pr="mix"' + (ps.length < 3 ? ' hidden' : '') + '>Mix the order</button></div>' +
       '</div>';
