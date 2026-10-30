@@ -150,7 +150,7 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
       document.querySelectorAll('body *').forEach(e => { const b = e.getBoundingClientRect(); if (b.width && b.right > W + 1 && !e.closest('.p-tablewrap,.tablebox,.board,.crm-groups,[hidden]')) over.push(e.tagName + '.' + e.className); });
       document.querySelectorAll('#app button, #app a.btn, .crm-side button, .crm-side a, .p-top button, .p-top select, .p-top input, .vault button, .vault input').forEach(e => {
         const b = e.getBoundingClientRect(); if (b.width && b.height && b.height < 43.5 && !e.closest('[hidden]')) small.push(e.tagName + '#' + e.id + '.' + e.className + ' ' + Math.round(b.height)); });
-      return { over:over.slice(0, 5), small:small.slice(0, 8), dash:/—/.test(document.body.innerText) };
+      return { over:over.slice(0, 5), small:small.slice(0, 8), dash:/\u2014/.test(document.body.innerText) };
     });
     ok(!r.over.length, label + ': nothing wider than the screen ' + (r.over.join(' ') || ''));
     ok(!r.small.length, label + ': touch targets 44px ' + (r.small.join(' ') || ''));
