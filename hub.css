@@ -157,18 +157,18 @@ html body .hmonth b{ font-weight:700; font-size:17px; }
 html body .hmonth:hover, html body .shead:hover, html body .slip:hover{ background:var(--sunk); }
 html body .slip-ic{ background:var(--accent-dim); color:var(--accent); }
 html body .set nav{ background:var(--sunk); }
-html body .set nav button[aria-current="true"]{ background:transparent; color:var(--accent); box-shadow:inset 2px 0 0 var(--champ); font-family:var(--display) !important; font-style:italic; }
+html body .set nav button[aria-current="true"]{ background:var(--p-card); color:var(--p-ink); box-shadow:inset 3px 0 0 var(--p-accent-hi); font-family:var(--p-body) !important; font-style:normal; font-weight:600; }
 html body .set-head h3, html body .set nav h2{ font-weight:700; }
 html body .set .box.hi, html body .me-rate{ background:var(--accent-dim); border-color:color-mix(in srgb, var(--champ) 40%, transparent); }
 html body .acct-menu, html body .acc-menu, html body .sheet{ border-color:var(--border2); }
 html body .chip[aria-pressed="true"], html body .choice:has(input:checked){ background:var(--accent-dim); color:var(--accent); border-color:var(--champ); }
-html body .switch[aria-checked="true"]{ background:var(--champ); }
-html body .bars .bar{ background:linear-gradient(90deg, var(--champ), var(--mag)); }
+html body .switch[aria-checked="true"]{ background:var(--p-accent); }
+html body .bars .bar{ background:var(--p-accent-hi); }
 html body .toast, html body .update{ background:var(--band); color:var(--band-ink); border:1px solid var(--champ); }
 html body .linkbtn, html body #pVisits .note a{ color:var(--accent); }
 
 /* ---------- sign-in screens ---------- */
-html body .auth h1{ font-weight:900; font-size:28px; text-transform:uppercase; letter-spacing:.02em; line-height:1; }
+html body .auth h1{ font-weight:800; font-size:28px; text-transform:none; letter-spacing:-.01em; line-height:1.1; }
 html body .auth .sub{ color:var(--muted); }
 
 /* ================= /cash pages (Overview, Team, Income, Expenses) ================= */
@@ -218,7 +218,7 @@ html.embed body #dashView{ max-width:1480px; padding:0 24px; }
   html.embed body #dashView:has(#cashTools:not([hidden])) #cashTools{ padding-right:200px; }
 }
 html body .notice.soft{ color:var(--gold); }
-html body .agent-no{ font-family:var(--display) !important; font-style:italic; color:var(--mag); background:transparent; }
+html body .agent-no{ font-family:var(--p-body) !important; font-style:normal; font-weight:700; color:var(--p-accent); background:transparent; }
 html body .note-day, html body .sd-sec h4{ color:var(--accent); letter-spacing:.22em; }
 html body .note-card{ background:var(--panel); }
 html body .score .sc-appt, html body .nc-nums{ color:var(--accent); }
