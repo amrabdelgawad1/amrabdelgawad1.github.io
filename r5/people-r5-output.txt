@@ -1,0 +1,115 @@
+ok   390 list: filters: All 6, Agents 4, Managers 1, Off 1
+ok   390 list: role pills, and when someone was turned off
+ok   390 list: Managers filter shows only managers
+ok   390 list: Off filter shows only people turned off
+ok   390 list: find a person by name
+ok   390 list: on a phone the list comes first
+ok   390 list: nothing wider than the screen (390px)
+ok   390 list: tap targets at least 40px
+ok   390 list: no console errors
+ok   390 agent-today: Agent chosen; Owner and Student can’t be picked
+ok   390 agent-today: today’s agent: role keys not turned on yet, and can be ticked
+ok   390 agent-today: nothing ticked, everything can be ticked
+ok   390 agent-today: What Sara will see: only her hours
+ok   390 agent-today: Save waits for a change
+ok   390 agent-today: preview follows the ticks
+ok   390 agent-today: saves role, extras and not_given in one change: members:{"role":"agent","access":["mkt"],"not_given":["deals"],"company_id":1,"deals_until":null,"deals_mfa":false} agents:{"role":"member"}
+ok   390 agent-today: agent card role kept in step
+ok   390 agent-today: nothing wider than the screen (390px)
+ok   390 agent-today: tap targets at least 40px
+ok   390 agent-today: no console errors
+ok   390 manager: role-included extras are ticked and greyed
+ok   390 manager: says they come with Manager
+ok   390 manager: manager preview: Live now, approves requests, hours, learner progress, no money
+ok   390 manager: nothing wider than the screen (390px)
+ok   390 manager: tap targets at least 40px
+ok   390 manager: no console errors
+ok   390 role-change: switching to Manager updates the preview
+ok   390 role-change: saves the new role
+ok   390 role-change: nothing wider than the screen (390px)
+ok   390 role-change: tap targets at least 40px
+ok   390 role-change: no console errors
+ok   390 log: access log in words, with who: Oct 28
+ok   390 log: an invite from the invite service is logged
+ok   390 log: nothing wider than the screen (390px)
+ok   390 log: tap targets at least 40px
+ok   390 log: no console errors
+ok   390 turn-off: asks before turning off
+ok   390 turn-off: turns off through team-access, as before
+ok   390 turn-off: someone off: says so, can be turned back on, nothing else editable
+ok   390 turn-off: nothing wider than the screen (390px)
+ok   390 turn-off: tap targets at least 40px
+ok   390 turn-off: no console errors
+ok   390 invite: invite goes through team-access unchanged, then the role is set: team-access:{"body":{"action":"invite","name":"Laila B.","email":"laila@example.com","company_id":1,"via":"email"}} members:{"role":"manager"}
+ok   390 invite: checks the name first
+ok   390 invite: nothing wider than the screen (390px)
+ok   390 invite: tap targets at least 40px
+ok   390 invite: no console errors
+ok   390 phone-back: phone: the person replaces the list, with a way back
+ok   390 phone-back: phone: back to the list
+ok   390 phone-back: nothing wider than the screen (390px)
+ok   390 phone-back: tap targets at least 40px
+ok   390 phone-back: no console errors
+ok   390 deep-link: #people/<user> opens that person
+ok   390 deep-link: nothing wider than the screen (390px)
+ok   390 deep-link: tap targets at least 40px
+ok   390 deep-link: no console errors
+ok   390 agent-blocked: an agent opening #people lands on their home
+ok   390 agent-blocked: nothing wider than the screen (390px)
+ok   390 agent-blocked: tap targets at least 40px
+ok   390 agent-blocked: no console errors
+ok   1440 list: filters: All 6, Agents 4, Managers 1, Off 1
+ok   1440 list: role pills, and when someone was turned off
+ok   1440 list: Managers filter shows only managers
+ok   1440 list: Off filter shows only people turned off
+ok   1440 list: find a person by name
+ok   1440 list: on PC the first person opens straight away
+ok   1440 list: nothing wider than the screen (1440px)
+ok   1440 list: tap targets at least 40px
+ok   1440 list: no console errors
+ok   1440 agent-today: Agent chosen; Owner and Student can’t be picked
+ok   1440 agent-today: today’s agent: role keys not turned on yet, and can be ticked
+ok   1440 agent-today: nothing ticked, everything can be ticked
+ok   1440 agent-today: What Sara will see: only her hours
+ok   1440 agent-today: Save waits for a change
+ok   1440 agent-today: preview follows the ticks
+ok   1440 agent-today: saves role, extras and not_given in one change: members:{"role":"agent","access":["mkt"],"not_given":["deals"],"company_id":1,"deals_until":null,"deals_mfa":false} agents:{"role":"member"}
+ok   1440 agent-today: agent card role kept in step
+ok   1440 agent-today: nothing wider than the screen (1440px)
+ok   1440 agent-today: tap targets at least 40px
+ok   1440 agent-today: no console errors
+ok   1440 manager: role-included extras are ticked and greyed
+ok   1440 manager: says they come with Manager
+ok   1440 manager: manager preview: Live now, approves requests, hours, learner progress, no money
+ok   1440 manager: nothing wider than the screen (1440px)
+ok   1440 manager: tap targets at least 40px
+ok   1440 manager: no console errors
+ok   1440 role-change: switching to Manager updates the preview
+ok   1440 role-change: saves the new role
+ok   1440 role-change: nothing wider than the screen (1440px)
+ok   1440 role-change: tap targets at least 40px
+ok   1440 role-change: no console errors
+ok   1440 log: access log in words, with who: Oct 28
+ok   1440 log: an invite from the invite service is logged
+ok   1440 log: nothing wider than the screen (1440px)
+ok   1440 log: tap targets at least 40px
+ok   1440 log: no console errors
+ok   1440 turn-off: asks before turning off
+ok   1440 turn-off: turns off through team-access, as before
+ok   1440 turn-off: someone off: says so, can be turned back on, nothing else editable
+ok   1440 turn-off: nothing wider than the screen (1440px)
+ok   1440 turn-off: tap targets at least 40px
+ok   1440 turn-off: no console errors
+ok   1440 invite: invite goes through team-access unchanged, then the role is set: team-access:{"body":{"action":"invite","name":"Laila B.","email":"laila@example.com","company_id":1,"via":"email"}} members:{"role":"manager"}
+ok   1440 invite: checks the name first
+ok   1440 invite: nothing wider than the screen (1440px)
+ok   1440 invite: tap targets at least 40px
+ok   1440 invite: no console errors
+ok   1440 deep-link: #people/<user> opens that person
+ok   1440 deep-link: nothing wider than the screen (1440px)
+ok   1440 deep-link: tap targets at least 40px
+ok   1440 deep-link: no console errors
+ok   1440 agent-blocked: an agent opening #people lands on their home
+ok   1440 agent-blocked: nothing wider than the screen (1440px)
+ok   1440 agent-blocked: tap targets at least 40px
+ok   1440 agent-blocked: no console errors
