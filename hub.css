@@ -133,14 +133,14 @@ html body .tile.due strong{ color:var(--gold); }
 html body .clock{ font-weight:900; font-size:72px; letter-spacing:-.01em; line-height:1; margin:20px 0 8px; }
 @media (max-width:420px){ html body .clock{ font-size:54px; } }
 html body .clock-sub{ font-size:14px; }
-html body .ctl{ border:1px solid var(--border2); background:transparent; color:var(--muted); font-weight:700; font-size:12px; letter-spacing:.18em; text-transform:uppercase; padding:16px 4px; gap:8px; }
+html body .ctl{ border:1px solid var(--border2); background:var(--p-card); color:var(--p-ink2); font-family:var(--p-body); font-weight:600; font-size:14px; letter-spacing:0; text-transform:none; padding:16px 4px; gap:8px; min-height:72px; }
 html body .ctl:hover{ background:transparent; border-color:var(--champ); color:var(--accent); }
-html body .ctl.on.run{ background:var(--champ); border-color:var(--champ); color:#0B0B0B; }
+html body .ctl.on.run{ background:var(--p-ok); border-color:var(--p-ok); color:#fff; }
 html body .ctl.on.brk{ border-color:var(--gold); color:var(--gold); background:color-mix(in srgb, var(--gold) 10%, transparent); }
 html body .ctl.on.pau{ border-color:var(--text); color:var(--text); background:transparent; }
 html body .ctl.off:hover{ color:var(--red); border-color:var(--red); }
 html body .goal-bar{ height:6px; background:var(--border); border:0; }
-html body .goal-bar i{ background:linear-gradient(90deg, var(--champ), var(--mag)); }
+html body .goal-bar i{ background:var(--p-accent-hi); }
 html body .goal.done .goal-bar i{ background:var(--green); }
 html body .goal-top b{ font-family:var(--display) !important; font-size:20px; font-weight:700; }
 
