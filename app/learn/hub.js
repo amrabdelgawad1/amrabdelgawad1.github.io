@@ -152,6 +152,10 @@
       if (!owner && res[1].data !== true && !COURSES.some(c => open[c.id])) return msg('The Learning Hub isn’t switched on for you yet. Ask Amr to open it.', ['/app/', 'Back to app']);
     }
     if (owner) { $('lhView').hidden = false; $('lhAsLearner').addEventListener('change', e => { asLearner = e.target.checked; draw(); }); }
+    // The shared top bar (portal-shell.js): Apps menu and the person's name. "Back to app" moves into the Apps menu.
+    if (window.PortalShell) window.PortalShell.start({ db, header:document.querySelector('.cp-top'), page:'learn', brand:document.querySelector('.cp-brand'),
+      hide:[document.querySelector('.lh-back')],
+      test:window.HUB_TEST ? { role:owner ? 'owner' : 'agent', keys:[].concat(open.acq ? ['course'] : [], open.mkt ? ['learn', 'mkt'] : [], open.psy ? ['learn', 'psy'] : []) } : null });
     draw();                                         // show the cards at once, then fill in progress
     await Promise.all([loadProgress(), owner ? loadOwner() : null]).catch(() => {});
     draw();

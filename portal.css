@@ -24,7 +24,7 @@
 }
 
 /* every portal piece sizes with its padding and border included (pages may not set this themselves) */
-.p-admin, .p-admin-tag, .p-app, .p-apps, .p-apps-btn, .p-area, .p-av, .p-bar, .p-brand, .p-btn, .p-card, .p-card-head, .p-count, .p-grid, .p-h2, .p-hero, .p-hero-bar, .p-hero-kick, .p-ic, .p-kick, .p-locked, .p-logo, .p-main, .p-me, .p-mode, .p-nav, .p-page, .p-pill, .p-rank, .p-row, .p-search, .p-side, .p-slot, .p-stat, .p-stats, .p-table, .p-top, .p-vh, .p-wrap, .p-search input, .p-mode a{ box-sizing:border-box; }
+.p-admin, .p-admin-tag, .p-app, .p-app-note, .p-app-txt, .p-apps, .p-apps-btn, .p-apps-foot, .p-apps-grid, .p-apps-head, .p-apps-label, .p-apps-wrap, .p-area, .p-av, .p-bar, .p-brand, .p-btn, .p-card, .p-card-head, .p-count, .p-dot, .p-grid, .p-h2, .p-hero, .p-hero-bar, .p-hero-kick, .p-ic, .p-kick, .p-locked, .p-logo, .p-main, .p-me, .p-me-name, .p-me-wrap, .p-menu, .p-mode, .p-name, .p-nav, .p-page, .p-pill, .p-rank, .p-replaced, .p-row, .p-search, .p-side, .p-slot, .p-stat, .p-stats, .p-table, .p-top, .p-vh, .p-wrap, .p-search input, .p-mode a, .p-menu a, .p-menu button{ box-sizing:border-box; }
 
 /* ---------- top bar (drawn by portal-shell.js) ---------- */
 .p-top{ position:sticky; top:0; z-index:30; height:var(--p-top); display:flex; align-items:center; gap:12px; padding:0 18px; padding-top:env(safe-area-inset-top, 0px); background:var(--p-card); border-bottom:1px solid var(--p-line); font-family:var(--p-body); color:var(--p-ink); }
@@ -35,24 +35,60 @@
 .p-mode a{ display:inline-flex; align-items:center; min-height:36px; padding:0 13px; border-radius:7px; color:var(--p-ink2); font-size:14px; font-weight:600; text-decoration:none; }
 .p-mode a[aria-current="page"]{ background:var(--p-dark); color:var(--p-on-dark); }
 .p-apps-btn{ display:inline-flex; align-items:center; gap:8px; flex:none; min-height:var(--p-tap); padding:0 13px; border:1px solid var(--p-line2); border-radius:var(--p-r-sm); background:var(--p-card); color:var(--p-ink); font:600 14px/1.2 var(--p-body); cursor:pointer; }
-.p-apps-btn svg{ width:18px; height:18px; }
-.p-apps-btn[aria-expanded="true"]{ border-color:var(--p-ink); }
+.p-apps-btn svg{ width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 .p-search{ position:relative; flex:1; max-width:460px; display:flex; align-items:center; }
 .p-search svg{ position:absolute; left:12px; width:18px; height:18px; color:var(--p-muted); pointer-events:none; }
 .p-search input{ width:100%; height:42px; border:1px solid var(--p-line); border-radius:var(--p-r-sm); background:var(--p-soft); padding:0 12px 0 38px; font:15px/1.2 var(--p-body); color:var(--p-ink); }
 .p-search input:focus{ outline:2px solid var(--p-accent); outline-offset:0; background:var(--p-card); }
 .p-slot{ display:flex; align-items:center; gap:10px; min-width:0; }
-.p-me{ display:flex; align-items:center; gap:10px; flex:none; margin-inline-start:auto; min-height:var(--p-tap); padding:0 4px; border:0; background:none; color:var(--p-ink); font:600 14px/1.2 var(--p-body); cursor:pointer; }
+.p-me{ display:flex; align-items:center; gap:10px; flex:none; min-height:var(--p-tap); padding:0 4px; border:0; background:none; color:var(--p-ink); font:600 14px/1.2 var(--p-body); cursor:pointer; }
 .p-av{ width:36px; height:36px; flex:none; border-radius:50%; background:var(--p-accent-soft); color:var(--p-accent); display:grid; place-items:center; font:700 13px/1.2 var(--p-body); overflow:hidden; }
 .p-av img{ width:100%; height:100%; object-fit:cover; }
 
+/* ---------- the bar on a page's own header (portal-shell.js) ---------- */
+.p-name{ min-width:0; margin:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font:800 19px/1.2 var(--p-display); letter-spacing:0; color:var(--p-ink); }
+.p-replaced{ display:none !important; }
+.p-shelled{ overflow:visible; }                     /* the Apps menu hangs below the bar */
+.p-shelled :focus-visible{ outline:2px solid var(--p-accent); outline-offset:2px; }
+.p-shelled .cp-brand.p-brand-keep{ margin-inline-end:0; }   /* a kept brand doesn't push the Apps button away */
+.p-shelled .p-apps-wrap{ margin-inline-end:auto; }
+.p-brand, .p-brand-keep{ min-height:var(--p-tap); min-width:var(--p-tap); }
+.p-shelled .cp-menu, .p-shelled .cp-findbtn, .p-shelled .cp-langs, .p-shelled .cp-acct{ flex:none; }
+.p-apps-wrap{ display:flex; flex:none; }
+.p-apps-btn{ position:relative; }
+.p-apps-btn[aria-expanded="true"]{ border-color:var(--p-accent); background:var(--p-accent-soft); color:var(--p-accent); }
+.p-dot{ position:absolute; top:6px; right:6px; width:8px; height:8px; border-radius:50%; background:var(--p-accent-hi); box-shadow:0 0 0 2px var(--p-card); }
+.p-me-wrap{ position:relative; flex:none; margin-inline-start:auto; }
+.p-me-name{ flex:none; font:600 14px/1.2 var(--p-body); color:var(--p-ink); white-space:nowrap; }
+.p-menu{ position:absolute; top:calc(100% + 8px); right:0; z-index:50; display:grid; min-width:200px; padding:6px; background:var(--p-card); border:1px solid var(--p-line); border-radius:var(--p-r); box-shadow:var(--p-shadow); }
+.p-menu a, .p-menu button{ display:flex; align-items:center; min-height:var(--p-tap); padding:0 12px; border:0; border-radius:var(--p-r-sm); background:none; color:var(--p-ink); font:500 15px/1.2 var(--p-body); text-align:start; text-decoration:none; cursor:pointer; }
+.p-menu a:hover, .p-menu button:hover, .p-menu a:focus-visible, .p-menu button:focus-visible{ background:var(--p-soft); }
+
 /* ---------- Apps menu ---------- */
-.p-apps{ position:absolute; top:calc(var(--p-top) - 6px); left:18px; z-index:40; width:min(560px, calc(100vw - 36px)); max-height:calc(100vh - var(--p-top) - 20px); overflow:auto; background:var(--p-card); border:1px solid var(--p-line); border-radius:12px; box-shadow:var(--p-shadow); padding:18px; display:grid; gap:18px; grid-template-columns:repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
-.p-apps h3{ margin:0 0 6px; font:700 11px/1.4 var(--p-body); letter-spacing:.14em; text-transform:uppercase; color:var(--p-accent); }
-.p-app{ display:flex; align-items:center; gap:12px; min-height:52px; padding:6px 8px; border-radius:var(--p-r-sm); color:var(--p-ink); text-decoration:none; font-size:15px; font-weight:600; }
+.p-apps{ position:absolute; top:calc(100% + 8px); left:clamp(8px, 8vw, 120px); z-index:50; width:min(760px, calc(100vw - 16px)); max-height:calc(100vh - var(--p-top) - 24px); overflow:auto; padding:22px 22px 18px; background:var(--p-card); border:1px solid var(--p-line); border-radius:14px; box-shadow:var(--p-shadow); color:var(--p-ink); font:15px/1.4 var(--p-body); text-align:start; }
+.p-apps-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.p-apps-title{ margin:0; font:700 21px/1.2 var(--p-body); color:var(--p-ink); letter-spacing:0; }
+.p-apps-head a{ color:var(--p-accent); font:600 14px/1.2 var(--p-body); }
+.p-apps-grid{ display:grid; gap:18px 26px; grid-template-columns:repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+.p-apps-h{ margin:0 0 6px; font:700 12px/1.4 var(--p-body); letter-spacing:.14em; text-transform:uppercase; color:var(--p-accent); }
+.p-app{ display:flex; align-items:center; gap:12px; min-height:60px; padding:8px 12px; border-radius:var(--p-r); color:var(--p-ink); text-decoration:none; }
 .p-app:hover, .p-app:focus-visible{ background:var(--p-soft); }
 .p-app[aria-current="page"]{ background:var(--p-accent-soft); }
-.p-app small{ display:block; color:var(--p-muted); font-size:12.5px; font-weight:500; }
+.p-app-txt{ flex:1; min-width:0; }
+.p-app-txt b{ display:block; font:700 15.5px/1.3 var(--p-body); }
+.p-app-txt small{ display:block; color:var(--p-muted); font:500 13px/1.35 var(--p-body); }
+.p-app-note{ flex:none; color:var(--p-muted); font:500 13px/1.2 var(--p-body); }
+.p-apps-foot{ margin:16px 0 0; padding-top:14px; border-top:1px solid var(--p-line); color:var(--p-muted); font:14px/1.4 var(--p-body); }
+@media (max-width:640px){
+  .p-apps-label, .p-me-name{ display:none; }
+  .p-apps-btn{ width:var(--p-tap); padding:0; justify-content:center; }
+  .p-apps{ left:8px; padding:18px 14px 14px; }
+  .p-admin-tag{ display:none; }
+  /* course pages on a phone: the progress keeps its number, the track goes; "View as learner" is in the course sidebar too */
+  .p-shelled{ gap:8px; padding-inline:10px; }
+  .p-shelled .cp-prog .cp-bar, .p-shelled .cp-view{ display:none; }
+  .p-shelled .cp-prog{ margin-inline-start:auto; }
+}
 
 /* ---------- small icon tile (dark square, orange glyph) ---------- */
 .p-ic{ width:40px; height:40px; flex:none; border-radius:var(--p-r-sm); background:var(--p-dark); color:var(--p-accent-hi); display:grid; place-items:center; }

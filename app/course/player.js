@@ -661,6 +661,9 @@
     let chosen = null; try { chosen = localStorage.getItem('cp-lang'); } catch(e){}
     if (!chosen && D.lang) { lang = D.lang; chrome(); }
     if (owner) { $('cpView').hidden = false; $('cpAsLearner').addEventListener('change', e => { asLearner = e.target.checked; route(); }); }
+    // The shared top bar (portal-shell.js) around this course's own controls. "All courses" moves into the Apps menu.
+    if (window.PortalShell) window.PortalShell.start({ db, header:document.querySelector('#cp .cp-top'), page:'learn', brand:document.querySelector('#cp .cp-brand'),
+      hide:[$('cpBack')], test:window.COURSE_TEST ? { role:owner ? 'owner' : 'agent', keys:['learn', 'mkt'] } : null });
     try { await Promise.all([document.fonts.load('800 80px "Bricolage Grotesque"'), document.fonts.load('700 26px Inter'), document.fonts.load('700 80px "IBM Plex Sans Arabic"')]); } catch(e){}
     window.addEventListener('hashchange', route); route();
   }
