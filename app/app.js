@@ -49,6 +49,8 @@
     // For the Team home (portal-home.js): the clock as it is now, and its buttons (same rules as the tracker: the end-of-shift note and all)
     clockState: () => ({ live, work: workNow() }),
     clock: m => { const b = document.querySelector('#pTrack .ctl[data-m="' + m + '"]'); if (b) b.click(); },
+    // For Invite and access (people.js): the invite service, the companies list
+    callAccess: body => callAccess(body), get companies(){ return companies; }, fillCompanies: (sel, cur) => fillCompanies(sel, cur),
     signOut: () => signOut(),
     agentsChanged: () => { if (canSee('team')) loadTeamMenu(); liveSig = ''; },
     setGoal: h => { weekGoal = Number(h) > 0 ? Number(h) : 0; drawGoal(); },
@@ -582,7 +584,7 @@
   // Highlights the open section (or person) in the menu; the names under Team stay open while on Team
   function markMenu(){
     const here = location.hash;
-    document.querySelectorAll('.drawer .mi[href]').forEach(a => a.classList.toggle('on', a.getAttribute('href') === here || (a.getAttribute('href') === '/app/learn/' && here.startsWith('#learn/')) || (a.getAttribute('href') === '#review' && here.startsWith('#review/'))));
+    document.querySelectorAll('.drawer .mi[href]').forEach(a => a.classList.toggle('on', a.getAttribute('href') === here || (a.getAttribute('href') === '/app/learn/' && here.startsWith('#learn/')) || (a.getAttribute('href') === '#review' && here.startsWith('#review/')) || (a.getAttribute('href') === '#people' && here.startsWith('#people/'))));
     if (here.startsWith('#team') && !$('teamTog').hidden) openTeamMenu(true);
   }
   function menuRoute(){
@@ -593,7 +595,7 @@
     const here = page + (page === 'team' && person ? '/' + person : '');
     if (window.PortalShell) { window.PortalShell.setPage(APP_OF[page] || ''); window.PortalShell.setMode(modeOf(page)); }
     const view = ['home', 'portal', 'admin', 'progress'].includes(page);
-    $('pView').hidden = !view; document.body.classList.toggle('p-viewing', view);
+    $('pView').hidden = !view; document.body.classList.toggle('p-viewing', view || page === 'people');
     if (view && window.PortalHome) window.PortalHome.open(page); else if (window.PortalHome) window.PortalHome.close();
     $('title').textContent = OWNER_PAGES[page];
     markMenu();
@@ -609,7 +611,7 @@
     $('cashBarName').textContent = who;
     clearInterval(liveTimer); clearInterval(liveDrawTimer);
     if (page === 'live') { loadLive(); liveTimer = setInterval(loadLive, 15000); }
-    if (page === 'people') loadPeople();
+    if (page === 'people' && window.PortalPeople) { let who = ''; try { who = person ? decodeURIComponent(person) : ''; } catch(e) {} window.PortalPeople.open(who); }
     if (page === 'requests') loadOwnerRequests();
     if (page === 'visits') loadVisits();
     if (page === 'emails') loadEmails();
@@ -906,123 +908,7 @@
     }
     return data || {};
   }
-  function showLink(name, link, note){
-    $('linkBox').hidden = false;
-    $('linkFor').textContent = name;
-    $('linkNote').textContent = note;
-    $('linkVal').value = link;
-    const msg = 'Hi ' + name.split(' ')[0] + ', here is your link for the Amr Abdelgawad Talents tracker: ' + link + '\n\nOpen it, choose a password, then add the app to your home screen. The link works once.';
-    $('linkWa').href = 'https://wa.me/?text=' + encodeURIComponent(msg);
-  }
-  $('linkCopy').addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText($('linkVal').value); toast('Link copied'); }
-    catch(e) { $('linkVal').select(); toast('Press and hold to copy the link'); }
-  });
-  let inviteVia = 'email';
-  ['invBtn', 'invWa'].forEach(id => $(id).addEventListener('click', () => { inviteVia = $(id).dataset.via; }));
-  $('invForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const btn = inviteVia === 'email' ? $('invBtn') : $('invWa');
-    const name = $('invName').value.trim().replace(/\s+/g, ' '), email = $('invEmail').value.trim(), co = Number($('invCo').value) || null;
-    if (name.length < 2) { $('invErr').textContent = 'Enter their full name.'; return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { $('invErr').textContent = 'Enter a valid email.'; return; }
-    $('invErr').textContent = '';
-    btn.setAttribute('aria-busy', 'true');
-    const r = await callAccess({ action:'invite', name, email, company_id: co, via: inviteVia });
-    btn.removeAttribute('aria-busy');
-    if (r.error) { $('invErr').textContent = r.error; return; }
-    const joined = r.linked_shifts ? ' ' + plural(r.linked_shifts, 'earlier shift') + ' joined their history.' : '';
-    if (r.sent) { $('linkBox').hidden = true; toast('Invite emailed to ' + email + '.' + joined); }
-    else showLink(name, r.link, 'Send this to ' + name.split(' ')[0] + '. It works once and expires in 24 hours.' + joined);
-    $('invName').value = ''; $('invEmail').value = '';
-    loadPeople();
-  });
-  ['invName', 'invEmail'].forEach(id => $(id).addEventListener('input', () => $('invErr').textContent = ''));
-
-  async function loadPeople(){
-    fillCompanies($('invCo'), $('invCo').value || (companies[0] && companies[0].id));
-    const { data, error } = await db.from('members').select('*').order('active', { ascending:false }).order('name');
-    const box = $('peopleList');
-    if (error) { box.innerHTML = '<p class="empty">' + (/members/.test(error.message || '') ? 'The app isn’t set up yet. Run supabase/app-setup.sql.' : 'Couldn’t load people.') + '</p>'; return; }
-    if (!data.length) { box.innerHTML = '<p class="empty">No one yet. Invite your first team member.</p>'; return; }
-    box.innerHTML = '';
-    data.forEach(m => {
-      const d = document.createElement('div'); d.className = 'person';
-      d.innerHTML = '<div class="head"><span class="av' + (m.active ? '' : ' gone') + '"></span><span class="n"><b></b><small></small></span>' + (m.active ? '<span class="pill p-ok">Active</span>' : '<span class="pill p-off">Removed</span>') + '</div>' +
-        '<div class="acts"><select class="field" aria-label="Works for"></select><button class="btn ghost small" data-a="link" data-via="email">Email a sign-in link</button><button class="btn ghost small" data-a="link" data-via="whatsapp">WhatsApp a sign-in link</button><button class="btn ghost small" data-a="' + (m.active ? 'remove' : 'restore') + '">' + (m.active ? 'Remove access' : 'Restore access') + '</button></div>';
-      d.querySelector('.av').textContent = initials(m.name);
-      d.querySelector('b').textContent = m.name;
-      d.querySelector('small').textContent = (m.email || '') + ' · since ' + new Date(m.created_at).toLocaleDateString('en-US', { month:'short', year:'numeric' });
-      // What they can also see, look only. Team and Money ask them for an authenticator code too.
-      if (m.active && Array.isArray(m.access)) {
-        // One Access dropdown: the button sums it up, the list inside has a tick per section
-        const acc = document.createElement('details'); acc.className = 'acc';
-        // Role first (Settings > Agents sets it until round 5), then the extras ticked here
-        const sum = () => (m.role === 'manager' ? 'Manager' : 'Agent') + ' · extras: ' + (m.access.length ? m.access.map(s => SECTION_NAMES[s]).join(', ') : 'none');
-        const sub = s => COURSE_KEYS.includes(s);
-        acc.innerHTML = '<summary></summary><div class="acc-menu">' + Object.keys(SECTION_NAMES).filter(s => s !== 'money' || m.access.includes('money')).map(s => (s === COURSE_KEYS[0] ? '<small style="display:block;margin:6px 0 2px 26px;opacity:.75">Courses inside the Learning Hub</small>' : '') +
-            '<label' + (sub(s) ? ' style="padding-left:26px"' : '') + '><input type="checkbox" value="' + s + '"' + (m.access.includes(s) ? ' checked' : '') + ' />' + esc(SECTION_NAMES[s]) + '</label>').join('') +
-          '<p>Look only: they can’t add, change or approve anything. Team and Money ask them for an authenticator code. A course opens only when Learning Hub is on too.</p></div>';
-        acc.querySelector('summary').textContent = sum();
-        // Course switches do nothing without Learning Hub, so they're greyed out until it's on
-        const dim = () => { const hub = acc.querySelector('input[value="learn"]').checked; COURSE_KEYS.forEach(k => { const i = acc.querySelector('input[value="' + k + '"]'); if (i) i.closest('label').style.opacity = hub ? '' : '.5'; }); };
-        dim();
-        acc.addEventListener('change', async e => {
-          const box = e.target, next = [...acc.querySelectorAll('input:checked')].map(i => i.value);
-          acc.querySelectorAll('input').forEach(i => i.disabled = true);
-          const { error } = await db.from('members').update({ access: next }).eq('user_id', m.user_id);
-          acc.querySelectorAll('input').forEach(i => i.disabled = false);
-          const first = m.name.split(' ')[0], what = SECTION_NAMES[box.value];
-          if (error) { box.checked = !box.checked; toast('Couldn’t change it. Try again.'); return; }
-          m.access = next; acc.querySelector('summary').textContent = sum(); dim();
-          if (box.value === 'deals') setTimeout(loadPeople, 400);
-          const needHub = box.checked && COURSE_KEYS.includes(box.value) && !next.includes('learn');
-          toast(needHub ? first + ' has ' + what + ' ticked, but it opens only once Learning Hub is on too.'
-            : box.checked ? first + ' can now see ' + what + (/team|money/.test(box.value) ? '. They’ll set up an authenticator code the first time.' : box.value === 'learn' && !next.some(k => COURSE_KEYS.includes(k)) ? '. Tick the courses they should open too.' : '.') : first + ' can no longer see ' + what + '.');
-        });
-        d.querySelector('.acts').prepend(acc);
-        // Deal tools: optional end date and two-step, only when Deal tools is switched on
-        if (m.access.includes('deals')) {
-          const dl = document.createElement('div'); dl.className = 'deals-opts';
-          dl.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-size:13px;margin-top:8px;width:100%';
-          dl.innerHTML = '<label style="display:flex;gap:8px;align-items:center">Deal tools until <input type="date" class="field" style="width:auto" /></label><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" /> Require two-step for Deal tools</label><small style="opacity:.7">Leave the date empty for no end.</small>';
-          const [dt, mf] = dl.querySelectorAll('input'); dt.value = m.deals_until || ''; mf.checked = !!m.deals_mfa;
-          const first = m.name.split(' ')[0];
-          dt.addEventListener('change', async () => {
-            const { error } = await db.from('members').update({ deals_until: dt.value || null }).eq('user_id', m.user_id);
-            if (error) { toast(/deals_until/.test(error.message || '') ? 'Run the Deal CRM database update first.' : 'Couldn’t change it. Try again.'); dt.value = m.deals_until || ''; return; }
-            m.deals_until = dt.value || null; toast(dt.value ? first + '’s Deal tools end on ' + new Date(dt.value + 'T00:00').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + '.' : first + '’s Deal tools have no end date.');
-          });
-          mf.addEventListener('change', async () => {
-            const { error } = await db.from('members').update({ deals_mfa: mf.checked }).eq('user_id', m.user_id);
-            if (error) { toast('Couldn’t change it. Try again.'); mf.checked = !mf.checked; return; }
-            m.deals_mfa = mf.checked; toast(mf.checked ? first + ' will set up an authenticator code the next time they open Deal tools.' : first + ' no longer needs two-step for Deal tools.');
-          });
-          d.querySelector('.acts').after(dl);
-        }
-      }
-      const sel = d.querySelector('select'); fillCompanies(sel, m.company_id);
-      sel.addEventListener('change', async () => {
-        const { error } = await db.from('members').update({ company_id: Number(sel.value) }).eq('user_id', m.user_id);
-        toast(error ? 'Couldn’t change it. Try again.' : m.name.split(' ')[0] + ' now works for ' + sel.options[sel.selectedIndex].text);
-      });
-      d.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', async () => {
-        const a = b.dataset.a;
-        if (a === 'remove' && !await ask({ title:'Remove ' + m.name + '’s access?', msg:'They won’t be able to sign in. Their shifts stay in your records.', ok:'Remove access', danger:true })) return;
-        b.setAttribute('aria-busy', 'true');
-        const r = await callAccess({ action:a, user_id:m.user_id, via: b.dataset.via || null });
-        b.removeAttribute('aria-busy');
-        if (r.error) { toast(r.error); return; }
-        if (a === 'link' && r.sent) { toast('Sign-in link emailed to ' + m.email); return; }
-        if (a === 'link') { showLink(m.name, r.link, 'A new sign-in link for ' + m.name.split(' ')[0] + ', for a forgotten password or a new phone. It works once and expires in an hour.'); window.scrollTo({ top:0, behavior:'smooth' }); return; }
-        toast(a === 'remove' ? 'Access removed' : 'Access restored'); loadPeople();
-      }));
-      box.appendChild(d);
-    });
-  }
-
-  // A tap outside an open Access dropdown closes it
-  document.addEventListener('click', e => document.querySelectorAll('details.acc[open]').forEach(x => { if (!x.contains(e.target)) x.open = false; }));
+  // Invite and access is its own page now: people.js (round 5, screen 8)
 
   function stopTimers(){ clearInterval(tickTimer); clearInterval(liveTimer); clearInterval(liveDrawTimer); clearInterval(memberSyncTimer); }
 

@@ -354,7 +354,9 @@
           (a.active ? '' : '<span class="pill p-off">Off</span>') + ICON.chev + '</button>' +
           (open ? '<div class="ag-body"><div class="two">' +
             '<label class="label">Name<input class="field" maxlength="80" value="' + esc(a.name) + '" data-a-name="' + a.id + '" /></label>' +
-            '<label class="label">Role<select class="field" data-a-role="' + a.id + '">' + Object.keys(ROLES).map(k => '<option value="' + k + '"' + (roleKey(a.role) === k ? ' selected' : '') + '>' + ROLES[k] + '</option>').join('') + '</select><small class="note">' + roleSees(a.role || 'member') + '</small></label>' +
+            // Round 5: the role is set in Invite and access (one place for role and extras); shown here, read only
+            '<div class="label">Role<span class="field ro" data-a-role-ro="' + a.id + '">' + ROLES[roleKey(a.role)] + '</span><small class="note">' + roleSees(a.role || 'member') + ' ' +
+              (loginOf(a) ? '<a href="#people/' + encodeURIComponent(loginOf(a).user_id) + '" data-close>Change it in Invite and access</a>' : 'Give them an app login first, then set their role in Invite and access.') + '</small></div>' +
             '<label class="label">Phone / WhatsApp<input class="field" maxlength="40" inputmode="tel" value="' + esc(a.phone || '') + '" data-a-phone="' + a.id + '" /></label>' +
             '<label class="label">Weekly goal (hours)<input class="field" type="number" min="1" max="120" step="0.5" inputmode="decimal" placeholder="No goal" value="' + (a.weekly_goal != null ? esc(String(Number(a.weekly_goal))) : '') + '" data-a-goal="' + a.id + '" /><small class="note">They see a progress bar under their clock. Leave empty for no goal.</small></label>' +
             '<div class="label">Works for<div class="chips">' + cos.map(c => '<button type="button" class="chip" aria-pressed="' + links.some(x => x.agent_id === a.id && x.company_id === c.id) + '" data-a-co="' + a.id + ':' + c.id + '">' + esc(c.name) + '</button>').join('') + '</div></div>' +
