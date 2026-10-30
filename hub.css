@@ -1,40 +1,26 @@
-/* Deal Tools look for /app and /cash: champagne gold, magenta, Bodoni headings, square edges.
-   Loaded last (after brand.css) so it wins. Light = cream, dark = black; the top band is black in both.
+/* The look for /app and /cash, on the portal tokens (/portal.css, loaded first). Round 6: was the "Deal Tools" look
+   (champagne gold, magenta, Bodoni, square edges, light and dark). The variable names stay, so every page and chart keeps
+   working; their values now come from the portal. Light only: dark mode would be one more block of --p-* values.
    PDF sheets (.slip in /cash) keep their own paper look, so most rules skip them. */
 :root{
-  --bg:#F1EBE0; --panel:#FBF8F2; --sunk:#EFE7D9; --bg2:#FBF8F2; --bg3:#FBF8F2; --bg4:#FBF8F2;
-  --border:#D8CDB9; --border2:#C4B699;
-  --text:#0B0B0B; --light:#3F3A33; --muted:#5E584F; --white:#0B0B0B;
-  --accent:#8A6A35; --accent2:#6E5228; --accent-dim:rgba(201,169,110,.2); --on-accent:#0B0B0B;
-  --green:#2E7D57; --gold:#9A6A12; --red:#C2187A;
-  --net-bg:#C9A96E; --net-bd:#C9A96E;
-  --brand-gold:#C9A96E; --brand-gold2:#E0C48E; --brand-navy:#0B0B0B;
-  --champ:#C9A96E; --mag:#C2187A; --mag-hi:#E46BB0;
-  --band:#0B0B0B; --band-ink:#F1EBE0; --band-sub:#CFC7BA; --band-line:#3A332A;
-  /* charts (cash.js reads these) */
-  --c-in:#A88A52; --c-kept:#8A6A35; --c-out:#C2187A; --c-save:#5E584F; --c-line:#0B0B0B;
-  --c-mid:#8A6A35; --c-mid-a:1; --flow-in-a:.4; --flow-out-a:.3; --flow-kept-a:.55;
-  --pal-in:#8A6A35,#C9A96E,#6E5228,#B0925C,#D9C29A,#A88A52;
-  --pal-out:#C2187A,#E46BB0,#9E1463,#D54F9C,#F0A3CF,#7A0F4D;
-  --display:"Bodoni Moda", Didot, "Bodoni 72", Georgia, serif;
-  --label:"Barlow Condensed", "Arial Narrow", sans-serif;
-  --body:"Barlow", "Helvetica Neue", Arial, sans-serif;
+  --bg:var(--p-paper); --panel:var(--p-card); --sunk:var(--p-soft); --bg2:var(--p-card); --bg3:var(--p-card); --bg4:var(--p-card);
+  --border:var(--p-line); --border2:var(--p-line2);
+  --text:var(--p-ink); --light:var(--p-ink2); --muted:var(--p-muted); --white:var(--p-ink);
+  --accent:var(--p-accent); --accent2:var(--p-accent-deep); --accent-dim:var(--p-accent-soft); --on-accent:var(--p-on-accent);
+  --green:var(--p-ok); --gold:#B45309; --red:var(--p-no);
+  --net-bg:var(--p-dark); --net-bd:var(--p-dark);
+  --brand-gold:var(--p-accent); --brand-gold2:var(--p-accent-deep); --brand-navy:var(--p-on-accent);
+  --champ:var(--p-accent); --mag:var(--p-accent-hi); --mag-hi:var(--p-accent-hi);
+  --band:var(--p-card); --band-ink:var(--p-ink); --band-sub:var(--p-muted); --band-line:var(--p-line);
+  /* charts (cash.js reads these): money in green, kept orange, out red */
+  --c-in:#157347; --c-kept:#C2410C; --c-out:#B42318; --c-save:#6B7079; --c-line:#14161B;
+  --c-mid:#C2410C; --c-mid-a:1; --flow-in-a:.35; --flow-out-a:.3; --flow-kept-a:.55;
+  --pal-in:#157347,#2E9A63,#0E5233,#5DB98A,#A6DBBE,#3F7F5E;
+  --pal-out:#B42318,#E5484D,#7A1A12,#F08A85,#F9C2BE,#5C1410;
+  --display:var(--p-display); --label:var(--p-body); --body:var(--p-body);
   --serif:var(--display); --sans:var(--body); --font-display:var(--display); --font-body:var(--body);
-  --radius:0; --radius-sm:0; --radius-lg:0;
-}
-html[data-theme="dark"]{
-  --bg:#0B0B0B; --panel:#131211; --sunk:#0F0E0D; --bg2:#131211; --bg3:#131211; --bg4:#1A1815;
-  --border:#2C2824; --border2:#3A332A;
-  --text:#F1EBE0; --light:#CFC7BA; --muted:#A39B8E; --white:#F1EBE0;
-  --accent:#C9A96E; --accent2:#E0C48E; --accent-dim:rgba(201,169,110,.16);
-  --green:#7FC8A0; --gold:#E3B45A; --red:#E46BB0;
-  --brand-gold2:#E0C48E;
-  --mag:#E46BB0;
-  --c-in:#C9A96E; --c-kept:#E0C48E; --c-out:#E46BB0; --c-save:#A39B8E; --c-line:#F1EBE0;
-  --c-mid:#E0C48E; --c-mid-a:1; --flow-in-a:.5; --flow-out-a:.38; --flow-kept-a:.7;
-  --pal-in:#C9A96E,#E0C48E,#8A6A35,#F1DDB4,#A88A52,#D9C29A;
-  --pal-out:#E46BB0,#C2187A,#F0A3CF,#9E1463,#F7C6E2,#D54F9C;
-  color-scheme:dark;
+  --radius:var(--p-r); --radius-sm:var(--p-r-sm); --radius-lg:14px;
+  color-scheme:light;
 }
 html body{ background:var(--bg); color:var(--text); }
 
@@ -47,15 +33,16 @@ html body .num, html body .money strong, html body .tile strong, html body .cloc
 html body :is(.clock, .tile strong, .money strong, .stat strong, .me-rate strong, .set .big-num, .goal-top b, .donut .d-total):not(.slip *){ font-variation-settings:"opsz" 6; font-optical-sizing:none; }
 
 /* ---------- square edges (round things stay round) ---------- */
-html body *:not(.slip):not(.slip *):not(#pView, #pView *, #pPeople *, .app-bar, .app-bar *, #drawer .cnt){ border-radius:0 !important; }   /* portal parts keep their corners (round 4) */
+/* round 6: portal corners instead of the old square edges */
+html body :is(.card, .t-card, .tile, .money, .stat, .sheet, .acct-menu, .update, .toast, .linkbox, .notice):not(.slip *){ border-radius:var(--p-r); }
+html body :is(.btn, .field, .sel, .ctl, .seg, .nav, .co-chip, .mi-tog):not(.slip *){ border-radius:var(--p-r-sm); }
 html body :is(.me, .av, .theme-toggle, .spin, .status i, .dot, .switch, .nc-head .av, .photo-row .av){ border-radius:50% !important; }
 html body img.logo{ box-shadow:0 0 0 1px var(--champ); }
 html body .switch{ border-radius:999px !important; }
-html body :is(.card, .t-card, .tile, .money, .stat, .btn, .field, .sel, .sheet, .acct-menu, .acc-menu, .update, .toast){ box-shadow:none !important; }
+html body :is(.card, .t-card, .tile, .money, .stat, .btn, .field, .sel, .sheet, .acct-menu, .acc-menu){ box-shadow:none !important; }
 
-/* ---------- cards: a thin gold line fading along the top ---------- */
+/* ---------- cards ---------- */
 html body :is(.card, .t-card){ position:relative; background:var(--panel); border:1px solid var(--border); }
-html body :is(.card, .t-card)::before{ content:""; position:absolute; left:-1px; right:-1px; top:-1px; height:2px; background:linear-gradient(90deg, var(--champ), transparent 70%); pointer-events:none; }
 html body .card h2, html body .card-title h2{ font-weight:700; font-size:22px; letter-spacing:0; line-height:1.15; }
 html body .card-title h2{ font-size:24px; }
 html body .card-title span{ font-size:11px; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); }
@@ -65,15 +52,15 @@ html body .label{ font-size:11px; font-weight:600; letter-spacing:.18em; text-tr
 html body .sec{ font-size:10.5px; font-weight:600; letter-spacing:.28em; text-transform:uppercase; color:var(--muted); padding-top:16px; }
 
 /* ---------- buttons ---------- */
-html body .btn{ font-weight:700; font-size:12px; letter-spacing:.2em; text-transform:uppercase; padding:12px 18px; transition:background .2s, color .2s, border-color .2s; }
-html body .btn.small, html body .btn-sm{ font-size:11.5px; padding:8px 14px; }
+html body .btn{ min-height:44px; font-family:var(--p-body); font-weight:600; font-size:15px; letter-spacing:0; text-transform:none; padding:10px 18px; transition:background .2s, color .2s, border-color .2s; }
+html body .btn.small, html body .btn-sm{ min-height:40px; font-size:14px; padding:8px 14px; }
 html body .btn.ghost, html body .btn-ghost{ background:transparent; color:var(--text); border:1px solid var(--border2); }
 html body .btn.ghost:hover, html body .btn-ghost:hover{ background:var(--sunk); border-color:var(--accent); color:var(--accent); }
 html body .btn-outline{ background:transparent; color:var(--accent); border:1px solid var(--champ); }
-html body .btn-outline:hover{ background:var(--champ); color:#0B0B0B; }
+html body .btn-outline:hover{ background:var(--champ); color:#fff; }
 html body .btn.danger{ background:var(--red); border-color:var(--red); color:#fff; }
-html body :focus-visible{ outline:2px solid var(--mag); outline-offset:2px; }
-::selection{ background:var(--champ); color:#0B0B0B; }
+html body :focus-visible{ outline:2px solid var(--p-accent); outline-offset:2px; }
+::selection{ background:var(--p-accent-soft); color:var(--p-ink); }
 
 /* ---------- fields ---------- */
 html body .field:focus, html body .sel:focus{ border-color:var(--champ); box-shadow:0 0 0 3px var(--accent-dim) !important; }
@@ -146,21 +133,22 @@ html body .tile.due strong{ color:var(--gold); }
 html body .clock{ font-weight:900; font-size:72px; letter-spacing:-.01em; line-height:1; margin:20px 0 8px; }
 @media (max-width:420px){ html body .clock{ font-size:54px; } }
 html body .clock-sub{ font-size:14px; }
-html body .ctl{ border:1px solid var(--border2); background:transparent; color:var(--muted); font-weight:700; font-size:12px; letter-spacing:.18em; text-transform:uppercase; padding:16px 4px; gap:8px; }
+html body .ctl{ border:1px solid var(--border2); background:var(--p-card); color:var(--p-ink2); font-family:var(--p-body); font-weight:600; font-size:14px; letter-spacing:0; text-transform:none; padding:16px 4px; gap:8px; min-height:72px; }
 html body .ctl:hover{ background:transparent; border-color:var(--champ); color:var(--accent); }
-html body .ctl.on.run{ background:var(--champ); border-color:var(--champ); color:#0B0B0B; }
+html body .ctl.on.run{ background:var(--p-ok); border-color:var(--p-ok); color:#fff; }
 html body .ctl.on.brk{ border-color:var(--gold); color:var(--gold); background:color-mix(in srgb, var(--gold) 10%, transparent); }
 html body .ctl.on.pau{ border-color:var(--text); color:var(--text); background:transparent; }
 html body .ctl.off:hover{ color:var(--red); border-color:var(--red); }
 html body .goal-bar{ height:6px; background:var(--border); border:0; }
-html body .goal-bar i{ background:linear-gradient(90deg, var(--champ), var(--mag)); }
+html body .goal-bar i{ background:var(--p-accent-hi); }
 html body .goal.done .goal-bar i{ background:var(--green); }
 html body .goal-top b{ font-family:var(--display) !important; font-size:20px; font-weight:700; }
 
 /* ---------- status chips ---------- */
-html body .status, html body .pill{ font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; padding:4px 10px; background:transparent; }
-html body .status.s-run, html body .pill.p-ok{ background:transparent; }
-html body .status.s-brk, html body .pill.p-due{ background:transparent; }
+/* portal pills: sentence case, soft fill */
+html body .status, html body .pill{ font-family:var(--p-body); font-size:12.5px; font-weight:700; letter-spacing:0; text-transform:none; padding:3px 10px; border-radius:99px; }
+html body .status.s-run, html body .pill.p-ok{ background:var(--p-ok-soft); color:var(--p-ok); border-color:transparent; }
+html body .status.s-brk, html body .pill.p-due{ background:var(--p-accent-soft); color:var(--p-accent); border-color:transparent; }
 html body .has-note{ background:var(--accent-dim); color:var(--accent); }
 
 /* ---------- lists, history, settings ---------- */
@@ -169,18 +157,22 @@ html body .hmonth b{ font-weight:700; font-size:17px; }
 html body .hmonth:hover, html body .shead:hover, html body .slip:hover{ background:var(--sunk); }
 html body .slip-ic{ background:var(--accent-dim); color:var(--accent); }
 html body .set nav{ background:var(--sunk); }
-html body .set nav button[aria-current="true"]{ background:transparent; color:var(--accent); box-shadow:inset 2px 0 0 var(--champ); font-family:var(--display) !important; font-style:italic; }
+html body .set nav button[aria-current="true"]{ background:var(--p-card); color:var(--p-ink); box-shadow:inset 3px 0 0 var(--p-accent-hi); font-family:var(--p-body) !important; font-style:normal; font-weight:600; }
 html body .set-head h3, html body .set nav h2{ font-weight:700; }
 html body .set .box.hi, html body .me-rate{ background:var(--accent-dim); border-color:color-mix(in srgb, var(--champ) 40%, transparent); }
 html body .acct-menu, html body .acc-menu, html body .sheet{ border-color:var(--border2); }
 html body .chip[aria-pressed="true"], html body .choice:has(input:checked){ background:var(--accent-dim); color:var(--accent); border-color:var(--champ); }
-html body .switch[aria-checked="true"]{ background:var(--champ); }
-html body .bars .bar{ background:linear-gradient(90deg, var(--champ), var(--mag)); }
-html body .toast, html body .update{ background:var(--band); color:var(--band-ink); border:1px solid var(--champ); }
+html body .switch[aria-checked="true"]{ background:var(--p-accent); }
+html body .bars .bar{ background:var(--p-accent-hi); }
+/* round 6: the update toast and the plain toast are the portal's dark toast (were black and gold) */
+html body .toast, html body .update{ background:var(--p-dark); color:#fff; border:0; border-radius:var(--p-r); box-shadow:var(--p-shadow); font-family:var(--p-body); font-size:15px; }
+html body .update{ padding:10px 10px 10px 18px; }
+html body .update .btn{ background:var(--p-accent-hi); border-color:var(--p-accent-hi); color:#fff; }
+html body .update .btn:hover{ filter:brightness(1.08); }
 html body .linkbtn, html body #pVisits .note a{ color:var(--accent); }
 
 /* ---------- sign-in screens ---------- */
-html body .auth h1{ font-weight:900; font-size:28px; text-transform:uppercase; letter-spacing:.02em; line-height:1; }
+html body .auth h1{ font-weight:800; font-size:28px; text-transform:none; letter-spacing:-.01em; line-height:1.1; }
 html body .auth .sub{ color:var(--muted); }
 
 /* ================= /cash pages (Overview, Team, Income, Expenses) ================= */
@@ -191,17 +183,18 @@ html body .money p, html body .stat p{ font-size:10.5px; font-weight:600; letter
 html body .money strong, html body .stat strong{ font-weight:700 !important; letter-spacing:0 !important; color:var(--text); }
 html body .money.in strong, html body .money.paid strong, html body .stat.w strong{ color:var(--text); }
 html body .money.out strong{ color:var(--red); }
-html body .money.net, html body .money.profit-big{ background:var(--champ); border-color:var(--champ); }
-html body .money.net :is(strong, p, small, .egp, .saved), html body .money.profit-big :is(strong, p, small){ color:#0B0B0B !important; }
-html body .money.net .c, html body .money.profit-big .c{ color:rgba(11,11,11,.72) !important; }
-/* income amounts in lists and the month table: gold, not green */
+html body .money.net, html body .money.profit-big{ background:var(--p-dark); border-color:var(--p-dark); }
+html body .money.net :is(strong, p, small, .egp, .saved), html body .money.profit-big :is(strong, p, small){ color:#fff !important; }
+html body .money.net p, html body .money.profit-big p{ color:var(--p-accent-hi) !important; }
+html body .money.net .c, html body .money.profit-big .c{ color:var(--p-on-dark2) !important; }
+/* income amounts in lists and the month table: the accent */
 html body :is(.cnum.in, .num.in, .mrow .in, .num.w, .brow .bnums){ color:var(--accent); }
-html body .money.net .team-add{ color:#0B0B0B; border-color:rgba(11,11,11,.35); }
+html body .money.net .team-add{ color:#fff; border-color:rgba(255,255,255,.35); }
 html body .money.net.neg{ background:color-mix(in srgb, var(--red) 10%, var(--panel)); border-color:color-mix(in srgb, var(--red) 40%, transparent); }
 html body .money.net.neg :is(strong, p, small){ color:var(--red) !important; }
 html body .seg{ background:transparent; border:1px solid var(--border2); padding:3px; }
-html body .seg button{ font-weight:700; font-size:11.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
-html body .seg button.on{ background:transparent; color:var(--accent); box-shadow:inset 0 0 0 1px var(--champ) !important; }
+html body .seg button{ min-height:40px; font-weight:600; font-size:14px; letter-spacing:0; text-transform:none; color:var(--p-ink2); }
+html body .seg button.on{ background:var(--p-dark); color:#fff; box-shadow:none !important; }
 html body .nav{ background:transparent; border-color:var(--border2); color:var(--text); }
 html body .nav:hover{ border-color:var(--champ); color:var(--accent); }
 html body .co-chip[aria-pressed="true"]{ background:var(--accent-dim); border-color:var(--champ); color:var(--accent); }
@@ -213,11 +206,11 @@ html body .flow .amt, html body .trend .ty, html body .donut .d-total{ font-fami
 html body .donut .d-total{ font-family:var(--display) !important; font-weight:700; font-size:17px; }
 html body .flow .amt.in{ fill:var(--text); } html body .flow .amt.out{ fill:var(--red); } html body .flow .amt.save{ fill:var(--muted); }
 html body .flow-foot .k-in{ background:var(--c-in); opacity:1; } html body .flow-foot .k-out{ background:var(--c-out); } html body .flow-foot .k-kept{ background:var(--c-kept); opacity:1; } html body .flow-foot .k-save{ background:var(--c-save); }
-/* month chart: the chosen month gets a faint tint and a thin gold outline, not a solid block */
-html body .trend .tg:hover .hov{ fill:color-mix(in srgb, var(--champ) 6%, transparent); }
+/* month chart: the chosen month gets a faint tint and a thin orange outline, not a solid block */
+html body .trend .tg:hover .hov{ fill:color-mix(in srgb, var(--p-accent) 6%, transparent); }
 html body .trend .tg.on .hov{ fill:color-mix(in srgb, var(--champ) 5%, transparent); stroke:var(--champ); stroke-width:1; stroke-opacity:.6; }
-/* "You" and "Team" tags both gold */
-html body .tag, html body .tag.me{ color:var(--accent); border-color:color-mix(in srgb, var(--champ) 55%, transparent); background:transparent; font-family:var(--label) !important; letter-spacing:.14em; }
+/* "You" and "Team" tags: soft orange pills */
+html body .tag, html body .tag.me{ color:var(--p-accent); border-color:transparent; background:var(--p-accent-soft); font-family:var(--p-body) !important; letter-spacing:0; text-transform:none; border-radius:99px; }
 /* "Where it came from" and "Where it went" keep their own height */
 html body .cash-split{ align-items:start; }
 /* inside the app the money pages use the same width as Team */
@@ -229,7 +222,7 @@ html.embed body #dashView{ max-width:1480px; padding:0 24px; }
   html.embed body #dashView:has(#cashTools:not([hidden])) #cashTools{ padding-right:200px; }
 }
 html body .notice.soft{ color:var(--gold); }
-html body .agent-no{ font-family:var(--display) !important; font-style:italic; color:var(--mag); background:transparent; }
+html body .agent-no{ font-family:var(--p-body) !important; font-style:normal; font-weight:700; color:var(--p-accent); background:transparent; }
 html body .note-day, html body .sd-sec h4{ color:var(--accent); letter-spacing:.22em; }
 html body .note-card{ background:var(--panel); }
 html body .score .sc-appt, html body .nc-nums{ color:var(--accent); }

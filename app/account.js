@@ -1,5 +1,5 @@
 // Talents app: the account circle (My profile, Settings, Sign out), profile photos, and Settings.
-// Settings shows what each person may use: everyone gets My profile, Password and Appearance;
+// Settings shows what each person may use: everyone gets My profile and Password;
 // Amr also gets Agents, Dollar rates and Backup. The database decides what each person can really change.
 (function(){
   const T = window.TalentsApp; if (!T) return;
@@ -157,8 +157,8 @@
   document.body.appendChild(sheet);
   let tab = 'profile', agentOpen = new Set(), agentView = null, lastFocus = null;
   const TABS = () => isOwner()
-    ? [['profile','My profile'], ['agents','Agents'], ['rates','Dollar rates'], ['password','Password'], ['look','Appearance'], ['backup','Backup']]
-    : [['profile','My profile'], ['password','Password'], ['look','Appearance']];
+    ? [['profile','My profile'], ['agents','Agents'], ['rates','Dollar rates'], ['password','Password'], ['backup','Backup']]
+    : [['profile','My profile'], ['password','Password']];   // round 6: light only, so no Appearance tab
   function openSettings(t){
     lastFocus = document.activeElement;
     tab = t; agentView = null;
