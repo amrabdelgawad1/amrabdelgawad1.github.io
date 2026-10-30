@@ -3,6 +3,7 @@
 //   SB_AAL      'aal1' (default) or 'aal2'
 //   SB_RPC      { function_name: data }   an unknown function answers { error:'no access' }
 //   SB_FROM     { table: [rows] }         every table query returns these rows (filters are ignored)
+//   SB_INVOKE   { function_name: data }   what an edge function (team-access) answers
 // Calls are recorded in window.SB_CALLS so a test can check what the page asked for.
 (function(){
   const calls = window.SB_CALLS = [];
@@ -37,7 +38,7 @@
     rpc: (name, args) => { calls.push(['rpc', name, args]); const r = window.SB_RPC || {}; return name in r ? res(r[name]) : res(null, 'course: no access'); },
     from: query,
     channel: () => { const c = { on: () => c, subscribe: () => c }; return c; }, removeChannel(){},
-    functions: { invoke: async (n, o) => { calls.push(['invoke', n, o]); return { data:{}, error:null }; } },
+    functions: { invoke: async (n, o) => { calls.push(['invoke', n, o]); return later({ data:(window.SB_INVOKE || {})[n] || {}, error:null }); } },
     storage: { from: () => ({ download: async () => ({ error:{ message:'not found' } }), createSignedUrl: async () => ({ error:{} }),
       createSignedUrls: async () => ({ data:[] }), upload: async () => ({ error:null }), remove: async () => ({}) }) }
   }) };

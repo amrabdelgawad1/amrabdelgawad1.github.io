@@ -47,7 +47,7 @@ html body .num, html body .money strong, html body .tile strong, html body .cloc
 html body :is(.clock, .tile strong, .money strong, .stat strong, .me-rate strong, .set .big-num, .goal-top b, .donut .d-total):not(.slip *){ font-variation-settings:"opsz" 6; font-optical-sizing:none; }
 
 /* ---------- square edges (round things stay round) ---------- */
-html body *:not(.slip):not(.slip *):not(#pView, #pView *, .app-bar, .app-bar *, #drawer .cnt){ border-radius:0 !important; }   /* portal parts keep their corners (round 4) */
+html body *:not(.slip):not(.slip *):not(#pView, #pView *, #pPeople *, .app-bar, .app-bar *, #drawer .cnt){ border-radius:0 !important; }   /* portal parts keep their corners (round 4) */
 html body :is(.me, .av, .theme-toggle, .spin, .status i, .dot, .switch, .nc-head .av, .photo-row .av){ border-radius:50% !important; }
 html body img.logo{ box-shadow:0 0 0 1px var(--champ); }
 html body .switch{ border-radius:999px !important; }

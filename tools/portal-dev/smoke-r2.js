@@ -30,19 +30,16 @@ const T = [
     check: async p => p.evaluate(() => document.getElementById('reviewBody').innerText),
     want: s => /3 of 16 modules passed · 2 assignments sent/.test(s) && /5 of 27 modules passed/.test(s) },
   { name:'people-role', url:'/app/#people', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:ownerRpc, SB_FROM:{ members, companies:[{ id:1, name:'Sample Co' }] } },
-    check: async p => { await p.waitForSelector('details.acc summary'); return p.evaluate(() => document.querySelector('details.acc summary').textContent + ' | ticks: ' + [...document.querySelectorAll('details.acc input')].map(i => i.value).join(',')); },
-    want: s => s === 'Agent · extras: none | ticks: live,requests,team,deals,learn,mkt,psy,course' },
+    // round 5: the access drop-down became the Invite and access page (people-r5.js checks it fully)
+    check: async p => { await p.waitForSelector('.pp-row'); return p.evaluate(() => document.querySelector('.pp-row .p-pill').textContent + ' | ' + ([...document.querySelectorAll('#pPeople input')].some(i => i.value === 'money') ? 'money' : 'no money')); },
+    want: s => s === 'Agent | no money' },
+  // round 5: the role is set in Invite and access; Settings > Agents shows it read only, with a link there
   { name:'agent-role', url:'/app/#live', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:ownerRpc, SB_FROM:{ companies:[{ id:1, name:'Sample Co' }], agent_companies:[],
       agents:[{ id:1, name:'Sara R.', active:true, role:'operator', created_at:'2026-09-01' }], members:[{ user_id:'u1', name:'Sara R.', email:'sara@example.com', active:true, agent_id:1, created_at:'2026-09-01' }] } },
     check: async p => {
-      await p.click('#me'); await p.click('[data-go="settings"]'); await p.click('[data-toggle="1"]'); await p.waitForSelector('select[data-a-role]', { state:'attached' });
-      const opts = await p.evaluate(() => [...document.querySelector('select[data-a-role]').options].map(o => (o.selected ? '*' : '') + o.textContent).join(','));
-      await p.evaluate(() => { const s = document.querySelector('select[data-a-role]'); s.value = 'member'; s.dispatchEvent(new Event('change', { bubbles:true })); });
-      await p.waitForTimeout(500);
-      const writes = await p.evaluate(() => SB_CALLS.filter(c => c[0] === 'update').map(c => c[1] + ':' + JSON.stringify(c[2])).join(' '));
-      return opts + ' | ' + writes; },
-    // an old Operator shows as Manager; switching to Agent sets both, and never touches access
-    want: s => s === 'Agent,*Manager | agents:{"role":"member"} members:{"role":"agent"}' },
+      await p.click('#me'); await p.click('[data-go="settings"]'); await p.click('[data-toggle="1"]'); await p.waitForSelector('[data-a-role-ro]', { state:'attached' });
+      return p.evaluate(() => { const r = document.querySelector('[data-a-role-ro]'); return r.textContent + ' | ' + !!document.querySelector('select[data-a-role]') + ' | ' + r.parentElement.querySelector('a').getAttribute('href'); }); },
+    want: s => s === 'Manager | false | #people/u1' },
   { name:'hub-owner-counts', url:'/app/learn/', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:Object.assign({ learn_can_open:true, course_has_access:true, course_state:null }, ownerRpc), SB_FROM:{ hub_uploads:[], learn_progress:[] } },
     check: async p => p.evaluate(() => [...document.querySelectorAll('.lh-own')].map(e => e.textContent.trim()).join(' | ')),
     want: s => s === '1 person has access | 1 person has access | No one else has access yet' }

@@ -22,12 +22,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;0,6..96,900;1,6..96,500&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&display=swap">
 <link rel="stylesheet" href="/portal.css?v=3">
-<link rel="stylesheet" href="app.css?v=20" />
+<link rel="stylesheet" href="app.css?v=21" />
 <link rel="stylesheet" href="../theme-switch.css?v=2">
 <link rel="stylesheet" href="../daylight-dark.css?v=2">
 <link rel="stylesheet" href="../ask.css?v=3">
 <link rel="stylesheet" href="../brand.css?v=2">
-<link rel="stylesheet" href="../hub.css?v=5">
+<link rel="stylesheet" href="../hub.css?v=6">
 <link rel="stylesheet" href="learn.css?v=4">
 <link rel="stylesheet" href="review.css?v=1">
 <script src="../theme.js?v=2"></script>
@@ -246,30 +246,8 @@
     <main class="pad" id="pReview" hidden><div id="reviewBody"></div></main>
 
     <!-- owner: invite and access -->
-    <main class="pad" id="pPeople" hidden>
-      <div class="grid2">
-        <section class="card">
-          <h2>Invite someone</h2>
-          <form id="invForm" class="form" novalidate>
-            <label class="label">Full name<input class="field" id="invName" maxlength="80" autocomplete="off" placeholder="Sara Nabil" /></label>
-            <label class="label">Email<input class="field" id="invEmail" type="email" autocomplete="off" placeholder="sara@email.com" /></label>
-            <label class="label">Works for<select class="field" id="invCo"></select></label>
-            <p class="err" id="invErr"></p>
-            <div class="row2"><button class="btn" id="invBtn" type="submit" data-via="email">Send email invite</button><button class="btn ghost" id="invWa" type="submit" data-via="whatsapp">Get WhatsApp link</button></div>
-          </form>
-          <div class="linkbox" id="linkBox" hidden>
-            <p><b id="linkFor"></b></p>
-            <p class="note" id="linkNote"></p>
-            <input class="field" id="linkVal" readonly />
-            <div class="row2"><button class="btn ghost" type="button" id="linkCopy">Copy link</button><a class="btn wa" id="linkWa" target="_blank" rel="noopener">Send on WhatsApp</a></div>
-          </div>
-        </section>
-        <section class="card list">
-          <h2>People</h2>
-          <div id="peopleList"><p class="empty">Loading…</p></div>
-        </section>
-      </div>
-    </main>
+    <!-- owner: Invite and access, drawn by people.js (round 5, screen 8) -->
+    <main id="pPeople" class="p-page" hidden></main>
 
     <!-- owner: the /cash pages -->
     <main id="pCash" hidden>
@@ -331,9 +309,10 @@
 <script src="../ask.js?v=4"></script>
 <script src="../hub-art.js?v=1"></script>
 <script src="/portal-shell.js?v=2"></script>
-<script src="app.js?v=55"></script>
+<script src="app.js?v=56"></script>
 <script src="portal-home.js?v=1"></script>
-<script src="account.js?v=11"></script>
+<script src="people.js?v=1"></script>
+<script src="account.js?v=12"></script>
 <script src="course/marketing/course.js?v=20"></script>
 <script src="psychology/course.js?v=1"></script>
 <script src="learn.js?v=13"></script>
