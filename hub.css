@@ -183,14 +183,14 @@ html body .money.net, html body .money.profit-big{ background:var(--p-dark); bor
 html body .money.net :is(strong, p, small, .egp, .saved), html body .money.profit-big :is(strong, p, small){ color:#fff !important; }
 html body .money.net p, html body .money.profit-big p{ color:var(--p-accent-hi) !important; }
 html body .money.net .c, html body .money.profit-big .c{ color:var(--p-on-dark2) !important; }
-/* income amounts in lists and the month table: gold, not green */
+/* income amounts in lists and the month table: the accent */
 html body :is(.cnum.in, .num.in, .mrow .in, .num.w, .brow .bnums){ color:var(--accent); }
 html body .money.net .team-add{ color:#fff; border-color:rgba(255,255,255,.35); }
 html body .money.net.neg{ background:color-mix(in srgb, var(--red) 10%, var(--panel)); border-color:color-mix(in srgb, var(--red) 40%, transparent); }
 html body .money.net.neg :is(strong, p, small){ color:var(--red) !important; }
 html body .seg{ background:transparent; border:1px solid var(--border2); padding:3px; }
-html body .seg button{ font-weight:700; font-size:11.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
-html body .seg button.on{ background:transparent; color:var(--accent); box-shadow:inset 0 0 0 1px var(--champ) !important; }
+html body .seg button{ min-height:40px; font-weight:600; font-size:14px; letter-spacing:0; text-transform:none; color:var(--p-ink2); }
+html body .seg button.on{ background:var(--p-dark); color:#fff; box-shadow:none !important; }
 html body .nav{ background:transparent; border-color:var(--border2); color:var(--text); }
 html body .nav:hover{ border-color:var(--champ); color:var(--accent); }
 html body .co-chip[aria-pressed="true"]{ background:var(--accent-dim); border-color:var(--champ); color:var(--accent); }
@@ -202,11 +202,11 @@ html body .flow .amt, html body .trend .ty, html body .donut .d-total{ font-fami
 html body .donut .d-total{ font-family:var(--display) !important; font-weight:700; font-size:17px; }
 html body .flow .amt.in{ fill:var(--text); } html body .flow .amt.out{ fill:var(--red); } html body .flow .amt.save{ fill:var(--muted); }
 html body .flow-foot .k-in{ background:var(--c-in); opacity:1; } html body .flow-foot .k-out{ background:var(--c-out); } html body .flow-foot .k-kept{ background:var(--c-kept); opacity:1; } html body .flow-foot .k-save{ background:var(--c-save); }
-/* month chart: the chosen month gets a faint tint and a thin gold outline, not a solid block */
-html body .trend .tg:hover .hov{ fill:color-mix(in srgb, var(--champ) 6%, transparent); }
+/* month chart: the chosen month gets a faint tint and a thin orange outline, not a solid block */
+html body .trend .tg:hover .hov{ fill:color-mix(in srgb, var(--p-accent) 6%, transparent); }
 html body .trend .tg.on .hov{ fill:color-mix(in srgb, var(--champ) 5%, transparent); stroke:var(--champ); stroke-width:1; stroke-opacity:.6; }
-/* "You" and "Team" tags both gold */
-html body .tag, html body .tag.me{ color:var(--accent); border-color:color-mix(in srgb, var(--champ) 55%, transparent); background:transparent; font-family:var(--label) !important; letter-spacing:.14em; }
+/* "You" and "Team" tags: soft orange pills */
+html body .tag, html body .tag.me{ color:var(--p-accent); border-color:transparent; background:var(--p-accent-soft); font-family:var(--p-body) !important; letter-spacing:0; text-transform:none; border-radius:99px; }
 /* "Where it came from" and "Where it went" keep their own height */
 html body .cash-split{ align-items:start; }
 /* inside the app the money pages use the same width as Team */
