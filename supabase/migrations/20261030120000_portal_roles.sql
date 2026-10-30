@@ -202,7 +202,7 @@ $$;
 revoke all on function public.hub_can_send(text) from public;
 grant execute on function public.hub_can_send(text) to authenticated;
 
--- Missed-shift requests: Amr or a manager decides; nobody but Amr decides their own.
+-- Missed-shift requests: Amr or a manager (with the authenticator code) decides; nobody but Amr decides their own.
 -- Same body as the live function, with the two checks changed.
 create or replace function public.decide_shift_request(p_id bigint, p_approve boolean, p_reason text default null::text)
 returns bigint language plpgsql security definer set search_path to '' as $function$
@@ -210,7 +210,9 @@ declare
   r public.shift_requests; v_shift bigint;
   v_owner boolean := coalesce(public.is_tracker_admin(), false);
 begin
-  if not (v_owner or (public.portal_role() = 'manager' and public.portal_can('requests'))) then
+  -- managers also need the authenticator code: an approval adds a shift, which feeds pay (reviewer decision)
+  if not (v_owner or (public.portal_role() = 'manager' and public.portal_can('requests')
+                      and coalesce(auth.jwt() ->> 'aal', '') = 'aal2')) then
     raise exception 'Not allowed' using errcode = '42501';
   end if;
   select * into r from public.shift_requests where id = p_id for update;
