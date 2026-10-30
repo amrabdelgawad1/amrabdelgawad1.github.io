@@ -38,12 +38,14 @@
   const db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
 
   let role = null, profile = null, user = null;
-  let access = []; // extra sections Amr switched on for this team member: live, requests, team, money
+  // What this team member can open: their role's keys plus extras, from portal_me() (supabase/migrations/20261030120000_portal_roles.sql).
+  // me = { role: 'manager' | 'agent', keys, needs_code }. The database checks every key again; this only tidies the menu.
+  let access = [], me = null;
 
   // What account.js (the circle menu, profile and Settings) needs from here
   window.TalentsApp = {
     db, toast, esc, initials,
-    get role(){ return role; }, get user(){ return user; }, get profile(){ return profile; }, get access(){ return access; },
+    get role(){ return role; }, get user(){ return user; }, get profile(){ return profile; }, get access(){ return access; }, get me(){ return me; },
     signOut: () => signOut(),
     agentsChanged: () => { if (canSee('team')) loadTeamMenu(); liveSig = ''; },
     setGoal: h => { weekGoal = Number(h) > 0 ? Number(h) : 0; drawGoal(); },
@@ -137,8 +139,12 @@
     profile = Array.isArray(prof) ? prof[0] : prof;
     if (error || !profile) { $('noAccessMsg').textContent = 'This account isn’t set up for the tracker. Ask Amr to invite you.'; show('vNoAccess'); return; }
     if (!profile.active) { $('noAccessMsg').textContent = 'Your access was switched off. Ask Amr if that’s a mistake.'; show('vNoAccess'); return; }
-    const acc = await db.from('members').select('access').eq('user_id', user.id).maybeSingle();
-    access = (!acc.error && acc.data && acc.data.access) || [];
+    const pm = await db.rpc('portal_me');
+    if (!pm.error && pm.data && Array.isArray(pm.data.keys)) { me = pm.data; access = pm.data.keys.filter(k => SECTION_NAMES[k]); }
+    else {   // database not updated yet: the extras list, as before
+      const acc = await db.from('members').select('access').eq('user_id', user.id).maybeSingle();
+      access = (!acc.error && acc.data && acc.data.access) || [];
+    }
     role = 'member'; startMember();
   }
 
@@ -919,9 +925,10 @@
       if (m.active && Array.isArray(m.access)) {
         // One Access dropdown: the button sums it up, the list inside has a tick per section
         const acc = document.createElement('details'); acc.className = 'acc';
-        const sum = () => 'Access: ' + (m.access.length ? m.access.map(s => SECTION_NAMES[s]).join(', ') : 'tracker only');
+        // Role first (Settings > Agents sets it until round 5), then the extras ticked here
+        const sum = () => (m.role === 'manager' ? 'Manager' : 'Agent') + ' · extras: ' + (m.access.length ? m.access.map(s => SECTION_NAMES[s]).join(', ') : 'none');
         const sub = s => COURSE_KEYS.includes(s);
-        acc.innerHTML = '<summary></summary><div class="acc-menu">' + Object.keys(SECTION_NAMES).map(s => (s === COURSE_KEYS[0] ? '<small style="display:block;margin:6px 0 2px 26px;opacity:.75">Courses inside the Learning Hub</small>' : '') +
+        acc.innerHTML = '<summary></summary><div class="acc-menu">' + Object.keys(SECTION_NAMES).filter(s => s !== 'money' || m.access.includes('money')).map(s => (s === COURSE_KEYS[0] ? '<small style="display:block;margin:6px 0 2px 26px;opacity:.75">Courses inside the Learning Hub</small>' : '') +
             '<label' + (sub(s) ? ' style="padding-left:26px"' : '') + '><input type="checkbox" value="' + s + '"' + (m.access.includes(s) ? ' checked' : '') + ' />' + esc(SECTION_NAMES[s]) + '</label>').join('') +
           '<p>Look only: they can’t add, change or approve anything. Team and Money ask them for an authenticator code. A course opens only when Learning Hub is on too.</p></div>';
         acc.querySelector('summary').textContent = sum();

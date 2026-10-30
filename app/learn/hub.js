@@ -59,17 +59,17 @@
     await Promise.all(jobs);
   }
 
-  // Amr only: how many people have each course switched on, and how much is waiting in the Review center
+  // Amr only: how many people can open each course (role plus extras, from portal_people()), and how much is waiting in the Review center
   let waiting = null;
   async function loadOwner(){
     if (window.HUB_TEST) { Object.assign(people, window.HUB_TEST.people || {}); waiting = window.HUB_TEST.waiting; return; }
     const [m, u, w] = await Promise.all([
-      db.from('members').select('access,active').then(r => r, () => ({})),
+      db.rpc('portal_people').then(r => r.error ? db.from('members').select('access,active') : r, () => ({})),   // older database: the extras list
       db.from('hub_uploads').select('id', { count:'exact', head:true }).eq('status', 'waiting').then(r => r, () => ({})),
       db.rpc('course_admin_waiting').then(r => r, () => ({}))
     ]);
     // Same rules as the access checks above: Acquisitions needs only its own switch, the others need Learning Hub too
-    (m.data || []).filter(x => x.active).forEach(x => { const a = x.access || []; COURSES.forEach(c => { if (a.includes(c.key) && (c.id === 'acq' || a.includes('learn'))) people[c.id] = (people[c.id] || 0) + 1; }); });
+    (m.data || []).filter(x => x.active).forEach(x => { const a = x.keys || x.access || []; COURSES.forEach(c => { if (a.includes(c.key) && (c.id === 'acq' || a.includes('learn'))) people[c.id] = (people[c.id] || 0) + 1; }); });
     if (u.count != null || w.data) waiting = (u.count || 0) + ((w.data || []).length);
   }
 

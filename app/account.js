@@ -5,11 +5,15 @@
   const T = window.TalentsApp; if (!T) return;
   const { db, toast, esc, initials } = T;
   const $ = id => document.getElementById(id);
-  const ROLES = { member:'Team member', operator:'Operator', leader:'Team leader' };
-  // What each role can also see in the app (look only), on top of their own clock, history, payslips and Settings
-  const ROLE_ACCESS = { member:[], leader:['live', 'requests', 'team'], operator:['live', 'requests', 'team', 'money'] };
-  const SECTION_NAMES = { live:'Live now', requests:'Missed-shift requests', team:'Team', money:'Money' };
-  const roleSees = r => ROLE_ACCESS[r].length ? 'Also sees ' + ROLE_ACCESS[r].map(s => SECTION_NAMES[s]).join(', ') + ' (look only).' : 'Sees only their own profile, history and payslips.';
+  // An agent's role is their app login's role (members.role, from supabase/migrations/20261030120000_portal_roles.sql).
+  // agents.role keeps its old values: member = Agent, leader = Manager. Operator is gone (Money is Amr's only): shown as Manager.
+  // Changing it here sets the login's role; it no longer rewrites what they can see (that's the role plus their extras).
+  const ROLES = { member:'Agent', leader:'Manager' };
+  const roleKey = r => r === 'operator' ? 'leader' : (ROLES[r] ? r : 'member');
+  const LOGIN_ROLE = { member:'agent', leader:'manager' };
+  const roleSees = r => roleKey(r) === 'leader'
+    ? 'Also sees Live now and everyone’s hours (with an authenticator code), and approves missed-shift requests. Never money or access.'
+    : 'Their own shifts, their own deals and the courses they’re given.';
   const pad2 = n => String(n).padStart(2, '0');
   const iso = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
   const today = () => iso(new Date());
@@ -37,7 +41,8 @@
   const isOwner = () => T.role === 'owner';
   const myName = () => isOwner() ? (mine.name || 'Amr Abdelgawad') : (T.profile && T.profile.name) || '';
   let card = null; // team member: their agent number, role, agent photo, company and pay (my_card)
-  const myRole = () => isOwner() ? 'owner' : (card && card.role) || 'member';
+  // A member's role comes from their login (T.me, portal_me()); their agent card is the fallback
+  const myRole = () => isOwner() ? 'owner' : T.me && T.me.role ? (T.me.role === 'manager' ? 'leader' : 'member') : roleKey((card && card.role) || 'member');
   const myAgent = () => agents.find(a => key(a.name) === key(myName()));
 
   // Photos for Live now: people with an account by user id, /tracker agents by name
@@ -126,7 +131,7 @@
   menu.className = 'acct-menu'; menu.id = 'acctMenu'; menu.setAttribute('role', 'menu'); menu.hidden = true;
   document.body.appendChild(menu);
   function openMenu(){
-    const role = isOwner() ? 'Owner' : ROLES[myRole()];
+    const role = isOwner() ? 'Owner' : ROLES[roleKey(myRole())];
     menu.innerHTML = '<div class="who">' + avatar(myName(), photoUrl(mine.photo), 42) + '<div><b>' + esc(myName()) + '</b><small>' + esc(role) + '</small></div></div>' +
       '<button type="button" class="ai" role="menuitem" data-go="profile">' + ICON.user + 'My profile</button>' +
       '<button type="button" class="ai" role="menuitem" data-go="settings">' + ICON.gear + 'Settings</button>' +
@@ -345,11 +350,11 @@
       '<div class="ag-list">' + agents.map(a => {
         const open = agentOpen.has(a.id), names = coNames(a);
         return '<div class="ag' + (a.active ? '' : ' off') + '"><button type="button" class="ag-head" aria-expanded="' + open + '" data-toggle="' + a.id + '">' + avatar(a.name, photoUrl(a.photo_path), 38) +
-          '<span class="ag-name"><b>' + agentNo(a) + ' · ' + esc(a.name) + '</b><small>' + esc(ROLES[a.role] || ROLES.member) + (names.length ? ' · ' + esc(names.join(', ')) : '') + ' · ' + (loginOf(a) && loginOf(a).active ? 'Has an app login' : 'No app login yet') + '</small></span>' +
+          '<span class="ag-name"><b>' + agentNo(a) + ' · ' + esc(a.name) + '</b><small>' + esc(ROLES[roleKey(a.role)]) + (names.length ? ' · ' + esc(names.join(', ')) : '') + ' · ' + (loginOf(a) && loginOf(a).active ? 'Has an app login' : 'No app login yet') + '</small></span>' +
           (a.active ? '' : '<span class="pill p-off">Off</span>') + ICON.chev + '</button>' +
           (open ? '<div class="ag-body"><div class="two">' +
             '<label class="label">Name<input class="field" maxlength="80" value="' + esc(a.name) + '" data-a-name="' + a.id + '" /></label>' +
-            '<label class="label">Role<select class="field" data-a-role="' + a.id + '">' + Object.keys(ROLES).map(k => '<option value="' + k + '"' + (a.role === k ? ' selected' : '') + '>' + ROLES[k] + '</option>').join('') + '</select><small class="note">' + roleSees(a.role || 'member') + '</small></label>' +
+            '<label class="label">Role<select class="field" data-a-role="' + a.id + '">' + Object.keys(ROLES).map(k => '<option value="' + k + '"' + (roleKey(a.role) === k ? ' selected' : '') + '>' + ROLES[k] + '</option>').join('') + '</select><small class="note">' + roleSees(a.role || 'member') + '</small></label>' +
             '<label class="label">Phone / WhatsApp<input class="field" maxlength="40" inputmode="tel" value="' + esc(a.phone || '') + '" data-a-phone="' + a.id + '" /></label>' +
             '<label class="label">Weekly goal (hours)<input class="field" type="number" min="1" max="120" step="0.5" inputmode="decimal" placeholder="No goal" value="' + (a.weekly_goal != null ? esc(String(Number(a.weekly_goal))) : '') + '" data-a-goal="' + a.id + '" /><small class="note">They see a progress bar under their clock. Leave empty for no goal.</small></label>' +
             '<div class="label">Works for<div class="chips">' + cos.map(c => '<button type="button" class="chip" aria-pressed="' + links.some(x => x.agent_id === a.id && x.company_id === c.id) + '" data-a-co="' + a.id + ':' + c.id + '">' + esc(c.name) + '</button>').join('') + '</div></div>' +
@@ -364,7 +369,7 @@
     if (!a) { agentView = null; return drawAgents(); }
     B.innerHTML = '<div><button class="btn ghost small" type="button" data-a-back>' + ICON.back + 'Agents</button></div>' +
       '<div class="photo-row">' + avatar(a.name, photoUrl(a.photo_path), 92) + '<div class="photo-side"><b class="big">' + agentNo(a) + ' · ' + esc(a.name) + '</b>' +
-      '<div class="chips"><span class="pill p-pau">' + ROLES[a.role] + '</span>' + (a.active ? '' : '<span class="pill p-off">Switched off</span>') + coNames(a).map(n => '<span class="pill p-off">' + esc(n) + '</span>').join('') + '</div></div></div>' +
+      '<div class="chips"><span class="pill p-pau">' + ROLES[roleKey(a.role)] + '</span>' + (a.active ? '' : '<span class="pill p-off">Switched off</span>') + coNames(a).map(n => '<span class="pill p-off">' + esc(n) + '</span>').join('') + '</div></div></div>' +
       '<div class="tiles four" id="agStats"><div class="tile"><p>Pay rate</p><strong class="num">…</strong></div><div class="tile"><p>Hours this month</p><strong class="num">…</strong></div><div class="tile in"><p>Earned this month</p><strong class="num">…</strong></div><div class="tile due"><p>Not paid yet</p><strong class="num">…</strong></div></div>' +
       '<div class="two"><div class="box"><div class="kv"><span>Phone</span><span>' + esc(a.phone || '—') + '</span></div><div class="kv"><span>Added</span><span>' + day(a.created_at.slice(0, 10)) + '</span></div><div class="kv"><span>Shifts this month</span><span id="agCount">…</span></div></div>' +
       '<div class="box" id="agRecent"><p class="note">Recent shifts</p></div></div>' +
@@ -482,7 +487,7 @@
       btn.removeAttribute('aria-busy');
       if (r.error) { err.textContent = r.error; return; }
       // Remember which agent this login belongs to (number, role, photo and payslips follow it)
-      await db.from('members').update({ agent_id: a.id, access: ROLE_ACCESS[a.role || 'member'] }).ilike('email', email);
+      await db.from('members').update({ agent_id: a.id, role: LOGIN_ROLE[roleKey(a.role)] }).ilike('email', email);
       const joined = r.linked_shifts ? ' ' + r.linked_shifts + ' earlier shift' + (r.linked_shifts === 1 ? '' : 's') + ' joined their history.' : '';
       if (r.sent) { delete linkOut[a.id]; toast('Invite emailed to ' + email + '.' + joined); }
       else if (r.link) { showLinkOut(a, r.link, 'Send this to ' + a.name.split(' ')[0] + '. It works once and expires in 24 hours.' + joined); toast('Invite link ready.' + joined); }
@@ -576,17 +581,13 @@
       const a = agents.find(x => x.id === Number(d.aRole));
       const { error } = await db.from('agents').update({ role: t.value }).eq('id', a.id);
       if (error) { t.value = a.role; toast('Couldn’t change it. Try again.'); return; }
-      // Their app login gets the sections that come with the role
+      // Their app login gets the same role (extras stay as they are)
       const m = loginOf(a);
       if (m) {
-        // Keep switches that aren't part of a role (Deal tools, Learning Hub, Acquisitions course); swap only the role's sections
-        const cur = await db.from('members').select('access').eq('user_id', m.user_id).maybeSingle();
-        const roleParts = new Set(Object.values(ROLE_ACCESS).flat());
-        const keep = Array.isArray(cur.data && cur.data.access) ? cur.data.access.filter(s => !roleParts.has(s)) : [];
-        const { error: e2 } = cur.error ? cur : await db.from('members').update({ access: [...new Set([...ROLE_ACCESS[t.value], ...keep])] }).eq('user_id', m.user_id);
-        if (e2) { toast(a.name + ' is now ' + ROLES[t.value] + ', but their access couldn’t be changed. Set it in Invite and access.'); return drawAgents(); }
+        const { error: e2 } = await db.from('members').update({ role: LOGIN_ROLE[roleKey(t.value)] }).eq('user_id', m.user_id);
+        if (e2) { toast(a.name + ' is now ' + ROLES[roleKey(t.value)] + ' here, but their login couldn’t be changed. Try again.'); return drawAgents(); }
       }
-      toast(a.name + ' is now ' + ROLES[t.value] + '. ' + roleSees(t.value)); return drawAgents();
+      toast(a.name + ' is now ' + ROLES[roleKey(t.value)] + '. ' + roleSees(t.value)); return drawAgents();
     }
     if (d.aPhone) {
       const a = agents.find(x => x.id === Number(d.aPhone));

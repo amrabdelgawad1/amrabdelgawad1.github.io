@@ -3,7 +3,8 @@
 //   #review          the feed, filtered by the people you pick
 //   #review/<user>   one person: progress in every course, then their uploads
 // Data: hub_uploads and hub_upload_comments (supabase/migrations/20261029060000_review_center.sql), the private
-// "hub-uploads" bucket, Acquisitions drills from course_admin_waiting, progress from course_admin_learners and learn_progress.
+// "hub-uploads" bucket, Acquisitions drills from course_admin_waiting, progress from course_admin_learners and
+// portal_learner_progress() (pass counts only: nobody but the learner reads their saved course data).
 (function(){
   'use strict';
   const A = () => window.TalentsApp || {};
@@ -40,7 +41,7 @@
     const [mem, up, lr, acq, wait] = await Promise.all([
       db.from('members').select('user_id,name,email,active,access').order('name'),
       db.from('hub_uploads').select('*').order('created_at', { ascending:false }).limit(400),
-      db.from('learn_progress').select('user_id,course,data,updated_at'),
+      db.rpc('portal_learner_progress'),
       db.rpc('course_admin_learners'),
       db.rpc('course_admin_waiting')
     ]);
@@ -49,7 +50,7 @@
     uploads = up.data || [];
     drills = (wait.data || []).map(w => ({ drill:true, user_id:w.userId, course:'acq', title:w.title || 'Written drill', created_at:w.submittedAt, href:'/course/#/admin/u/' + encodeURIComponent(w.userId) + '/s/' + encodeURIComponent(w.moduleId) + '/' + encodeURIComponent(w.itemId), status:'waiting' }));
     acqProgress = {}; (acq.data || []).forEach(l => acqProgress[l.userId] = l);
-    hubProgress = {}; (lr.data || []).forEach(r => { (hubProgress[r.user_id] = hubProgress[r.user_id] || {})[r.course] = r; });
+    hubProgress = {}; (lr.data || []).forEach(r => { (hubProgress[r.user_id] = hubProgress[r.user_id] || {})[r.course] = r; });   // { passed, sent, updated_at }
     comments = {};
     if (uploads.length) {
       const c = await db.from('hub_upload_comments').select('*').in('upload_id', uploads.map(u => u.id)).order('created_at');
@@ -70,13 +71,15 @@
     if (a) rows.push({ c:'Acquisitions', pct:a.total ? Math.round(a.done * 100 / a.total) : 0,
       t:(a.module ? 'Module ' + a.module + ' · ' + a.done + ' of ' + a.total : 'Not started') + (a.checkpoint ? ' · checkpoint ' + a.checkpoint.score + '%' : ''), at:a.lastActive, href:'/course/#/admin/u/' + encodeURIComponent(uid) });
     const h = hubProgress[uid] || {};
-    const mk = h.mkt2 && h.mkt2.data && typeof h.mkt2.data.m === 'object' ? h.mkt2.data.m : null;
-    if (mk) {
-      const ms = Object.values(mk).filter(m => m && typeof m === 'object'), passed = ms.filter(m => ((m.quiz && m.quiz.best) || 0) >= 80).length, asg = ms.filter(m => m.asg && m.asg.done).length;
+    if (h.mkt2) {
+      const passed = h.mkt2.passed || 0, asg = h.mkt2.sent || 0;
       const total = (window.COURSE && window.COURSE.plan && window.COURSE.plan.length) || 16;
       rows.push({ c:'Marketing', pct:Math.round(passed * 100 / total), t:passed + ' of ' + total + ' modules passed · ' + asg + (asg === 1 ? ' assignment' : ' assignments') + ' sent', at:h.mkt2.updated_at });
     }
-    if (h.psy) rows.push({ c:'Psychology', pct:null, t:'Studying · last saved ' + ago(h.psy.updated_at), at:h.psy.updated_at });
+    if (h.psy) {
+      const passed = h.psy.passed || 0, total = (window.PSY_COURSE && window.PSY_COURSE.modules) || 27;
+      rows.push({ c:'Psychology', pct:Math.round(passed * 100 / total), t:passed + ' of ' + total + ' modules passed', at:h.psy.updated_at });
+    }
     return rows;
   }
   const progressHtml = uid => {
