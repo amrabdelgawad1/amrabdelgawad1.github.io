@@ -3,6 +3,9 @@
 //   #portal    Amr's Portal view (screen 1): today's numbers, one card per area, "Waiting for you"
 //   #admin     Amr's Admin overview (screen 5): what needs him, one box per sidebar group
 //   #progress  Learner progress for Amr and managers: pass counts only (portal_learner_progress, round 2)
+// Deal numbers (round 7): deals are encrypted in the browser, so the database can't count them. After the Deal CRM is
+// unlocked in this tab it leaves counts only (no names, places or money) in sessionStorage "dealCounts"; without them
+// these pages say "Unlock the CRM to see deal numbers" instead of guessing.
 // Everything here reads through the page's own Supabase client (window.TalentsApp.db) and the database's rules:
 // a number someone may not see simply doesn't load. Styles: /portal.css (.p-*) and app.css (#pView).
 (function(){
@@ -52,6 +55,10 @@
     (o.meta ? '<p class="p-acard-meta">' + o.meta + '</p>' : '') + '<a class="p-btn" href="' + esc(o.href) + '">' + esc(o.btn) + '</a></div></article>';
   const metaN = (n, t) => '<span><b>' + esc(n) + '</b> ' + esc(t) + '</span>';
   const safe = p => p.then(r => r, () => ({}));
+  const UNLOCK = 'Unlock the CRM to see deal numbers';
+  function dealCounts(){
+    try { const c = JSON.parse(sessionStorage.getItem('dealCounts') || 'null'); return c && typeof c.open === 'number' ? c : null; } catch(e) { return null; }
+  }
 
   // ---------- shared numbers ----------
   async function liveCount(db){
@@ -93,10 +100,12 @@
       hero('Portal', 'Hi, ' + first(prof.name), clockLine(), '<div class="p-hero-act" id="pvClockBox">' + clockBtn() + '</div>') +
       '<section aria-labelledby="pvCont" id="pvContWrap" hidden><h2 class="p-h2" id="pvCont">Continue learning</h2><div id="pvContBox"></div></section>' +
       '<section aria-labelledby="pvAreas"><h2 class="p-h2" id="pvAreas">Your areas</h2><div class="p-grid p-areas">' + areas.map(area).join('') + '</div></section>' +
+      '<section aria-labelledby="pvBoard" id="pvBoardWrap" hidden><h2 class="p-h2" id="pvBoard">This week on the team <small>Monday to Sunday</small></h2><div id="pvBoardBox"></div></section>' +
       (locked.length ? '<section aria-labelledby="pvLocked"><h2 class="p-h2 p-h2-sm" id="pvLocked">Not open for you yet</h2><div class="p-lockrow">' +
         locked.map(c => '<p class="p-locked">' + IC.lock + '<span><b>' + esc(c.name.replace('Real Estate ', '')) + ' course</b> · Ask Amr to open it</span></p>').join('') + '</div></section>' : '') +
       '</div>';
     $('pvClockBox').addEventListener('click', e => { const b = e.target.closest('[data-clock]'); if (b) T.clock(b.dataset.clock); });
+    board(T.db, my);
     if (me.role === 'manager' || has('requests')) {
       const n = (await pendingRequests(T.db) || []).length;
       if (my !== run) return;
@@ -110,6 +119,16 @@
       '<span class="p-btn">Continue</span></a>';
     const i = $('pvContBox').querySelector('.p-bar i'); if (i) i.style.width = cont.pct + '%';   // set by script (/app allows it); never a style="" attribute
     $('pvContWrap').hidden = false;
+  }
+  // This week's team board: calls logged, lessons passed, drills sent. One database function (portal_team_board) that
+  // never returns hours or pay; everyone on the team sees the same board.
+  async function board(db, my){
+    const r = await safe(db.rpc('portal_team_board'));
+    if (my !== run || !Array.isArray(r.data) || !r.data.length) return;
+    $('pvBoardBox').innerHTML = '<div class="p-tablewrap"><table class="p-table"><thead><tr><th scope="col">#</th><th scope="col">Name</th><th scope="col">Calls logged</th><th scope="col">Lessons passed</th><th scope="col">Drills sent</th></tr></thead><tbody>' +
+      r.data.map((x, i) => '<tr' + (x.is_me ? ' class="is-me"' : '') + '><td class="p-rank">' + (i + 1) + '</td><td>' + esc(x.is_me ? (x.name || 'You') + ' (you)' : x.name || 'Someone') + '</td><td>' +
+        (Number(x.calls) || 0) + '</td><td>' + (Number(x.lessons) || 0) + '</td><td>' + (Number(x.drills) || 0) + '</td></tr>').join('') + '</tbody></table></div>';
+    $('pvBoardWrap').hidden = false;
   }
   function clockLine(){
     const T = A(), st = T.clockState ? T.clockState() : null, prof = T.profile || {};
@@ -158,13 +177,14 @@
     const names = await nameMap(db);
     const learning = new Set(lr.hub.filter(x => x.passed > 0 || x.updated_at).map(x => x.user_id).concat(lr.acq.filter(x => x.done > 0 || x.module).map(x => x.userId))).size;
     const r = reqs || [], waitN = revs.length + r.length;
-    const month = new Date().toLocaleDateString('en-US', { month:'short' });
+    const month = new Date().toLocaleDateString('en-US', { month:'short' }), dc = dealCounts();
     box().innerHTML = '<div class="p-wrap">' +
       hero('Portal', greet + ', Amr', '6 areas · ' + plural(waitN, 'thing') + ' waiting for you',
         '<div class="p-stats">' + stat(revs.length, 'to review', '#review') + stat(live == null ? '–' : live, 'clocked in now', '#live') + stat(r.length, r.length === 1 ? 'shift request' : 'shift requests', '#requests') + '</div>') +
       '<section aria-labelledby="pvAreas"><h2 class="p-h2" id="pvAreas">Your areas</h2><div class="p-grid p-acards">' + [
         acard({ band:'Learning Hub', icon:'bookBig', kick:'3 courses', name:'Courses', sub:'Acquisitions, Marketing, and Psychology and Therapy, with progress for everyone learning.', meta:metaN(learning, 'learning'), href:'/app/learn/', btn:'Open Learning Hub' }),
-        acard({ band:'Deals', icon:'house', kick:'Everyone’s deals', name:'Deal CRM', sub:'Every seller lead and deal, from first call to closing, with follow-ups.', href:'/app/deals/', btn:'Open Deal CRM' }),
+        acard({ band:'Deals', icon:'house', kick:'Everyone’s deals', name:'Deal CRM', sub:'Every seller lead and deal, from first call to closing, with follow-ups.',
+          meta:dc ? metaN(dc.open, 'open') + ' ' + metaN(dc.due, 'due') + ' ' + metaN(dc.contract, 'under contract') : esc(UNLOCK), href:'/app/deals/', btn:dc ? 'Open Deal CRM' : 'Unlock the CRM' }),
         acard({ band:'Money', icon:'cash', kick:'Only you', name:'Cash', sub:'Income, expenses and profit for the month, in one place.', meta:metaN(month, 'this month'), href:'#overview', btn:'Open Cash' }),
         acard({ band:'Team', icon:'people', kick:'Live now', name:'Team and shifts', sub:'Who is clocked in, hours, missed-shift requests and invites.', meta:metaN(live == null ? '–' : live, 'clocked in') + ' ' + metaN(r.length, r.length === 1 ? 'request' : 'requests'), href:'#live', btn:'Open Team' }),
         acard({ band:'Reviews', icon:'mic', kick:revs.length + ' waiting', name:'Review center', sub:'Call recordings, files and written drills from every course, scored in one place.', meta:metaN(revs.length, 'to review'), href:'#review', btn:'Open Review center' }),
@@ -193,7 +213,7 @@
     const [live, reqs, revs, lr, mem, vis] = await Promise.all([liveCount(db), pendingRequests(db), reviewsWaiting(db), learners(db, true),
       safe(db.from('members').select('active')), safe(db.rpc('visit_stats', { p_hours:168 }))]);
     if (my !== run) return;
-    const r = reqs || [], team = (mem.data || []).filter(x => x.active).length;
+    const r = reqs || [], team = (mem.data || []).filter(x => x.active).length, dc = dealCounts();
     const learning = new Set(lr.hub.map(x => x.user_id).concat(lr.acq.filter(x => x.done > 0 || x.module).map(x => x.userId))).size;
     const need = revs.length + r.length;
     const v = vis.data && vis.data.visitors != null ? Number(vis.data.visitors).toLocaleString('en-US') : null;
@@ -205,7 +225,9 @@
           row('Missed-shift requests', r.length ? pillR(r.length + ' waiting') : muted('None'), '#requests'), row('Invite and access', muted('Manage'), '#people')]) +
         box5('Learning', '3 courses', [row('Review center', revs.length ? pillR(revs.length + ' waiting') : muted('None'), '#review'),
           row('Learner progress', muted(learning + ' learning'), '#progress'), row('Who has which course', muted('Manage'), '/app/learn/')]) +
-        box5('Deals', 'All reps', [row('Deal CRM', muted('Open'), '/app/deals/'), row('Land calculator', muted('Open'), '/land-calculator/'), row('House calculator', muted('Open'), '/house-calculator/')]) +
+        box5('Deals', 'All reps', (dc ? [row('Follow-ups due', dc.due ? pillR(dc.due + ' due') : muted('None'), '/app/deals/#followups'), row('Open deals', muted(String(dc.open)), '/app/deals/'),
+          row('Under contract', muted(String(dc.contract)), '/app/deals/')] : [row(UNLOCK, muted('Unlock'), '/app/deals/')])
+          .concat([row('Land calculator', muted('Open'), '/land-calculator/'), row('House calculator', muted('Open'), '/house-calculator/')])) +
         box5('Money', 'Only you', [row('Cash this month', muted('Open'), '#overview'), row('Course payments', muted('Not set up yet'))]) +
         box5('Site', 'Public pages', [row('Visits this week', muted(v == null ? 'Open' : v), '#visits'), row('Team emails', muted('Open'), '#emails'),
           row('Zoho Campaigns', muted('Open'), 'https://campaigns.zoho.com/', true)]) +

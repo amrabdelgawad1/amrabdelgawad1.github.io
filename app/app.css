@@ -519,3 +519,7 @@ html body #pPeople{ min-height:calc(100vh - var(--p-top)); font:16px/1.5 var(--p
   .pp-back{ display:inline-flex; align-items:center; }
 }
 @media (max-width:520px){ .pp-roles{ grid-template-columns:1fr; } .pp-loglist li{ grid-template-columns:60px 1fr; } }
+
+/* Round 7: the weekly team board on the Team home fits a phone (the table scrolls inside its box, never the page) */
+#pView .p-wrap > section{ min-width:0; }
+@media (max-width:640px){ #pvBoardBox .p-table th, #pvBoardBox .p-table td{ padding:10px 8px; } }
