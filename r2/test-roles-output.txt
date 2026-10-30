@@ -1,0 +1,66 @@
+== migration, first run
+supabase/migrations/20261030120000_portal_roles.sql:53: NOTICE:  members: dropped members_role_live
+supabase/migrations/20261030120000_portal_roles.sql:63: NOTICE:  trigger "members_role_default" for relation "public.members" does not exist, skipping
+supabase/migrations/20261030120000_portal_roles.sql:110: NOTICE:  members: not_given added and filled for 5 rows
+supabase/migrations/20261030120000_portal_roles.sql:247: NOTICE:  deal_access_status: now reads the role
+supabase/migrations/20261030120000_portal_roles.sql:313: NOTICE:  policy "access_log owner reads" for relation "public.access_log" does not exist, skipping
+supabase/migrations/20261030120000_portal_roles.sql:337: NOTICE:  trigger "members_access_log" for relation "public.members" does not exist, skipping
+== migration, second run
+supabase/migrations/20261030120000_portal_roles.sql:247: NOTICE:  deal_access_status: already reads the role
+supabase/migrations/20261030120000_portal_roles.sql:252: NOTICE:  policy "learn: own rows" for relation "public.learn_progress" does not exist, skipping
+supabase/migrations/20261030120000_portal_roles.sql:308: NOTICE:  relation "access_log" already exists, skipping
+supabase/migrations/20261030120000_portal_roles.sql:309: NOTICE:  relation "access_log_target_at" already exists, skipping
+== checks
+  ok   everyone on the team today is an agent
+  ok   A had nothing: every agent key goes in not_given
+  ok   X had learn: only course and deals go in not_given
+  ok   role owner can't be stored
+  ok   an invite sent with role member becomes agent
+  ok   a new invite gets the full agent set
+  ok   A (agent, had nothing): still nothing
+  ok   A role is agent
+  ok   A: no Deal tools
+  ok   X (had learn and mkt): same two
+  ok   X opens Marketing, not Psychology
+  ok   X: no Acquisitions, can send for Marketing
+  ok   L (had live): live, without the code, as before
+  ok   L: has_access agrees
+  ok   T (had team): needs the code first, as before
+  ok   T: portal_me says team is waiting on the code
+  ok   T with the code: team opens
+  ok   F (switched off): nothing, no role
+  ok   N (new invite): the agent set
+  ok   N: Acquisitions yes, Marketing no
+  ok   N: Deal tools open through the role
+  ok   N: no Live now
+  ok   M role is manager
+  ok   M without the code: everything but team
+  ok   M with the code: team too, never money
+  ok   Amr without the code: nothing yet, Deal tools ask for it
+  ok   Amr with the code: everything
+  ok   money as an extra counts for nobody
+  ok   manager with the code sees team shifts, not Amr's own
+  ok   manager sees every missed-shift request
+  ok   manager reads no learn_progress rows
+  ok   manager gets progress for active members only
+  ok   manager can't read the access log
+  ok   manager without the code sees no shifts
+  ok   manager without the code: no learner progress
+  ok   agent sees no shifts, only their own request
+  ok   agent: no learner progress
+  ok   nobody writes the access log
+  ok   a learner reads their own progress
+  ok   Amr reads nobody else's saved course data (scratch pad, drawings)
+  ok   pass count: Marketing, 1 of 2 quizzes at 80 or more
+  ok   pass count: Marketing, 1 assignment sent
+  ok   pass count: Psychology, exam done + 17 of 20 pass, 12 of 20 doesn't
+  ok   Amr gets everyone with their role and keys
+  ok   agent can't decide a request
+  ok   manager can't decide their own request
+  ok   manager approves someone else's request
+  ok   Amr decides the manager's request
+  ok   one log line for one access change
+  ok   the log line says who and what
+  ok   a new invite is logged
+  ok   A opens Marketing once Amr ticks it
+== all checks passed
