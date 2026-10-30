@@ -508,10 +508,10 @@
   // ======================================================================
   // Owner: menu, Live now, Invite and access, and the /cash pages
   // ======================================================================
-  const OWNER_PAGES = { live:'Live now', requests:'Missed-shift requests', emails:'Team emails', people:'Invite and access', visits:'Website visitors', learn:'Learning Hub', review:'Review center', mytime:'My time', overview:'Cash', team:'Team and shifts', income:'Income', expense:'Expenses', track:'My hours',
+  const OWNER_PAGES = { live:'Live now', requests:'Missed-shift requests', emails:'Team emails', people:'Invite and access', visits:'Website visitors', logs:'Logs', learn:'Learning Hub', review:'Review center', mytime:'My time', overview:'Cash', team:'Team and shifts', income:'Income', expense:'Expenses', track:'My hours',
     home:'Portal', portal:'Portal', admin:'Admin', progress:'Learner progress' };   // the last four: portal-home.js
   // Which switch in Invite and access opens each page; "owner" pages are Amr's alone
-  const SECTION = { live:'live', requests:'requests', team:'team', overview:'money', income:'money', expense:'money', mytime:'owner', emails:'owner', people:'owner', visits:'owner', learn:'learn', review:'owner', track:'track',
+  const SECTION = { live:'live', requests:'requests', team:'team', overview:'money', income:'money', expense:'money', mytime:'owner', emails:'owner', people:'owner', visits:'owner', logs:'owner', learn:'learn', review:'owner', track:'track',
     home:'home', portal:'owner', admin:'owner', progress:'progress' };
   const SECTION_NAMES = { live:'Live now', requests:'Missed-shift requests', team:'Team', money:'Money', deals:'Deal tools', learn:'Learning Hub', mkt:'Marketing course', psy:'Psychology course', course:'Acquisitions course' };
   // Course switches sit under Learning Hub: a course opens only when Learning Hub is on too.
@@ -584,7 +584,7 @@
   // Highlights the open section (or person) in the menu; the names under Team stay open while on Team
   function markMenu(){
     const here = location.hash;
-    document.querySelectorAll('.drawer .mi[href]').forEach(a => a.classList.toggle('on', a.getAttribute('href') === here || (a.getAttribute('href') === '/app/learn/' && here.startsWith('#learn/')) || (a.getAttribute('href') === '#review' && here.startsWith('#review/')) || (a.getAttribute('href') === '#people' && here.startsWith('#people/'))));
+    document.querySelectorAll('.drawer .mi[href]').forEach(a => a.classList.toggle('on', a.getAttribute('href') === here || (a.getAttribute('href') === '/app/learn/' && here.startsWith('#learn/')) || (a.getAttribute('href') === '#review' && here.startsWith('#review/')) || (a.getAttribute('href') === '#people' && here.startsWith('#people/')) || (a.getAttribute('href') === '#logs' && here.startsWith('#logs/'))));
     if (here.startsWith('#team') && !$('teamTog').hidden) openTeamMenu(true);
   }
   function menuRoute(){
@@ -595,15 +595,15 @@
     const here = page + (page === 'team' && person ? '/' + person : '');
     if (window.PortalShell) { window.PortalShell.setPage(APP_OF[page] || ''); window.PortalShell.setMode(modeOf(page)); }
     const view = ['home', 'portal', 'admin', 'progress'].includes(page);
-    $('pView').hidden = !view; document.body.classList.toggle('p-viewing', view || page === 'people');
+    $('pView').hidden = !view; document.body.classList.toggle('p-viewing', view || page === 'people' || page === 'logs');
     if (view && window.PortalHome) window.PortalHome.open(page); else if (window.PortalHome) window.PortalHome.close();
     $('title').textContent = OWNER_PAGES[page];
     markMenu();
     $('pTrack').hidden = page !== 'track';
     $('pLive').hidden = page !== 'live'; $('pPeople').hidden = page !== 'people'; $('pRequests').hidden = page !== 'requests';
     $('pVisits').hidden = page !== 'visits'; $('pEmails').hidden = page !== 'emails'; $('pLearn').hidden = page !== 'learn';
-    $('pReview').hidden = page !== 'review';
-    const cashPage = !['live', 'people', 'requests', 'track', 'visits', 'emails', 'learn', 'review', 'home', 'portal', 'admin', 'progress'].includes(page);
+    $('pReview').hidden = page !== 'review'; $('pLogs').hidden = page !== 'logs';
+    const cashPage = !['live', 'people', 'requests', 'track', 'visits', 'emails', 'logs', 'learn', 'review', 'home', 'portal', 'admin', 'progress'].includes(page);
     $('pCash').hidden = !cashPage;
     // A person's Team page gets a bar for their payslips (Amr only; uploading is his)
     let who = ''; try { who = page === 'team' && person ? decodeURIComponent(person) : ''; } catch(e) {}
@@ -615,6 +615,7 @@
     if (page === 'requests') loadOwnerRequests();
     if (page === 'visits') loadVisits();
     if (page === 'emails') loadEmails();
+    if (window.PortalLogs) { if (page === 'logs') window.PortalLogs.open(person || ''); else window.PortalLogs.close(); }
     if (page === 'learn' && window.TalentsLearn) window.TalentsLearn.open(person || '');
     if (page === 'review' && window.HubReview) { let id = ''; try { id = person ? decodeURIComponent(person) : ''; } catch(e) {} window.HubReview.open(id); }
     countRequests();

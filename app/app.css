@@ -406,9 +406,9 @@ html body header.app-bar h1.p-name{ font:800 19px/1.2 var(--p-display) !importan
    portal fonts win: Bricolage Grotesque for headings, Inter for card titles and text. */
 html body.p-viewing{ background:var(--p-paper); }
 html body #pView{ min-height:calc(100vh - var(--p-top)); }
-html body :is(#pView, #pPeople) :is(h1, h2, h3){ font-family:var(--p-display) !important; letter-spacing:-.01em; text-transform:none; }
+html body :is(#pView, #pPeople, #pLogs) :is(h1, h2, h3){ font-family:var(--p-display) !important; letter-spacing:-.01em; text-transform:none; }
 html body #pView .p-card-head h2, html body #pView .p-cont-txt b{ font-family:var(--p-body) !important; letter-spacing:0; }
-html body :is(#pView, #pPeople) :focus-visible{ outline:2px solid var(--p-accent); outline-offset:2px; }
+html body :is(#pView, #pPeople, #pLogs) :focus-visible{ outline:2px solid var(--p-accent); outline-offset:2px; }
 html body #pView a.p-row, html body #pView a.p-area, html body #pView a.p-cont{ color:var(--p-ink); }
 html body :is(#pView, #pPeople) .p-btn{ color:var(--p-on-accent); }
 html body #pPeople .p-btn.is-ghost{ color:var(--p-ink); }
@@ -523,3 +523,25 @@ html body #pPeople{ min-height:calc(100vh - var(--p-top)); font:16px/1.5 var(--p
 /* Round 7: the weekly team board on the Team home fits a phone (the table scrolls inside its box, never the page) */
 #pView .p-wrap > section{ min-width:0; }
 @media (max-width:640px){ #pvBoardBox .p-table th, #pvBoardBox .p-table td{ padding:10px 8px; } }
+
+/* Phase 0: Logs (#pLogs, logs.js) */
+html body #pLogs{ min-height:calc(100vh - var(--p-top)); }
+#pLogs .lg-bar{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; }
+#pLogs .lg-days{ display:flex; align-items:center; gap:10px; color:var(--p-ink2); font:500 14px/1.2 var(--p-body); }
+#pLogs .lg-days select{ min-height:var(--p-tap); padding:0 10px; border:1px solid var(--p-line2); border-radius:var(--p-r-sm); background:var(--p-card); color:var(--p-ink); font:500 15px var(--p-body); }
+#pLogs .p-mode a{ min-height:var(--p-tap); }
+#pLogs .lg-table td{ vertical-align:top; }
+#pLogs .lg-when{ white-space:nowrap; color:var(--p-ink2); }
+#pLogs .lg-detail{ word-break:break-word; color:var(--p-ink2); font-size:14px; }
+#pLogs .lg-table small{ display:block; margin-top:2px; color:var(--p-muted); font-size:13px; }
+#pLogs .lg-table a{ color:var(--p-accent); }
+#pLogs .p-wrap{ grid-template-columns:minmax(0, 1fr); }
+#pLogs .p-wrap > *{ min-width:0; }
+@media (max-width:640px){
+  #pLogs .lg-table thead{ display:none; }
+  #pLogs .lg-table, #pLogs .lg-table tbody, #pLogs .lg-table tr, #pLogs .lg-table td{ display:block; }
+  #pLogs .lg-table tr{ padding:12px 14px; border-bottom:1px solid var(--p-line); }
+  #pLogs .lg-table tr:last-child{ border-bottom:0; }
+  #pLogs .lg-table td{ padding:2px 0; border:0; }
+  #pLogs .lg-days span{ display:none; }
+}
