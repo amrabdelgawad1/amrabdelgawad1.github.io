@@ -51,7 +51,15 @@
     setGoal: h => { weekGoal = Number(h) > 0 ? Number(h) : 0; drawGoal(); },
     fxChanged: () => { loadFx(); try { const w = $('cashFrame').contentWindow; if (w && w.reloadFx) w.reloadFx(); } catch(e){} }
   };
-  const signedIn = () => document.dispatchEvent(new Event('talents-signed-in'));
+  const signedIn = () => { shell(); document.dispatchEvent(new Event('talents-signed-in')); };
+  // The shared top bar (/portal-shell.js): logo, page name, Apps menu, the person's name; ADMIN label for Amr.
+  // The menu button, the theme switch and the account circle (account.js) stay as they are.
+  const APP_OF = { track:'hours', live:'team', requests:'team', team:'team', people:'people', review:'review', overview:'cash', income:'cash', expense:'cash', mytime:'cash', learn:'learn' };
+  const pageNow = () => location.hash.slice(1).split('/')[0] || (role === 'owner' ? 'live' : 'track');
+  function shell(){
+    if (!window.PortalShell) return;
+    window.PortalShell.start({ db, header:document.querySelector('header.app-bar'), page:APP_OF[pageNow()] || '', name:$('title'), lead:$('burger'), me:$('me'), admin:role === 'owner' });
+  }
 
   // ---------- sign in ----------
   $('loginForm').addEventListener('submit', async e => {
@@ -564,6 +572,7 @@
     if (page === 'learn' && !person) { location.replace('/app/learn/'); return; }   // the Learning Hub home is its own page now
     if (!OWNER_PAGES[page] || !canSee(SECTION[page])) { page = role === 'owner' ? 'live' : 'track'; history.replaceState(null, '', '#' + page); }
     const here = page + (page === 'team' && person ? '/' + person : '');
+    if (window.PortalShell) window.PortalShell.setPage(APP_OF[page] || '');
     $('title').textContent = OWNER_PAGES[page];
     markMenu();
     $('pTrack').hidden = page !== 'track';
@@ -760,6 +769,7 @@
     if (!canSee('requests')) return;
     const { count } = await db.from('shift_requests').select('id', { count:'exact', head:true }).eq('status', 'pending');
     const n = count || 0;
+    if (window.PortalShell) window.PortalShell.setCount('requests', n);
     $('reqCnt').hidden = !n; $('reqCnt').textContent = n + ' waiting';
     $('burgerDot').hidden = !n;
   }

@@ -68,6 +68,9 @@
     window.COURSE = course;
     window.LH_STORE = store();
     window.LH_DB = { db, uid };   // the course tools save private entries to learn_notes with this (db is null in test mode)
+    // The shared top bar (portal-shell.js) around this course's own controls. "All courses" moves into the Apps menu.
+    if (window.PortalShell) window.PortalShell.start({ db, header:document.querySelector('#cp .cp-top'), page:'learn', brand:document.querySelector('#cp .cp-brand'),
+      hide:[document.getElementById('cpBack')], test:window.PSY_TEST ? { role:window.PSY_OWNER ? 'owner' : 'agent', keys:['learn', 'psy'] } : null });
     const s = document.createElement('script'); s.src = 'player.js?v=4';
     s.onerror = () => stop('loadFail');
     document.body.appendChild(s);

@@ -246,6 +246,9 @@
       '</header>' +
       '<div class="cp-body"><aside class="cp-side" id="cpSide" aria-label="Course content"></aside><div class="cp-scrim" id="cpScrim" hidden></div>' +
       '<div class="cp-main" id="cpMain"></div></div>';
+    // The shared top bar (portal-shell.js): Apps menu, and the account button shows the person's name. "All courses" moves into the Apps menu.
+    if (window.PortalShell) window.PortalShell.start({ db, header:appEl.querySelector('.cp-top'), page:'learn', brand:appEl.querySelector('.cp-brand'),
+      me:appEl.querySelector('.cp-acct'), hide:[appEl.querySelector('.cp-back')] });
     $('cpMenu').addEventListener('click', () => setSide(!document.body.classList.contains('side-open')));
     $('cpScrim').addEventListener('click', () => setSide(false, true));
     setSide(false);
