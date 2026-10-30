@@ -1,0 +1,131 @@
+ok   390 track: shows its data
+ok   390 track: no old-look fonts or colors
+ok   390 track: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   390 track: nothing wider than the screen (390px)
+ok   390 track: no console errors
+ok   390 live: shows its data
+ok   390 live: no old-look fonts or colors
+ok   390 live: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   390 live: nothing wider than the screen (390px)
+ok   390 live: no console errors
+ok   390 requests: shows its data
+ok   390 requests: no old-look fonts or colors
+ok   390 requests: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   390 requests: nothing wider than the screen (390px)
+ok   390 requests: no console errors
+ok   390 visits: shows its data
+ok   390 visits: no old-look fonts or colors
+ok   390 visits: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   390 visits: nothing wider than the screen (390px)
+ok   390 visits: no console errors
+ok   390 emails: shows its data
+ok   390 emails: no old-look fonts or colors
+ok   390 emails: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   390 emails: nothing wider than the screen (390px)
+ok   390 emails: no console errors
+ok   390 review: shows its data
+ok   390 review: no old-look fonts or colors
+ok   390 review: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   390 review: nothing wider than the screen (390px)
+ok   390 review: no console errors
+ok   390 settings: shows its data
+ok   390 settings: no old-look fonts or colors
+ok   390 settings: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   390 settings: nothing wider than the screen (390px)
+ok   390 settings: no console errors
+ok   390 update-toast: shows its data
+ok   390 update-toast: no old-look fonts or colors
+ok   390 update-toast: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   390 update-toast: nothing wider than the screen (390px)
+ok   390 update-toast: no console errors
+ok   390 cash-overview: shows its data
+ok   390 cash-overview: no old-look fonts or colors
+ok   390 cash-overview: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   390 cash-overview: nothing wider than the screen (390px)
+ok   390 cash-overview: no console errors
+ok   390 cash-income: shows its data
+ok   390 cash-income: no old-look fonts or colors
+ok   390 cash-income: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   390 cash-income: nothing wider than the screen (390px)
+ok   390 cash-income: no console errors
+ok   390 cash-expense: shows its data
+ok   390 cash-expense: no old-look fonts or colors
+ok   390 cash-expense: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   390 cash-expense: nothing wider than the screen (390px)
+ok   390 cash-expense: no console errors
+ok   390 cash-team: shows its data
+ok   390 cash-team: no old-look fonts or colors
+ok   390 cash-team: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   390 cash-team: nothing wider than the screen (390px)
+ok   390 cash-team: no console errors
+ok   390 cash-mytime: shows its data
+ok   390 cash-mytime: no old-look fonts or colors
+ok   390 cash-mytime: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   390 cash-mytime: nothing wider than the screen (390px)
+ok   390 cash-mytime: no console errors
+ok   1440 track: shows its data
+ok   1440 track: no old-look fonts or colors
+ok   1440 track: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   1440 track: nothing wider than the screen (1440px)
+ok   1440 track: no console errors
+ok   1440 live: shows its data
+ok   1440 live: no old-look fonts or colors
+ok   1440 live: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   1440 live: nothing wider than the screen (1440px)
+ok   1440 live: no console errors
+ok   1440 requests: shows its data
+ok   1440 requests: no old-look fonts or colors
+ok   1440 requests: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   1440 requests: nothing wider than the screen (1440px)
+ok   1440 requests: no console errors
+ok   1440 visits: shows its data
+ok   1440 visits: no old-look fonts or colors
+ok   1440 visits: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   1440 visits: nothing wider than the screen (1440px)
+ok   1440 visits: no console errors
+ok   1440 emails: shows its data
+ok   1440 emails: no old-look fonts or colors
+ok   1440 emails: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   1440 emails: nothing wider than the screen (1440px)
+ok   1440 emails: no console errors
+ok   1440 review: shows its data
+ok   1440 review: no old-look fonts or colors
+ok   1440 review: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   1440 review: nothing wider than the screen (1440px)
+ok   1440 review: no console errors
+ok   1440 settings: shows its data
+ok   1440 settings: no old-look fonts or colors
+ok   1440 settings: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   1440 settings: nothing wider than the screen (1440px)
+ok   1440 settings: no console errors
+ok   1440 update-toast: shows its data
+ok   1440 update-toast: no old-look fonts or colors
+ok   1440 update-toast: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   1440 update-toast: nothing wider than the screen (1440px)
+ok   1440 update-toast: no console errors
+ok   1440 cash-overview: shows its data
+ok   1440 cash-overview: no old-look fonts or colors
+ok   1440 cash-overview: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   1440 cash-overview: nothing wider than the screen (1440px)
+ok   1440 cash-overview: no console errors
+ok   1440 cash-income: shows its data
+ok   1440 cash-income: no old-look fonts or colors
+ok   1440 cash-income: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   1440 cash-income: nothing wider than the screen (1440px)
+ok   1440 cash-income: no console errors
+ok   1440 cash-expense: shows its data
+ok   1440 cash-expense: no old-look fonts or colors
+ok   1440 cash-expense: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   1440 cash-expense: nothing wider than the screen (1440px)
+ok   1440 cash-expense: no console errors
+ok   1440 cash-team: shows its data
+ok   1440 cash-team: no old-look fonts or colors
+ok   1440 cash-team: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   1440 cash-team: nothing wider than the screen (1440px)
+ok   1440 cash-team: no console errors
+ok   1440 cash-mytime: shows its data
+ok   1440 cash-mytime: no old-look fonts or colors
+ok   1440 cash-mytime: light only: no dark-mode switch, and a saved dark choice is ignored
+ok   1440 cash-mytime: nothing wider than the screen (1440px)
+ok   1440 cash-mytime: no console errors
+all passed
