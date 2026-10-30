@@ -1,0 +1,168 @@
+ok   390 app-owner: one Apps button
+ok   390 app-owner: nothing wider than the screen (390px)
+ok   390 app-owner: bar height 60px
+ok   390 app-owner: Enter opens the menu and moves focus into it
+ok   390 app-owner: lists Deal CRM, Land calculator, House calculator, Learning Hub, Review center, Team and shifts, Invite and access, Cash
+     notes: 4 waiting, 1 request, Only you · current: Team and shifts
+ok   390 app-owner: menu fits on screen
+ok   390 app-owner: Escape closes it and focus goes back to Apps
+ok   390 app-owner: bar buttons at least 40px (the course language buttons are the page's own, left for round 6)
+ok   390 app-owner: no console errors
+ok   390 app-manager: one Apps button
+ok   390 app-manager: nothing wider than the screen (390px)
+ok   390 app-manager: bar height 60px
+ok   390 app-manager: Enter opens the menu and moves focus into it
+ok   390 app-manager: lists My hours, Deal CRM, Land calculator, House calculator, Learning Hub, Team and shifts
+     notes: 1 request · current: Team and shifts
+ok   390 app-manager: menu fits on screen
+ok   390 app-manager: Escape closes it and focus goes back to Apps
+ok   390 app-manager: bar buttons at least 40px (the course language buttons are the page's own, left for round 6)
+ok   390 app-manager: no console errors
+ok   390 app-agent: one Apps button
+ok   390 app-agent: nothing wider than the screen (390px)
+ok   390 app-agent: bar height 60px
+ok   390 app-agent: Enter opens the menu and moves focus into it
+ok   390 app-agent: lists My hours, Deal CRM, Land calculator, House calculator, Learning Hub
+     notes: none · current: My hours
+ok   390 app-agent: menu fits on screen
+ok   390 app-agent: Escape closes it and focus goes back to Apps
+ok   390 app-agent: bar buttons at least 40px (the course language buttons are the page's own, left for round 6)
+ok   390 app-agent: no console errors
+ok   390 app-off: no Apps menu before we know who this is
+ok   390 app-off: no console errors
+ok   390 hub-owner: one Apps button
+ok   390 hub-owner: nothing wider than the screen (390px)
+ok   390 hub-owner: bar height 60px
+ok   390 hub-owner: Enter opens the menu and moves focus into it
+ok   390 hub-owner: lists Deal CRM, Land calculator, House calculator, Learning Hub, Review center, Team and shifts, Invite and access, Cash
+     notes: 4 waiting, 1 request, Only you · current: Learning Hub
+ok   390 hub-owner: menu fits on screen
+ok   390 hub-owner: Escape closes it and focus goes back to Apps
+ok   390 hub-owner: bar buttons at least 40px (the course language buttons are the page's own, left for round 6)
+ok   390 hub-owner: no console errors
+ok   390 hub-agent: one Apps button
+ok   390 hub-agent: nothing wider than the screen (390px)
+ok   390 hub-agent: bar height 60px
+ok   390 hub-agent: Enter opens the menu and moves focus into it
+ok   390 hub-agent: lists My hours, Deal CRM, Land calculator, House calculator, Learning Hub
+     notes: none · current: Learning Hub
+ok   390 hub-agent: menu fits on screen
+ok   390 hub-agent: Escape closes it and focus goes back to Apps
+ok   390 hub-agent: bar buttons at least 40px (the course language buttons are the page's own, left for round 6)
+ok   390 hub-agent: no console errors
+ok   390 mkt-agent: one Apps button
+ok   390 mkt-agent: nothing wider than the screen (390px)
+ok   390 mkt-agent: bar height 60px
+ok   390 mkt-agent: Enter opens the menu and moves focus into it
+ok   390 mkt-agent: lists My hours, Deal CRM, Land calculator, House calculator, Learning Hub
+     notes: none · current: Learning Hub
+ok   390 mkt-agent: menu fits on screen
+ok   390 mkt-agent: Escape closes it and focus goes back to Apps
+ok   390 mkt-agent: bar buttons at least 40px (the course language buttons are the page's own, left for round 6)
+ok   390 mkt-agent: no console errors
+ok   390 psy-owner: one Apps button
+ok   390 psy-owner: nothing wider than the screen (390px)
+ok   390 psy-owner: bar height 60px
+ok   390 psy-owner: Enter opens the menu and moves focus into it
+ok   390 psy-owner: lists Deal CRM, Land calculator, House calculator, Learning Hub, Review center, Team and shifts, Invite and access, Cash
+     notes: Only you · current: Learning Hub
+ok   390 psy-owner: menu fits on screen
+ok   390 psy-owner: Escape closes it and focus goes back to Apps
+ok   390 psy-owner: bar buttons at least 40px (the course language buttons are the page's own, left for round 6)
+ok   390 psy-owner: no console errors
+ok   390 acq-agent: one Apps button
+ok   390 acq-agent: nothing wider than the screen (390px)
+ok   390 acq-agent: bar height 60px
+ok   390 acq-agent: Enter opens the menu and moves focus into it
+ok   390 acq-agent: lists My hours, Deal CRM, Land calculator, House calculator, Learning Hub
+     notes: none · current: Learning Hub
+ok   390 acq-agent: menu fits on screen
+ok   390 acq-agent: Escape closes it and focus goes back to Apps
+ok   390 acq-agent: bar buttons at least 40px (the course language buttons are the page's own, left for round 6)
+ok   390 acq-agent: no console errors
+ok   390 acq-signedout: no Apps menu before we know who this is
+ok   390 acq-signedout: no console errors
+ok   1440 app-owner: one Apps button
+ok   1440 app-owner: nothing wider than the screen (1440px)
+ok   1440 app-owner: bar height 60px
+ok   1440 app-owner: Enter opens the menu and moves focus into it
+ok   1440 app-owner: lists Deal CRM, Land calculator, House calculator, Learning Hub, Review center, Team and shifts, Invite and access, Cash
+     notes: 4 waiting, 1 request, Only you · current: Team and shifts
+ok   1440 app-owner: menu fits on screen
+ok   1440 app-owner: Escape closes it and focus goes back to Apps
+ok   1440 app-owner: bar buttons at least 40px (the course language buttons are the page's own, left for round 6)
+ok   1440 app-owner: no console errors
+ok   1440 app-manager: one Apps button
+ok   1440 app-manager: nothing wider than the screen (1440px)
+ok   1440 app-manager: bar height 60px
+ok   1440 app-manager: Enter opens the menu and moves focus into it
+ok   1440 app-manager: lists My hours, Deal CRM, Land calculator, House calculator, Learning Hub, Team and shifts
+     notes: 1 request · current: Team and shifts
+ok   1440 app-manager: menu fits on screen
+ok   1440 app-manager: Escape closes it and focus goes back to Apps
+ok   1440 app-manager: bar buttons at least 40px (the course language buttons are the page's own, left for round 6)
+ok   1440 app-manager: no console errors
+ok   1440 app-agent: one Apps button
+ok   1440 app-agent: nothing wider than the screen (1440px)
+ok   1440 app-agent: bar height 60px
+ok   1440 app-agent: Enter opens the menu and moves focus into it
+ok   1440 app-agent: lists My hours, Deal CRM, Land calculator, House calculator, Learning Hub
+     notes: none · current: My hours
+ok   1440 app-agent: menu fits on screen
+ok   1440 app-agent: Escape closes it and focus goes back to Apps
+ok   1440 app-agent: bar buttons at least 40px (the course language buttons are the page's own, left for round 6)
+ok   1440 app-agent: no console errors
+ok   1440 app-off: no Apps menu before we know who this is
+ok   1440 app-off: no console errors
+ok   1440 hub-owner: one Apps button
+ok   1440 hub-owner: nothing wider than the screen (1440px)
+ok   1440 hub-owner: bar height 60px
+ok   1440 hub-owner: Enter opens the menu and moves focus into it
+ok   1440 hub-owner: lists Deal CRM, Land calculator, House calculator, Learning Hub, Review center, Team and shifts, Invite and access, Cash
+     notes: 4 waiting, 1 request, Only you · current: Learning Hub
+ok   1440 hub-owner: menu fits on screen
+ok   1440 hub-owner: Escape closes it and focus goes back to Apps
+ok   1440 hub-owner: bar buttons at least 40px (the course language buttons are the page's own, left for round 6)
+ok   1440 hub-owner: no console errors
+ok   1440 hub-agent: one Apps button
+ok   1440 hub-agent: nothing wider than the screen (1440px)
+ok   1440 hub-agent: bar height 60px
+ok   1440 hub-agent: Enter opens the menu and moves focus into it
+ok   1440 hub-agent: lists My hours, Deal CRM, Land calculator, House calculator, Learning Hub
+     notes: none · current: Learning Hub
+ok   1440 hub-agent: menu fits on screen
+ok   1440 hub-agent: Escape closes it and focus goes back to Apps
+ok   1440 hub-agent: bar buttons at least 40px (the course language buttons are the page's own, left for round 6)
+ok   1440 hub-agent: no console errors
+ok   1440 mkt-agent: one Apps button
+ok   1440 mkt-agent: nothing wider than the screen (1440px)
+ok   1440 mkt-agent: bar height 60px
+ok   1440 mkt-agent: Enter opens the menu and moves focus into it
+ok   1440 mkt-agent: lists My hours, Deal CRM, Land calculator, House calculator, Learning Hub
+     notes: none · current: Learning Hub
+ok   1440 mkt-agent: menu fits on screen
+ok   1440 mkt-agent: Escape closes it and focus goes back to Apps
+ok   1440 mkt-agent: bar buttons at least 40px (the course language buttons are the page's own, left for round 6)
+ok   1440 mkt-agent: no console errors
+ok   1440 psy-owner: one Apps button
+ok   1440 psy-owner: nothing wider than the screen (1440px)
+ok   1440 psy-owner: bar height 60px
+ok   1440 psy-owner: Enter opens the menu and moves focus into it
+ok   1440 psy-owner: lists Deal CRM, Land calculator, House calculator, Learning Hub, Review center, Team and shifts, Invite and access, Cash
+     notes: Only you · current: Learning Hub
+ok   1440 psy-owner: menu fits on screen
+ok   1440 psy-owner: Escape closes it and focus goes back to Apps
+ok   1440 psy-owner: bar buttons at least 40px (the course language buttons are the page's own, left for round 6)
+ok   1440 psy-owner: no console errors
+ok   1440 acq-agent: one Apps button
+ok   1440 acq-agent: nothing wider than the screen (1440px)
+ok   1440 acq-agent: bar height 60px
+ok   1440 acq-agent: Enter opens the menu and moves focus into it
+ok   1440 acq-agent: lists My hours, Deal CRM, Land calculator, House calculator, Learning Hub
+     notes: none · current: Learning Hub
+ok   1440 acq-agent: menu fits on screen
+ok   1440 acq-agent: Escape closes it and focus goes back to Apps
+ok   1440 acq-agent: bar buttons at least 40px (the course language buttons are the page's own, left for round 6)
+ok   1440 acq-agent: no console errors
+ok   1440 acq-signedout: no Apps menu before we know who this is
+ok   1440 acq-signedout: no console errors
