@@ -399,4 +399,45 @@ html[data-theme="dark"] .av.owner{ background:var(--brand-gold, #E3AA35); color:
 .app-bar .me.has-photo{ background:var(--p-soft); }
 .app-bar .me:focus-visible, .app-bar .burger:focus-visible, .app-bar .theme-toggle:focus-visible{ outline:2px solid var(--p-accent); outline-offset:2px; }
 html body header.app-bar h1.p-name{ font:800 19px/1.2 var(--p-display) !important; letter-spacing:0; text-transform:none; color:var(--p-ink); }
-@media (max-width:640px){ .app-bar{ gap:8px; padding:0 12px; } .app-bar .p-name{ font-size:17px; } }
+@media (max-width:640px){ .app-bar{ gap:6px; padding:0 10px; } .app-bar .p-name{ font-size:17px; } }
+
+/* ---------- round 4: the homes (#pView) and the dark sidebar ----------
+   hub.css sets every h1, h2, h3 here in Bodoni with !important (html body :is(h1, h2, h3...)). These rules use ids so the
+   portal fonts win: Bricolage Grotesque for headings, Inter for card titles and text. */
+html body.p-viewing{ background:var(--p-paper); }
+html body #pView{ min-height:calc(100vh - var(--p-top)); }
+html body #pView :is(h1, h2, h3){ font-family:var(--p-display) !important; letter-spacing:-.01em; text-transform:none; }
+html body #pView .p-card-head h2, html body #pView .p-cont-txt b{ font-family:var(--p-body) !important; letter-spacing:0; }
+html body #pView :focus-visible{ outline:2px solid var(--p-accent); outline-offset:2px; }
+html body #pView a.p-row, html body #pView a.p-area, html body #pView a.p-cont{ color:var(--p-ink); }
+html body #pView .p-btn{ color:var(--p-on-accent); }
+html body header.app-bar h1#title.p-name{ font-family:var(--p-display) !important; font-weight:800; font-size:19px; letter-spacing:0; text-transform:none; color:var(--p-ink); }
+
+/* the drawer is now the dark sidebar (screen 5): groups People, Learning, Deals, Money, Site */
+html body #drawer{ background:var(--p-dark); border-right:0; color:#E6E7EA; padding:6px 0 12px; font-family:var(--p-body); }
+html body #drawer #drawName, html body #drawer #drawWho{ display:none; }
+html body #drawer .mi{ min-height:var(--p-tap); padding:0 20px; gap:12px; border:0; border-left:3px solid transparent; border-radius:0; color:#E6E7EA; font:500 15px/1.2 var(--p-body) !important; background:none; }
+html body #drawer .mi .i{ width:18px; height:18px; color:var(--p-on-dark3); }
+html body #drawer .mi:hover{ background:var(--p-dark2); color:#fff; border-left-color:transparent; }
+html body #drawer .mi:hover .i{ color:var(--p-on-dark2); }
+html body #drawer .mi.on{ background:var(--p-dark2); color:#fff; border-left:3px solid var(--p-accent-hi); padding-left:20px; font-family:var(--p-body) !important; font-style:normal; }
+html body #drawer .mi.on .i{ color:var(--p-accent-hi); }
+html body #drawer .mi.is-off{ color:var(--p-on-dark3); cursor:default; }
+html body #drawer .mi.is-off:hover{ background:none; }
+html body #drawer .mi .cnt, html body #drawer .mi .cnt.due{ min-width:22px; height:22px; padding:0 7px; display:inline-flex; align-items:center; justify-content:center; border-radius:99px; background:var(--p-accent-hi); color:#fff; font:700 12px/1 var(--p-body) !important; letter-spacing:0; }
+html body #drawer .sec{ margin:18px 0 4px; padding:0 20px; color:var(--p-accent-hi); font:700 11px/1.4 var(--p-body); letter-spacing:.14em; text-transform:uppercase; }
+html body #drawer .mi-tog{ color:var(--p-on-dark3); width:var(--p-tap); height:var(--p-tap); }
+html body #drawer .mi-tog:hover{ background:var(--p-dark2); color:#fff; }
+html body #drawer .sub .mi{ padding-left:50px; font-size:14px !important; color:var(--p-on-dark2); }
+html body #drawer .bottom{ border-top:1px solid var(--p-dark-line); margin-top:auto; padding-top:8px; }
+html body #drawer .bottom .mi{ color:var(--p-on-dark2); }
+html body #drawer :focus-visible{ outline:2px solid var(--p-accent-hi); outline-offset:-2px; }
+@media (min-width:1100px){
+  body:has(#vApp:not([hidden])):has(#drawer:not([hidden])) .drawer{ top:var(--p-top); width:260px; }
+  body:has(#vApp:not([hidden])):has(#drawer:not([hidden])) #vApp{ padding-left:260px; }
+  body:has(#vApp:not([hidden])):has(#drawer:not([hidden])) #vApp > .app-bar{ margin-left:-260px; }
+}
+@media (max-width:640px){
+  .app-bar .theme-toggle{ display:none; }
+  .app-bar:has(.p-mode) .p-name{ display:none; }
+}

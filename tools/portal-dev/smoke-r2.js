@@ -19,7 +19,7 @@ const menu = async p => { if (await p.isVisible('#burger')) await p.click('#burg
 const T = [
   { name:'agent-menu', url:'/app/', init:{ SB_SESSION:U, SB_RPC:memberRpc({ role:'agent', keys:['course','deals','learn'], needs_code:[] }) },
     check: menu,
-    want: s => /Learning Hub/.test(s) && /Land calculator/.test(s) && !/Live now/.test(s) && !/Invite/.test(s) },
+    want: s => s === '' },   // round 4: agents have no sidebar; their areas are on the Team home (homes-r4.js checks those)
   { name:'manager-menu', url:'/app/', init:{ SB_SESSION:U, SB_RPC:memberRpc({ role:'manager', keys:['course','deals','learn','live','requests','team'], needs_code:['team'] }) },
     check: menu,
     want: s => /Live now/.test(s) && /Missed-shift/.test(s) && /Team/.test(s) && !/Income/.test(s) && !/Invite/.test(s) },
