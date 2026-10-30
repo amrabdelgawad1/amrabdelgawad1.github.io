@@ -1,0 +1,108 @@
+ok   390 owner-admin: nothing wider than the screen (390px)
+ok   390 owner-admin: Amr lands on the Admin overview
+ok   390 owner-admin: page name in Bricolage Grotesque (was Bodoni): "Bricolage Grotesque"
+ok   390 owner-admin: hero heading in Bricolage Grotesque
+ok   390 owner-admin: ADMIN label shows
+ok   390 owner-admin: Apps button shows
+ok   390 owner-admin: portal corners are round (not the old square look)
+ok   390 owner-admin: switch is on Admin
+ok   390 owner-admin: overview numbers: 3 things (2 reviews, 1 request), 1,234 visits, Zoho link
+ok   390 owner-admin: boxes People, Learning, Deals, Money, Site
+ok   390 owner-admin: tap targets at least 40px
+ok   390 owner-admin: no console errors
+ok   390 owner-portal: nothing wider than the screen (390px)
+ok   390 owner-portal: switch is on Portal
+ok   390 owner-portal: greeting and things waiting
+ok   390 owner-portal: six area cards
+ok   390 owner-portal: waiting list: reviews and requests
+ok   390 owner-portal: tap targets at least 40px
+ok   390 owner-portal: no console errors
+ok   390 owner-oldlinks: nothing wider than the screen (390px)
+ok   390 owner-oldlinks: old link #people still opens Invite and access
+ok   390 owner-oldlinks: old link #review still opens the Review center
+ok   390 owner-oldlinks: old link #learn still goes to the Learning Hub
+ok   390 owner-oldlinks: tap targets at least 40px
+ok   390 owner-oldlinks: no console errors
+ok   390 owner-progress: nothing wider than the screen (390px)
+ok   390 owner-progress: learner progress table, pass counts only
+ok   390 owner-progress: tap targets at least 40px
+ok   390 owner-progress: no console errors
+ok   390 manager-home: nothing wider than the screen (390px)
+ok   390 manager-home: manager lands on the Team home
+ok   390 manager-home: no ADMIN label or switch (Amr only)
+ok   390 manager-home: manager areas: Team and shifts with 1 request, Learner progress
+ok   390 manager-home: manager sees learner progress
+ok   390 manager-home: tap targets at least 40px
+ok   390 manager-home: no console errors
+ok   390 agent-home: nothing wider than the screen (390px)
+ok   390 agent-home: agent lands on the Team home
+ok   390 agent-home: no sidebar or menu button for agents
+ok   390 agent-home: hero: name and clock state
+ok   390 agent-home: continue learning: Acquisitions module 2, 7%
+ok   390 agent-home: areas: My deals, Learning Hub, My hours, Calculators
+ok   390 agent-home: locked courses listed
+ok   390 agent-home: hero heading in Bricolage Grotesque
+ok   390 agent-home: Clock in starts the shift (same code as the tracker) and the button turns to Clock out
+ok   390 agent-home: an agent opening #live goes back to the Team home
+ok   390 agent-home: old link #track still opens My hours
+ok   390 agent-home: tap targets at least 40px
+ok   390 agent-home: no console errors
+ok   390 agent-nocompany: nothing wider than the screen (390px)
+ok   390 agent-nocompany: no company yet: says so, no clock button
+ok   390 agent-nocompany: tap targets at least 40px
+ok   390 agent-nocompany: no console errors
+ok   1440 owner-admin: nothing wider than the screen (1440px)
+ok   1440 owner-admin: Amr lands on the Admin overview
+ok   1440 owner-admin: page name in Bricolage Grotesque (was Bodoni): "Bricolage Grotesque"
+ok   1440 owner-admin: hero heading in Bricolage Grotesque
+ok   1440 owner-admin: ADMIN label shows
+ok   1440 owner-admin: Apps button shows
+ok   1440 owner-admin: portal corners are round (not the old square look)
+ok   1440 owner-admin: switch is on Admin
+ok   1440 owner-admin: overview numbers: 3 things (2 reviews, 1 request), 1,234 visits, Zoho link
+ok   1440 owner-admin: boxes People, Learning, Deals, Money, Site
+ok   1440 owner-admin: sidebar groups: Overview | People:Live now | People:Team and shifts | People:Missed-shift requests | People:Invite and access | Learning:Learning Hub | Learning:Learner progress | Learning:Review center | Deals:Deal CRM | Deals:Land calculator | Deals:House calculator | Money:Cash | Money:Income | Money:Expenses | Money:My time | Money:Payments (later) | Site:Visits | Site:Emails | Site:Zoho Campaigns
+ok   1440 owner-admin: tap targets at least 40px
+ok   1440 owner-admin: no console errors
+ok   1440 owner-portal: nothing wider than the screen (1440px)
+ok   1440 owner-portal: switch is on Portal
+ok   1440 owner-portal: greeting and things waiting
+ok   1440 owner-portal: six area cards
+ok   1440 owner-portal: waiting list: reviews and requests
+ok   1440 owner-portal: tap targets at least 40px
+ok   1440 owner-portal: no console errors
+ok   1440 owner-oldlinks: nothing wider than the screen (1440px)
+ok   1440 owner-oldlinks: old link #people still opens Invite and access
+ok   1440 owner-oldlinks: old link #review still opens the Review center
+ok   1440 owner-oldlinks: old link #learn still goes to the Learning Hub
+ok   1440 owner-oldlinks: tap targets at least 40px
+ok   1440 owner-oldlinks: no console errors
+ok   1440 owner-progress: nothing wider than the screen (1440px)
+ok   1440 owner-progress: learner progress table, pass counts only
+ok   1440 owner-progress: tap targets at least 40px
+ok   1440 owner-progress: no console errors
+ok   1440 manager-home: nothing wider than the screen (1440px)
+ok   1440 manager-home: manager lands on the Team home
+ok   1440 manager-home: no ADMIN label or switch (Amr only)
+ok   1440 manager-home: manager areas: Team and shifts with 1 request, Learner progress
+ok   1440 manager-home: smaller Admin side: Portal | My hours | People:Live now | People:Team and shifts | People:Missed-shift requests | Learning:Learning Hub | Learning:Learner progress | Deals:Deal CRM | Deals:Land calculator | Deals:House calculator
+ok   1440 manager-home: manager sees learner progress
+ok   1440 manager-home: tap targets at least 40px
+ok   1440 manager-home: no console errors
+ok   1440 agent-home: nothing wider than the screen (1440px)
+ok   1440 agent-home: agent lands on the Team home
+ok   1440 agent-home: no sidebar or menu button for agents
+ok   1440 agent-home: hero: name and clock state
+ok   1440 agent-home: continue learning: Acquisitions module 2, 7%
+ok   1440 agent-home: areas: My deals, Learning Hub, My hours, Calculators
+ok   1440 agent-home: locked courses listed
+ok   1440 agent-home: hero heading in Bricolage Grotesque
+ok   1440 agent-home: Clock in starts the shift (same code as the tracker) and the button turns to Clock out
+ok   1440 agent-home: an agent opening #live goes back to the Team home
+ok   1440 agent-home: old link #track still opens My hours
+ok   1440 agent-home: tap targets at least 40px
+ok   1440 agent-home: no console errors
+ok   1440 agent-nocompany: nothing wider than the screen (1440px)
+ok   1440 agent-nocompany: no company yet: says so, no clock button
+ok   1440 agent-nocompany: tap targets at least 40px
+ok   1440 agent-nocompany: no console errors
