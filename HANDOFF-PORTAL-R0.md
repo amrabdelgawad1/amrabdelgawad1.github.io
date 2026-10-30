@@ -40,7 +40,7 @@ where p.proname in ('decide_shift_request', 'deal_access_status', 'my_profile');
 
 ## What Amr must do
 
-Answer the five questions at the end of `PORTAL-MAP.md` (section 9). Question 1 (Money) and question 3 (agent defaults) block round 2.
+Nothing more. His answers are recorded in `PORTAL-MAP.md` section 9. Round 2 waits for the reviewer's database export above.
 
 ## Left or unsure
 

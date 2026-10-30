@@ -171,10 +171,11 @@ Public pages (`/`, `/cv/`, `/book/`, `/call/`, `/sample-report/`) are out of sco
 
 ---
 
-## 9. Questions for Amr
+## 9. Decisions from Amr (Oct 30)
 
-1. **Money switch.** Today a team member can be given a look-only Money view (and the Operator role gives it). In the new setup only you see Cash and payroll. Should anyone who has it today keep it, or does it go?
-2. **Scratch pad and drawings.** In the Psychology course, a learner's scratch pad and pen drawings are saved where you can read them (thought records and goal plans are already private). Should those become private too?
-3. **New agent defaults.** Should every current team member get Deal tools and the Acquisitions course now, as the Agent role says, or keep exactly what they have and only new people get the full Agent set? (My pick: keep what they have.)
-4. **Dark mode.** The app and Cash pages have a light/dark switch today. The new design is light only. Drop dark mode?
-5. **"Emails and sign-ups"** on the Admin overview: is "sign-ups" the newsletter list, or something else?
+1. **Money:** owner only. Operator becomes Manager without money. Round 2 does **not** drop `money` from anyone's `access`; the reviewer confirms names and removes it in the same SQL run. `portal_can('money')` returns true for the owner only, whatever `access` says.
+2. **Scratch pad and pen drawings:** private to the learner. Round 2 moves `pad:` and `ink:` out of anything Amr can read (or narrows the owner read on `learn_progress`). Amr and managers get learner progress only from a pass-count function.
+3. **Current team keeps exactly what they have.** Option A from section 6: a `not_given` list on today's members for any agent key they don't have. New invites get the full Agent set.
+4. **Dark mode:** dropped in restyled pages. All colors live as tokens in `portal.css` so dark mode can come back later.
+5. **"Sign-ups" removed.** The newsletter is in Zoho Campaigns, not Supabase. The Site box shows Visits and Team emails, plus a plain "Open Zoho Campaigns" link.
+6. **Screen 8:** follow the brief. No students in the members list; filters are All, Agents, Managers, Off.
