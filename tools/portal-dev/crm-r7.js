@@ -7,7 +7,7 @@
 // Checks: Amr sets the team passphrase from his old one, a rep moves onto it, a new rep joins with it, the team view
 // (Everyone / Only me / Pick people, view-only drawer), Amr changes it again, a change that races a save is refused
 // with nothing saved, a stale tab can't write a mix, the key and passphrase are never stored, and the layout at 390
-// and 1440 (no overflow, 44px targets, no em dashes, no console errors).
+// and 1440 (no overflow, 44px targets, no em dashes, no console errors), including the locked page at both widths.
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
 const { webcrypto:wc } = require('crypto');
@@ -144,6 +144,20 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   const text = p => p.evaluate(() => document.body.innerText);
   const shot = async (p, name) => { if (OUT) { fs.mkdirSync(OUT, { recursive:true }); await p.screenshot({ path:path.join(OUT, name + '.png'), fullPage:true }); } };
   const stored = p => p.evaluate(() => JSON.stringify({ l:Object.assign({}, localStorage), s:Object.assign({}, sessionStorage) }));
+  // While locked, the sidebar is hidden and the lock card must get the whole page: full width, centered, not squeezed
+  // into the empty sidebar column (bug fixed live on 2026-10-30: .crm-side[hidden]+.crm-main{grid-column:1/-1})
+  async function lockedLayout(p, label){
+    const r = await p.evaluate(() => {
+      const W = document.documentElement.clientWidth, g = document.getElementById('gate').getBoundingClientRect(), m = document.querySelector('.crm-main').getBoundingClientRect();
+      return { W, main:Math.round(m.width), gate:Math.round(g.width), mid:Math.round((g.left + g.right) / 2), side:document.getElementById('crmSide').hidden };
+    });
+    ok(r.side, label + ': the sidebar is hidden while locked');
+    ok(r.main >= r.W - 1, label + ': the page area uses the full width (' + r.main + ' of ' + r.W + 'px)');
+    ok(r.gate >= Math.min(620, r.W - 28) - 1, label + ': the lock card is full size (' + r.gate + 'px)');
+    ok(Math.abs(r.mid - r.W / 2) <= 2, label + ': the lock card is centered');
+    await shot(p, 'crm-locked-' + label.split(' ').pop());
+    await layout(p, label);
+  }
   async function layout(p, label){
     const r = await p.evaluate(() => {
       const W = document.documentElement.clientWidth, over = [], small = [];
@@ -160,6 +174,7 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   console.log('== Amr opens his CRM (his own passphrase, no team key yet)');
   let p = await open(OWNER);
   ok(/Your Deal CRM is locked/.test(await text(p)), 'locked gate first');
+  await lockedLayout(p, 'locked 1440');
   await unlock(p, 'wrong passphrase here');
   ok(/doesn’t open/.test(await p.textContent('#vErr')), 'a wrong passphrase is refused');
   await unlock(p, AMR_OLD);
@@ -210,6 +225,7 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
 
   console.log('== Rep 1 moves onto the team passphrase');
   p = await open(R1, 'aal1', 390);
+  await lockedLayout(p, 'locked 390');
   await unlock(p, REP1_OWN);
   ok(await p.isVisible('#mvP'), 'after unlocking with their own passphrase, the CRM asks them to move');
   await shot(p, 'crm-rep-move-390');
