@@ -277,7 +277,7 @@
       const r = await T().callAccess({ action:'invite', name, email, company_id:co, via });
       if (!r.error && role === 'manager') {
         // team-access makes them an Agent (the column default); the role is set right after, by Amr, and logged
-        const { error } = await T().db.from('members').update({ role:'manager' }).ilike('email', email);
+        const { error } = await T().db.from('members').update({ role:'manager' }).ilike('email', email.replace(/[\\%_]/g, '\\$&'));   // exact match, any case: _ and % are wildcards in ilike
         if (error) T().toast(first(name) + ' is invited as an Agent. Set Manager on their row.');
       }
       btn.removeAttribute('aria-busy');
