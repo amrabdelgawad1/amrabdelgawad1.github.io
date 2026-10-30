@@ -36,7 +36,9 @@ begin
   for c in
     select con.conname from pg_constraint con
      where con.conrelid = 'public.members'::regclass and con.contype = 'c'
-       and pg_get_constraintdef(con.oid) ~ '\mrole\M' and con.conname <> 'members_role_check'
+       and pg_get_constraintdef(con.oid) ~ '\mrole\M'
+       -- the live rule that only allowed 'member' is ALSO named members_role_check: drop it unless it's already the new one
+       and (con.conname <> 'members_role_check' or pg_get_constraintdef(con.oid) !~ 'manager')
   loop
     execute format('alter table public.members drop constraint %I', c.conname);
     raise notice 'members: dropped %', c.conname;

@@ -2,14 +2,14 @@
 -- copied from the reviewer's exports of Oct 30 2026 (DB-EXPORT-R2 and R2b). The owner's address is a fake one here.
 -- Runs after tools/course-dev/stubs.sql and the repo migrations, before the migration under test.
 
--- members, as live: role only allowed 'member', plus the Deal tools columns
+-- members, as live: role only allowed 'member' (the live rule is named members_role_check, the same name as the new one), plus the Deal tools columns
 alter table public.members add column if not exists role text not null default 'member';
 alter table public.members add column if not exists deals_until date;
 alter table public.members add column if not exists deals_mfa boolean not null default false;
 alter table public.members add column if not exists agent_id bigint;
 do $$ begin
-  if not exists (select 1 from pg_constraint where conrelid = 'public.members'::regclass and conname = 'members_role_live') then
-    alter table public.members add constraint members_role_live check (role = 'member');
+  if not exists (select 1 from pg_constraint where conrelid = 'public.members'::regclass and conname = 'members_role_check') then
+    alter table public.members add constraint members_role_check check (role = 'member');
   end if;
   if not exists (select 1 from pg_constraint where conrelid = 'public.members'::regclass and conname = 'members_access_check') then
     alter table public.members add constraint members_access_check
