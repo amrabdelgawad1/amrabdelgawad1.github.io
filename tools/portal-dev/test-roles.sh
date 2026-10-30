@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Round 2 database check on a throwaway local Postgres (needs Postgres 15+ binaries; nothing touches Supabase).
+# Round 2 and round 7 database checks on a throwaway local Postgres (needs Postgres 15+ binaries; nothing touches Supabase).
 #   bash tools/portal-dev/test-roles.sh
 # 1. course-dev stubs (auth, storage), every repo migration before the roles one, then live-stubs.sql (what the live
 #    database has that the repo doesn't, from the reviewer's exports), then today's team as sample people.
@@ -49,4 +49,9 @@ insert into public.shift_requests (user_id, name, status) values
  ('00000000-0000-0000-0000-000000000006', 'N day', 'pending');
 SQL
 echo "== checks"; P -f "$ROOT/tools/portal-dev/test-roles.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
+# ---------- round 7: the Deal CRM as a team, and the weekly board ----------
+MIG7="$ROOT/supabase/migrations/20261030160000_portal_deals_team.sql"
+echo "== round 7 migration, first run"; P -f "$MIG7"
+echo "== round 7 migration, second run"; P -f "$MIG7"
+echo "== round 7 checks"; P -f "$ROOT/tools/portal-dev/test-deals.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
 echo "== all checks passed"

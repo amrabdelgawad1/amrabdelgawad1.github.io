@@ -109,3 +109,27 @@ returns text language sql stable security definer set search_path to '' as $func
  left join public.members m on m.user_id = auth.uid() and m.active and 'deals' = any(m.access);
 $function$;
 grant execute on function public.has_access(text), public.decide_shift_request(bigint, boolean, text), public.deal_access_status() to authenticated;
+
+-- ---------- round 7 ----------
+-- shifts carry the optional numbers from the end-of-shift brief (cash/team.js reads them)
+alter table public.shifts add column if not exists dials integer;
+alter table public.shifts add column if not exists conversations integer;
+alter table public.shifts add column if not exists appointments integer;
+-- The Deal CRM tables. ASSUMED from the CRM's own calls (not exported yet): deal_logs is read by tool and saved with
+-- onConflict (user_id, tool); deal_followups is written as { deal_key, due } and cleared by user_id. Each person their
+-- own rows. The reviewer compares these with the live definitions before running round 7.
+create table if not exists public.deal_logs (
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  tool text not null, blob jsonb, updated_at timestamptz not null default now(),
+  unique (user_id, tool));
+create table if not exists public.deal_followups (
+  id bigint generated always as identity primary key,
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  deal_key text not null, due date);
+alter table public.deal_logs enable row level security;
+alter table public.deal_followups enable row level security;
+grant select, insert, update, delete on public.deal_logs, public.deal_followups to authenticated;
+drop policy if exists "deal_logs own rows" on public.deal_logs;
+create policy "deal_logs own rows" on public.deal_logs for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+drop policy if exists "deal_followups own rows" on public.deal_followups;
+create policy "deal_followups own rows" on public.deal_followups for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
