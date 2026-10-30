@@ -1,12 +1,13 @@
 /* Course player: laid out like a GoHighLevel course (top bar, course-content sidebar, lesson pane),
    in the Marketing course look: planning-board paper, one orange accent, Bricolage Grotesque + Inter. */
+/* The values come from /portal.css (loaded first); this page keeps its own names for them. */
 :root{
-  --paper:#F7F5F0; --grid:rgba(20,22,27,.05); --card:#FFFFFF; --ink:#14161B; --ink2:#3B3F47; --muted:#6B7079;
-  --line:#E4E1D9; --line2:#D3CFC4; --soft:#F1EEE7;
-  --accent:#C2410C; --accent-hi:#FF5A1F; --accent-soft:#FFF1EA; --on-accent:#FFFFFF;
-  --ok:#157347; --ok-soft:#EAF6EF; --no:#B42318; --no-soft:#FDEEEC;
-  --display:"Bricolage Grotesque", "Arial Black", system-ui, sans-serif; --body:"Inter", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
-  --r:10px; --side:316px; color-scheme:light;
+  --paper:var(--p-paper); --grid:rgba(20,22,27,.05); --card:var(--p-card); --ink:var(--p-ink); --ink2:var(--p-ink2); --muted:var(--p-muted);
+  --line:var(--p-line); --line2:var(--p-line2); --soft:var(--p-soft);
+  --accent:var(--p-accent); --accent-hi:var(--p-accent-hi); --accent-soft:var(--p-accent-soft); --on-accent:var(--p-on-accent);
+  --ok:var(--p-ok); --ok-soft:var(--p-ok-soft); --no:var(--p-no); --no-soft:var(--p-no-soft);
+  --display:var(--p-display); --body:var(--p-body);
+  --r:var(--p-r); --side:316px; color-scheme:light;
 }
 *{ box-sizing:border-box; }
 [hidden]{ display:none !important; }

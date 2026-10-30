@@ -1,17 +1,18 @@
 /* The Acquisitions course in the Learning Hub look (the Marketing and Psychology courses):
    paper ground, one orange accent, Bricolage Grotesque headings and Inter text, a top bar and a course-content sidebar.
    Loaded after course.css: it re-points course.css's colors and fonts, then adds the frame. */
+/* Values that match the portal come from /portal.css (loaded first). Here --body is a text color, not a font. */
 :root{
-  --bg:#F7F5F0; --card:#FFFFFF; --line:#E4E1D9; --track:#F1EEE7;
-  --ink:#14161B; --ink-2:#3B3F47; --muted:#6B7079; --faint:#6B7079; --body:#3B3F47;
-  --orange:#FF5A1F; --orange-btn:#C2410C; --orange-text:#C2410C; --orange-soft:#FFF1EA; --orange-softer:#FFF7F2; --orange-chip:#9A3412;
-  --hero:#14161B; --hero-2:#C9CCD3; --hero-num:#FF5A1F;
-  --ok-text:#157347; --ok-fill:#EAF6EF; --ok-line:#157347; --ok-soft:#EAF6EF;
-  --err-text:#B42318; --err-fill:#FDEEEC; --err-line:#B42318;
-  --chip:#F1EEE7; --chip-text:#3B3F47;
-  --display:"Bricolage Grotesque", "Arial Black", system-ui, sans-serif;
-  --sans:"Inter", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
-  --mono:"Inter", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --bg:var(--p-paper); --card:var(--p-card); --line:var(--p-line); --track:var(--p-soft);
+  --ink:var(--p-ink); --ink-2:var(--p-ink2); --muted:var(--p-muted); --faint:var(--p-muted); --body:var(--p-ink2);
+  --orange:var(--p-accent-hi); --orange-btn:var(--p-accent); --orange-text:var(--p-accent); --orange-soft:var(--p-accent-soft); --orange-softer:#FFF7F2; --orange-chip:var(--p-accent-deep);
+  --hero:var(--p-dark); --hero-2:#C9CCD3; --hero-num:var(--p-accent-hi);
+  --ok-text:var(--p-ok); --ok-fill:var(--p-ok-soft); --ok-line:var(--p-ok); --ok-soft:var(--p-ok-soft);
+  --err-text:var(--p-no); --err-fill:var(--p-no-soft); --err-line:var(--p-no);
+  --chip:var(--p-soft); --chip-text:var(--p-ink2);
+  --display:var(--p-display);
+  --sans:var(--p-body);
+  --mono:var(--p-body);
   --side:316px; --top:60px;
 }
 body{ font-family:var(--sans); font-size:15.5px; line-height:1.6; -webkit-font-smoothing:antialiased; }
