@@ -229,7 +229,7 @@
           row('Under contract', muted(String(dc.contract)), '/app/deals/')] : [row(UNLOCK, muted('Unlock'), '/app/deals/')])
           .concat([row('Land calculator', muted('Open'), '/land-calculator/'), row('House calculator', muted('Open'), '/house-calculator/')])) +
         box5('Money', 'Only you', [row('Cash this month', muted('Open'), '#overview'), row('Course payments', muted('Not set up yet'))]) +
-        box5('Site', 'Public pages', [row('Visits this week', muted(v == null ? 'Open' : v), '#visits'), row('Team emails', muted('Open'), '#emails'),
+        box5('Site', 'Public pages', [row('Visits this week', muted(v == null ? 'Open' : v), '#visits'), row('Team emails', muted('Open'), '#emails'), row('Logs', muted('Open'), '#logs'),
           row('Zoho Campaigns', muted('Open'), 'https://campaigns.zoho.com/', true)]) +
       '</div></div>';
   }

@@ -208,12 +208,32 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(true); });
   document.addEventListener('click', e => { if (!e.target.closest('.p-apps-wrap, .p-me-wrap')) closeAll(false); });
 
+  // ---------- error reports (Phase 0) ----------
+  // Errors this page hits go to log_app_error() (Amr reads them in /app > Logs). At most 5 per page load, each once,
+  // never form contents. Browser extensions' errors and cross-origin "Script error." are skipped.
+  let reported = null;
+  function reportErrors(db){
+    if (reported || !db || !db.rpc || window.PORTAL_TEST) return;
+    reported = new Set();
+    const send = (message, source, line, stack) => {
+      message = String(message || '').slice(0, 500);
+      if (!message || message === 'Script error.' || /ResizeObserver loop/.test(message) || /^(chrome|moz|safari)-extension:/.test(source || '')) return;
+      if (reported.has(message) || reported.size >= 5) return;
+      reported.add(message);
+      try { db.rpc('log_app_error', { p_page:location.pathname + location.hash.split('/')[0], p_message:message, p_source:String(source || '').replace(location.origin, ''),
+        p_line:Number(line) || null, p_stack:String(stack || '').slice(0, 2000), p_ua:navigator.userAgent.slice(0, 300) }).then(() => {}, () => {}); } catch(e) {}
+    };
+    window.addEventListener('error', e => { if (e && e.message) send(e.message, e.filename, e.lineno, e.error && e.error.stack); });
+    window.addEventListener('unhandledrejection', e => { const r = e && e.reason; send(r && r.message ? r.message : String(r), '', null, r && r.stack); });
+  }
+
   window.PortalShell = {
     // First call: draws the bar and loads who this is. Later calls with another header (a page that rebuilds its frame) reuse the data.
     start(o){
       opts = Object.assign({}, opts || {}, o);
       if (o.page) page = o.page;
       mount(o.header, o);
+      reportErrors(o.db);
       if (!loading) loading = load().then(drawAll, () => {});
       return loading;
     },

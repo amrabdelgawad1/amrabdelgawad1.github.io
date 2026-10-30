@@ -54,4 +54,9 @@ MIG7="$ROOT/supabase/migrations/20261030160000_portal_deals_team.sql"
 echo "== round 7 migration, first run"; P -f "$MIG7"
 echo "== round 7 migration, second run"; P -f "$MIG7"
 echo "== round 7 checks"; P -f "$ROOT/tools/portal-dev/test-deals.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
+# ---------- phase 0: logs ----------
+MIGL="$ROOT/supabase/migrations/20261031090000_portal_logs.sql"
+echo "== logs migration, first run"; P -f "$MIGL"
+echo "== logs migration, second run"; P -f "$MIGL"
+echo "== logs checks"; P -f "$ROOT/tools/portal-dev/test-logs.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
 echo "== all checks passed"
