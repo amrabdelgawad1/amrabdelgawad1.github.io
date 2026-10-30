@@ -12,6 +12,7 @@
 //     me,            an existing account button to keep (it keeps its own menu); otherwise the shell adds one with
 //                    "Go to the app" and "Sign out"
 //     admin,         true on the owner's /app page: shows the orange ADMIN label
+//     modes,         the owner's Portal / Admin switch on /app: { portal:'#portal', admin:'#admin', current:'admin' }
 //     test           test mode: { role, keys, needs_code, name, counts:{ review, requests } } instead of asking the database
 //   })
 // window.PORTAL_TEST (same shape as test) overrides everything, for checks without signing in (tools/portal-dev).
@@ -139,6 +140,12 @@
       const tag = document.createElement('span'); tag.className = 'p-admin-tag'; tag.textContent = 'Admin';
       after.after(tag); after = tag;
     }
+    if (o.modes) {
+      const nav = document.createElement('nav'); nav.className = 'p-mode'; nav.setAttribute('aria-label', 'Portal or Admin');
+      nav.innerHTML = '<a href="' + esc(o.modes.portal) + '" data-mode="portal">Portal</a><a href="' + esc(o.modes.admin) + '" data-mode="admin">Admin</a>';
+      after.after(nav); after = nav; b.modes = nav;
+      setMode(b, o.modes.current);
+    }
     // Apps button and menu
     const wrap = document.createElement('div'); wrap.className = 'p-apps-wrap';
     const id = 'pApps' + (bars.length + 1);
@@ -180,6 +187,7 @@
     if (b.meBtn) b.meBtn.setAttribute('aria-label', 'Your account' + (me.name ? ': ' + me.name : ''));
   }
   const drawAll = () => bars.forEach(draw);
+  function setMode(b, cur){ if (b.modes) b.modes.querySelectorAll('a').forEach(a => a.dataset.mode === cur ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')); }
 
   function toggle(b, open){
     if (open) closeAll();
@@ -211,6 +219,8 @@
     },
     // The page moved to another app (/app's hash routes)
     setPage(p){ page = p || ''; drawAll(); },
+    // The owner's Portal / Admin switch follows the page: 'portal' or 'admin'
+    setMode(cur){ bars.forEach(b => setMode(b, cur)); },
     // A page that already counted something tells the bar (no second query): setCount('requests', 2), setCount('review', 4)
     setCount(name, n){ counts[name] = Number(n) || 0; drawAll(); },
     // Counts changed (a request was decided, a review approved)

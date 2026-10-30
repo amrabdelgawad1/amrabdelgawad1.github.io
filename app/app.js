@@ -46,6 +46,9 @@
   window.TalentsApp = {
     db, toast, esc, initials,
     get role(){ return role; }, get user(){ return user; }, get profile(){ return profile; }, get access(){ return access; }, get me(){ return me; },
+    // For the Team home (portal-home.js): the clock as it is now, and its buttons (same rules as the tracker: the end-of-shift note and all)
+    clockState: () => ({ live, work: workNow() }),
+    clock: m => { const b = document.querySelector('#pTrack .ctl[data-m="' + m + '"]'); if (b) b.click(); },
     signOut: () => signOut(),
     agentsChanged: () => { if (canSee('team')) loadTeamMenu(); liveSig = ''; },
     setGoal: h => { weekGoal = Number(h) > 0 ? Number(h) : 0; drawGoal(); },
@@ -54,11 +57,14 @@
   const signedIn = () => { shell(); document.dispatchEvent(new Event('talents-signed-in')); };
   // The shared top bar (/portal-shell.js): logo, page name, Apps menu, the person's name; ADMIN label for Amr.
   // The menu button, the theme switch and the account circle (account.js) stay as they are.
-  const APP_OF = { track:'hours', live:'team', requests:'team', team:'team', people:'people', review:'review', overview:'cash', income:'cash', expense:'cash', mytime:'cash', learn:'learn' };
-  const pageNow = () => location.hash.slice(1).split('/')[0] || (role === 'owner' ? 'live' : 'track');
+  const APP_OF = { track:'hours', live:'team', requests:'team', team:'team', people:'people', review:'review', overview:'cash', income:'cash', expense:'cash', mytime:'cash', learn:'learn', progress:'learn' };
+  const pageNow = () => location.hash.slice(1).split('/')[0] || (role === 'owner' ? 'admin' : 'home');
+  // Amr's two sides of /app: the Portal view (#portal) and everything else (the Admin side)
+  const modeOf = p => p === 'portal' ? 'portal' : 'admin';
   function shell(){
     if (!window.PortalShell) return;
-    window.PortalShell.start({ db, header:document.querySelector('header.app-bar'), page:APP_OF[pageNow()] || '', name:$('title'), lead:$('burger'), me:$('me'), admin:role === 'owner' });
+    window.PortalShell.start({ db, header:document.querySelector('header.app-bar'), page:APP_OF[pageNow()] || '', name:$('title'), lead:$('burger'), me:$('me'), admin:role === 'owner',
+      modes:role === 'owner' ? { portal:'#portal', admin:'#admin', current:modeOf(pageNow()) } : null });
   }
 
   // ---------- sign in ----------
@@ -184,12 +190,13 @@
 
   async function startMember(){
     show('vApp');
-    const extra = access.length > 0;
-    if (location.hash && !extra) history.replaceState(null, '', location.pathname); // without extra access, team members have one page
-    $('burger').hidden = !extra; $('drawer').hidden = !extra;
+    // The sidebar is for people with team pages (managers, or Live now and the like as extras). Agents move around from
+    // their Team home and the Apps menu.
+    const side = access.some(k => ['live', 'requests', 'team', 'money'].includes(k));
+    $('burger').hidden = !side; $('drawer').hidden = !side;
     $('me').textContent = initials(profile.name); $('me').classList.remove('owner');
     $('title').textContent = 'Tracker';
-    $('pTrack').hidden = false; ['pLive', 'pPeople', 'pCash'].forEach(p => $(p).hidden = true);
+    ['pTrack', 'pLive', 'pPeople', 'pCash'].forEach(p => $(p).hidden = true);
     $('tCompany').textContent = profile.company_name || 'No company yet';
     // The clock lives in the database, so you can start on one device and stop on another
     const { data, error } = await db.from('live_status').select('*').eq('user_id', user.id).maybeSingle();
@@ -204,7 +211,7 @@
     loadHistory();
     loadRequests();
     loadFx().then(() => loadHistory());
-    if (extra) startMenu();
+    startMenu();
     signedIn();
   }
 
@@ -262,6 +269,7 @@
   }
 
   function drawClock(){
+    if (window.PortalHome) window.PortalHome.tick();
     drawGuard();
     drawGoal();
     const mode = live ? live.mode : 'off';
@@ -498,17 +506,22 @@
   // ======================================================================
   // Owner: menu, Live now, Invite and access, and the /cash pages
   // ======================================================================
-  const OWNER_PAGES = { live:'Live now', requests:'Missed-shift requests', emails:'Team emails', people:'Invite and access', visits:'Website visitors', learn:'Learning Hub', review:'Review center', mytime:'My time', overview:'Overview', team:'Team', income:'Income', expense:'Expenses', track:'Tracker' };
+  const OWNER_PAGES = { live:'Live now', requests:'Missed-shift requests', emails:'Team emails', people:'Invite and access', visits:'Website visitors', learn:'Learning Hub', review:'Review center', mytime:'My time', overview:'Cash', team:'Team and shifts', income:'Income', expense:'Expenses', track:'My hours',
+    home:'Portal', portal:'Portal', admin:'Admin', progress:'Learner progress' };   // the last four: portal-home.js
   // Which switch in Invite and access opens each page; "owner" pages are Amr's alone
-  const SECTION = { live:'live', requests:'requests', team:'team', overview:'money', income:'money', expense:'money', mytime:'owner', emails:'owner', people:'owner', visits:'owner', learn:'learn', review:'owner', track:'track' };
+  const SECTION = { live:'live', requests:'requests', team:'team', overview:'money', income:'money', expense:'money', mytime:'owner', emails:'owner', people:'owner', visits:'owner', learn:'learn', review:'owner', track:'track',
+    home:'home', portal:'owner', admin:'owner', progress:'progress' };
   const SECTION_NAMES = { live:'Live now', requests:'Missed-shift requests', team:'Team', money:'Money', deals:'Deal tools', learn:'Learning Hub', mkt:'Marketing course', psy:'Psychology course', course:'Acquisitions course' };
   // Course switches sit under Learning Hub: a course opens only when Learning Hub is on too.
   // New course? Add its switch here and in SECTION_NAMES, and give its track the same key in learn.js (TRACKS[].key).
   const COURSE_KEYS = ['mkt', 'psy', 'course'];
   // 'hub' is the Learning Hub menu link (/app/learn/): shown with Learning Hub or any course switched on
+  // home: the Team home, team members only. progress: Learner progress, Amr and managers.
   const canSee = sec => sec === 'hub' ? role === 'owner' || (role === 'member' && (access.includes('learn') || COURSE_KEYS.some(k => access.includes(k))))
+    : sec === 'home' ? role === 'member'
+    : sec === 'progress' ? role === 'owner' || (role === 'member' && !!me && me.role === 'manager')
     : role === 'owner' ? sec !== 'track' : role === 'member' && (sec === 'track' || access.includes(sec));
-  const hasMenu = () => role === 'owner' || (role === 'member' && access.length > 0);
+  const hasMenu = () => role === 'owner' || role === 'member';
   let companies = [];
 
   async function startOwner(){
@@ -525,6 +538,12 @@
   // Hiding is for tidiness; the database decides what each person can actually read.
   async function startMenu(){
     document.querySelectorAll('#drawer [data-sec]').forEach(el => el.hidden = !canSee(el.dataset.sec));
+    // a group heading shows only when something under it does
+    document.querySelectorAll('#drawer .sec').forEach(h => {
+      let n = h.nextElementSibling, any = false;
+      while (n && !n.matches('.sec, .bottom')) { if (!n.hidden && n.matches('.mi, .mi-row')) any = true; n = n.nextElementSibling; }
+      h.hidden = !any;
+    });
     if (role === 'member') {
       $('drawName').textContent = profile.name;
       $('drawWho').textContent = 'Can also see: ' + access.map(s => SECTION_NAMES[s]).filter(Boolean).join(', ');
@@ -570,16 +589,19 @@
     if (!hasMenu()) return;
     let [page, person] = location.hash.slice(1).split('/');
     if (page === 'learn' && !person) { location.replace('/app/learn/'); return; }   // the Learning Hub home is its own page now
-    if (!OWNER_PAGES[page] || !canSee(SECTION[page])) { page = role === 'owner' ? 'live' : 'track'; history.replaceState(null, '', '#' + page); }
+    if (!OWNER_PAGES[page] || !canSee(SECTION[page])) { page = role === 'owner' ? 'admin' : 'home'; history.replaceState(null, '', '#' + page); }
     const here = page + (page === 'team' && person ? '/' + person : '');
-    if (window.PortalShell) window.PortalShell.setPage(APP_OF[page] || '');
+    if (window.PortalShell) { window.PortalShell.setPage(APP_OF[page] || ''); window.PortalShell.setMode(modeOf(page)); }
+    const view = ['home', 'portal', 'admin', 'progress'].includes(page);
+    $('pView').hidden = !view; document.body.classList.toggle('p-viewing', view);
+    if (view && window.PortalHome) window.PortalHome.open(page); else if (window.PortalHome) window.PortalHome.close();
     $('title').textContent = OWNER_PAGES[page];
     markMenu();
     $('pTrack').hidden = page !== 'track';
     $('pLive').hidden = page !== 'live'; $('pPeople').hidden = page !== 'people'; $('pRequests').hidden = page !== 'requests';
     $('pVisits').hidden = page !== 'visits'; $('pEmails').hidden = page !== 'emails'; $('pLearn').hidden = page !== 'learn';
     $('pReview').hidden = page !== 'review';
-    const cashPage = !['live', 'people', 'requests', 'track', 'visits', 'emails', 'learn', 'review'].includes(page);
+    const cashPage = !['live', 'people', 'requests', 'track', 'visits', 'emails', 'learn', 'review', 'home', 'portal', 'admin', 'progress'].includes(page);
     $('pCash').hidden = !cashPage;
     // A person's Team page gets a bar for their payslips (Amr only; uploading is his)
     let who = ''; try { who = page === 'team' && person ? decodeURIComponent(person) : ''; } catch(e) {}
@@ -646,7 +668,7 @@
     people.sort((a, b) => order[a.mode] - order[b.mode] || a.m.name.localeCompare(b.m.name));
     const count = k => people.filter(p => p.mode === k).length;
     $('lRun').textContent = count('run'); $('lBrk').textContent = count('brk'); $('lPau').textContent = count('pau');
-    $('liveCnt').hidden = !count('run'); $('liveCnt').textContent = count('run') + ' working';
+    $('liveCnt').hidden = !count('run'); $('liveCnt').textContent = count('run'); $('liveCnt').setAttribute('aria-label', count('run') + ' working');
     const box = $('liveList');
     if (!people.length) { liveSig = ''; box.innerHTML = '<p class="empty">No team members yet. Invite someone from Invite and access.</p>'; return; }
     const ASKED = { run:'Resume', pau:'Pause', brk:'Break' };
@@ -770,7 +792,7 @@
     const { count } = await db.from('shift_requests').select('id', { count:'exact', head:true }).eq('status', 'pending');
     const n = count || 0;
     if (window.PortalShell) window.PortalShell.setCount('requests', n);
-    $('reqCnt').hidden = !n; $('reqCnt').textContent = n + ' waiting';
+    $('reqCnt').hidden = !n; $('reqCnt').textContent = n; $('reqCnt').setAttribute('aria-label', n + ' waiting');
     $('burgerDot').hidden = !n;
   }
   // ---------- Team emails: each agent's weekly email, checked by Amr before it goes out ----------

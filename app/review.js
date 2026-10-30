@@ -272,7 +272,7 @@
     const db = A().db; if (!db) return 0;
     const [u, w] = await Promise.all([db.from('hub_uploads').select('id', { count:'exact', head:true }).eq('status', 'waiting'), db.rpc('course_admin_waiting')]);
     const n = (u.count || 0) + ((w.data || []).length);
-    const el = $('reviewCnt'); if (el) { el.hidden = !n; el.textContent = n + ' waiting'; }
+    const el = $('reviewCnt'); if (el) { el.hidden = !n; el.textContent = n; el.setAttribute('aria-label', n + ' waiting'); }
     if (window.PortalShell) window.PortalShell.setCount('review', n);
     return n;
   }

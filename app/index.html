@@ -21,13 +21,13 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;0,6..96,900;1,6..96,500&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&display=swap">
-<link rel="stylesheet" href="/portal.css?v=2">
-<link rel="stylesheet" href="app.css?v=19" />
+<link rel="stylesheet" href="/portal.css?v=3">
+<link rel="stylesheet" href="app.css?v=20" />
 <link rel="stylesheet" href="../theme-switch.css?v=2">
 <link rel="stylesheet" href="../daylight-dark.css?v=2">
 <link rel="stylesheet" href="../ask.css?v=3">
 <link rel="stylesheet" href="../brand.css?v=2">
-<link rel="stylesheet" href="../hub.css?v=4">
+<link rel="stylesheet" href="../hub.css?v=5">
 <link rel="stylesheet" href="learn.css?v=4">
 <link rel="stylesheet" href="review.css?v=1">
 <script src="../theme.js?v=2"></script>
@@ -98,6 +98,9 @@
       <button type="button" class="me" id="me" aria-haspopup="menu" aria-expanded="false" aria-label="Your account: profile, settings, sign out">?</button>
     </header>
     <div class="notice" id="notice" hidden></div>
+
+    <!-- round 4: the Team home, Amr's Portal and Admin overview, Learner progress (portal-home.js) -->
+    <main id="pView" class="p-page p-viewmain" hidden><div class="p-main" id="pViewBody"></div></main>
 
     <!-- team member: tracker and own history -->
     <main class="pad" id="pTrack" hidden>
@@ -278,31 +281,39 @@
 
   <!-- menu: the owner sees everything, a team member only what Amr switched on -->
   <div class="shade" id="shade"></div>
-  <nav class="drawer" id="drawer" aria-label="Sections" hidden>
+    <nav class="drawer" id="drawer" aria-label="Sections" hidden>
     <h3 id="drawName">Amr Abdelgawad</h3><p class="who" id="drawWho">Owner · all access</p>
-    <a class="mi" href="#track" data-sec="track" hidden><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>My tracker</a>
+    <!-- Round 4: the Admin side (Amr) and the smaller one for managers, grouped like screen 5. Headings with nothing visible under them hide themselves (app.js). -->
+    <a class="mi" href="#admin" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Overview</a>
+    <a class="mi" href="#home" data-sec="home"><svg class="i" viewBox="0 0 24 24"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9.5h12V10"/></svg>Portal</a>
+    <a class="mi" href="#track" data-sec="track" hidden><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>My hours</a>
+    <p class="sec">People</p>
     <a class="mi" href="#live" data-sec="live"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>Live now<span class="cnt" id="liveCnt" hidden></span></a>
-    <a class="mi" href="#mytime" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>My time</a>
-    <a class="mi" href="#overview" data-sec="money"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Overview</a>
     <div class="mi-row" data-sec="team">
-      <a class="mi" href="#team"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.8-3.2 3-5 5.5-5s4.7 1.8 5.5 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.2.1 3.8 1.6 4.5 4.3"/></svg>Team</a>
+      <a class="mi" href="#team"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.8-3.2 3-5 5.5-5s4.7 1.8 5.5 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.2.1 3.8 1.6 4.5 4.3"/></svg>Team and shifts</a>
       <button class="mi-tog" type="button" id="teamTog" aria-expanded="false" aria-controls="teamSub" aria-label="Show team members" hidden><svg class="i" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
     </div>
     <div class="sub" id="teamSub" hidden></div>
-    <a class="mi" href="#income" data-sec="money"><svg class="i" viewBox="0 0 24 24"><path d="M17 7L7 17M7 9v8h8"/></svg>Income</a>
-    <a class="mi" href="#expense" data-sec="money"><svg class="i" viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>Expenses</a>
-    <a class="mi" href="#visits" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Website visitors</a>
-    <p class="sec" data-sec="hub">Learning</p>
+    <a class="mi" href="#requests" data-sec="requests"><svg class="i" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>Missed-shift requests<span class="cnt due" id="reqCnt" hidden></span></a>
+    <a class="mi" href="#people" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><circle cx="10" cy="8" r="3.2"/><path d="M4 19c.8-3.2 3.2-5 6-5s4.9 1.6 5.7 4"/><path d="M18 8v6M15 11h6"/></svg>Invite and access</a>
+    <p class="sec">Learning</p>
     <a class="mi" href="/app/learn/" data-sec="hub"><svg class="i" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Learning Hub</a>
+    <a class="mi" href="#progress" data-sec="progress"><svg class="i" viewBox="0 0 24 24"><path d="M5 19V11M12 19V5M19 19v-6"/></svg>Learner progress</a>
     <a class="mi" href="#review" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Review center<span class="cnt due" id="reviewCnt" hidden></span></a>
-    <p class="sec" data-sec="deals">Deal tools</p>
+    <p class="sec">Deals</p>
     <a class="mi" href="/app/deals/" data-sec="deals"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Deal CRM</a>
     <a class="mi" href="/land-calculator/" data-sec="deals"><svg class="i" viewBox="0 0 24 24"><path d="M3 18l5-7 4 5 3-4 6 6z"/><path d="M3 21h18"/></svg>Land calculator</a>
     <a class="mi" href="/house-calculator/" data-sec="deals"><svg class="i" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>House calculator</a>
-    <p class="sec" data-sec="requests">People</p>
-    <a class="mi" href="#requests" data-sec="requests"><svg class="i" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>Missed-shift requests<span class="cnt due" id="reqCnt" hidden></span></a>
-    <a class="mi" href="#emails" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5l8.5 6.5 8.5-6.5"/></svg>Team emails</a>
-    <a class="mi" href="#people" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><circle cx="10" cy="8" r="3.2"/><path d="M4 19c.8-3.2 3.2-5 6-5s4.9 1.6 5.7 4"/><path d="M18 8v6M15 11h6"/></svg>Invite and access</a>
+    <p class="sec">Money</p>
+    <a class="mi" href="#overview" data-sec="money"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Cash</a>
+    <a class="mi" href="#income" data-sec="money"><svg class="i" viewBox="0 0 24 24"><path d="M17 7L7 17M7 9v8h8"/></svg>Income</a>
+    <a class="mi" href="#expense" data-sec="money"><svg class="i" viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>Expenses</a>
+    <a class="mi" href="#mytime" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>My time</a>
+    <span class="mi is-off" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg>Payments (later)</span>
+    <p class="sec">Site</p>
+    <a class="mi" href="#visits" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Visits</a>
+    <a class="mi" href="#emails" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5l8.5 6.5 8.5-6.5"/></svg>Emails</a>
+    <a class="mi" href="https://campaigns.zoho.com/" target="_blank" rel="noopener" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/></svg>Zoho Campaigns</a>
     <div class="bottom">
       <button class="mi" type="button" id="backupBtn" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Download a backup</button>
       <button class="mi" type="button" id="installBtn" hidden><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Install the app</button>
@@ -319,12 +330,13 @@
 <script src="../tracker/config.js"></script>
 <script src="../ask.js?v=4"></script>
 <script src="../hub-art.js?v=1"></script>
-<script src="/portal-shell.js?v=1"></script>
-<script src="app.js?v=54"></script>
+<script src="/portal-shell.js?v=2"></script>
+<script src="app.js?v=55"></script>
+<script src="portal-home.js?v=1"></script>
 <script src="account.js?v=11"></script>
 <script src="course/marketing/course.js?v=20"></script>
 <script src="psychology/course.js?v=1"></script>
 <script src="learn.js?v=13"></script>
-<script src="review.js?v=4"></script>
+<script src="review.js?v=5"></script>
 </body>
 </html>
