@@ -303,7 +303,7 @@
       hero('Admin', 'Overview', need ? plural(need, 'thing') + ' need you today' : 'Nothing needs you right now',
         '<div class="p-stats">' + stat(revs.length, 'to review', '#review') + stat(r.length, r.length === 1 ? 'shift request' : 'shift requests', '#requests') + stat(live == null ? '–' : live, 'clocked in now', '#live') + '</div>') +
       '<div class="p-grid p-boxes">' +
-        box5('People', plural(team, 'person', 'people') + ' on the team', [row('Clocked in now', muted(live == null ? '–' : plural(live, 'person', 'people')), '#live'),
+        box5('People', plural(team, 'person', 'people') + ' on the team', [row('Team overview', muted('Open'), '#teamview'), row('Clocked in now', muted(live == null ? '–' : plural(live, 'person', 'people')), '#live'),
           row('Missed-shift requests', r.length ? pillR(r.length + ' waiting') : muted('None'), '#requests'),
           row('Calls today', muted(ct ? plural(sum('dials'), 'dial') + ' · ' + plural(sum('appointments'), 'appointment') : '–')),
           row('End-of-day reports', eodPill(eod.data)), row('Invite and access', muted('Manage'), '#people')]) +
@@ -435,8 +435,48 @@
     box().querySelector('.p-loading').outerHTML = body;
   }
 
+  // ======================================================================
+  // Phase 3: Team overview (#teamview). Amr, and managers who may see everyone's hours.
+  // One row per person: on shift, hours, calls, end-of-day notes missing, deals, learning, last active.
+  // portal_team_overview gives the numbers (never pay); course progress comes from the learner progress functions.
+  // ======================================================================
+  let tvDays = 7;
+  async function teamview(my){
+    const T = A(), db = T.db, owner = T.role === 'owner';
+    const pick = '<div class="p-seg" role="group" aria-label="Period">' + [[1, 'Today'], [7, '7 days'], [30, '30 days']].map(([n, t]) =>
+      '<button type="button" class="p-seg-b" data-tv="' + n + '" aria-pressed="' + (n === tvDays) + '">' + t + '</button>').join('') + '</div>';
+    box().innerHTML = '<div class="p-wrap">' + hero('People', 'Team overview', 'Calls, hours, deals and learning for everyone, on one screen.', pick) + '<div id="tvBody"><p class="p-loading">Loading…</p></div></div>';
+    box().querySelector('.p-seg').addEventListener('click', e => { const b = e.target.closest('[data-tv]'); if (!b || +b.dataset.tv === tvDays) return; tvDays = +b.dataset.tv; teamview(++run); });
+    const [r, lr] = await Promise.all([safe(db.rpc('portal_team_overview', { p_days:tvDays })), learners(db, owner)]);
+    if (my !== run) return;
+    if (r.error || !Array.isArray(r.data)) {
+      $('tvBody').innerHTML = '<p class="p-card p-empty">' + (/Not allowed/.test((r.error || {}).message || '') ? 'The team overview needs your authenticator code. Sign in again with it to see this page.' : 'Couldn’t load the team overview. Check your connection and try again.') + '</p>';
+      return;
+    }
+    const people = r.data.filter(x => x.role !== 'owner' && x.user_id !== T.user.id);
+    if (!people.length) { $('tvBody').innerHTML = '<p class="p-card p-empty">No one on the team yet. Invite people from Invite and access.</p>'; return; }
+    const courses = {};
+    lr.acq.forEach(x => (courses[x.userId] = courses[x.userId] || []).push('Acquisitions ' + (x.done || 0) + '/' + (x.total || 15)));
+    lr.hub.forEach(x => { const c = COURSES.find(k => k.id === x.course); if (c) (courses[x.user_id] = courses[x.user_id] || []).push(c.short + ' ' + (x.passed || 0) + '/' + c.total); });
+    const sum = k => people.reduce((a, x) => a + (Number(x[k]) || 0), 0), deals = people.some(x => x.deals_open != null);
+    const ago = d => { if (!d) return 'Not yet'; const m = (Date.now() - new Date(d).getTime()) / 60000; return m < 60 ? 'Within the hour' : m < 1440 ? Math.floor(m / 60) + 'h ago' : m < 2880 ? 'Yesterday' : Math.floor(m / 1440) + ' days ago'; };
+    const per = tvDays === 1 ? 'today' : 'in ' + tvDays + ' days';
+    const tile = (v, label, href) => '<a class="p-tile" href="' + href + '"><b>' + esc(v) + '</b><span>' + esc(label) + '</span></a>';
+    $('tvBody').innerHTML = '<div class="p-today p-tv-stats">' + tile(people.filter(x => x.on_shift).length, 'on shift now', '#live') + tile(hm(sum('worked_seconds')), 'hours ' + per, '#team') +
+        tile(sum('dials'), 'calls ' + per, '#teamview') + (deals ? tile(sum('deals_closed'), 'deals closed ' + per, '/app/deals/') : tile(sum('appointments') + sum('offers'), 'offers and appointments', '#teamview')) + '</div>' +
+      '<div class="p-tablewrap"><table class="p-table p-tv"><thead><tr><th scope="col">Name</th><th scope="col">Hours</th><th scope="col">Calls</th><th scope="col">End-of-day</th>' + (deals ? '<th scope="col">Deals</th>' : '') + '<th scope="col">Learning</th><th scope="col">Last active</th></tr></thead><tbody>' +
+      people.map(x => '<tr><td><b>' + esc(x.name || 'Someone') + '</b>' + (x.on_shift ? ' <span class="p-pill is-ok">On shift</span>' : '') + (x.role === 'manager' ? '<br><small>Manager</small>' : '') + '</td>' +
+        '<td>' + hm(x.worked_seconds) + '<br><small>' + plural(x.days_worked, 'day') + '</small></td>' +
+        '<td>' + x.dials + ' dials<br><small>' + plural(x.conversations, 'conversation') + ' · ' + plural(x.offers, 'offer') + ' · ' + plural(x.appointments, 'appointment') + '</small></td>' +
+        '<td>' + (x.notes_missing ? '<span class="p-pill is-no">' + plural(x.notes_missing, 'note') + ' missing</span>' : x.days_worked ? '<span class="p-pill is-ok">All sent</span>' : '<small>No shifts</small>') + '</td>' +
+        (deals ? '<td>' + x.deals_open + ' open<br><small>' + x.deals_contract + ' under contract · ' + x.deals_closed + ' closed' + (x.followups_late ? '</small><br><span class="p-pill is-no">' + plural(x.followups_late, 'follow-up') + ' late</span>' : '</small>') + '</td>' : '') +
+        '<td>' + plural(x.lessons, 'lesson') + ' · ' + plural(x.drills, 'drill') + ' sent<br><small>' + esc((courses[x.user_id] || ['No course started']).join(' · ')) + '</small></td>' +
+        '<td>' + esc(ago(x.last_active)) + '</td></tr>').join('') + '</tbody></table></div>' +
+      (deals ? '' : '<p class="p-empty">Deal numbers show for people who may see the team’s deals (Deal tools and the authenticator code).</p>');
+  }
+
   window.PortalHome = {
-    open(page){ view = page; const my = ++run; ({ home, portal, admin, progress })[page](my).catch(() => { if (my === run) box().insertAdjacentHTML('beforeend', '<p class="p-card p-empty">Couldn’t load everything. Check your connection and try again.</p>'); }); },
+    open(page){ view = page; const my = ++run; ({ home, portal, admin, progress, teamview })[page](my).catch(() => { if (my === run) box().insertAdjacentHTML('beforeend', '<p class="p-card p-empty">Couldn’t load everything. Check your connection and try again.</p>'); }); },
     // every second from app.js: keep the Team home's clock line and button current
     tick(){
       if (view !== 'home' || !$('pvSub') || $('pView').hidden) return;

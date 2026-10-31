@@ -27,7 +27,26 @@ const sideOf = p => p.evaluate(() => { const d = document.getElementById('drawer
   d.querySelectorAll('.sec, .mi').forEach(e => { if (e.hidden || e.closest('[hidden]') || e.closest('.bottom') || e.closest('.sub')) return; if (e.classList.contains('sec')) g = e.textContent.trim(); else out.push((g ? g + ':' : '') + e.textContent.trim().replace(/\s*\d+( waiting)?$/, '')); });
   return out; });
 const fontOf = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); return e ? getComputedStyle(e).fontFamily : ''; }, sel);
+const tvRows = [{ user_id:'oid', name:'Amr', role:'owner', on_shift:false, worked_seconds:0, days_worked:0, dials:0, conversations:0, offers:0, appointments:0, notes_missing:0, deals_open:1, deals_contract:0, deals_closed:0, followups_late:0, lessons:0, drills:0, last_active:null },
+  { user_id:'u1', name:'Sara R.', role:'agent', on_shift:true, worked_seconds:18000, days_worked:2, dials:81, conversations:10, offers:1, appointments:3, notes_missing:1, deals_open:2, deals_contract:1, deals_closed:1, followups_late:1, lessons:4, drills:1, last_active:new Date(Date.now() - 300000).toISOString() },
+  { user_id:'u2', name:'Youssef H.', role:'manager', on_shift:false, worked_seconds:3600, days_worked:1, dials:12, conversations:2, offers:0, appointments:0, notes_missing:0, deals_open:0, deals_contract:0, deals_closed:0, followups_late:0, lessons:0, drills:0, last_active:new Date(Date.now() - 3 * 86400000).toISOString() }];
 const T = [
+  { name:'owner-teamview', url:'/app/#teamview', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:Object.assign({}, owner, { portal_team_overview:tvRows }), SB_FROM:ownerFrom }, run: async (p, ok, W) => {
+      await p.waitForSelector('.p-tv', { timeout:8000 }).catch(() => {});
+      const t = await p.evaluate(() => document.getElementById('pView').innerText);
+      ok(/Team overview/.test(await p.textContent('#title')) && /Team overview/.test(t), 'the Team overview opens from #teamview');
+      ok(/Sara R\.\s*On shift/.test(t) && /5:00/.test(t) && /81 dials/.test(t) && /10 conversations · 1 offer · 3 appointments/.test(t) && /1 note missing/.test(t), 'Sara: on shift, 5:00 hours, 81 dials, the rest of her calls, 1 note missing');
+      ok(/2 open[\s\S]*1 under contract · 1 closed[\s\S]*1 follow-up late/.test(t), 'her deals: 2 open, 1 under contract, 1 closed, 1 follow-up late');
+      ok(/Acquisitions 3\/15/.test(t) && /4 lessons · 1 drill sent/.test(t), 'learning: lessons and drills, and course progress');
+      ok(/Youssef H\.[\s\S]*Manager/.test(t) && /3 days ago/.test(t) && /All sent/.test(t), 'Youssef: manager, last active 3 days ago, every note sent');
+      ok(!/\bAmr\b[\s\S]*0 dials/.test(t.split('Name')[1] || ''), 'Amr himself isn’t a row');
+      ok(/1\s*on shift now/.test(t) && /93\s*calls in 7 days/.test(t) && /1\s*deals closed in 7 days/.test(t), 'totals: 1 on shift, 93 calls, 1 deal closed in 7 days');
+      await p.click('[data-tv="30"]'); await p.waitForTimeout(400);
+      ok(await p.evaluate(() => { const c = SB_CALLS.filter(x => x[0] === 'rpc' && x[1] === 'portal_team_overview'); return c.length >= 2 && c[c.length - 1][2].p_days === 30; }) && await p.getAttribute('[data-tv="30"]', 'aria-pressed') === 'true', '30 days asks for 30 days and shows as chosen');
+      const wide = await p.evaluate(() => [...document.querySelectorAll('#pView *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1 && !e.closest('.p-tablewrap')).slice(0, 4).map(e => e.tagName + '.' + e.className + ' ' + Math.round(e.getBoundingClientRect().right)).join(' | '));
+      ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'nothing wider than the screen (the table scrolls inside its box) ' + wide);
+      ok(await p.evaluate(() => [...document.querySelectorAll('[data-tv]')].every(b => b.getBoundingClientRect().height >= 44)), 'period buttons at least 44px');
+    } },
   { name:'owner-admin', url:'/app/', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:owner, SB_FROM:ownerFrom }, run: async (p, ok, W) => {
       ok(await p.evaluate(() => location.hash) === '#admin', 'Amr lands on the Admin overview');
       ok(/Bricolage/.test(await fontOf(p, '#title')), 'page name in Bricolage Grotesque (was Bodoni): ' + (await fontOf(p, '#title')).split(',')[0]);
@@ -49,7 +68,7 @@ const T = [
       ok(await p.evaluate(() => !document.querySelector('#pvEodBox b b') && /<b>Slow<\/b>/.test(document.getElementById('pvEodBox').textContent)), 'notes are shown as plain text, never as page code');
       await p.click('[data-eod="-1"]'); await p.waitForTimeout(400);
       ok(await p.evaluate(() => { const c = SB_CALLS.filter(x => x[0] === 'rpc' && x[1] === 'portal_eod'); const a = c[c.length - 1][2]; return a && /^\d{4}-\d{2}-\d{2}$/.test(a.p_day); }) && await p.getAttribute('[data-eod="-1"]', 'aria-pressed') === 'true', 'Yesterday asks for the day before (Cairo date) and shows as chosen');
-      if (W > 1000) { const s = await sideOf(p); ok(s && JSON.stringify(s) === JSON.stringify(['Overview','People:Live now','People:Team and shifts','People:Missed-shift requests','People:Invite and access','Learning:Learning Hub','Learning:Learner progress','Learning:Review center','Deals:Deal CRM','Deals:Land calculator','Deals:House calculator','Money:Cash','Money:Income','Money:Expenses','Money:My time','Money:Payments (later)','Site:Visits','Site:Emails','Site:Logs','Site:Zoho Campaigns']), 'sidebar groups: ' + (s || []).join(' | ')); }
+      if (W > 1000) { const s = await sideOf(p); ok(s && JSON.stringify(s) === JSON.stringify(['Overview','People:Team overview','People:Live now','People:Team and shifts','People:Missed-shift requests','People:Invite and access','Learning:Learning Hub','Learning:Learner progress','Learning:Review center','Deals:Deal CRM','Deals:Land calculator','Deals:House calculator','Money:Cash','Money:Income','Money:Expenses','Money:My time','Money:Payments (later)','Site:Visits','Site:Emails','Site:Logs','Site:Zoho Campaigns']), 'sidebar groups: ' + (s || []).join(' | ')); }
     } },
   { name:'owner-portal', url:'/app/#portal', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:owner, SB_FROM:ownerFrom }, run: async (p, ok) => {
       ok(await p.evaluate(() => (document.querySelector('.p-mode [aria-current="page"]') || {}).textContent) === 'Portal', 'switch is on Portal');
@@ -74,7 +93,7 @@ const T = [
       ok(!(await p.$('.p-mode')) && !(await p.isVisible('.p-admin-tag')), 'no ADMIN label or switch (Amr only)');
       const t = await p.evaluate(() => document.getElementById('pView').innerText);
       ok(/Hi, Mona/.test(t) && /Team and shifts/.test(t) && /1 request/.test(t) && /Learner progress/.test(t), 'manager areas: Team and shifts with 1 request, Learner progress');
-      if (W > 1000) { const s = await sideOf(p); ok(s && JSON.stringify(s) === JSON.stringify(['Portal','My hours','People:Live now','People:Team and shifts','People:Missed-shift requests','Learning:Learning Hub','Learning:Learner progress','Deals:Deal CRM','Deals:Land calculator','Deals:House calculator']), 'smaller Admin side: ' + (s || []).join(' | ')); }
+      if (W > 1000) { const s = await sideOf(p); ok(s && JSON.stringify(s) === JSON.stringify(['Portal','My hours','People:Team overview','People:Live now','People:Team and shifts','People:Missed-shift requests','Learning:Learning Hub','Learning:Learner progress','Deals:Deal CRM','Deals:Land calculator','Deals:House calculator']), 'smaller Admin side: ' + (s || []).join(' | ')); }
       await p.evaluate(() => { location.hash = '#progress'; }); await p.waitForTimeout(800);
       ok(/Youssef H\.\s+Marketing\s+2 of 16/.test(await p.evaluate(() => document.getElementById('pView').innerText)), 'manager sees learner progress');
     } },
