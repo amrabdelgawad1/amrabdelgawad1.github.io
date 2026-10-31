@@ -27,7 +27,8 @@ Phase 2 is fully built; Gate 2 is next (first deal matched to a buyer from the l
 **Gate 2:** first deal matched to a buyer from the list.
 
 ## Phase 3. Grow the team
-Team overview, call scoring with the ACQ 22 50-point scorecard, roleplay practice, onboarding checklist per new hire, script and objection library.
+Done: team overview (one screen: calls, hours, end-of-day notes, deals and learning per person, today / 7 / 30 days).
+Not built: call scoring with the ACQ 22 50-point scorecard, roleplay practice, onboarding checklist per new hire, script and objection library.
 Certificates wait until the Acquisitions modules are settled (more may be added); they'll be issued after the last module rather than Module 15.
 Paid sign-up goes live here, only once the legal pages (terms, refund, privacy) and staging are in place. On hold for now (Oct 31): Amr is working on the students plan and the legal pages.
 

@@ -25,6 +25,7 @@ Pick up from here. Every item below is merged to `main` and live unless it says 
 | Phase 2: deal folder. Files on each deal (encrypted in the browser with a per-file key; name, type and key on the team key; private bucket `deal-files`), title company saved with the deal (encrypted), due diligence checklist (readable ticks, progress on the board). Passphrase change carries file names and keys | #59 | `20261031220000_deal_folder.sql` (`deal_files`, `deal_checklist`, bucket and storage rules, `deal_rekey` extended). CRM file updated |
 | Phase 2: deal sheet maker. "Make a deal sheet" in every real deal's folder: one page for buyers (asking price, per acre or value after repairs and repairs, up to 4 folder photos decrypted in the browser, details, contact, as-is and assignment lines), Print or save as PDF (one Letter or A4 page) or Copy as text. Never on it: max offer, opening offer, what we pay, seller, notes, title company, file names. Street address and parcel only when ticked. Details saved inside the encrypted deal | #61 (checks only) | none; CRM file updated |
 | Phase 2: commissions. On a closed deal (Deal CRM, Amr only): pick the rep, type the profit and a percentage (worked out) or the commission; owed or paid. Each one is an expense line in Cash (Commissions), kept in step both ways (paid either side; amount and date only from the CRM; can't be deleted from Cash). Reps see their own on the Team home (never profit or percent) and get a notification when added and paid. Admin Money box: commissions owed | #62 | `20261031230000_commissions.sql` (staging, then live). CRM file: see below |
+| Phase 3: team overview (`#teamview`, People menu, Admin overview link). One row per person for today, 7 or 30 days: on shift, hours and days, calls (dials, conversations, offers, appointments), end-of-day notes missing, deals (open, under contract, closed, follow-ups late; only for people who may see the team's deals), lessons and drills sent with course progress, last active. Amr, and managers with Team access | #63 | `20261031240000_team_overview.sql` (`portal_team_overview`, staging then live, run through the Supabase connection) |
 
 Each migration ran on staging first, then on live, and has a line in Admin > Logs > Changes.
 
@@ -37,7 +38,7 @@ Each migration ran on staging first, then on live, and has a line in Admin > Log
 ## Next, in order (Amr's decisions, Oct 31)
 1. ~~Phase 2: deal sheet maker~~ **Done (Oct 31).**
 2. ~~Phase 2: commissions~~ **Done (Oct 31).**
-3. Phase 3: team overview (every rep's calls, deals and course progress on one screen).
+3. ~~Phase 3: team overview~~ **Done (Oct 31).**
 4. Phase 3: call scoring with the ACQ 22 50-point scorecard, and roleplay practice.
 5. Phase 3: onboarding checklist per new hire, and the script and objection library.
 
@@ -59,7 +60,7 @@ Later, by Amr's choice:
 The Supabase SQL editor sometimes keeps showing "Running..." after a migration has finished. Don't run it again blindly: read back what it created (tables, triggers, function bodies) to confirm, as on Oct 31 for the notifications migration.
 
 ## How each round runs now
-1. Build on a branch, with checks in `tools/portal-dev/`. `test-roles.sh` runs every database check, 325 at the moment.
+1. Build on a branch, with checks in `tools/portal-dev/`. `test-roles.sh` runs every database check, 336 at the moment.
 2. Run the SQL on staging, then a read-only check as the owner (see `tools/staging/README.md`).
 3. Run the SQL on live, and add a `change_log` line.
 4. Open the PR, merge it, and confirm the Pages deploy succeeded.
