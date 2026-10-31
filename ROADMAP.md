@@ -19,7 +19,8 @@ Phase 1 is fully built; Gate 1 is next (every rep logs every call for two straig
 ## Phase 2. Deals and money
 Done: buyers list and matching ("Buyers who fit" on every deal).
 Done: the deals split (`DATA-MODEL.md` section 4).
-Not built: deal folder (contract, title company, comps, due diligence checklist), deal sheet maker (one-page PDF for buyers), commissions per rep per deal feeding Cash (counted only when a deal closes in the Deal CRM).
+Done: deal folder (files encrypted in the browser before upload: contract, title, comps, photos, inspection; title company with the deal; due diligence checklist with progress on the board).
+Not built: deal sheet maker (one-page PDF for buyers), commissions per rep per deal feeding Cash (counted only when a deal closes in the Deal CRM).
 
 **Gate 2:** first deal matched to a buyer from the list.
 

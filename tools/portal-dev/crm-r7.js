@@ -39,11 +39,39 @@ const ws = deals => ({ v:2, deals, buyers:[], settings:{ weeklyGoal:10, me:{ nam
 // ---------- the in-memory database ----------
 const OWNER = 'o-amr', R1 = 'u-rep1', R2 = 'u-rep2', MG = 'u-mgr';
 const PEOPLE = { [OWNER]:{ name:'Amr', role:'owner', active:true }, [R1]:{ name:'Rep 1', role:'agent', active:true }, [R2]:{ name:'Rep 2', role:'agent', active:true }, [MG]:{ name:'Maya M.', role:'manager', active:true } };
-const DB = { logs:[], fus:[], buyers:[], deals:[], team:null, raceOnce:false };
+const DB = { logs:[], fus:[], buyers:[], deals:[], files:[], checklist:[], store:{}, team:null, raceOnce:false };
 const err = m => ({ data:null, error:{ message:m } });
 function handle(me, aal, op){
   const P = PEOPLE[me];
   if (op.kind === 'aal') return { data:{ currentLevel:aal, nextLevel:aal } };
+  // Phase 2 deal folder: rows follow their deal's rules (seen by whoever sees the deal; changed by its owner or Amr)
+  if (op.kind === 'storage' || (op.kind === 'from' && (op.table === 'deal_files' || op.table === 'deal_checklist'))) {
+    const seeAll = P.role === 'owner' || (P.role === 'manager' && aal === 'aal2');
+    const dealOf = id => DB.deals.find(d => d.id === id);
+    const sees = id => { const d = dealOf(id); return !!d && (seeAll || d.owner === me); };
+    const writes = id => { const d = dealOf(id); return !!d && (d.owner === me || P.role === 'owner'); };
+    if (op.kind === 'storage') {
+      if (op.op === 'upload') { if (!writes(op.path.split('/')[0])) return err('new row violates row-level security policy'); DB.store[op.path] = op.data; return { data:{ path:op.path } }; }
+      if (op.op === 'download') { const f = DB.files.find(x => x.path === op.path); if (!f || !sees(f.deal_id)) return err('Object not found'); return { data:DB.store[op.path] }; }
+      if (op.op === 'remove') { op.paths.forEach(x => { if (writes(x.split('/')[0])) delete DB.store[x]; }); return { data:[] }; }
+    }
+    const T = op.table === 'deal_files' ? 'files' : 'checklist', f = Object.fromEntries(op.filters);
+    const match = r => Object.entries(f).every(([k, v]) => r[k] === v);
+    if (op.op === 'select') return { data:DB[T].filter(r => sees(r.deal_id) && match(r)).map(r => JSON.parse(JSON.stringify(r))) };
+    if (op.op === 'delete') { DB[T] = DB[T].filter(r => !(writes(r.deal_id) && match(r))); return { data:null }; }
+    if (op.op === 'insert') {
+      const v = op.value;
+      if (!writes(v.deal_id)) return err('new row violates row-level security policy');
+      if (T === 'files') {
+        if (!v.enc || !DB.team || v.enc.salt !== DB.team.salt) return err('This file isn\'t encrypted with the team passphrase.');
+        DB.files.push(Object.assign({ id:'f' + (DB.files.length + 1) + Math.random().toString(36).slice(2, 6), owner:dealOf(v.deal_id).owner, created_at:new Date().toISOString() }, v));
+      } else {
+        if (DB.checklist.some(r => r.deal_id === v.deal_id && r.item === v.item)) return err('duplicate key');
+        DB.checklist.push(Object.assign({ done_by:me }, v));
+      }
+      return { data:null };
+    }
+  }
   if (op.kind === 'from' && (op.table === 'buyers' || op.table === 'deals')) {
     const TB = op.table, what = TB === 'deals' ? 'deal' : 'buyer';
     // Phase 2 rules: Amr and managers with the code see everyone's; others their own. Writes: own rows (Amr any), team key only.
@@ -100,7 +128,8 @@ function handle(me, aal, op){
       case 'deal_rekey': {
         const old = DB.team && DB.team.salt;
         const bcopy = JSON.parse(JSON.stringify(DB.buyers)), dcopy = JSON.parse(JSON.stringify(DB.deals));
-        const undo = () => { DB.logs = copy; DB.buyers = bcopy; DB.deals = dcopy; };
+        const fcopy = JSON.parse(JSON.stringify(DB.files));
+        const undo = () => { DB.logs = copy; DB.buyers = bcopy; DB.deals = dcopy; DB.files = fcopy; };
         if (owner) { if (!a.p_check || a.p_check.salt !== a.p_salt) return err('rekey: the team check must use the new salt'); }
         else { if (a.p_check) return err('Not allowed: only Amr sets the team passphrase'); if (!DB.team || a.p_salt !== DB.team.salt) return err('rekey: use the team passphrase'); }
         const copy = JSON.parse(JSON.stringify(DB.logs));
@@ -113,6 +142,12 @@ function handle(me, aal, op){
             const b = DB.buyers.find(y => y.id === x.buyer);
             if (!b || b.enc.iv !== x.old_iv) { DB.logs = copy; DB.buyers = bcopy; return err('rekey: a buyer changed while you were working. Nothing was saved. Reload and try again.'); }
             b.enc = x.blob; continue;
+          }
+          if (x.file) {
+            if (!owner) { undo(); return err('Not allowed: only Amr re-encrypts the deal folders'); }
+            const f = DB.files.find(y => y.id === x.file);
+            if (!f || f.enc.iv !== x.old_iv) { undo(); return err('rekey: a file changed while you were working. Nothing was saved. Reload and try again.'); }
+            f.enc = x.blob; continue;
           }
           if (x.deal) {
             if (!owner) { undo(); return err('Not allowed: only Amr re-encrypts deals'); }
@@ -127,6 +162,7 @@ function handle(me, aal, op){
         }
         const left = DB.logs.filter(r => r.blob.salt !== a.p_salt && (owner ? (r.user_id === me && r.tool === 'workspace') || (old && copy.find(c => c.user_id === r.user_id && c.tool === r.tool).blob.salt === old) : r.user_id === me) && /^workspace/.test(r.tool));
         if (owner && DB.buyers.some(b => b.enc.salt !== a.p_salt)) { DB.logs = copy; DB.buyers = bcopy; return err('rekey: 1 buyer(s) would be left on the old passphrase. Nothing was saved.'); }
+        if (owner && DB.files.some(f => f.enc.salt !== a.p_salt)) { undo(); return err('rekey: 1 file(s) would be left on the old passphrase. Nothing was saved.'); }
         if (owner && DB.deals.some(d => d.enc.salt !== a.p_salt)) { undo(); return err('rekey: 1 deal(s) would be left on the old passphrase. Nothing was saved.'); }
         if (left.length) { DB.logs = copy; DB.buyers = bcopy; DB.deals = dcopy; return err('rekey: ' + left.length + ' workspace(s) would be left on the old passphrase. Nothing was saved.'); }
         if (owner) DB.team = { salt:a.p_salt, check:a.p_check };
@@ -148,7 +184,12 @@ const CLIENT = `(() => {
       then(a, b){ return call(Object.assign({ kind:'from' }, st)).then(a, b); } };
     return o;
   }
-  const db = { from:q, rpc:(name, args) => call({ kind:'rpc', name, args }),
+  const b64 = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, i + 8192)); return btoa(s); };
+  const storage = { from:() => ({
+    upload:async (path, blob) => call({ kind:'storage', op:'upload', path, data:b64(new Uint8Array(await blob.arrayBuffer())) }),
+    download:async path => { const r = await call({ kind:'storage', op:'download', path }); return r.error ? r : { data:new Blob([Uint8Array.from(atob(r.data), c => c.charCodeAt(0))]) }; },
+    remove:async paths => call({ kind:'storage', op:'remove', paths }) }) };
+  const db = { from:q, storage, rpc:(name, args) => call({ kind:'rpc', name, args }),
     auth:{ getSession:async () => ({ data:{ session:{ user:{ id:I.userId } } } }), signOut:async () => ({}), mfa:{ getAuthenticatorAssuranceLevel:() => call({ kind:'aal' }) } } };
   window.DealGate = { db, name:I.name, userId:I.userId };
   window.PORTAL_TEST = { role:I.role, name:I.name, keys:['course','deals','learn'] };
@@ -385,6 +426,48 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   await p.evaluate(() => { try { localStorage.removeItem('crm-view'); } catch (e) {} });
   await p.ctx.close();
 
+  console.log('== Phase 2: the deal folder (files, title company, due diligence)');
+  p = await open(R2, 'aal1', 1440);
+  await unlock(p, TEAM1);
+  await p.click('button.crm-prop[data-open="' + r2d.id + '"]');
+  await p.waitForSelector('#drawer:not([hidden]) #crmFolder #crmCheck label', { timeout:10000 });
+  const items = await p.$$eval('#crmCheck label', ls => ls.map(l => l.textContent.trim()));
+  ok(items.length === 10 && items[0] === 'Title search ordered and clear' && !items.some(t => /Inspection done/.test(t)), 'a land deal gets the 10 land checklist items');
+  await p.click('#crmCheck input[data-tick="title_search"]'); await p.waitForTimeout(700);
+  ok(DB.checklist.some(r => r.deal_id === r2d.id && r.item === 'title_search') && /1 of 10 done/.test(await p.textContent('#crmCheck')), 'ticking Title search saves it: 1 of 10 done');
+  const SECRET = 'PURCHASE AGREEMENT. Seller: Johnathan Q. Example, 123 Oak Rd. Price $15,000.';
+  await p.selectOption('#dfKind', 'contract');
+  await p.setInputFiles('#dfFile', { name:'Example contract.pdf', mimeType:'application/pdf', buffer:Buffer.from(SECRET) });
+  await p.waitForFunction(() => /Added/.test((document.getElementById('dfNote') || {}).textContent || ''), null, { timeout:15000 }).catch(() => {});
+  const fr = DB.files.find(f => f.deal_id === r2d.id), storedF = fr && Buffer.from(DB.store[fr.path] || '', 'base64').toString('latin1');
+  ok(fr && fr.kind === 'contract' && fr.path.startsWith(r2d.id + '/') && fr.enc.salt === DB.team.salt, 'the contract is saved in the deal’s folder, on the team key');
+  ok(storedF && storedF.length === SECRET.length + 16 && !/Johnathan|Oak|AGREEMENT/.test(storedF), 'what storage holds is unreadable (no seller name, no text)');
+  ok(fr && !/Example contract|Johnathan/.test(JSON.stringify(Object.assign({}, fr, { enc:null }))) && (await dec(fr.enc, TEAM1)).name === 'Example contract.pdf', 'the file name is only inside the encrypted part');
+  ok(/Example contract\.pdf/.test(await p.textContent('#crmFiles')) && /Contract/.test(await p.textContent('#crmFiles')), 'the folder lists it by name and kind');
+  const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#crmFiles [data-fget="0"]')]);
+  const got = fs.readFileSync(await dl.path(), 'utf8');
+  ok(got === SECRET && dl.suggestedFilename() === 'Example contract.pdf', 'Download gives back the exact original file');
+  await p.setInputFiles('#dfFile', { name:'comps.txt', mimeType:'text/plain', buffer:Buffer.from('comp 1, comp 2') });
+  await p.waitForFunction(() => /Added comps/.test((document.getElementById('dfNote') || {}).textContent || ''), null, { timeout:15000 }).catch(() => {});
+  ok(DB.files.filter(f => f.deal_id === r2d.id).length === 2, 'a second file joins the folder');
+  await p.click('#crmFiles [data-fdel="1"]'); await p.click('#crmFiles [data-fdel="1"]'); await p.waitForTimeout(800);
+  ok(DB.files.filter(f => f.deal_id === r2d.id).length === 1 && Object.keys(DB.store).length === 1, 'Remove (asked twice) removes the file and its stored copy');
+  await p.fill('#dtName', 'Acme Title Co'); await p.fill('#dtContact', '555-0199'); await p.fill('#dtFile', 'AT-2210');
+  await p.click('#dSave'); await p.waitForTimeout(1500);
+  const wsT = (await dec(DB.logs.find(r => r.user_id === R2).blob, TEAM1)).deals.find(d => d.id === r2d.id);
+  ok(wsT.title && wsT.title.name === 'Acme Title Co' && wsT.title.file === 'AT-2210' && wsT.contract && wsT.contract.closing === day(20), 'Save keeps the title company with the deal (and the contract dates)');
+  ok(!/Acme|AT-2210|555-0199/.test(JSON.stringify(DB.deals.find(d => d.id === r2d.id))), 'the title company never reaches the readable deal row');
+  await p.click('[data-crmview="board"]'); await p.waitForTimeout(400);
+  ok(/Checklist 1 of 10/.test(await p.$eval('.crm-col[aria-label="Under contract"]', e => e.innerText)), 'the board shows checklist progress on a deal under contract');
+  await p.click('.crm-col[aria-label="Under contract"] .crm-card'); await p.waitForSelector('#drawer:not([hidden]) #crmFolder');
+  await p.setViewportSize({ width:390, height:844 }); await p.waitForTimeout(300);
+  ok(await p.evaluate(() => document.documentElement.scrollWidth <= 390), 'deal folder at 390: nothing wider than the screen');
+  ok(await p.evaluate(() => [...document.querySelectorAll('#crmFolder button, #crmFolder .crm-check label, #crmFolder select, #crmFolder input[type=text]')].filter(e => e.offsetParent).every(e => e.getBoundingClientRect().height >= 44)), 'deal folder at 390: buttons, ticks and fields are at least 44px tall');
+  await shot(p, 'crm-folder-390');
+  ok(!p.errs.length, 'no console errors (deal folder) ' + p.errs.join(' | '));
+  await p.evaluate(() => { try { localStorage.removeItem('crm-view'); } catch (e) {} });
+  await p.ctx.close();
+
   console.log('== Amr sees the team: Everyone, Only me, Pick people');
   p = await open(OWNER, 'aal2', 1440);
   await unlock(p, TEAM1);
@@ -457,6 +540,7 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   let dOpen = 0; for (const d of DB.deals) { try { if ((await dec(d.enc, TEAM2)).name) dOpen++; } catch (e) {} }
   ok(DB.deals.length >= 3 && DB.deals.every(d => d.enc.salt === DB.team.salt) && dOpen === DB.deals.length, 'every deal row (' + DB.deals.length + ') moved to the new passphrase in the same step');
   ok(new Set(DB.deals.map(d => d.owner)).size === 3, 'deal rows from Amr, Rep 1 and Rep 2');
+  ok(DB.files.length === 1 && DB.files.every(f => f.enc.salt === DB.team.salt) && (await dec(DB.files[0].enc, TEAM2)).name === 'Example contract.pdf', 'the deal folder’s file moved to the new passphrase in the same step');
   await p.click('#tpReopen'); await p.waitForSelector('#gate.vault');
   await unlock(p, TEAM1);
   ok(/doesn’t open/.test(await p.textContent('#vErr')), 'the old team passphrase no longer opens Amr’s CRM');
