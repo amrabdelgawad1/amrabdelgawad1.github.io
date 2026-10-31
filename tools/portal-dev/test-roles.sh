@@ -88,4 +88,7 @@ echo "== end-of-day checks"; P -f "$ROOT/tools/portal-dev/test-eod.sql" 2>&1 | s
 MIGX="$ROOT/supabase/migrations/20261031190000_shift_dupes.sql"
 P -f "$MIGX"; P -f "$MIGX"
 echo "== shift saved once checks"; P -f "$ROOT/tools/portal-dev/test-shift-dupes.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
+MIGC2="$ROOT/supabase/migrations/20261031200000_deal_dates.sql"
+P -f "$MIGC2"; P -f "$MIGC2"
+echo "== deal dates checks"; P -f "$ROOT/tools/portal-dev/test-deal-dates.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
 echo "== all checks passed"
