@@ -61,6 +61,18 @@ update public.deals set stage = 'contract' where id = 'd-nt';
 select pg_temp.ok((select count(*) from public.notifications where user_id = :O::uuid and kind = 'deal_stage' and title = 'New N''s land deal moved to Under contract' and body = 'Ross, OH' and link = '/app/deals/#id=d-nt') = 1, 'a rep''s deal moving to Under contract tells Amr: kind, county and state');
 select pg_temp.ok((select count(*) from public.notifications where title like '%SECRET%' or body like '%SECRET%') = 0, 'nothing encrypted ever shows in a notification');
 select pg_temp.ok((select count(*) from public.notifications where kind = 'deal_stage' and user_id = :O::uuid) = 1, 'a brand-new deal doesn''t notify, only the stage change');
+-- clearing a result must never block the rep's save
+select set_config('request.jwt.claims', json_build_object('sub', :N, 'role', 'authenticated')::text, false);
+update public.deals set result = 'sold', paid = 1000, sold = 2000 where id = 'd-nt';
+update public.deals set result = null, stage = 'contract' where id = 'd-nt';
+select pg_temp.ok((select result is null and stage = 'contract' from public.deals where id = 'd-nt'), 'clearing a deal''s result saves (no notification gets in the way)');
+select pg_temp.ok((select count(*) from public.notifications where user_id = :O::uuid and kind = 'deal_stage' and title like '%sold%') = 1, 'the sale itself still told Amr');
+-- a background job (nobody signed in) changing Amr's own deal still doesn't notify Amr
+reset role;
+select set_config('request.jwt.claims', '{}', false);
+insert into public.deals (id, owner, kind, state, stage, enc) values ('d-bg', :O, 'land', 'TX', 'lead', jsonb_build_object('v', 2, 'salt', :'ts', 'iv', 'i-bg', 'ct', 'x'));
+update public.deals set stage = 'talking' where id = 'd-bg';
+select pg_temp.ok((select count(*) from public.notifications where link = '/app/deals/#id=d-bg') = 0, 'a background change to Amr''s own deal doesn''t notify him');
 -- Amr's own deal: he doesn't notify himself
 select set_config('request.jwt.claims', json_build_object('sub', :O, 'role', 'authenticated')::text, false);
 insert into public.deals (id, owner, kind, state, stage, enc) values ('d-no', :O, 'house', 'FL', 'lead', jsonb_build_object('v', 2, 'salt', :'ts', 'iv', 'i-no', 'ct', 'x'));
@@ -89,4 +101,4 @@ set role anon;
 select set_config('request.jwt.claims', '{}', false);
 select pg_temp.ok(pg_temp.fails('select count(*) from public.notifications') and pg_temp.fails($$select public.request_course_access('mkt')$$), 'not signed in: nothing');
 reset role;
-delete from public.deals where id in ('d-nt', 'd-no');
+delete from public.deals where id in ('d-nt', 'd-no', 'd-bg');

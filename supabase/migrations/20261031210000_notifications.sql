@@ -12,7 +12,7 @@ create table if not exists public.notifications (
   kind text not null check (kind in ('access_request', 'shift_request', 'shift_decided', 'review_sent', 'review_done', 'deal_stage', 'feedback', 'payment')),
   title text not null check (length(title) between 1 and 160),
   body text check (length(body) <= 300),
-  link text check (link ~ '^/[^/]'),                                      -- a page on this site only
+  link text check (link ~ '^/[^/\\]'),                                      -- a page on this site only
   created_at timestamptz not null default now(),
   read_at timestamptz
 );
@@ -32,10 +32,14 @@ create policy "notifications own mark" on public.notifications for update to aut
 create or replace function public.notify(p_user uuid, p_kind text, p_title text, p_body text, p_link text)
 returns void language plpgsql security definer set search_path = '' as $$
 begin
-  if p_user is null or p_user is not distinct from auth.uid() then return; end if;   -- never yourself
-  insert into public.notifications (user_id, kind, title, body, link)
-  values (p_user, p_kind, left(p_title, 160), left(p_body, 300), p_link);
-  delete from public.notifications n where n.user_id = p_user and n.created_at < now() - interval '90 days';
+  if p_user is null or p_user is not distinct from auth.uid() or nullif(btrim(coalesce(p_title, '')), '') is null then return; end if;   -- never yourself
+  begin
+    insert into public.notifications (user_id, kind, title, body, link)
+    values (p_user, p_kind, left(p_title, 160), left(p_body, 300), case when p_link ~ '^/[^/\\]' then p_link end);
+    delete from public.notifications n where n.user_id = p_user and n.created_at < now() - interval '90 days';
+  exception when others then
+    null;   -- a notification must never block the save that raised it
+  end;
 end $$;
 revoke all on function public.notify(uuid, text, text, text, text) from public, anon, authenticated;
 
@@ -137,7 +141,8 @@ create or replace function public.notify_deal_event()
 returns trigger language plpgsql security definer set search_path = '' as $$
 declare d record; v_where text; v_what text;
 begin
-  if new.kind not in ('stage', 'result') then return null; end if;
+  if new.kind not in ('stage', 'result') or new.to_value is null then return null; end if;   -- a cleared result says nothing new
+  if new.owner is not distinct from public.portal_owner_id() then return null; end if;          -- Amr's own deals never notify Amr
   select x.kind, x.county, x.state into d from public.deals x where x.id = new.deal_id;
   if not found then return null; end if;
   v_where := nullif(concat_ws(', ', initcap(d.county), d.state), '');

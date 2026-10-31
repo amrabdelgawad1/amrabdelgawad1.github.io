@@ -171,6 +171,7 @@
       if (e.target.closest('[data-allread]')) { markAll(); return; }
       const a = e.target.closest('a[data-nid]'); if (!a) return;
       const n = notes.find(x => String(x.id) === a.dataset.nid);
+      closeAll(false);
       if (n && !n.read_at) { e.preventDefault(); markOne(n).then(() => { location.href = a.href; }); }
     });
     // me: the page's own account button (it keeps its menu), or the shell's
@@ -232,7 +233,7 @@
   // Only the database writes them. Checked on load, every minute while the page is open, and when you come back to it.
   const ago = d => { const s = Math.max(0, (Date.now() - new Date(d).getTime()) / 1000);
     return s < 60 ? 'just now' : s < 3600 ? Math.floor(s / 60) + ' min ago' : s < 86400 ? Math.floor(s / 3600) + ' h ago' : s < 172800 ? 'yesterday' : new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric' }); };
-  const safeLink = l => /^\/(?!\/)/.test(String(l || '')) ? l : '/app/';
+  const safeLink = l => /^\/(?![\/\\])/.test(String(l || '')) ? l : '/app/';
   async function loadNotes(){
     const t = window.PORTAL_TEST || (opts && opts.test);
     if (t) { notes = (t.notes || []).slice(); unread = notes.filter(n => !n.read_at).length; return; }
@@ -245,12 +246,13 @@
     if (Array.isArray(l.data)) notes = l.data;
     if (typeof c.count === 'number') unread = c.count; else unread = notes.filter(n => !n.read_at).length;
   }
-  function drawBell(b){
+  function drawBell(b, keepList){
     if (!b.bell) return;
     b.bellWrap.hidden = !me;
     const badge = b.bell.querySelector('.p-badge');
     badge.hidden = !unread; badge.textContent = unread > 9 ? '9+' : String(unread);
     b.bell.setAttribute('aria-label', unread ? 'Notifications, ' + unread + ' new' : 'Notifications');
+    if (keepList && !b.notes.hidden) return;   // an open panel keeps its list (and keyboard focus); the badge still updates
     b.notes.innerHTML = '<div class="p-notes-head"><p role="heading" aria-level="2">Notifications</p>' +
       (unread ? '<button type="button" data-allread>Mark all read</button>' : '') + '</div>' +
       (notes.length ? '<ul class="p-notes-list">' + notes.map(n => '<li><a href="' + esc(safeLink(n.link)) + '" data-nid="' + esc(n.id) + '"' + (n.read_at ? '' : ' class="is-new"') + '>' +
@@ -260,9 +262,10 @@
   function bellOpen(b, open){
     if (open) closeAll();
     b.notes.hidden = !open; b.bell.setAttribute('aria-expanded', open);
-    if (open) { refreshNotes(); const f = b.notes.querySelector('a, button'); if (f) f.focus(); }
+    if (open) { const f = b.notes.querySelector('a, button'); if (f) f.focus(); }
   }
-  async function refreshNotes(){ await loadNotes().catch(() => {}); bars.forEach(drawBell); }
+  // Background refresh (every minute, on coming back to the tab): never redraws a list someone is looking at
+  async function refreshNotes(){ await loadNotes().catch(() => {}); bars.forEach(b => drawBell(b, true)); }
   async function markOne(n){
     n.read_at = new Date().toISOString(); unread = Math.max(0, unread - 1); bars.forEach(drawBell);
     if (opts && opts.db && !window.PORTAL_TEST && !opts.test) await opts.db.from('notifications').update({ read_at:n.read_at }).eq('id', n.id).then(x => x, () => ({}));
