@@ -31,7 +31,7 @@ Each migration ran on staging first, then on live, and has a line in Admin > Log
 4. **The students plan decisions** (section 9 of `PORTAL-STUDENTS.md`).
 
 ## Next, in order
-1. Gate 0: the database half passed on live (acting as Kyle Miller, 17 tables, nothing of anyone else's). Still needed: Kyle signs in once on a phone and once on a PC; check both in Admin > Logs (sign-ins).
+1. Gate 0 passed (Oct 31): database check as Kyle Miller, and his sign-ins from an Android phone and a Windows PC.
 2. Finish Phase 1: notifications.
 4. Rest of Phase 2: deal folder, deal sheet maker, commissions on Cash.
 5. Students and paid sign-up, after Amr's decisions and the legal pages.

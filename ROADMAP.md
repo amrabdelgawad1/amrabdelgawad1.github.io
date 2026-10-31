@@ -2,11 +2,11 @@
 
 Each phase opens only when the one before passes its gate. A gate is passed by real use, not by merged code.
 
-## Phase 0. Foundation (mostly done)
+## Phase 0. Foundation (done)
 One shell and menu, roles in the database, linked data model, staging copy, backups, logs, shared theme.
 Encryption split done for buyers and deals (working fields readable, personal details encrypted).
 
-**Gate 0:** a rep signs in on phone and PC and sees only their own data. Database half passed Oct 31 on live as Kyle Miller (17 tables, 0 rows of anyone else's). Still needed: Kyle signs in once on a phone and once on a PC.
+**Gate 0: passed Oct 31.** A rep signs in on phone and PC and sees only their own data: on live as Kyle Miller, 17 tables with 0 rows of anyone else's, and sign-ins recorded from an Android phone (07:50) and a Windows PC (07:51).
 
 ## Phase 1. Daily work
 Done: call counter and Calls today, do-not-call list, feedback button, pinned announcement, Today screen (today's numbers, callbacks due, deals needing action, next lesson, on the Team home), end-of-day reports (the rep's clock-out note and numbers; Amr's Admin overview lists today or yesterday for everyone: sent, no report, on shift, didn't work).
