@@ -20,7 +20,7 @@ const ownerFrom = { members:[{ user_id:'u1', name:'Sara R.', active:true }, { us
 const START = new Date(Date.now() - 2 * 3600e3).toISOString();
 const LIVE = [{ user_id:'u1', mode:'run', started_at:START, work_seconds:3000, break_seconds:0, seg_at:new Date(Date.now() - 3600e3).toISOString(), updated_at:new Date().toISOString() }];
 const TAPS = [{ id:1, kind:'dial', at:START }, { id:2, kind:'dial', at:START }, { id:3, kind:'dial', at:START }, { id:4, kind:'conversation', at:START }];
-const agent = member(ME.agent, 'Sara R.');
+const agent = Object.assign(member(ME.agent, 'Sara R.'), { dnc_check:false, dnc_add:'8135550142' });
 const START_ISO = START;
 const T = [
   { name:'calls-on', url:'/app/#track', init:{ SB_SESSION:U, SB_RPC:agent, SB_FROM:{ live_status:LIVE, call_events:TAPS } }, run: async (p, ok, W) => {
@@ -34,6 +34,11 @@ const T = [
     ok(!JSON.stringify(ins).match(/phone|name|@/), 'nothing but the kind and the shift');
     const small = await p.evaluate(() => [...document.querySelectorAll('#tCalls button')].filter(b => b.getBoundingClientRect().height < 44).length);
     ok(small === 0, 'buttons at least 44px tall');
+    await p.click('#tDnc summary'); await p.fill('#dncPhone', '(813) 555-0142'); await p.click('#dncCheck'); await p.waitForTimeout(300);
+    ok(/Not on the list/.test(await p.textContent('#dncMsg')), 'do-not-call: check a number');
+    await p.click('#dncAdd'); await p.waitForTimeout(300);
+    const add = await p.evaluate(() => (window.SB_CALLS || []).filter(c => c[0] === 'rpc' && c[1] === 'dnc_add').map(c => c[2]));
+    ok(add.length === 1 && add[0].p_phone === '(813) 555-0142' && add[0].p_reason === 'asked' && /Added/.test(await p.textContent('#dncMsg')), 'and add it with a reason');
     await p.click('.ctl.off'); await p.waitForTimeout(600);
     const nums = await p.evaluate(() => [...document.querySelectorAll('input[type="number"], input[inputmode="numeric"]')].filter(i => i.offsetParent).map(i => i.value));
     ok(nums.slice(0, 3).join(',') === '4,1,', 'ending the shift: dials and conversations fill in from the counter (' + nums.join(',') + ')');

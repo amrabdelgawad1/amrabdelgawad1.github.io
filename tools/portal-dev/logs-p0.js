@@ -41,6 +41,12 @@ const T = [
     ok(/Phase 0: logs/.test(t) && /20261031090000_portal_logs\.sql/.test(t) && /Round 7/.test(t), 'Changes: what shipped and the SQL that ran');
     ok(await p.evaluate(() => document.querySelector('.lg-days').hidden), 'no period picker on Changes');
   } },
+  { name:'logs-dnc', url:'/app/#logs/dnc', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:Object.assign({}, LOGS, { portal_dnc:[{ phone:'8135550142', reason:'asked', note:'Asked twice', who:'Sara R.', added_at:ago(30) }] }), SB_FROM:ownerFrom }, run: async (p, ok) => {
+    const t = await p.evaluate(() => document.getElementById('pLogs').innerText);
+    ok(/\(813\) 555-0142/.test(t) && /Asked not to be called/.test(t) && /Asked twice/.test(t) && /Sara R\./.test(t) && /Download for the dialer/.test(t), 'Do not call: the list, why, who, and a CSV download');
+    await p.click('.lg-rm'); await p.click('.lg-rm'); await p.waitForTimeout(400);
+    ok(await p.evaluate(() => (window.SB_CALLS || []).some(c => c[0] === 'rpc' && c[1] === 'dnc_remove' && c[2].p_phone === '8135550142')), 'Remove asks twice, then takes the number off');
+  } },
   { name:'logs-not-set-up', url:'/app/#logs', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:owner, SB_FROM:ownerFrom }, run: async (p, ok) => {
     ok(/Couldn’t load the log|aren’t set up/.test(await p.evaluate(() => document.getElementById('pLogs').innerText)), 'without the database part: a plain message, no crash');
   } },

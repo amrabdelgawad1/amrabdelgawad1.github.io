@@ -67,4 +67,7 @@ echo "== call counter checks"; P -f "$ROOT/tools/portal-dev/test-calls.sql" 2>&1
 MIGT="$ROOT/supabase/migrations/20261031120000_calls_today.sql"
 P -f "$MIGT"; P -f "$MIGT"
 echo "== calls today checks"; P -f "$ROOT/tools/portal-dev/test-calls-today.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
+MIGD="$ROOT/supabase/migrations/20261031130000_dnc.sql"
+P -f "$MIGD"; P -f "$MIGD"
+echo "== do-not-call checks"; P -f "$ROOT/tools/portal-dev/test-dnc.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
 echo "== all checks passed"
