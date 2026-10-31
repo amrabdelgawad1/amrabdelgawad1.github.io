@@ -9,9 +9,8 @@ Encryption split done for buyers and deals (working fields readable, personal de
 **Gate 0:** a rep signs in on phone and PC and sees only their own data. Database half passed Oct 31 on live as Kyle Miller (17 tables, 0 rows of anyone else's). Still needed: Kyle signs in once on a phone and once on a PC.
 
 ## Phase 1. Daily work
-Done: call counter and Calls today, do-not-call list, feedback button, pinned announcement, Today screen (today's numbers, callbacks due, deals needing action, next lesson, on the Team home).
+Done: call counter and Calls today, do-not-call list, feedback button, pinned announcement, Today screen (today's numbers, callbacks due, deals needing action, next lesson, on the Team home), end-of-day reports (the rep's clock-out note and numbers; Amr's Admin overview lists today or yesterday for everyone: sent, no report, on shift, didn't work).
 Not built:
-- End-of-day report: one short form per rep, under two minutes, replaces chat updates.
 - Pipeline board: stages from new lead to closed, countdowns for inspection period and closing.
 - Notifications: access requests, drills submitted, deal stage changes, payments in.
 

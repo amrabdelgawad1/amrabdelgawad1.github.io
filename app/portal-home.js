@@ -263,8 +263,8 @@
   async function admin(my){
     const T = A(), db = T.db;
     box().innerHTML = '<div class="p-wrap">' + hero('Admin', 'Overview', 'Loading…', '') + '</div>';
-    const [live, reqs, revs, lr, mem, vis, calls, ann] = await Promise.all([liveCount(db), pendingRequests(db), reviewsWaiting(db), learners(db, true),
-      safe(db.from('members').select('active')), safe(db.rpc('visit_stats', { p_hours:168 })), safe(db.rpc('portal_calls_today')), safe(db.rpc('portal_announcement'))]);
+    const [live, reqs, revs, lr, mem, vis, calls, ann, eod] = await Promise.all([liveCount(db), pendingRequests(db), reviewsWaiting(db), learners(db, true),
+      safe(db.from('members').select('active')), safe(db.rpc('visit_stats', { p_hours:168 })), safe(db.rpc('portal_calls_today')), safe(db.rpc('portal_announcement')), safe(db.rpc('portal_eod'))]);
     if (my !== run) return;
     const r = reqs || [], team = (mem.data || []).filter(x => x.active).length, dc = dealCounts();
     const ct = Array.isArray(calls.data) ? calls.data : null, sum = k => (ct || []).reduce((a, x) => a + (Number(x[k]) || 0), 0);
@@ -277,7 +277,8 @@
       '<div class="p-grid p-boxes">' +
         box5('People', plural(team, 'person', 'people') + ' on the team', [row('Clocked in now', muted(live == null ? '–' : plural(live, 'person', 'people')), '#live'),
           row('Missed-shift requests', r.length ? pillR(r.length + ' waiting') : muted('None'), '#requests'),
-          row('Calls today', muted(ct ? plural(sum('dials'), 'dial') + ' · ' + plural(sum('appointments'), 'appointment') : '–')), row('Invite and access', muted('Manage'), '#people')]) +
+          row('Calls today', muted(ct ? plural(sum('dials'), 'dial') + ' · ' + plural(sum('appointments'), 'appointment') : '–')),
+          row('End-of-day reports', eodPill(eod.data)), row('Invite and access', muted('Manage'), '#people')]) +
         box5('Learning', '3 courses', [row('Review center', revs.length ? pillR(revs.length + ' waiting') : muted('None'), '#review'),
           row('Learner progress', muted(learning + ' learning'), '#progress'), row('Who has which course', muted('Manage'), '/app/learn/')]) +
         box5('Deals', 'All reps', (dc ? [row('Follow-ups due', dc.due ? pillR(dc.due + ' due') : muted('None'), '/app/deals/#followups'), row('Open deals', muted(String(dc.open)), '/app/deals/'),
@@ -286,8 +287,9 @@
         box5('Money', 'Only you', [row('Cash this month', muted('Open'), '#overview'), row('Course payments', muted('Not set up yet'))]) +
         box5('Site', 'Public pages', [row('Visits this week', muted(v == null ? 'Open' : v), '#visits'), row('Team emails', muted('Open'), '#emails'), row('Logs', muted('Open'), '#logs'),
           row('Zoho Campaigns', muted('Open'), 'https://campaigns.zoho.com/', true)]) +
-      '</div>' + callsToday(ct) + annForm(ann.data) + '</div>';
+      '</div>' + callsToday(ct) + eodSection(eod.data) + annForm(ann.data) + '</div>';
     wireAnnForm(db);
+    wireEod(db, my);
   }
 
   // Amr: one announcement pinned on everyone's Team home (set_announcement; empty clears it)
@@ -310,6 +312,52 @@
     if (clear) clear.addEventListener('click', () => go(''));
   }
 
+  // ---------- End-of-day reports (Phase 1) ----------
+  // Each rep's report is the note they send when they end a shift, with their numbers. portal_eod lists every active
+  // person for one Cairo day: sent, missing (worked but a shift has no note), on shift, or didn't work. No pay.
+  const EOD_STATUS = { missing:['No report', ' is-no'], on_shift:['On shift', ' is-ok'], sent:['Sent', ''], off:['Didn’t work', ' is-plain'] };
+  function eodPill(rows){
+    if (!Array.isArray(rows)) return muted('–');
+    const miss = rows.filter(x => x.status === 'missing').length, sent = rows.filter(x => x.status === 'sent').length;
+    return miss ? '<span class="p-pill is-no">' + esc(miss + ' missing') + '</span>' : muted(sent ? plural(sent, 'report') + ' in' : 'None yet');
+  }
+  // Today's date in Cairo, then whole calendar days back from it (safe across clock changes)
+  const cairoDay = n => { const [y, m, d] = new Intl.DateTimeFormat('en-CA', { timeZone:'Africa/Cairo' }).format(new Date()).split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); };
+  function eodCards(rows){
+    if (!rows.length) return '<p class="p-card p-empty">No one on the team yet.</p>';
+    return '<div class="p-eod-list">' + rows.map(x => {
+      const st = EOD_STATUS[x.status] || EOD_STATUS.off, worked = Number(x.worked_seconds) || 0;
+      const nums = worked || x.status === 'on_shift' ? [hm(worked) + ' worked', plural(Number(x.dials) || 0, 'dial'), plural(Number(x.conversations) || 0, 'conversation'),
+        plural(Number(x.offers) || 0, 'offer'), plural(Number(x.appointments) || 0, 'appointment')].join(' · ') : '';
+      const notes = (Array.isArray(x.reports) ? x.reports : []).map(r => '<p class="p-eod-note">' + esc(r.note) + '</p>').join('');
+      const gap = x.status === 'missing' && x.shifts > x.with_report ? '<p class="p-eod-gap">' + esc(x.with_report ? (x.shifts - x.with_report) + ' of ' + plural(x.shifts, 'shift') + ' without a note' : 'No note with ' + (x.shifts === 1 ? 'this shift' : 'these shifts')) + '</p>' : '';
+      return '<article class="p-card p-eod"><div class="p-eod-head"><b>' + esc(x.name || 'Someone') + '</b><span class="p-pill' + st[1] + '">' + esc(st[0]) + '</span></div>' +
+        (nums ? '<p class="p-eod-nums">' + esc(nums) + '</p>' : '') + notes + gap + '</article>';
+    }).join('') + '</div>';
+  }
+  function eodSection(rows){
+    if (!Array.isArray(rows)) return '';
+    return '<section aria-labelledby="pvEodH"><div class="p-eod-top"><h2 class="p-h2" id="pvEodH">End-of-day reports <small id="pvEodSum">' + esc(eodSum(rows)) + '</small></h2>' +
+      '<div class="p-seg" role="group" aria-label="Which day"><button type="button" class="p-seg-b" data-eod="0" aria-pressed="true">Today</button><button type="button" class="p-seg-b" data-eod="-1" aria-pressed="false">Yesterday</button></div></div>' +
+      '<div id="pvEodBox">' + eodCards(rows) + '</div></section>';
+  }
+  function eodSum(rows){
+    const worked = rows.filter(x => x.status !== 'off').length, sent = rows.filter(x => x.status === 'sent').length;
+    return worked ? sent + ' of ' + plural(worked, 'person', 'people') + ' who worked sent a report' : 'No one has worked yet';
+  }
+  function wireEod(db, my){
+    const top = box().querySelector('.p-seg'); if (!top) return;
+    top.addEventListener('click', async e => {
+      const b = e.target.closest('[data-eod]'); if (!b || b.getAttribute('aria-pressed') === 'true') return;
+      top.querySelectorAll('[data-eod]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      $('pvEodBox').innerHTML = '<p class="p-loading">Loading…</p>';
+      const r = await safe(db.rpc('portal_eod', { p_day:cairoDay(Number(b.dataset.eod)) }));
+      if (my !== run) return;
+      if (!Array.isArray(r.data)) { $('pvEodBox').innerHTML = '<p class="p-card p-empty">Couldn’t load the reports. Refresh to try again.</p>'; return; }
+      $('pvEodSum').textContent = eodSum(r.data); $('pvEodBox').innerHTML = eodCards(r.data);
+    });
+  }
   // Today's calls per person (portal_calls_today): ended shifts' numbers plus the taps of shifts still running
   function callsToday(ct){
     if (!ct || !ct.length) return '';

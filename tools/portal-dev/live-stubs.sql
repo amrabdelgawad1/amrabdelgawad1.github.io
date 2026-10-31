@@ -115,6 +115,8 @@ grant execute on function public.has_access(text), public.decide_shift_request(b
 alter table public.shifts add column if not exists dials integer;
 alter table public.shifts add column if not exists conversations integer;
 alter table public.shifts add column if not exists appointments integer;
+-- the end-of-shift note itself (cash/team.js reads shifts.brief; Phase 1 end-of-day reports list it)
+alter table public.shifts add column if not exists brief text;
 -- The Deal CRM tables. ASSUMED from the CRM's own calls (not exported yet): deal_logs is read by tool and saved with
 -- onConflict (user_id, tool); deal_followups is written as { deal_key, due } and cleared by user_id. Each person their
 -- own rows. The reviewer compares these with the live definitions before running round 7.
