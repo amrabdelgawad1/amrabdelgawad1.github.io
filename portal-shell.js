@@ -223,6 +223,8 @@
       try { db.rpc('log_app_error', { p_page:location.pathname + location.hash.split('/')[0], p_message:message, p_source:String(source || '').replace(location.origin, ''),
         p_line:Number(line) || null, p_stack:String(stack || '').slice(0, 2000), p_ua:navigator.userAgent.slice(0, 300) }).then(() => {}, () => {}); } catch(e) {}
     };
+    // a sign-in line for Amr's activity log, once per browser tab (the database keeps one per person every 6 hours)
+    try { if (!sessionStorage.getItem('portalSignin')) { sessionStorage.setItem('portalSignin', '1'); db.rpc('log_sign_in').then(() => {}, () => {}); } } catch(e) {}
     window.addEventListener('error', e => { if (e && e.message) send(e.message, e.filename, e.lineno, e.error && e.error.stack); });
     window.addEventListener('unhandledrejection', e => { const r = e && e.reason; send(r && r.message ? r.message : String(r), '', null, r && r.stack); });
   }

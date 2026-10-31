@@ -67,3 +67,14 @@ select pg_temp.ok((select count(*) from public.portal_changes()) = 9, 'the relea
 select public.log_change('Phase 0: logs', 'Errors, activity and changes', '20261031090000_portal_logs.sql', null);
 select pg_temp.ok(exists (select 1 from public.portal_changes() where title = 'Phase 0: logs'), 'Amr adds a line');
 reset role;
+
+-- ---------- sign-ins (20261031100000_portal_signins.sql) ----------
+set role authenticated;
+select pg_temp.as_user(:A::uuid, 'a@example.com', 'aal1');
+select public.log_sign_in(); select public.log_sign_in(); select public.log_sign_in();
+select pg_temp.as_user(:O::uuid, 'owner@example.com', 'aal2');
+select pg_temp.ok((select count(*) from public.portal_activity(1) where kind = 'signed_in' and who = 'Agent A') = 1, 'a sign-in is noted once per 6 hours, with the name');
+reset role;
+set role anon;
+select pg_temp.ok(pg_temp.fails('select public.log_sign_in()'), 'someone signed out can''t write one');
+reset role;
