@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/portal.css?v=4">
-<link rel="stylesheet" href="app.css?v=25" />
+<link rel="stylesheet" href="app.css?v=26" />
 <link rel="stylesheet" href="../ask.css?v=3">
 <link rel="stylesheet" href="../hub.css?v=7">
 <link rel="stylesheet" href="learn.css?v=4">
@@ -135,6 +135,13 @@
           </div>
         </section>
         <div class="stack">
+          <!-- Phase 1: the call counter while clocked in (calls.js) -->
+          <section class="card" id="tCalls" hidden aria-labelledby="tCallsH">
+            <div class="calls-head"><h2 id="tCallsH">Calls this shift</h2><button class="btn ghost small" type="button" id="tCallsUndo" disabled>Undo last</button></div>
+            <div class="calls-grid" id="tCallsGrid"></div>
+            <p class="note" id="tCallsMsg" role="status"></p>
+            <p class="note">One tap per call. Your end-of-shift numbers fill in from these.</p>
+          </section>
           <div class="tiles">
             <div class="tile"><p>This month</p><strong class="num" id="hMonth">0h 00m</strong><small id="hShifts">0 shifts</small></div>
             <div class="tile due"><p>Not paid yet</p><strong class="num" id="hDue">$0.00</strong><small id="hDueEgp"></small></div>
@@ -303,10 +310,11 @@
 <script src="../tracker/config.js"></script>
 <script src="../ask.js?v=4"></script>
 <script src="/portal-shell.js?v=4"></script>
-<script src="app.js?v=57"></script>
+<script src="app.js?v=58"></script>
 <script src="portal-home.js?v=3"></script>
 <script src="people.js?v=1"></script>
 <script src="logs.js?v=2"></script>
+<script src="calls.js?v=1"></script>
 <script src="account.js?v=13"></script>
 <script src="course/marketing/course.js?v=20"></script>
 <script src="psychology/course.js?v=1"></script>
