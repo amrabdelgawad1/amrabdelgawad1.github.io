@@ -468,6 +468,110 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   await p.evaluate(() => { try { localStorage.removeItem('crm-view'); } catch (e) {} });
   await p.ctx.close();
 
+  console.log('== Phase 2: the deal sheet (one page for buyers)');
+  p = await open(R2, 'aal1', 1440);
+  await unlock(p, TEAM1);
+  await p.click('button.crm-prop[data-open="' + r2d.id + '"]');
+  await p.waitForSelector('#drawer:not([hidden]) #crmFolder #dfSheet', { timeout:10000 });
+  // a photo in the folder (a real 2x2 PNG)
+  const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8z8DAwMDAxMDAwMDAAAANHQEDasKb6QAAAABJRU5ErkJggg==', 'base64');
+  await p.selectOption('#dfKind', 'photo');
+  await p.setInputFiles('#dfFile', { name:'front.png', mimeType:'image/png', buffer:PNG });
+  await p.waitForFunction(() => /Added front/.test((document.getElementById('dfNote') || {}).textContent || ''), null, { timeout:15000 }).catch(() => {});
+  ok(DB.files.some(f => f.deal_id === r2d.id && f.kind === 'photo'), 'a photo is added to the deal folder');
+  await p.fill('#dcClose', day(25));   // an unsaved change in the deal panel: the sheet's save must not take it
+  await p.click('#dfSheet');
+  await p.waitForSelector('#crmSheetUI #shPics input', { timeout:15000 });
+  ok(await p.isVisible('#crmSheetUI') && /Deal sheet/.test(await p.textContent('#shTitle')), 'Make a deal sheet opens the sheet maker');
+  ok(await p.$$eval('#shPics input:checked', x => x.length) === 1 && await p.$$eval('#shPrev .dsh-pics img', x => x.length) === 1, 'the folder photo is opened in the browser and picked for the sheet');
+  ok(await p.$eval('#shPrev .dsh-pics img', i => i.src.startsWith('blob:')), 'the photo is shown from this browser only (never a link to storage)');
+  await p.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed++; window.__printHtml = document.getElementById('crmSheetPrint').innerHTML; window.__cls = document.documentElement.className; }; });
+  await p.click('#shPrint'); await p.waitForTimeout(200);
+  ok(/Add the asking price first/.test(await p.textContent('#shNote')) && await p.evaluate(() => window.__printed) === 0, 'no asking price: it says so and doesn’t print');
+  await p.fill('#sh_price', '45,000'); await p.fill('#sh_acres', '12.5'); await p.fill('#sh_zoning', 'Agricultural'); await p.fill('#sh_access', 'County road');
+  await p.fill('#sh_about', 'Wooded, level, close to town.'); await p.fill('#sh_whoName', 'Rep Two'); await p.fill('#sh_whoPhone', '555-0142');
+  let pv = await p.textContent('#shPrev');
+  ok(/12\.5 acres of land/.test(pv) && /Dayton, OH/.test(pv) && /\$45,000/.test(pv) && /\$3,600/.test(pv) && /Agricultural/.test(pv) && /County road/.test(pv), 'the preview: headline from the acres, the area, asking $45,000, $3,600 per acre, the details');
+  ok(!/Max offer|Opening|Acme|AT-2210|Example contract|2-bed house/.test(pv), 'never on it: max offer, opening offer, the title company, file names, the deal’s own name');
+  ok(/Assignment of contract/.test(pv) && /Sold as is/.test(pv), 'a deal under contract says it’s an assignment, and as is');
+  ok(await p.isHidden('#shAddrBox') && !/Oak/.test(pv), 'no street address unless asked');
+  await p.check('#sh_showAddr'); await p.fill('#sh_address', '123 Oak Rd'); await p.fill('#sh_parcel', '12-345');
+  pv = await p.textContent('#shPrev');
+  ok(/123 Oak Rd, Dayton, OH/.test(pv) && /12-345/.test(pv), 'ticking Show the street address adds the address and parcel number');
+  await p.uncheck('#sh_showAddr');
+  pv = await p.textContent('#shPrev');
+  ok(!/Oak|12-345/.test(pv), 'unticking takes both off again');
+  await p.click('#shPrint'); await p.waitForTimeout(800);
+  const ph = await p.evaluate(() => ({ n:window.__printed, html:window.__printHtml || '', cls:window.__cls || '' }));
+  ok(ph.n === 1 && /\$45,000/.test(ph.html) && /crm-printing/.test(ph.cls) && /^Deal sheet - 12\.5 acres/.test(await p.title()), 'Print or save as PDF prints the sheet (only the sheet: the page is hidden for print)');
+  await p.waitForTimeout(600);
+  const wsS = (await dec(DB.logs.find(r => r.user_id === R2).blob, TEAM1)).deals.find(d => d.id === r2d.id);
+  ok(wsS.sheet && wsS.sheet.price === '45,000' && wsS.sheet.acres === '12.5' && wsS.sheet.showAddr === false && wsS.sheet.address === '123 Oak Rd' && wsS.sheet.photos.length === 1, 'what was typed is saved with the deal (encrypted, in the workspace)');
+  ok(!/45,000|Agricultural|Oak/.test(JSON.stringify(DB.deals.find(d => d.id === r2d.id))), 'none of it reaches the readable deal row');
+  ok(wsS.contract.closing === day(20) && DB.deals.find(d => d.id === r2d.id).closing_on === day(20), 'the sheet’s save leaves the deal panel’s unsaved closing date alone (it waits for the panel’s own Save)');
+  // one page: print the page to PDF the way the browser would
+  await p.evaluate(() => document.documentElement.classList.add('crm-printing'));
+  const pdf = await p.pdf({ format:'Letter' });
+  const pages = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+  ok(pages === 1, 'it fits on one Letter page (' + pages + ')');
+  await p.evaluate(() => document.documentElement.classList.remove('crm-printing'));
+  // the fullest sheet: 4 large photos and the longest description still fit on one page
+  for (const n of ['side', 'back', 'road']) {
+    const b64p = await p.evaluate(n => { const c = document.createElement('canvas'); c.width = 1600; c.height = 1200; const g = c.getContext('2d');
+      g.fillStyle = n === 'side' ? '#5b7f4a' : n === 'back' ? '#8a6a35' : '#47607a'; g.fillRect(0, 0, 1600, 1200); g.fillStyle = '#fff'; g.font = 'bold 160px sans-serif'; g.fillText(n, 200, 650);
+      return c.toDataURL('image/png').split(',')[1]; }, n);
+    await p.click('#shClose'); await p.selectOption('#dfKind', 'photo');
+    await p.setInputFiles('#dfFile', { name:n + '.png', mimeType:'image/png', buffer:Buffer.from(b64p, 'base64') });
+    await p.waitForFunction(n => new RegExp('Added ' + n).test((document.getElementById('dfNote') || {}).textContent || ''), n, { timeout:15000 }).catch(() => {});
+    await p.click('#dfSheet'); await p.waitForSelector('#crmSheetUI #shPics input', { timeout:15000 });
+  }
+  ok(await p.$$eval('#shPics input', x => x.length) === 4, 'four photos in the folder');
+  await p.$$eval('#shPics input', xs => xs.forEach(x => { if (!x.checked) x.click(); }));
+  await p.fill('#sh_about', 'Long description. '.repeat(40).slice(0, 600)); await p.fill('#sh_utilities', 'Power at the road, well and septic needed'); await p.fill('#sh_flood', 'Zone X');
+  await p.check('#sh_showAddr'); await p.fill('#sh_parcel', '12-345-678');
+  ok(await p.$$eval('#shPrev .dsh-pics img', x => x.length) === 4, 'all four on the sheet');
+  await p.click('#shPrint'); await p.waitForTimeout(800);
+  await p.evaluate(() => document.documentElement.classList.add('crm-printing'));
+  const pdfAs = async format => { await p.evaluate(() => document.documentElement.classList.add('crm-printing')); return p.pdf({ format }); };   // each PDF fires afterprint, which clears the class
+  const pdf4 = await pdfAs('Letter'), pdfA4 = await pdfAs('A4');
+  if (OUT) fs.writeFileSync(path.join(OUT, 'crm-sheet.pdf'), pdf4);
+  const pages4 = (pdf4.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length, pagesA4 = (pdfA4.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+  ok(pages4 === 1 && pagesA4 === 1, 'the fullest sheet still fits on one page, Letter and A4 (' + pages4 + ', ' + pagesA4 + ')');
+  await p.evaluate(() => document.documentElement.classList.remove('crm-printing'));
+  await p.uncheck('#sh_showAddr'); await p.click('#shPrint'); await p.waitForTimeout(500);
+  await p.evaluate(() => { window.__copied = null; try { Object.defineProperty(navigator, 'clipboard', { value:{ writeText:async t => { window.__copied = t; } }, configurable:true }); } catch (e) {} });
+  await p.click('#shCopy'); await p.waitForTimeout(300);
+  const cp = await p.evaluate(() => window.__copied || '');
+  ok(/^Land for sale: 12\.5 acres of land/.test(cp) && /Asking \$45,000/.test(cp) && /Rep Two · 555-0142/.test(cp) && !/Oak|Acme/.test(cp), 'Copy as text gives a short message for buyers');
+  await shot(p, 'crm-sheet-1440');
+  await p.evaluate(() => document.activeElement && document.activeElement.blur());
+  await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+  ok(!(await p.$('#crmSheetUI')) && await p.isVisible('#drawer'), 'Escape closes the sheet maker (even with nothing focused), the deal stays open');
+  ok(await p.inputValue('#dcClose') === day(25), 'the unsaved closing date is still in the panel');
+  await p.fill('#dcClose', day(20));
+  ok(!/^Deal sheet/.test(await p.title()) && !(await p.evaluate(() => document.documentElement.classList.contains('crm-printing'))) && !(await p.$('#crmSheetPrint')), 'closing puts the page title back and clears the print copy');
+  await p.fill('#dNotes', 'Buyer list sent'); await p.click('#dSave'); await p.waitForTimeout(1500);
+  const wsS2 = (await dec(DB.logs.find(r => r.user_id === R2).blob, TEAM1)).deals.find(d => d.id === r2d.id);
+  ok(wsS2.notes === 'Buyer list sent' && wsS2.sheet && wsS2.sheet.price === '45,000', 'saving the deal afterwards keeps the sheet details');
+  await p.click('button.crm-prop[data-open="' + r2d.id + '"]').catch(() => {});
+  await p.waitForSelector('#drawer:not([hidden]) #dfSheet', { timeout:10000 });
+  await p.setViewportSize({ width:390, height:844 }); await p.waitForTimeout(200);
+  await p.click('#dfSheet'); await p.waitForSelector('#crmSheetUI #shPics input', { timeout:15000 });
+  ok(await p.inputValue('#sh_price') === '45,000' && await p.inputValue('#sh_whoPhone') === '555-0142', 'the next sheet starts from what was saved');
+  await p.click('#shClose'); await p.click('#dfSheet'); await p.waitForSelector('#crmSheetUI');
+  await p.evaluate(() => { window.print = () => {}; document.getElementById('shPrint').click(); });   // before the photos finish loading
+  await p.waitForTimeout(1200);
+  const wsS3 = (await dec(DB.logs.find(r => r.user_id === R2).blob, TEAM1)).deals.find(d => d.id === r2d.id);
+  ok(wsS3.sheet && wsS3.sheet.photos.length === 4, 'printing before the photos load keeps the photos picked last time');
+  ok(await p.$$eval('#shPrev .dsh-pics img', x => x.length) === 4, 'and the photos still show once they load');
+  ok(await p.evaluate(() => { const ui = document.getElementById('crmSheetUI'); return ui.scrollWidth <= 390 && document.documentElement.scrollWidth <= 390; }), 'sheet maker at 390: nothing wider than the screen');
+  const small = await p.evaluate(() => [...document.querySelectorAll('#crmSheetUI button, #crmSheetUI input[type=text], #crmSheetUI .sh-tick, #crmSheetUI .sh-pics label')].filter(e => e.offsetParent && e.getBoundingClientRect().height < 44).map(e => e.id || e.className));
+  ok(!small.length, 'sheet maker at 390: buttons, fields and ticks at least 44px ' + small.join(' '));
+  ok(!/—/.test(await p.textContent('#crmSheetUI')), 'no em dashes');
+  await shot(p, 'crm-sheet-390');
+  ok(!p.errs.length, 'no console errors (deal sheet) ' + p.errs.join(' | '));
+  await p.ctx.close();
+
   console.log('== Amr sees the team: Everyone, Only me, Pick people');
   p = await open(OWNER, 'aal2', 1440);
   await unlock(p, TEAM1);
@@ -480,6 +584,10 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   await p.click('tr[data-team] .crm-prop');
   t = await p.textContent('#drawer');
   ok(/View only/.test(t) && /Rep 1|Rep 2/.test(t) && !(await p.$('#dSave')), 'a teammate’s deal opens view only');
+  await p.waitForSelector('#drawer #dfSheet', { timeout:10000 });
+  await p.click('#dfSheet'); await p.waitForSelector('#crmSheetUI');
+  ok(/nothing here is saved/.test(await p.textContent('#crmSheetUI')), 'a teammate’s deal can have a sheet; nothing is saved to their deal');
+  await p.click('#shClose');
   await shot(p, 'crm-owner-teamdeal-1440');
   await p.click('#dX');
   await p.selectOption('#crmShow', 'me');
@@ -540,7 +648,8 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   let dOpen = 0; for (const d of DB.deals) { try { if ((await dec(d.enc, TEAM2)).name) dOpen++; } catch (e) {} }
   ok(DB.deals.length >= 3 && DB.deals.every(d => d.enc.salt === DB.team.salt) && dOpen === DB.deals.length, 'every deal row (' + DB.deals.length + ') moved to the new passphrase in the same step');
   ok(new Set(DB.deals.map(d => d.owner)).size === 3, 'deal rows from Amr, Rep 1 and Rep 2');
-  ok(DB.files.length === 1 && DB.files.every(f => f.enc.salt === DB.team.salt) && (await dec(DB.files[0].enc, TEAM2)).name === 'Example contract.pdf', 'the deal folder’s file moved to the new passphrase in the same step');
+  const fNames = []; for (const f of DB.files) { try { fNames.push((await dec(f.enc, TEAM2)).name); } catch (e) {} }
+  ok(DB.files.length === 5 && DB.files.every(f => f.enc.salt === DB.team.salt) && fNames.sort().join() === 'Example contract.pdf,back.png,front.png,road.png,side.png', 'the deal folder’s files (contract and photos) moved to the new passphrase in the same step');
   await p.click('#tpReopen'); await p.waitForSelector('#gate.vault');
   await unlock(p, TEAM1);
   ok(/doesn’t open/.test(await p.textContent('#vErr')), 'the old team passphrase no longer opens Amr’s CRM');
