@@ -210,10 +210,11 @@
   async function admin(my){
     const T = A(), db = T.db;
     box().innerHTML = '<div class="p-wrap">' + hero('Admin', 'Overview', 'Loading…', '') + '</div>';
-    const [live, reqs, revs, lr, mem, vis] = await Promise.all([liveCount(db), pendingRequests(db), reviewsWaiting(db), learners(db, true),
-      safe(db.from('members').select('active')), safe(db.rpc('visit_stats', { p_hours:168 }))]);
+    const [live, reqs, revs, lr, mem, vis, calls] = await Promise.all([liveCount(db), pendingRequests(db), reviewsWaiting(db), learners(db, true),
+      safe(db.from('members').select('active')), safe(db.rpc('visit_stats', { p_hours:168 })), safe(db.rpc('portal_calls_today'))]);
     if (my !== run) return;
     const r = reqs || [], team = (mem.data || []).filter(x => x.active).length, dc = dealCounts();
+    const ct = Array.isArray(calls.data) ? calls.data : null, sum = k => (ct || []).reduce((a, x) => a + (Number(x[k]) || 0), 0);
     const learning = new Set(lr.hub.map(x => x.user_id).concat(lr.acq.filter(x => x.done > 0 || x.module).map(x => x.userId))).size;
     const need = revs.length + r.length;
     const v = vis.data && vis.data.visitors != null ? Number(vis.data.visitors).toLocaleString('en-US') : null;
@@ -222,7 +223,8 @@
         '<div class="p-stats">' + stat(revs.length, 'to review', '#review') + stat(r.length, r.length === 1 ? 'shift request' : 'shift requests', '#requests') + stat(live == null ? '–' : live, 'clocked in now', '#live') + '</div>') +
       '<div class="p-grid p-boxes">' +
         box5('People', plural(team, 'person', 'people') + ' on the team', [row('Clocked in now', muted(live == null ? '–' : plural(live, 'person', 'people')), '#live'),
-          row('Missed-shift requests', r.length ? pillR(r.length + ' waiting') : muted('None'), '#requests'), row('Invite and access', muted('Manage'), '#people')]) +
+          row('Missed-shift requests', r.length ? pillR(r.length + ' waiting') : muted('None'), '#requests'),
+          row('Calls today', muted(ct ? plural(sum('dials'), 'dial') + ' · ' + plural(sum('appointments'), 'appointment') : '–')), row('Invite and access', muted('Manage'), '#people')]) +
         box5('Learning', '3 courses', [row('Review center', revs.length ? pillR(revs.length + ' waiting') : muted('None'), '#review'),
           row('Learner progress', muted(learning + ' learning'), '#progress'), row('Who has which course', muted('Manage'), '/app/learn/')]) +
         box5('Deals', 'All reps', (dc ? [row('Follow-ups due', dc.due ? pillR(dc.due + ' due') : muted('None'), '/app/deals/#followups'), row('Open deals', muted(String(dc.open)), '/app/deals/'),
@@ -231,7 +233,16 @@
         box5('Money', 'Only you', [row('Cash this month', muted('Open'), '#overview'), row('Course payments', muted('Not set up yet'))]) +
         box5('Site', 'Public pages', [row('Visits this week', muted(v == null ? 'Open' : v), '#visits'), row('Team emails', muted('Open'), '#emails'), row('Logs', muted('Open'), '#logs'),
           row('Zoho Campaigns', muted('Open'), 'https://campaigns.zoho.com/', true)]) +
-      '</div></div>';
+      '</div>' + callsToday(ct) + '</div>';
+  }
+
+  // Today's calls per person (portal_calls_today): ended shifts' numbers plus the taps of shifts still running
+  function callsToday(ct){
+    if (!ct || !ct.length) return '';
+    return '<section aria-labelledby="pvCallsH"><h2 class="p-h2" id="pvCallsH">Calls today <small>Live: shifts still running count as they tap</small></h2>' +
+      '<div class="p-tablewrap"><table class="p-table"><thead><tr><th scope="col">Name</th><th scope="col">Dials</th><th scope="col">Conversations</th><th scope="col">Offers</th><th scope="col">Appointments</th></tr></thead><tbody>' +
+      ct.map(x => '<tr><td>' + esc(x.name) + (x.on_shift ? ' <span class="p-pill is-ok">On shift</span>' : '') + '</td><td>' + (Number(x.dials) || 0) + '</td><td>' + (Number(x.conversations) || 0) +
+        '</td><td>' + (Number(x.offers) || 0) + '</td><td>' + (Number(x.appointments) || 0) + '</td></tr>').join('') + '</tbody></table></div></section>';
   }
 
   // ======================================================================

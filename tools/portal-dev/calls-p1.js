@@ -38,6 +38,16 @@ const T = [
     const nums = await p.evaluate(() => [...document.querySelectorAll('input[type="number"], input[inputmode="numeric"]')].filter(i => i.offsetParent).map(i => i.value));
     ok(nums.slice(0, 3).join(',') === '4,1,', 'ending the shift: dials and conversations fill in from the counter (' + nums.join(',') + ')');
   } },
+  { name:'admin-calls-today', url:'/app/', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_FROM:ownerFrom, SB_RPC:Object.assign({}, owner, { portal_calls_today:[
+      { user_id:'u1', name:'Sara R.', dials:25, conversations:5, offers:1, appointments:2, on_shift:true }, { user_id:'u2', name:'Youssef H.', dials:40, conversations:7, offers:0, appointments:1, on_shift:false }] }) }, run: async (p, ok) => {
+    const t = await p.evaluate(() => document.getElementById('pView').innerText);
+    ok(/Calls today\s*65 dials · 3 appointments/.test(t), 'Admin overview: today\u2019s totals in the People box');
+    ok(/Sara R\.\s*On shift\s*25\s*5\s*1\s*2/.test(t) && /Youssef H\.\s*40\s*7\s*0\s*1/.test(t), 'and a row per person, marked when on shift');
+  } },
+  { name:'admin-no-calls', url:'/app/', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_FROM:ownerFrom, SB_RPC:owner }, run: async (p, ok) => {
+    const t = await p.evaluate(() => document.getElementById('pView').innerText);
+    ok(/Calls today\s*–/.test(t) && !/Calls today Live/.test(t), 'older database: a dash, no table');
+  } },
   { name:'calls-off', url:'/app/#track', init:{ SB_SESSION:U, SB_RPC:agent, SB_FROM:{ live_status:[], call_events:[] } }, run: async (p, ok) => {
     await p.waitForTimeout(2000);
     ok(await p.evaluate(() => document.getElementById('tCalls').hidden), 'not clocked in: no counter');
