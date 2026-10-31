@@ -371,6 +371,9 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   ok(/2-bed house/.test(uc) && /Inspection ends in 3 days/.test(uc) && /Closing in 20 days/.test(uc), 'the deal sits under Under contract with its countdowns');
   await p.click('.crm-col[aria-label="Under contract"] .crm-card'); await p.waitForSelector('#drawer:not([hidden]) #crmContract');
   ok(await p.inputValue('#dcClose') === day(20), 'a card opens the deal, dates filled in');
+  await p.fill('#dcInspect', day(-10)); await p.click('#dSave'); await p.waitForTimeout(600);
+  ok(await p.isVisible('#drawer') && /can’t end before the contract date/.test(await p.textContent('#dcNote')), 'an inspection end before the contract date stops the Save and says why');
+  ok((await dec(DB.logs.find(r => r.user_id === R2).blob, TEAM1)).deals.find(d => d.id === r2d.id).contract.inspection === day(3), 'and nothing was saved: the old date is kept');
   await p.click('#dX'); await p.waitForTimeout(200);
   await p.setViewportSize({ width:390, height:844 }); await p.waitForTimeout(300);
   ok(await p.evaluate(() => document.documentElement.scrollWidth <= 390), 'Board at 390: nothing wider than the screen');

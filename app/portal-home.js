@@ -59,8 +59,8 @@
   // Deals under contract with a date in the next n days (from public.deals: dates only, no names; Amr sees everyone's)
   function soon(rows, key, n){
     if (!Array.isArray(rows)) return muted('–');
-    const t = new Date(), today = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
-    const end = new Date(t.getTime() + n * 864e5), last = end.getFullYear() + '-' + String(end.getMonth() + 1).padStart(2, '0') + '-' + String(end.getDate()).padStart(2, '0');
+    const ymd = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const t = new Date(), today = ymd(t), end = new Date(t); end.setDate(end.getDate() + n); const last = ymd(end);   // calendar days, safe across clock changes
     const k = rows.filter(r => r[key] && r[key] >= today && r[key] <= last).length;
     return k ? pillR(plural(k, 'deal')) : muted('None');
   }
@@ -149,11 +149,14 @@
   const dealName = d => (d.kind === 'house' ? 'House' : 'Land') + (d.county || d.state ? ' · ' + [d.county ? title(d.county) : '', d.state || ''].filter(Boolean).join(', ') : '');
   const daysLate = (due, now) => Math.round((new Date(now + 'T12:00') - new Date(due + 'T12:00')) / 864e5);
   const dealRow = (d, right) => row(dealName(d), right, '/app/deals/#id=' + encodeURIComponent(d.id));
+  // The next contract date still to come (inspection end, then closing), for sorting; '9999' when none is left
+  const nextDate = (d, now) => [d.inspection_ends, d.closing_on].filter(x => x && x >= now)[0] || (d.closing_on && d.closing_on < now ? d.closing_on : '9999');
   // Under contract: the next date that matters (inspection end, then closing), as a countdown
   function contractTxt(d, now){
     const k = x => x ? Math.round((new Date(x + 'T12:00') - new Date(now + 'T12:00')) / 864e5) : null;
     const ins = k(d.inspection_ends), cl = k(d.closing_on);
     if (ins != null && ins >= 0) return { t:ins === 0 ? 'Inspection ends today' : 'Inspection ends in ' + plural(ins, 'day'), hot:ins <= 3 };
+    if (ins != null && cl == null) return { t:'Inspection over', hot:false };
     if (cl != null) return { t:cl > 0 ? 'Closing in ' + plural(cl, 'day') : cl === 0 ? 'Closing today' : 'Closing was ' + plural(-cl, 'day') + ' ago', hot:cl <= 7, late:cl < 0 };
     return { t:'Under contract · add dates', hot:false };
   }
@@ -172,7 +175,7 @@
     const now = isoDay(new Date()), list = r.data || [];
     const due = list.filter(d => d.follow_up && d.follow_up <= now).sort((a, b) => a.follow_up < b.follow_up ? -1 : 1);
     const act = list.filter(d => !d.follow_up || d.stage === 'contract').filter(d => !due.includes(d))
-      .sort((a, b) => (a.stage === 'contract' ? 0 : 1) - (b.stage === 'contract' ? 0 : 1) || ((a.inspection_ends || a.closing_on || '9999') < (b.inspection_ends || b.closing_on || '9999') ? -1 : 1) || (a.updated_at < b.updated_at ? -1 : 1));
+      .sort((a, b) => (a.stage === 'contract' ? 0 : 1) - (b.stage === 'contract' ? 0 : 1) || nextDate(a, now).localeCompare(nextDate(b, now)) || String(a.updated_at || '').localeCompare(String(b.updated_at || '')));
     $('pvDueN').textContent = due.length ? plural(due.length, 'deal') : '';
     $('pvActN').textContent = act.length ? plural(act.length, 'deal') : '';
     const lateTxt = d => { const k = daysLate(d.follow_up, now); return k <= 0 ? 'Today' : k === 1 ? '1 day late' : k + ' days late'; };

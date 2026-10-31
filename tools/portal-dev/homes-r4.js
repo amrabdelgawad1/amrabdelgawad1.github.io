@@ -99,14 +99,16 @@ const T = [
       { id:'d2', kind:'house', county:'polk', state:'FL', stage:'talking', follow_up:iso(0), updated_at:'2026-10-21T10:00:00Z' },
       { id:'d3', kind:'land', county:null, state:'TX', stage:'lead', follow_up:null, updated_at:'2026-10-22T10:00:00Z' },
       { id:'d4', kind:'house', county:'dayton', state:'OH', stage:'contract', follow_up:iso(5), inspection_ends:iso(2), closing_on:iso(15), updated_at:'2026-10-23T10:00:00Z' },
-      { id:'d5', kind:'land', county:'athens', state:'OH', stage:'lead', follow_up:iso(4), updated_at:'2026-10-24T10:00:00Z' }] } }, run: async (p, ok) => {
+      { id:'d5', kind:'land', county:'athens', state:'OH', stage:'lead', follow_up:iso(4), updated_at:'2026-10-24T10:00:00Z' },
+      { id:'d6', kind:'land', county:'pike', state:'OH', stage:'contract', follow_up:null, inspection_ends:iso(-2), closing_on:null, updated_at:'2026-10-25T10:00:00Z' }] } }, run: async (p, ok) => {
       const t = await p.evaluate(() => document.getElementById('pView').innerText);
       ok(/Today/.test(t) && /23\s*calls/.test(t) && /1\s*conversation\b/.test(t) && /3\s*offers and appointments/.test(t) && /0:00\s*hours today/.test(t), 'today’s numbers: 23 calls, 1 conversation, 3 offers and appointments, 0:00 hours');
       const due = await p.evaluate(() => document.getElementById('pvDue').innerText), act = await p.evaluate(() => document.getElementById('pvAct').innerText);
       ok(/Land · Ross, OH[\s\S]*3 days late[\s\S]*House · Polk, FL[\s\S]*Today/.test(due) && !/Athens|Dayton|TX/.test(due), 'callbacks due: the late one first, then today; future follow-ups left out');
       ok(/House · Dayton, OH[\s\S]*Inspection ends in 2 days[\s\S]*Land · TX[\s\S]*New lead · no follow-up/.test(act) && !/Athens|Ross|Polk/.test(act), 'needing action: under contract first with its countdown, then a deal with no follow-up');
+      ok(/Land · Pike, OH[\s\S]*Inspection over/.test(act), 'a deal whose inspection is over and has no closing date says Inspection over');
       ok(await p.evaluate(() => (document.querySelector('#pvDue a.p-row') || {}).getAttribute('href')) === '/app/deals/#id=d1', 'a row opens that deal in the CRM');
-      ok(/2 deals/.test(await p.textContent('#pvDueN')) && /2 deals/.test(await p.textContent('#pvActN')), 'counts on both lists');
+      ok(/2 deals/.test(await p.textContent('#pvDueN')) && /3 deals/.test(await p.textContent('#pvActN')), 'counts on both lists');
       ok(await p.evaluate(() => SB_CALLS.some(c => c[0] === 'rpc' && c[1] === 'portal_my_today') && SB_CALLS.some(c => c[0] === 'from' && c[1] === 'deals')), 'reads portal_my_today and the deals table');
       const hs = await p.evaluate(() => [...document.querySelectorAll('#pView h2')].map(h => h.textContent.replace(/\s+/g, ' ').trim()));
       ok(hs.findIndex(h => /^Today/.test(h)) >= 0 && hs.findIndex(h => /^Today/.test(h)) < hs.indexOf('Your areas') && hs.includes('Next lesson'), 'Today comes before Your areas, with the Next lesson: ' + hs.join(' | '));
