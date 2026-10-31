@@ -309,6 +309,10 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   ok(dr && dr.id === r2d.id && dr.kind === r2d.kind && dr.state === 'OH' && dr.county === 'dayton' && dr.stage === 'lead', 'Rep 2’s deal row: same id and kind, Dayton, OH, new lead');
   ok(dr && dr.enc.salt === DB.team.salt, 'the row is on the team key');
   ok(dr && !/2-bed house|555-|Seller/.test(JSON.stringify(Object.assign({}, dr, { enc:null }))) && (await dec(dr.enc, TEAM1)).name === '2-bed house', 'the deal’s name and contact are only inside the encrypted part');
+  await p.click('#qaddBtn'); await p.fill('#qName', 'Oak lot'); await p.fill('#qLoc', '123 Oak Rd, OH'); await p.click('#qSave');
+  await p.waitForTimeout(1200);
+  const addr = DB.deals.filter(d => d.owner === R2).find(d => d.id !== dr.id);
+  ok(addr && addr.state === 'OH' && addr.county === null && !/oak/i.test(JSON.stringify(Object.assign({}, addr, { enc:null }))), 'a street address stays encrypted: no readable county');
 
   console.log('== Phase 2: Rep 2 adds cash buyers; they reach the database encrypted');
   await p.click('[data-go="buyers"]');
@@ -335,8 +339,8 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   await p.waitForFunction(() => /3-bed house/.test(document.getElementById('dealTable').textContent), null, { timeout:15000 });
   t = await p.textContent('#dealTable');
   ok(/20 acres/.test(t) && /3-bed house/.test(t) && /2-bed house/.test(t) && /Rep 1/.test(t) && /Rep 2/.test(t), 'Everyone: Amr’s, Rep 1’s and Rep 2’s open deals with owners');
-  ok(/6 open deals · 2 follow-ups due/.test(await p.textContent('#hSub')), 'hero counts the team');
-  ok(JSON.parse(await p.evaluate(() => sessionStorage.getItem('dealCounts'))).open === 6, 'portal counts include the team');
+  ok(/7 open deals · 2 follow-ups due/.test(await p.textContent('#hSub')), 'hero counts the team');
+  ok(JSON.parse(await p.evaluate(() => sessionStorage.getItem('dealCounts'))).open === 7, 'portal counts include the team');
   await shot(p, 'crm-owner-everyone-1440');
   await p.click('tr[data-team] .crm-prop');
   t = await p.textContent('#drawer');

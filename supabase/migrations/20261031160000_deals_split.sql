@@ -57,9 +57,13 @@ begin
       raise exception 'This deal isn''t encrypted with the team passphrase. Lock the CRM and open it again.' using errcode = '22023';
     end if;
   end if;
-  if tg_op = 'UPDATE' then new.created_at := old.created_at; end if;
+  -- the created date comes from the CRM (so moved deals keep it), but never in the future and never before 2020
+  if tg_op = 'UPDATE' then new.created_at := old.created_at;
+  else new.created_at := least(greatest(coalesce(new.created_at, now()), '2020-01-01'::timestamptz), now()); end if;
   new.state := case when btrim(coalesce(new.state, '')) ~* '^[a-z]{2}$' then upper(btrim(new.state)) end;
   new.county := nullif(btrim(regexp_replace(lower(coalesce(new.county, '')), '\s+(county|parish)$', '')), '');
+  -- a county never has a digit in it: anything with one (a street number, a parcel id) is not kept readable
+  if new.county ~ '[0-9]' then new.county := null; end if;
   if new.result in ('sold', 'assigned', 'kept') then new.stage := 'closed';
   elsif new.result in ('passed', 'elsewhere') then new.stage := 'passed'; end if;
   if new.stage in ('closed', 'passed') then new.follow_up := null; end if;
@@ -70,41 +74,49 @@ revoke all on function public.deals_check() from public, anon, authenticated;
 drop trigger if exists deals_check on public.deals;
 create trigger deals_check before insert or update on public.deals for each row execute function public.deals_check();
 
--- Stage changes and results, for countdowns and reports. Only the database writes here.
+-- Stage changes and results, for countdowns and reports. Only the database writes here, and the history stays
+-- when a deal is deleted (it may feed commissions), so it carries its own owner instead of depending on the deal.
 create table if not exists public.deal_events (
   id bigserial primary key,
-  deal_id text not null references public.deals(id) on delete cascade,
+  deal_id text not null,
+  owner uuid not null references auth.users(id) on delete cascade,
   at timestamptz not null default now(),
-  kind text not null check (kind in ('created', 'stage', 'result')),
+  kind text not null check (kind in ('created', 'stage', 'result', 'deleted')),
   from_value text, to_value text,
   by uuid default auth.uid()
 );
 create index if not exists deal_events_deal on public.deal_events (deal_id, at);
+create index if not exists deal_events_owner on public.deal_events (owner);
 alter table public.deal_events enable row level security;
 revoke all on public.deal_events from anon, authenticated;
 grant select on public.deal_events to authenticated;
 drop policy if exists "deal events read" on public.deal_events;
 create policy "deal events read" on public.deal_events for select to authenticated
-  using (exists (select 1 from public.deals x where x.id = deal_id));   -- the deals rules decide
+  using (public.portal_can('deals') and (owner = auth.uid() or public.deals_team_viewer()));   -- the same rule as deals
 
 create or replace function public.deals_log()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin
   if tg_op = 'INSERT' then
-    insert into public.deal_events (deal_id, kind, to_value) values (new.id, 'created', new.stage);
+    insert into public.deal_events (deal_id, owner, kind, to_value) values (new.id, new.owner, 'created', new.stage);
+  elsif tg_op = 'DELETE' then
+    insert into public.deal_events (deal_id, owner, kind, from_value) values (old.id, old.owner, 'deleted', old.stage);
   else
+    if new.owner is distinct from old.owner then
+      update public.deal_events e set owner = new.owner where e.deal_id = new.id and e.owner = old.owner;
+    end if;
     if new.stage is distinct from old.stage then
-      insert into public.deal_events (deal_id, kind, from_value, to_value) values (new.id, 'stage', old.stage, new.stage);
+      insert into public.deal_events (deal_id, owner, kind, from_value, to_value) values (new.id, new.owner, 'stage', old.stage, new.stage);
     end if;
     if new.result is distinct from old.result then
-      insert into public.deal_events (deal_id, kind, from_value, to_value) values (new.id, 'result', old.result, new.result);
+      insert into public.deal_events (deal_id, owner, kind, from_value, to_value) values (new.id, new.owner, 'result', old.result, new.result);
     end if;
   end if;
   return null;
 end $$;
 revoke all on function public.deals_log() from public, anon, authenticated;
 drop trigger if exists deals_log on public.deals;
-create trigger deals_log after insert or update on public.deals for each row execute function public.deals_log();
+create trigger deals_log after insert or update or delete on public.deals for each row execute function public.deals_log();
 
 -- Turning someone off gives their deal rows to Amr too (the buyers version, extended).
 create or replace function public.portal_deals_to_owner()
@@ -123,6 +135,7 @@ begin
     update public.deal_followups f set user_id = v_owner where f.user_id = new.user_id;
     update public.buyers b set owner = v_owner where b.owner = new.user_id;
     update public.deals x set owner = v_owner where x.owner = new.user_id;
+    update public.deal_events e set owner = v_owner where e.owner = new.user_id;
   end if;
   return new;
 end $$;

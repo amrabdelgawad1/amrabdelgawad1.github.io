@@ -24,6 +24,11 @@ insert into public.deals (id, kind, state, county, value, max_offer, stage, foll
   ('d-n1', 'land', 'oh', 'Ross County', 60000, 18000, 'lead', current_date + 2, jsonb_build_object('v', 2, 'salt', :'ts', 'iv', 'i-n1', 'ct', 'deal N1'));
 select pg_temp.ok((select state = 'OH' and county = 'ross' from public.deals where id = 'd-n1'), 'state and county are tidied');
 select pg_temp.ok((select count(*) from public.deal_events where deal_id = 'd-n1' and kind = 'created') = 1, 'a new deal is recorded in deal_events');
+insert into public.deals (id, kind, state, county, created_at, enc) values
+  ('d-n2', 'land', 'OH', '123 Oak Rd', now() + interval '30 days', jsonb_build_object('v', 2, 'salt', :'ts', 'iv', 'i-n2', 'ct', 'deal N2'));
+select pg_temp.ok((select county is null and created_at <= now() from public.deals where id = 'd-n2'), 'a street address never stays readable as the county, and no future dates');
+delete from public.deals where id = 'd-n2';
+select pg_temp.ok((select count(*) from public.deal_events where deal_id = 'd-n2') = 2 and (select count(*) from public.deal_events where deal_id = 'd-n2' and kind = 'deleted') = 1, 'deleting a deal keeps its history and records the delete');
 select pg_temp.ok(pg_temp.err($$insert into public.deals (id, kind, enc) values ('d-x', 'land', '{"salt":"OTHER","iv":"i","ct":"c"}')$$) like '%team passphrase%', 'a deal on another key is refused');
 select pg_temp.ok(pg_temp.fails($$insert into public.deals (id, kind, enc) values ('d-z', 'boat', jsonb_build_object('salt', current_setting('x.ts'), 'iv', 'i', 'ct', 'c'))$$), 'only land or house');
 select pg_temp.ok(pg_temp.fails($$insert into public.deals (id, kind, stage, enc) values ('d-z', 'land', 'maybe', jsonb_build_object('salt', current_setting('x.ts'), 'iv', 'i', 'ct', 'c'))$$), 'only the CRM''s stages');
@@ -48,7 +53,7 @@ select pg_temp.ok((select count(*) from public.deals) = 2, 'with the code: every
 update public.deals set stage = 'lead' where id = 'd-n1';
 select pg_temp.ok((select stage from public.deals where id = 'd-n1') = 'closed', 'but can''t change someone else''s');
 select pg_temp.as_user(:N::uuid, 'n@example.com', 'aal1');
-select pg_temp.ok((select count(*) from public.deals) = 1 and (select count(*) from public.deal_events where deal_id = 'd-m1') = 0, 'a rep sees only their own deals and history');
+select pg_temp.ok((select count(*) from public.deals) = 1 and (select count(*) from public.deal_events where deal_id = 'd-m1') = 0 and (select count(*) from public.deal_events where deal_id = 'd-n2') = 2, 'a rep sees only their own deals and history, deleted ones too');
 select pg_temp.as_user(:A::uuid, 'a@example.com', 'aal2');
 select pg_temp.ok((select count(*) from public.deals) = 0 and pg_temp.fails($$insert into public.deals (id, kind, enc) values ('d-a', 'land', '{"salt":"x","iv":"i","ct":"c"}')$$), 'no Deal tools: nothing to read or add');
 select pg_temp.as_user(:O::uuid, 'owner@example.com', 'aal2');
@@ -73,4 +78,5 @@ select pg_temp.ok((select bool_and(enc ->> 'salt' = 'TEAM4SALTTEAM400') from pub
 -- turning someone off gives their deals to Amr, unchanged
 update public.members set active = false where user_id = :N;
 select pg_temp.ok((select owner from public.deals where id = 'd-n1') = :O::uuid and (select enc ->> 'ct' from public.deals where id = 'd-n1') = 'deal N1', 'turning someone off gives their deals to Amr, unchanged');
+select pg_temp.ok((select count(*) from public.deal_events where owner = :N::uuid) = 0, 'and their deal history, deleted deals included');
 update public.members set active = true where user_id = :N;
