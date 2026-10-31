@@ -98,6 +98,7 @@
     const locked = COURSES.filter(c => !open(c));
     box().innerHTML = '<div class="p-wrap">' +
       hero('Portal', 'Hi, ' + first(prof.name), clockLine(), '<div class="p-hero-act" id="pvClockBox">' + clockBtn() + '</div>') +
+      '<div id="pvAnnc"></div>' +
       '<section aria-labelledby="pvCont" id="pvContWrap" hidden><h2 class="p-h2" id="pvCont">Continue learning</h2><div id="pvContBox"></div></section>' +
       '<section aria-labelledby="pvAreas"><h2 class="p-h2" id="pvAreas">Your areas</h2><div class="p-grid p-areas">' + areas.map(area).join('') + '</div></section>' +
       '<section aria-labelledby="pvBoard" id="pvBoardWrap" hidden><h2 class="p-h2" id="pvBoard">This week on the team <small>Monday to Sunday</small></h2><div id="pvBoardBox"></div></section>' +
@@ -106,6 +107,7 @@
       '</div>';
     $('pvClockBox').addEventListener('click', e => { const b = e.target.closest('[data-clock]'); if (b) T.clock(b.dataset.clock); });
     board(T.db, my);
+    announcement(T.db, my);
     if (me.role === 'manager' || has('requests')) {
       const n = (await pendingRequests(T.db) || []).length;
       if (my !== run) return;
@@ -129,6 +131,12 @@
       r.data.map((x, i) => '<tr' + (x.is_me ? ' class="is-me"' : '') + '><td class="p-rank">' + (i + 1) + '</td><td>' + esc(x.is_me ? (x.name || 'You') + ' (you)' : x.name || 'Someone') + '</td><td>' +
         (Number(x.calls) || 0) + '</td><td>' + (Number(x.lessons) || 0) + '</td><td>' + (Number(x.drills) || 0) + '</td></tr>').join('') + '</tbody></table></div>';
     $('pvBoardWrap').hidden = false;
+  }
+  // Amr's pinned announcement (portal_announcement), on the Team home
+  async function announcement(db, my){
+    const r = await safe(db.rpc('portal_announcement'));
+    if (my !== run || !r.data || !r.data.message) return;
+    $('pvAnnc').innerHTML = '<section class="p-annc" aria-label="Announcement from Amr"><span><b>From Amr</b><p>' + esc(r.data.message) + '</p></span></section>';
   }
   function clockLine(){
     const T = A(), st = T.clockState ? T.clockState() : null, prof = T.profile || {};
@@ -210,8 +218,8 @@
   async function admin(my){
     const T = A(), db = T.db;
     box().innerHTML = '<div class="p-wrap">' + hero('Admin', 'Overview', 'Loading…', '') + '</div>';
-    const [live, reqs, revs, lr, mem, vis, calls] = await Promise.all([liveCount(db), pendingRequests(db), reviewsWaiting(db), learners(db, true),
-      safe(db.from('members').select('active')), safe(db.rpc('visit_stats', { p_hours:168 })), safe(db.rpc('portal_calls_today'))]);
+    const [live, reqs, revs, lr, mem, vis, calls, ann] = await Promise.all([liveCount(db), pendingRequests(db), reviewsWaiting(db), learners(db, true),
+      safe(db.from('members').select('active')), safe(db.rpc('visit_stats', { p_hours:168 })), safe(db.rpc('portal_calls_today')), safe(db.rpc('portal_announcement'))]);
     if (my !== run) return;
     const r = reqs || [], team = (mem.data || []).filter(x => x.active).length, dc = dealCounts();
     const ct = Array.isArray(calls.data) ? calls.data : null, sum = k => (ct || []).reduce((a, x) => a + (Number(x[k]) || 0), 0);
@@ -233,7 +241,28 @@
         box5('Money', 'Only you', [row('Cash this month', muted('Open'), '#overview'), row('Course payments', muted('Not set up yet'))]) +
         box5('Site', 'Public pages', [row('Visits this week', muted(v == null ? 'Open' : v), '#visits'), row('Team emails', muted('Open'), '#emails'), row('Logs', muted('Open'), '#logs'),
           row('Zoho Campaigns', muted('Open'), 'https://campaigns.zoho.com/', true)]) +
-      '</div>' + callsToday(ct) + '</div>';
+      '</div>' + callsToday(ct) + annForm(ann.data) + '</div>';
+    wireAnnForm(db);
+  }
+
+  // Amr: one announcement pinned on everyone's Team home (set_announcement; empty clears it)
+  function annForm(a){
+    return '<section class="p-card p-annc-form" aria-labelledby="pvAnncH"><div class="p-card-head"><h2 id="pvAnncH">Announcement</h2><span>Pinned on everyone’s Team home</span></div>' +
+      '<label class="p-vh" for="pvAnncText">Announcement</label><textarea id="pvAnncText" maxlength="600" placeholder="For example: Team call Monday at 9 am New York time.">' + esc(a && a.message || '') + '</textarea>' +
+      '<div class="acts"><button type="button" class="p-btn" id="pvAnncPost">' + (a && a.message ? 'Update' : 'Post') + '</button>' + (a && a.message ? '<button type="button" class="p-btn is-ghost" id="pvAnncClear">Take it down</button>' : '') + '</div>' +
+      '<p class="p-annc-msg" id="pvAnncMsg" role="status"></p></section>';
+  }
+  function wireAnnForm(db){
+    const go = async text => {
+      $('pvAnncMsg').textContent = 'Saving…';
+      const r = await safe(db.rpc('set_announcement', { p_message:text }));
+      if (r.error || !('data' in r)) { $('pvAnncMsg').textContent = 'Couldn’t save it. Check your connection.'; return; }
+      $('pvAnncMsg').textContent = text ? 'Posted. The team sees it on their home page.' : 'Taken down.';
+      if (!text) $('pvAnncText').value = '';
+    };
+    const post = $('pvAnncPost'), clear = $('pvAnncClear');
+    if (post) post.addEventListener('click', () => { const t = $('pvAnncText').value.trim(); if (!t) { $('pvAnncMsg').textContent = 'Write the announcement first.'; return; } go(t); });
+    if (clear) clear.addEventListener('click', () => go(''));
   }
 
   // Today's calls per person (portal_calls_today): ended shifts' numbers plus the taps of shifts still running

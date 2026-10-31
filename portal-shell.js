@@ -109,7 +109,8 @@
     }).join('');
     return '<div class="p-apps-head"><p class="p-apps-title" role="heading" aria-level="2">Go to</p><a href="/app/">Portal home</a></div>' +
       '<div class="p-apps-grid">' + groups + '</div>' +
-      (me.role === 'owner' ? '<p class="p-apps-foot">Team members only see the apps you switched on for them in Invite and access.</p>' : '');
+      (me.role === 'owner' ? '<p class="p-apps-foot">Team members only see the apps you switched on for them in Invite and access.</p>'
+        : opts && opts.db && !window.PORTAL_TEST ? '<div class="p-apps-foot"><button type="button" class="p-fb-open" data-fb>Report a problem or idea</button></div>' : '');
   }
   function total(){
     // the dot on the Apps button: things waiting that this person handles
@@ -228,6 +229,38 @@
     window.addEventListener('error', e => { if (e && e.message) send(e.message, e.filename, e.lineno, e.error && e.error.stack); });
     window.addEventListener('unhandledrejection', e => { const r = e && e.reason; send(r && r.message ? r.message : String(r), '', null, r && r.stack); });
   }
+
+  // ---------- "Report a problem or idea" (send_feedback; Amr reads it in /app > Logs > Feedback) ----------
+  let fb = null;
+  function openFeedback(){
+    if (!opts || !opts.db) return;
+    if (!fb) {
+      fb = document.createElement('div'); fb.className = 'p-fb'; fb.hidden = true;
+      fb.innerHTML = '<form class="p-fb-box" role="dialog" aria-modal="true" aria-labelledby="pFbH">' +
+        '<p class="p-fb-h" id="pFbH" role="heading" aria-level="2">Report a problem or idea</p>' +
+        '<div class="p-fb-kind"><label><input type="radio" name="pFbKind" value="problem" checked>Something’s wrong</label><label><input type="radio" name="pFbKind" value="idea">An idea</label></div>' +
+        '<label class="p-fb-l">What happened, or what would help?<textarea maxlength="2000" rows="5"></textarea></label>' +
+        '<p class="p-fb-msg" role="status"></p>' +
+        '<div class="p-fb-acts"><button type="button" class="p-btn is-ghost" data-fb-close>Cancel</button><button type="submit" class="p-btn">Send to Amr</button></div></form>';
+      document.body.append(fb);
+      const say = t => { fb.querySelector('.p-fb-msg').textContent = t; };
+      fb.addEventListener('click', e => { if (e.target === fb || e.target.closest('[data-fb-close]')) fb.hidden = true; });
+      fb.querySelector('form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const text = fb.querySelector('textarea').value.trim(), kind = fb.querySelector('input[name="pFbKind"]:checked').value;
+        if (text.length < 3) { say('Write a few words first.'); return; }
+        const btn = fb.querySelector('button[type="submit"]'); btn.disabled = true; say('Sending…');
+        let r; try { r = await opts.db.rpc('send_feedback', { p_kind:kind, p_message:text, p_page:location.pathname + location.hash.split('/')[0] }); } catch(err) { r = { error:err }; }
+        btn.disabled = false;
+        if (r.error) { say(/a lot for one day/.test(r.error.message || '') ? 'That’s a lot for one day. Send the rest tomorrow.' : 'Couldn’t send it. Check your connection and try again.'); return; }
+        fb.querySelector('textarea').value = ''; say('Sent. Thank you!');
+        setTimeout(() => { fb.hidden = true; say(''); }, 1200);
+      });
+    }
+    closeAll(false); fb.hidden = false; fb.querySelector('textarea').focus();
+  }
+  document.addEventListener('click', e => { if (e.target.closest('[data-fb]')) openFeedback(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && fb && !fb.hidden) fb.hidden = true; });
 
   window.PortalShell = {
     // First call: draws the bar and loads who this is. Later calls with another header (a page that rebuilds its frame) reuse the data.

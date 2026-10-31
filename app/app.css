@@ -567,3 +567,14 @@ html body #pLogs{ min-height:calc(100vh - var(--p-top)); }
 #tCalls .dnc .row2{ margin-top:10px; }
 #pLogs .lg-acts{ display:flex; justify-content:flex-end; margin-bottom:10px; }
 #pLogs .lg-rm{ min-height:var(--p-tap); padding:6px 12px; font-size:14px; }
+#pLogs .lg-done td{ opacity:.55; }
+#pLogs .lg-fb{ white-space:pre-wrap; }
+#pLogs .lg-done-btn{ min-height:var(--p-tap); padding:6px 12px; font-size:14px; white-space:nowrap; }
+#pLogs .p-mode{ flex-wrap:wrap; }
+/* announcement: Team home banner and Amr's form on the Admin overview */
+#pView .p-annc{ display:flex; gap:12px; align-items:flex-start; padding:16px 18px; border:1px solid var(--p-accent); border-radius:var(--p-r); background:var(--p-accent-soft); color:var(--p-ink); }
+#pView .p-annc b{ display:block; color:var(--p-accent-deep); font:700 12px/1.4 var(--p-body); letter-spacing:.12em; text-transform:uppercase; }
+#pView .p-annc p{ margin:2px 0 0; white-space:pre-wrap; font-size:16px; }
+#pView .p-annc-form textarea{ box-sizing:border-box; width:100%; min-height:84px; margin-top:10px; padding:10px 12px; border:1px solid var(--p-line2); border-radius:var(--p-r-sm); font:16px/1.4 var(--p-body); color:var(--p-ink); resize:vertical; }
+#pView .p-annc-form .acts{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+#pView .p-annc-form .p-annc-msg{ margin:8px 0 0; color:var(--p-ink2); font-size:14px; min-height:20px; }

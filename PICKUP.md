@@ -13,6 +13,7 @@ Pick up from here. Every item below is merged to `main` and live unless it says 
 | Phase 1: call counter on My hours | #42 | `20261031110000_call_events.sql` |
 | Phase 1: calls count while the shift runs; Calls today on the Admin overview | #44 | `20261031120000_calls_today.sql` |
 | Phase 1: do-not-call list (reps check and add on My hours; Amr's list and CSV in Logs) | #45 | `20261031130000_dnc.sql` |
+| Report a problem or idea (Apps menu, every page; Logs > Feedback) and one pinned announcement on the Team home | #46 | `20261031140000_feedback_announcements.sql` |
 
 Each migration ran on staging first, then on live, and has a line in Admin > Logs > Changes.
 
@@ -28,7 +29,7 @@ Each migration ran on staging first, then on live, and has a line in Admin > Log
 3. Phase 3: commissions on Cash.
 
 ## How each round runs now
-1. Build on a branch, with checks in `tools/portal-dev/`. `test-roles.sh` runs every database check, 150 at the moment.
+1. Build on a branch, with checks in `tools/portal-dev/`. `test-roles.sh` runs every database check, 160 at the moment.
 2. Run the SQL on staging, then a read-only check as the owner (see `tools/staging/README.md`).
 3. Run the SQL on live, and add a `change_log` line.
 4. Open the PR, merge it, and confirm the Pages deploy succeeded.
