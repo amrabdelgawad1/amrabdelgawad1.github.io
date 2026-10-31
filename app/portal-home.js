@@ -99,7 +99,12 @@
     box().innerHTML = '<div class="p-wrap">' +
       hero('Portal', 'Hi, ' + first(prof.name), clockLine(), '<div class="p-hero-act" id="pvClockBox">' + clockBtn() + '</div>') +
       '<div id="pvAnnc"></div>' +
-      '<section aria-labelledby="pvCont" id="pvContWrap" hidden><h2 class="p-h2" id="pvCont">Continue learning</h2><div id="pvContBox"></div></section>' +
+      '<section aria-labelledby="pvToday" class="p-today-wrap"><h2 class="p-h2" id="pvToday">Today <small>' + esc(new Date().toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' })) + '</small></h2>' +
+        '<div class="p-today" id="pvTodayNums"><p class="p-loading">Loading…</p></div>' +
+        (has('deals') ? '<div class="p-grid p-today-lists"><section class="p-card" aria-labelledby="pvDueH"><div class="p-card-head"><h2 id="pvDueH">Callbacks due</h2><span id="pvDueN"></span></div><div id="pvDue"><p class="p-loading">Loading…</p></div></section>' +
+          '<section class="p-card" aria-labelledby="pvActH"><div class="p-card-head"><h2 id="pvActH">Deals needing action</h2><span id="pvActN"></span></div><div id="pvAct"><p class="p-loading">Loading…</p></div></section></div>' : '') +
+      '</section>' +
+      '<section aria-labelledby="pvCont" id="pvContWrap" hidden><h2 class="p-h2" id="pvCont">Next lesson</h2><div id="pvContBox"></div></section>' +
       '<section aria-labelledby="pvAreas"><h2 class="p-h2" id="pvAreas">Your areas</h2><div class="p-grid p-areas">' + areas.map(area).join('') + '</div></section>' +
       '<section aria-labelledby="pvBoard" id="pvBoardWrap" hidden><h2 class="p-h2" id="pvBoard">This week on the team <small>Monday to Sunday</small></h2><div id="pvBoardBox"></div></section>' +
       (locked.length ? '<section aria-labelledby="pvLocked"><h2 class="p-h2 p-h2-sm" id="pvLocked">Not open for you yet</h2><div class="p-lockrow">' +
@@ -108,6 +113,7 @@
     $('pvClockBox').addEventListener('click', e => { const b = e.target.closest('[data-clock]'); if (b) T.clock(b.dataset.clock); });
     board(T.db, my);
     announcement(T.db, my);
+    today(T.db, my, has('deals'));
     if (me.role === 'manager' || has('requests')) {
       const n = (await pendingRequests(T.db) || []).length;
       if (my !== run) return;
@@ -121,6 +127,45 @@
       '<span class="p-btn">Continue</span></a>';
     const i = $('pvContBox').querySelector('.p-bar i'); if (i) i.style.width = cont.pct + '%';   // set by script (/app allows it); never a style="" attribute
     $('pvContWrap').hidden = false;
+  }
+  // ---------- Today (Phase 1) ----------
+  // Days: the heading and "due" use this device's own day, the same day the Deal CRM uses when a follow-up date is
+  // picked, so a callback set for today shows as today. The call numbers use the Cairo day, like the Admin overview's
+  // Calls today, so the two always agree. On purpose; only far-off time zones late in the evening ever see the gap.
+  // The first thing after sign-in: today's numbers (portal_my_today, own counts only), callbacks due and deals needing
+  // action. Deals come from public.deals under its rules (your own rows); only the readable fields are used: kind,
+  // county, state, stage and dates. Seller names and details stay encrypted in the CRM, which a row opens.
+  const STAGE = { lead:'New lead', talking:'Talking', offer:'Offer sent', contract:'Under contract' };
+  const isoDay = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const title = t => String(t || '').replace(/\b\w/g, x => x.toUpperCase());
+  const dealName = d => (d.kind === 'house' ? 'House' : 'Land') + (d.county || d.state ? ' · ' + [d.county ? title(d.county) : '', d.state || ''].filter(Boolean).join(', ') : '');
+  const daysLate = (due, now) => Math.round((new Date(now + 'T12:00') - new Date(due + 'T12:00')) / 864e5);
+  const dealRow = (d, right) => row(dealName(d), right, '/app/deals/#id=' + encodeURIComponent(d.id));
+  async function today(db, my, deals){
+    const T = A(), st = T.clockState ? T.clockState() : null;
+    const [n, r] = await Promise.all([safe(db.rpc('portal_my_today')),
+      deals ? safe(db.from('deals').select('id,kind,county,state,stage,follow_up,updated_at').eq('owner', T.user.id).not('stage', 'in', '(closed,passed)')) : Promise.resolve({})]);
+    if (my !== run) return;
+    const c = (Array.isArray(n.data) ? n.data[0] : n.data) || null;
+    const tile = (v, label, href) => '<a class="p-tile" href="' + href + '"><b>' + esc(v) + '</b><span>' + esc(label) + '</span></a>';
+    $('pvTodayNums').innerHTML = tile(st ? hm(st.work) : '0:00', 'hours today', '#track') +
+      tile(c ? c.dials : '–', c && c.dials === 1 ? 'call' : 'calls', '#track') + tile(c ? c.conversations : '–', c && c.conversations === 1 ? 'conversation' : 'conversations', '#track') +
+      tile(c ? (c.offers || 0) + (c.appointments || 0) : '–', 'offers and appointments', '#track');
+    if (!deals) return;
+    if (r.error) { $('pvDue').innerHTML = $('pvAct').innerHTML = '<p class="p-empty">Couldn’t load your deals. Refresh to try again.</p>'; return; }
+    const now = isoDay(new Date()), list = r.data || [];
+    const due = list.filter(d => d.follow_up && d.follow_up <= now).sort((a, b) => a.follow_up < b.follow_up ? -1 : 1);
+    const act = list.filter(d => !d.follow_up || d.stage === 'contract').filter(d => !due.includes(d))
+      .sort((a, b) => (a.stage === 'contract' ? 0 : 1) - (b.stage === 'contract' ? 0 : 1) || (a.updated_at < b.updated_at ? -1 : 1));
+    $('pvDueN').textContent = due.length ? plural(due.length, 'deal') : '';
+    $('pvActN').textContent = act.length ? plural(act.length, 'deal') : '';
+    const lateTxt = d => { const k = daysLate(d.follow_up, now); return k <= 0 ? 'Today' : k === 1 ? '1 day late' : k + ' days late'; };
+    $('pvDue').innerHTML = due.length ? due.slice(0, 6).map(d => dealRow(d, '<span class="p-pill' + (d.follow_up < now ? ' is-no' : '') + '">' + esc(lateTxt(d)) + '</span>')).join('') +
+        (due.length > 6 ? row('And ' + (due.length - 6) + ' more', muted('Open the CRM'), '/app/deals/') : '')
+      : '<p class="p-empty">' + (list.length ? 'No callbacks due today.' : 'No open deals yet. Deals you add in the Deal CRM show up here.') + '</p>';
+    $('pvAct').innerHTML = act.length ? act.slice(0, 6).map(d => dealRow(d, '<span class="p-pill is-plain">' + esc(d.stage === 'contract' ? 'Under contract' : (STAGE[d.stage] || 'Open') + ' · no follow-up') + '</span>')).join('') +
+        (act.length > 6 ? row('And ' + (act.length - 6) + ' more', muted('Open the CRM'), '/app/deals/') : '')
+      : '<p class="p-empty">' + (list.length ? 'Every open deal has a next step.' : 'Nothing yet.') + '</p>';
   }
   // This week's team board: calls logged, lessons passed, drills sent. One database function (portal_team_board) that
   // never returns hours or pay; everyone on the team sees the same board.

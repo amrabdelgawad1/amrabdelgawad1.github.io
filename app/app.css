@@ -578,3 +578,13 @@ html body #pLogs{ min-height:calc(100vh - var(--p-top)); }
 #pView .p-annc-form textarea{ box-sizing:border-box; width:100%; min-height:84px; margin-top:10px; padding:10px 12px; border:1px solid var(--p-line2); border-radius:var(--p-r-sm); font:16px/1.4 var(--p-body); color:var(--p-ink); resize:vertical; }
 #pView .p-annc-form .acts{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
 #pView .p-annc-form .p-annc-msg{ margin:8px 0 0; color:var(--p-ink2); font-size:14px; min-height:20px; }
+
+/* ---------- Phase 1: Today on the Team home (portal-home.js today()) ---------- */
+#pView .p-today{ display:grid; gap:12px; grid-template-columns:repeat(4, minmax(0, 1fr)); margin-bottom:18px; }
+#pView .p-tile{ display:flex; flex-direction:column; justify-content:center; min-height:88px; padding:14px 16px; background:var(--p-card); border:1px solid var(--p-line); border-radius:var(--p-r); color:var(--p-muted); text-decoration:none; font-size:13px; }
+#pView .p-tile b{ display:block; color:var(--p-ink); font:800 28px/1.1 var(--p-display); }
+#pView .p-tile:hover, #pView .p-tile:focus-visible{ border-color:var(--p-accent); }
+#pView .p-today-lists{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+#pView .p-today-lists .p-row{ min-height:48px; }
+#pView .p-today-lists .p-row > span:first-child{ min-width:0; overflow-wrap:anywhere; }
+@media (max-width:760px){ #pView .p-today{ grid-template-columns:repeat(2, minmax(0, 1fr)); } #pView .p-today-lists{ grid-template-columns:1fr; } }

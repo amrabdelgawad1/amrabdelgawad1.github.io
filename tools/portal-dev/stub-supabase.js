@@ -14,7 +14,7 @@
     const rows = (window.SB_FROM || {})[table];
     let single = false;
     const q = {
-      select(){ return q; }, eq(){ return q; }, neq(){ return q; }, in(){ return q; }, gte(){ return q; }, lte(){ return q; }, ilike(){ return q; },
+      select(){ return q; }, eq(){ return q; }, neq(){ return q; }, not(){ return q; }, in(){ return q; }, gte(){ return q; }, lte(){ return q; }, ilike(){ return q; },
       order(){ return q; }, limit(){ return q; }, range(){ return q; },
       maybeSingle(){ single = true; return q; }, single(){ single = true; return q; },
       insert(v){ calls.push(['insert', table, v]); return q; }, update(v){ calls.push(['update', table, v]); return q; },
