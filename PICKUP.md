@@ -1,4 +1,4 @@
-# Where things stand (Oct 30, 2026, evening)
+# Where things stand (Oct 31, 2026)
 
 Pick up from here. Every item below is merged to `main` and live unless it says otherwise.
 
@@ -14,22 +14,31 @@ Pick up from here. Every item below is merged to `main` and live unless it says 
 | Phase 1: calls count while the shift runs; Calls today on the Admin overview | #44 | `20261031120000_calls_today.sql` |
 | Phase 1: do-not-call list (reps check and add on My hours; Amr's list and CSV in Logs) | #45 | `20261031130000_dnc.sql` |
 | Report a problem or idea (Apps menu, every page; Logs > Feedback) and one pinned announcement on the Team home | #46 | `20261031140000_feedback_announcements.sql` |
+| Phase 2: buyers list in the database, `buyer_matches`, buyers move with the team passphrase change and to Amr on turn-off; fix for turning someone off twice | #48 | `20261031150000_buyers.sql` |
+| Phase 2: the Deal CRM shares buyers with the team, shows "The team's buyers" (Amr, managers with the code) and "Buyers who fit" in every real deal | #49 (checks only) | none; private `deal-tools/crm.html` updated, see below |
 
 Each migration ran on staging first, then on live, and has a line in Admin > Logs > Changes.
 
 ## Waiting on Amr
 1. ~~Backups~~ **Done (Oct 31):** the secrets are in, and the nightly backup in `amrabdelgawad1/portal-backups` runs at 03:17 Cairo time. The first full run says `RESTORE OK` (61 tables, 44 storage files, 10.7 MB). Optional, still open: add `BACKUP_PASSPHRASE` to encrypt the copies.
-2. **Team passphrase** in the Deal CRM (Settings > Set the team passphrase), from round 7.
+2. ~~Team passphrase~~ **Done (Oct 31).**
 3. **The roadmap's five phases and four gates, as text.** The blueprint's diagram didn't come through, so Phase 1 so far covers only what the text names (call logging, end-of-day numbers).
 4. **The students plan decisions** (section 9 of `PORTAL-STUDENTS.md`).
 
 ## Next, in order
 1. Phase 1 is done for what the blueprint's text names. Anything else in Phase 1 (from the roadmap diagram) waits for Amr's text.
-2. Phase 2, deals: split the Deal CRM into readable working fields and encrypted personal fields (plan in `DATA-MODEL.md` section 4), plus buyers and buyer matching. Staging first. The calculators keep their look.
+2. Phase 2, deals: buyers and matching are done. Still to do: split the Deal CRM into readable working fields and encrypted personal fields (plan in `DATA-MODEL.md` section 4). Staging first. The calculators keep their look.
 3. Phase 3: commissions on Cash.
 
+## The private Deal CRM file
+- Live: `deal-tools/crm.html`, 92,839 bytes, sha256 `b3f58ea67ffa6a88e7a616e2ec5735990ab1fbf900d0c218d4703b55f07a1358` (Oct 31, Phase 2 buyers). Use it as the base for the next change.
+- Backups in the same bucket: `crm-before-p2-2026-10-30.html` (round 7 file, `bd9475d1...`) and `crm-before-r7-2026-10-30.html`.
+- Build sources (never in this public repo): private repo `amrabdelgawad1/portal-backups`, folder `crm-build/`. Build with `python3 -I patch.py crm-src.html frame.html ext.js crm.html`, test with `node tools/portal-dev/crm-r7.js http://localhost:8702 crm.html` (97 checks).
+- Uploading: Amr's own signed-in session (two-step) may write the bucket. Browsers may keep the old copy for up to an hour.
+- How buyers work: your own buyers still live in your encrypted workspace (the calculators read them there). When the CRM is on the team passphrase it copies them to `public.buyers`: the buy box readable, name, phone, email and notes encrypted. Areas become counties ("Polk, Hillsborough") or states ("FL, GA"); if both are typed, only the counties count.
+
 ## How each round runs now
-1. Build on a branch, with checks in `tools/portal-dev/`. `test-roles.sh` runs every database check, 160 at the moment.
+1. Build on a branch, with checks in `tools/portal-dev/`. `test-roles.sh` runs every database check, 181 at the moment.
 2. Run the SQL on staging, then a read-only check as the owner (see `tools/staging/README.md`).
 3. Run the SQL on live, and add a `change_log` line.
 4. Open the PR, merge it, and confirm the Pages deploy succeeded.
