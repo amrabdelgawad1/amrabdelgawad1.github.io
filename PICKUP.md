@@ -18,7 +18,7 @@ Pick up from here. Every item below is merged to `main` and live unless it says 
 Each migration ran on staging first, then on live, and has a line in Admin > Logs > Changes.
 
 ## Waiting on Amr
-1. **Backups:** private repo `amrabdelgawad1/portal-backups` has the nightly workflow. Add the secrets `SUPABASE_DB_URL` (Session pooler URI with the database password), `SUPABASE_SERVICE_ROLE_KEY` and, optionally, `BACKUP_PASSPHRASE`. Then run it once and check the summary says `RESTORE OK`. Steps are in that repo's README.
+1. ~~Backups~~ **Done (Oct 31):** the secrets are in, and the nightly backup in `amrabdelgawad1/portal-backups` runs at 03:17 Cairo time. The first full run says `RESTORE OK` (61 tables, 44 storage files, 10.7 MB). Optional, still open: add `BACKUP_PASSPHRASE` to encrypt the copies.
 2. **Team passphrase** in the Deal CRM (Settings > Set the team passphrase), from round 7.
 3. **The roadmap's five phases and four gates, as text.** The blueprint's diagram didn't come through, so Phase 1 so far covers only what the text names (call logging, end-of-day numbers).
 4. **The students plan decisions** (section 9 of `PORTAL-STUDENTS.md`).
