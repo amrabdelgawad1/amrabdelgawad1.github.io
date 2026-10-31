@@ -58,5 +58,6 @@ echo "== round 7 checks"; P -f "$ROOT/tools/portal-dev/test-deals.sql" 2>&1 | se
 MIGL="$ROOT/supabase/migrations/20261031090000_portal_logs.sql"
 echo "== logs migration, first run"; P -f "$MIGL"
 echo "== logs migration, second run"; P -f "$MIGL"
+P -f "$ROOT/supabase/migrations/20261031100000_portal_signins.sql"
 echo "== logs checks"; P -f "$ROOT/tools/portal-dev/test-logs.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
 echo "== all checks passed"
