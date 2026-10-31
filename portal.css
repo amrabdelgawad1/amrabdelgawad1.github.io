@@ -240,3 +240,27 @@ a.p-cont:hover{ border-color:var(--p-accent); }
 .p-fb-l textarea{ box-sizing:border-box; width:100%; min-height:110px; padding:10px 12px; border:1px solid var(--p-line2); border-radius:var(--p-r-sm); font:16px/1.4 var(--p-body); color:var(--p-ink); resize:vertical; }
 .p-fb-msg{ margin:0; min-height:20px; color:var(--p-ink2); font-size:14px; }
 .p-fb-acts{ display:flex; justify-content:flex-end; gap:8px; }
+
+/* ---------- Phase 1: the notifications bell (portal-shell.js) ---------- */
+.p-bell-wrap{ position:relative; display:flex; flex:none; }
+.p-bell{ position:relative; display:inline-flex; align-items:center; justify-content:center; width:var(--p-tap); height:var(--p-tap); padding:0; border:1px solid var(--p-line2); border-radius:var(--p-r-sm); background:var(--p-card); color:var(--p-ink); cursor:pointer; }
+.p-bell svg{ width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.p-bell[aria-expanded="true"]{ border-color:var(--p-accent); background:var(--p-accent-soft); color:var(--p-accent); }
+.p-badge{ position:absolute; top:-6px; right:-6px; min-width:20px; height:20px; padding:0 5px; border-radius:99px; background:var(--p-accent-hi); color:#fff; font:800 11.5px/20px var(--p-body); text-align:center; box-shadow:0 0 0 2px var(--p-card); }
+.p-notes{ position:absolute; top:calc(100% + 8px); right:0; z-index:60; width:min(400px, calc(100vw - 16px)); max-height:calc(100vh - var(--p-top) - 24px); overflow:auto; background:var(--p-card); border:1px solid var(--p-line); border-radius:14px; box-shadow:var(--p-shadow); color:var(--p-ink); font:15px/1.4 var(--p-body); text-align:start; }
+.p-notes-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px 10px; border-bottom:1px solid var(--p-line); }
+.p-notes-head p{ margin:0; font:800 16px/1.2 var(--p-body); }
+.p-notes-head button{ min-height:var(--p-tap); padding:0 10px; border:0; background:none; color:var(--p-accent); font:700 14px/1 var(--p-body); cursor:pointer; }
+.p-notes-list{ list-style:none; margin:0; padding:6px; }
+.p-notes-list a{ display:grid; gap:2px; min-height:var(--p-tap); padding:10px 12px; border-radius:10px; color:var(--p-ink); text-decoration:none; }
+.p-notes-list a:hover, .p-notes-list a:focus-visible{ background:var(--p-soft); }
+.p-notes-list a.is-new{ background:var(--p-accent-soft); }
+.p-notes-list b{ font-weight:700; font-size:14.5px; overflow-wrap:anywhere; }
+.p-notes-list span{ color:var(--p-ink2); font-size:13.5px; overflow-wrap:anywhere; }
+.p-notes-list small{ color:var(--p-muted); font-size:12.5px; }
+.p-notes-empty{ margin:0; padding:18px 16px; color:var(--p-muted); }
+@media (max-width:640px){ .p-notes{ position:fixed; top:calc(var(--p-top) + 6px); left:8px; right:8px; width:auto; } }
+/* With the bell, the owner's bar is full on a phone: the Portal / Admin switch already says Admin, so the label goes */
+/* Course pages: the bar also holds the course menu, search and language. Under 420px the progress number goes (it is
+   on the Learning Hub card and the Next lesson card too) and the spacing tightens. */
+@media (max-width:420px){ .p-admin-tag{ display:none; } .p-shelled.p-shelled{ gap:4px; padding-inline:8px; } .p-shelled.p-shelled .cp-prog{ display:none; } }

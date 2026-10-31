@@ -11,8 +11,8 @@ Encryption split done for buyers and deals (working fields readable, personal de
 ## Phase 1. Daily work
 Done: call counter and Calls today, do-not-call list, feedback button, pinned announcement, Today screen (today's numbers, callbacks due, deals needing action, next lesson, on the Team home), end-of-day reports (the rep's clock-out note and numbers; Amr's Admin overview lists today or yesterday for everyone: sent, no report, on shift, didn't work).
 Done too: pipeline board (a Board view in the Deal CRM, New lead to Closed and passed; contract, inspection and closing dates on each deal under contract, with countdowns on the board, the list, the Today screen and Amr's Admin overview).
-Not built:
-- Notifications: access requests, drills submitted, deal stage changes, payments in.
+Done too: notifications (a bell in the top bar on every signed-in page. Amr: course access requests, missed-shift requests, recordings and drills sent for review, a rep's deal changing stage, problems and ideas. Reps: their request decided, their recording or drill reviewed. "Ask for access" on locked courses. Payments added once payments exist).
+Phase 1 is fully built; Gate 1 is next (every rep logs every call for two straight weeks).
 
 **Gate 1:** every rep logs every call for two straight weeks.
 

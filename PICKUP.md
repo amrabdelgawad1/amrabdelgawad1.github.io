@@ -21,6 +21,7 @@ Pick up from here. Every item below is merged to `main` and live unless it says 
 | Phase 1: end-of-day reports on the Admin overview (today or yesterday: sent, no report, on shift, didn't work, with hours, numbers and notes) | #54 | `20261031180000_eod.sql` (`portal_eod`) |
 | Fix: clocking out on the tracker now clears Live now, and the same shift is never saved twice (Amr's End on an already-saved shift just clears Live now) | #54 | `20261031190000_shift_dupes.sql` (two triggers on `shifts`) |
 | Phase 1: pipeline board. Deal CRM Board view (five stage columns) and List/Board switch; contract signed, inspection ends and closing dates on deals under contract, with countdowns in the CRM, on Today and on the Admin overview (Closing in 14 days, Inspection ending in 7 days) | #55 | `20261031200000_deal_dates.sql` (three date columns on `deals`, staging then live). CRM file uploaded |
+| Phase 1: notifications. Bell in the shared top bar (`portal-shell.js`), Ask for access on locked courses (Team home, Learning Hub). Fix: the Review center opened empty when /app loaded straight onto #review (app.js now waits for every script before the first route) | (this PR) | `20261031210000_notifications.sql` (`notifications` table, triggers on shift_requests, hub_uploads, course_submissions, deal_events, feedback) |
 
 Each migration ran on staging first, then on live, and has a line in Admin > Logs > Changes.
 
@@ -31,13 +32,12 @@ Each migration ran on staging first, then on live, and has a line in Admin > Log
 4. **The students plan decisions** (section 9 of `PORTAL-STUDENTS.md`).
 
 ## Next, in order (Amr's decisions, Oct 31)
-1. Phase 1: notifications (a bell in the top bar: access requests, drills sent for review, deal stage changes; payments in later).
-2. Phase 2: deal folder (contract, title company, comps, due diligence checklist with each deal).
-3. Phase 2: deal sheet maker (one-page PDF for buyers from the deal's numbers and photos).
-4. Phase 2: commissions in the Deal CRM, counted only when a deal closes: what each rep earned per deal, paid or owed, feeding Cash.
-5. Phase 3: team overview (every rep's calls, deals and course progress on one screen).
-6. Phase 3: call scoring with the ACQ 22 50-point scorecard, and roleplay practice.
-7. Phase 3: onboarding checklist per new hire, and the script and objection library.
+1. Phase 2: deal folder (contract, title company, comps, due diligence checklist with each deal).
+2. Phase 2: deal sheet maker (one-page PDF for buyers from the deal's numbers and photos).
+3. Phase 2: commissions in the Deal CRM, counted only when a deal closes: what each rep earned per deal, paid or owed, feeding Cash.
+4. Phase 3: team overview (every rep's calls, deals and course progress on one screen).
+5. Phase 3: call scoring with the ACQ 22 50-point scorecard, and roleplay practice.
+6. Phase 3: onboarding checklist per new hire, and the script and objection library.
 
 Later, by Amr's choice:
 - Certificates: wait until the Acquisitions modules are settled (more may be added), then issue after the last module, not Module 15.
