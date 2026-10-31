@@ -17,7 +17,7 @@ Pick up from here. Every item below is merged to `main` and live unless it says 
 | Phase 2: buyers list in the database, `buyer_matches`, buyers move with the team passphrase change and to Amr on turn-off; fix for turning someone off twice | #48 | `20261031150000_buyers.sql` |
 | Phase 2: the Deal CRM shares buyers with the team, shows "The team's buyers" (Amr, managers with the code) and "Buyers who fit" in every real deal | #49 (checks only) | none; private `deal-tools/crm.html` updated, see below |
 | Phase 2: deals split, `deals` (working fields readable, the rest encrypted) and `deal_events` (history, kept on delete); passphrase change and turn-off carry them; `ROADMAP.md` | #50 | `20261031160000_deals_split.sql` (staging, then live). CRM file uploaded Oct 31 |
-| Phase 1: Today screen on the Team home (today's numbers, callbacks due, deals needing action, next lesson); a Today row opens that deal in the CRM | (this PR) | `20261031170000_today.sql` (`portal_my_today`). CRM file updated for the deal links |
+| Phase 1: Today screen on the Team home (today's numbers, callbacks due, deals needing action, next lesson); a Today row opens that deal in the CRM | #52 | `20261031170000_today.sql` (`portal_my_today`, staging then live). CRM file uploaded |
 
 Each migration ran on staging first, then on live, and has a line in Admin > Logs > Changes.
 
@@ -34,8 +34,8 @@ Each migration ran on staging first, then on live, and has a line in Admin > Log
 5. Students and paid sign-up, after Amr's decisions and the legal pages.
 
 ## The private Deal CRM file
-- Live: `deal-tools/crm.html`, 99,004 bytes, sha256 `275d95b691c3aad09dd90b0b034b2776047b972b415cf38f2441bc44f900c0fb` (Oct 31, deals split; sources merged in `portal-backups` PR #1). Use it as the base for the next change.
-- Backups in the same bucket: `crm-before-split-2026-10-31.html` (Phase 2 buyers file, `b3f58ea6...`), `crm-before-p2-2026-10-30.html` (round 7 file, `bd9475d1...`) and `crm-before-r7-2026-10-30.html`.
+- Live: `deal-tools/crm.html`, 100,592 bytes, sha256 `ce9bd876a0ff011187e9f1b07fa6faccd1a1ebdfe6cd65e38e514152b44e611f` (Oct 31, Today links; sources merged in `portal-backups` PR #2). Use it as the base for the next change.
+- Backups in the same bucket: `crm-before-today-2026-10-31.html` (deals split file, `275d95b6...`), `crm-before-split-2026-10-31.html` (Phase 2 buyers file, `b3f58ea6...`), `crm-before-p2-2026-10-30.html` (round 7 file, `bd9475d1...`) and `crm-before-r7-2026-10-30.html`.
 - Build sources (never in this public repo): private repo `amrabdelgawad1/portal-backups`, folder `crm-build/`. Build with `python3 -I patch.py crm-src.html frame.html ext.js crm.html`, test with `node tools/portal-dev/crm-r7.js http://localhost:8702 crm.html` (97 checks).
 - Uploading: Amr's own signed-in session (two-step) may write the bucket. Browsers may keep the old copy for up to an hour.
 - How buyers work: your own buyers still live in your encrypted workspace (the calculators read them there). When the CRM is on the team passphrase it copies them to `public.buyers`: the buy box readable, name, phone, email and notes encrypted. Areas become counties ("Polk, Hillsborough") or states ("FL, GA"); if both are typed, only the counties count.
