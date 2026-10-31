@@ -168,7 +168,7 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
     deal('r2', '8 acres', 'Vinton County, OH', 'lead', day(6), '')]), REP1_OWN, sR), updated_at:'' });
 
   const browser = await chromium.launch();
-  async function open(user, aal, W){
+  async function open(user, aal, W, hash){
     const ctx = await browser.newContext({ viewport:{ width:W || 1440, height:(W || 1440) < 768 ? 844 : 900 }, serviceWorkers:'block', isMobile:(W || 1440) < 768, hasTouch:(W || 1440) < 768 });
     await ctx.route(/^https?:\/\/(?!localhost)/, r => r.abort());
     const P = PEOPLE[user];
@@ -178,7 +178,7 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
     const p = await ctx.newPage(); p.errs = [];
     p.on('pageerror', e => p.errs.push('PAGE ' + e.message));
     p.on('console', m => { if (m.type() === 'error' && !/fonts\.g|ERR_FAILED|net::/.test(m.text())) p.errs.push('CONSOLE ' + m.text()); });
-    await p.goto(BASE + '/app/deals/crm-test.html#pipeline');
+    await p.goto(BASE + '/app/deals/crm-test.html' + (hash || '#pipeline'));
     try { await p.waitForSelector('#gate.vault, #app:not([hidden])', { timeout:20000 }); }
     catch (e) { console.log(p.errs.join('\n')); throw e; }
     p.ctx = ctx; return p;
@@ -331,6 +331,18 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   ok(await p.isHidden('#crmTeamBuyers') || !(await p.$('#crmTeamBuyers')), 'a rep has no team buyers list');
   await layout(p, 'rep buyers 1440');
   ok(!p.errs.length, 'no console errors (Rep 2) ' + p.errs.join(' | '));
+  await p.ctx.close();
+
+  console.log('== Phase 1: a link from the Today screen opens that deal');
+  p = await open(R2, 'aal1', 390, '#id=' + encodeURIComponent(r2d.id));
+  await unlock(p, TEAM1);
+  await p.waitForSelector('#drawer:not([hidden])', { timeout:10000 }).catch(() => {});
+  ok(await p.isVisible('#drawer') && /2-bed house/.test(await p.textContent('#drawer')), 'the CRM opens with Rep 2’s deal in the drawer');
+  ok(await p.evaluate(() => location.hash) === '#pipeline', 'the address goes back to the pipeline (a refresh won’t reopen it)');
+  await p.ctx.close();
+  p = await open(R2, 'aal1', 1440, '#id=not-a-deal');
+  await unlock(p, TEAM1);
+  ok(await p.isHidden('#drawer') && /2-bed house/.test(await text(p)) && !p.errs.length, 'a link to a deal that isn’t there just opens the pipeline');
   await p.ctx.close();
 
   console.log('== Amr sees the team: Everyone, Only me, Pick people');

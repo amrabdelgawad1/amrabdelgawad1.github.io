@@ -17,6 +17,7 @@ Pick up from here. Every item below is merged to `main` and live unless it says 
 | Phase 2: buyers list in the database, `buyer_matches`, buyers move with the team passphrase change and to Amr on turn-off; fix for turning someone off twice | #48 | `20261031150000_buyers.sql` |
 | Phase 2: the Deal CRM shares buyers with the team, shows "The team's buyers" (Amr, managers with the code) and "Buyers who fit" in every real deal | #49 (checks only) | none; private `deal-tools/crm.html` updated, see below |
 | Phase 2: deals split, `deals` (working fields readable, the rest encrypted) and `deal_events` (history, kept on delete); passphrase change and turn-off carry them; `ROADMAP.md` | #50 | `20261031160000_deals_split.sql` (staging, then live). CRM file uploaded Oct 31 |
+| Phase 1: Today screen on the Team home (today's numbers, callbacks due, deals needing action, next lesson); a Today row opens that deal in the CRM | (this PR) | `20261031170000_today.sql` (`portal_my_today`). CRM file updated for the deal links |
 
 Each migration ran on staging first, then on live, and has a line in Admin > Logs > Changes.
 
@@ -27,9 +28,8 @@ Each migration ran on staging first, then on live, and has a line in Admin > Log
 4. **The students plan decisions** (section 9 of `PORTAL-STUDENTS.md`).
 
 ## Next, in order
-1. The new `crm.html` is uploaded. Amr opens the CRM once with the team passphrase so each real deal gets its row; then check that `public.deals` has one row per real deal and no street addresses in `county`.
-2. Run and record the Gate 0 test with a real rep account on phone and PC.
-3. Finish Phase 1: Today screen, end-of-day report, pipeline board, notifications.
+1. Gate 0: the database half passed on live (acting as Kyle Miller, 17 tables, nothing of anyone else's). Still needed: Kyle signs in once on a phone and once on a PC; check both in Admin > Logs (sign-ins).
+2. Finish Phase 1: end-of-day report, pipeline board, notifications.
 4. Rest of Phase 2: deal folder, deal sheet maker, commissions on Cash.
 5. Students and paid sign-up, after Amr's decisions and the legal pages.
 

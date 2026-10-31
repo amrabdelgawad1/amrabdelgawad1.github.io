@@ -79,4 +79,7 @@ echo "== buyers checks"; P -f "$ROOT/tools/portal-dev/test-buyers.sql" 2>&1 | se
 MIGS="$ROOT/supabase/migrations/20261031160000_deals_split.sql"
 P -f "$MIGS"; P -f "$MIGS"
 echo "== deals split checks"; P -f "$ROOT/tools/portal-dev/test-deals-split.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
+MIGY="$ROOT/supabase/migrations/20261031170000_today.sql"
+P -f "$MIGY"; P -f "$MIGY"
+echo "== today checks"; P -f "$ROOT/tools/portal-dev/test-today.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
 echo "== all checks passed"

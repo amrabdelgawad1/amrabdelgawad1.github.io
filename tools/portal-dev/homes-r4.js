@@ -17,6 +17,7 @@ const owner = { is_tracker_admin:true, portal_me:{ role:'owner', keys:['course',
 const ownerFrom = { members:[{ user_id:'u1', name:'Sara R.', active:true }, { user_id:'u2', name:'Youssef H.', active:true }], companies:[], live_status:[{ user_id:'u1' }],
   shift_requests:[{ id:1, name:'Sara R.', shift_date:'2026-10-27', user_id:'u1' }], hub_uploads:[{ id:'h1', user_id:'u2', title:'Call recording', course:'mkt', module:'m3' }], code_live_status:[] };
 
+const iso = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 const sideOf = p => p.evaluate(() => { const d = document.getElementById('drawer'); if (!d || d.hidden) return null;
   const out = []; let g = '';
   d.querySelectorAll('.sec, .mi').forEach(e => { if (e.hidden || e.closest('[hidden]') || e.closest('.bottom') || e.closest('.sub')) return; if (e.classList.contains('sec')) g = e.textContent.trim(); else out.push((g ? g + ':' : '') + e.textContent.trim().replace(/\s*\d+( waiting)?$/, '')); });
@@ -79,6 +80,29 @@ const T = [
       ok(await p.evaluate(() => location.hash) === '#home', 'an agent opening #live goes back to the Team home');
       await p.evaluate(() => { location.hash = '#track'; }); await p.waitForTimeout(500);
       ok(!(await p.evaluate(() => document.getElementById('pTrack').hidden)), 'old link #track still opens My hours');
+    } },
+  { name:'agent-today', url:'/app/', init:{ SB_SESSION:U, SB_RPC:Object.assign(member(ME.agent, 'Sara R.'), { portal_my_today:[{ dials:23, conversations:1, offers:2, appointments:1 }] }), SB_FROM:{ live_status:[], deals:[
+      { id:'d1', kind:'land', county:'ross', state:'OH', stage:'offer', follow_up:iso(-3), updated_at:'2026-10-20T10:00:00Z' },
+      { id:'d2', kind:'house', county:'polk', state:'FL', stage:'talking', follow_up:iso(0), updated_at:'2026-10-21T10:00:00Z' },
+      { id:'d3', kind:'land', county:null, state:'TX', stage:'lead', follow_up:null, updated_at:'2026-10-22T10:00:00Z' },
+      { id:'d4', kind:'house', county:'dayton', state:'OH', stage:'contract', follow_up:iso(5), updated_at:'2026-10-23T10:00:00Z' },
+      { id:'d5', kind:'land', county:'athens', state:'OH', stage:'lead', follow_up:iso(4), updated_at:'2026-10-24T10:00:00Z' }] } }, run: async (p, ok) => {
+      const t = await p.evaluate(() => document.getElementById('pView').innerText);
+      ok(/Today/.test(t) && /23\s*calls/.test(t) && /1\s*conversation\b/.test(t) && /3\s*offers and appointments/.test(t) && /0:00\s*hours today/.test(t), 'today’s numbers: 23 calls, 1 conversation, 3 offers and appointments, 0:00 hours');
+      const due = await p.evaluate(() => document.getElementById('pvDue').innerText), act = await p.evaluate(() => document.getElementById('pvAct').innerText);
+      ok(/Land · Ross, OH[\s\S]*3 days late[\s\S]*House · Polk, FL[\s\S]*Today/.test(due) && !/Athens|Dayton|TX/.test(due), 'callbacks due: the late one first, then today; future follow-ups left out');
+      ok(/House · Dayton, OH[\s\S]*Under contract[\s\S]*Land · TX[\s\S]*New lead · no follow-up/.test(act) && !/Athens|Ross|Polk/.test(act), 'needing action: under contract first, then a deal with no follow-up');
+      ok(await p.evaluate(() => (document.querySelector('#pvDue a.p-row') || {}).getAttribute('href')) === '/app/deals/#id=d1', 'a row opens that deal in the CRM');
+      ok(/2 deals/.test(await p.textContent('#pvDueN')) && /2 deals/.test(await p.textContent('#pvActN')), 'counts on both lists');
+      ok(await p.evaluate(() => SB_CALLS.some(c => c[0] === 'rpc' && c[1] === 'portal_my_today') && SB_CALLS.some(c => c[0] === 'from' && c[1] === 'deals')), 'reads portal_my_today and the deals table');
+      const hs = await p.evaluate(() => [...document.querySelectorAll('#pView h2')].map(h => h.textContent.replace(/\s+/g, ' ').trim()));
+      ok(hs.findIndex(h => /^Today/.test(h)) >= 0 && hs.findIndex(h => /^Today/.test(h)) < hs.indexOf('Your areas') && hs.includes('Next lesson'), 'Today comes before Your areas, with the Next lesson: ' + hs.join(' | '));
+    } },
+  { name:'agent-today-empty', url:'/app/', init:{ SB_SESSION:U, SB_RPC:Object.assign(member(ME.agent, 'Sara R.'), { portal_my_today:[{ dials:0, conversations:0, offers:0, appointments:0 }] }), SB_FROM:{ live_status:[], deals:[] } }, run: async (p, ok) => {
+      ok(/No open deals yet/.test(await p.textContent('#pvDue')) && /1?\s*0\s*calls/.test(await p.evaluate(() => document.getElementById('pvTodayNums').innerText)), 'no deals yet: says so; zero calls');
+    } },
+  { name:'learner-today', url:'/app/', init:{ SB_SESSION:U, SB_RPC:Object.assign(member({ role:'agent', keys:['course','learn'], needs_code:[] }, 'Lina P.'), { portal_my_today:[{ dials:4, conversations:0, offers:0, appointments:0 }] }), SB_FROM:{ live_status:[] } }, run: async (p, ok) => {
+      ok(!(await p.$('#pvDue')) && !(await p.evaluate(() => SB_CALLS.some(c => c[0] === 'from' && c[1] === 'deals'))), 'no Deal CRM access: no deal lists, and the deals table isn’t asked');
     } },
   { name:'agent-nocompany', url:'/app/', init:{ SB_SESSION:U, SB_RPC:member(ME.agent, 'Omar T.', null), SB_FROM:{ live_status:[] } }, run: async (p, ok) => {
       ok(/Amr needs to set the company/.test(await p.evaluate(() => document.getElementById('pvSub').textContent)) && !(await p.$('[data-clock]')), 'no company yet: says so, no clock button');

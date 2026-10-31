@@ -4,14 +4,13 @@ Each phase opens only when the one before passes its gate. A gate is passed by r
 
 ## Phase 0. Foundation (mostly done)
 One shell and menu, roles in the database, linked data model, staging copy, backups, logs, shared theme.
-Still open: the encryption split for deals (working fields readable, personal details encrypted). Buyers are done.
+Encryption split done for buyers and deals (working fields readable, personal details encrypted).
 
-**Gate 0:** a rep signs in on phone and PC and sees only their own data. Needs a recorded test with a real rep account.
+**Gate 0:** a rep signs in on phone and PC and sees only their own data. Database half passed Oct 31 on live as Kyle Miller (17 tables, 0 rows of anyone else's). Still needed: Kyle signs in once on a phone and once on a PC.
 
 ## Phase 1. Daily work
-Done: call counter and Calls today, do-not-call list, feedback button, pinned announcement.
+Done: call counter and Calls today, do-not-call list, feedback button, pinned announcement, Today screen (today's numbers, callbacks due, deals needing action, next lesson, on the Team home).
 Not built:
-- Today screen: callbacks due, deals needing action, next lesson, today's numbers. The first page after sign-in.
 - End-of-day report: one short form per rep, under two minutes, replaces chat updates.
 - Pipeline board: stages from new lead to closed, countdowns for inspection period and closing.
 - Notifications: access requests, drills submitted, deal stage changes, payments in.
@@ -20,7 +19,7 @@ Not built:
 
 ## Phase 2. Deals and money
 Done: buyers list and matching ("Buyers who fit" on every deal).
-Next: the deals split (`DATA-MODEL.md` section 4).
+Done: the deals split (`DATA-MODEL.md` section 4).
 Not built: deal folder (contract, title company, comps, due diligence checklist), deal sheet maker (one-page PDF for buyers), commissions per rep per deal feeding Cash.
 
 **Gate 2:** first deal matched to a buyer from the list.
