@@ -21,7 +21,7 @@ Pick up from here. Every item below is merged to `main` and live unless it says 
 | Phase 1: end-of-day reports on the Admin overview (today or yesterday: sent, no report, on shift, didn't work, with hours, numbers and notes) | #54 | `20261031180000_eod.sql` (`portal_eod`) |
 | Fix: clocking out on the tracker now clears Live now, and the same shift is never saved twice (Amr's End on an already-saved shift just clears Live now) | #54 | `20261031190000_shift_dupes.sql` (two triggers on `shifts`) |
 | Phase 1: pipeline board. Deal CRM Board view (five stage columns) and List/Board switch; contract signed, inspection ends and closing dates on deals under contract, with countdowns in the CRM, on Today and on the Admin overview (Closing in 14 days, Inspection ending in 7 days) | #55 | `20261031200000_deal_dates.sql` (three date columns on `deals`, staging then live). CRM file uploaded |
-| Phase 1: notifications. Bell in the shared top bar (`portal-shell.js`), Ask for access on locked courses (Team home, Learning Hub). Fix: the Review center opened empty when /app loaded straight onto #review (app.js now waits for every script before the first route) | (this PR) | `20261031210000_notifications.sql` (`notifications` table, triggers on shift_requests, hub_uploads, course_submissions, deal_events, feedback) |
+| Phase 1: notifications. Bell in the shared top bar (`portal-shell.js`), Ask for access on locked courses (Team home, Learning Hub). Fix: the Review center opened empty when /app loaded straight onto #review (app.js now waits for every script before the first route) | #57 | `20261031210000_notifications.sql` (`notifications` table, triggers on shift_requests, hub_uploads, course_submissions, deal_events, feedback) |
 
 Each migration ran on staging first, then on live, and has a line in Admin > Logs > Changes.
 
@@ -46,11 +46,14 @@ Later, by Amr's choice:
 - Website: legal pages and a public outsourcing page, later.
 
 ## The private Deal CRM file
-- Live: `deal-tools/crm.html`, 111,405 bytes, sha256 `5121442c8793925f159fff4e134d06a5af53816222e6a95eac2bb066ff70220e` (Oct 31, pipeline board; sources merged in `portal-backups` PR #3). Use it as the base for the next change.
-- Backups in the same bucket: `crm-before-board-2026-10-31.html` (Today links file, `ce9bd876...`), `crm-before-today-2026-10-31.html` (deals split file, `275d95b6...`), `crm-before-split-2026-10-31.html` (Phase 2 buyers file, `b3f58ea6...`), `crm-before-p2-2026-10-30.html` (round 7 file, `bd9475d1...`) and `crm-before-r7-2026-10-30.html`.
+- Live: `deal-tools/crm.html`, 111,405 bytes, sha256 `42cf757754681fc75601c33c7a1790b033d261be4a1839f4b0482933ea2db478` (Oct 31, notifications bell; sources merged in `portal-backups` PR #4). Use it as the base for the next change.
+- Backups in the same bucket: `crm-before-bell-2026-10-31.html` (pipeline board file, `5121442c...`), `crm-before-board-2026-10-31.html` (Today links file, `ce9bd876...`), `crm-before-today-2026-10-31.html` (deals split file, `275d95b6...`), `crm-before-split-2026-10-31.html` (Phase 2 buyers file, `b3f58ea6...`), `crm-before-p2-2026-10-30.html` (round 7 file, `bd9475d1...`) and `crm-before-r7-2026-10-30.html`.
 - Build sources (never in this public repo): private repo `amrabdelgawad1/portal-backups`, folder `crm-build/`. Build with `python3 -I patch.py crm-src.html frame.html ext.js crm.html`, test with `node tools/portal-dev/crm-r7.js http://localhost:8702 crm.html` (97 checks).
 - Uploading: Amr's own signed-in session (two-step) may write the bucket. Browsers may keep the old copy for up to an hour.
 - How buyers work: your own buyers still live in your encrypted workspace (the calculators read them there). When the CRM is on the team passphrase it copies them to `public.buyers`: the buy box readable, name, phone, email and notes encrypted. Areas become counties ("Polk, Hillsborough") or states ("FL, GA"); if both are typed, only the counties count.
+
+## Note: running SQL
+The Supabase SQL editor sometimes keeps showing "Running..." after a migration has finished. Don't run it again blindly: read back what it created (tables, triggers, function bodies) to confirm, as on Oct 31 for the notifications migration.
 
 ## How each round runs now
 1. Build on a branch, with checks in `tools/portal-dev/`. `test-roles.sh` runs every database check, 181 at the moment.
