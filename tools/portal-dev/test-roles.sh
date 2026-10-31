@@ -76,4 +76,7 @@ echo "== feedback and announcement checks"; P -f "$ROOT/tools/portal-dev/test-fe
 MIGB="$ROOT/supabase/migrations/20261031150000_buyers.sql"
 P -f "$MIGB"; P -f "$MIGB"
 echo "== buyers checks"; P -f "$ROOT/tools/portal-dev/test-buyers.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
+MIGS="$ROOT/supabase/migrations/20261031160000_deals_split.sql"
+P -f "$MIGS"; P -f "$MIGS"
+echo "== deals split checks"; P -f "$ROOT/tools/portal-dev/test-deals-split.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
 echo "== all checks passed"

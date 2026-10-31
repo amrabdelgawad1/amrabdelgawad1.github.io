@@ -16,22 +16,26 @@ Pick up from here. Every item below is merged to `main` and live unless it says 
 | Report a problem or idea (Apps menu, every page; Logs > Feedback) and one pinned announcement on the Team home | #46 | `20261031140000_feedback_announcements.sql` |
 | Phase 2: buyers list in the database, `buyer_matches`, buyers move with the team passphrase change and to Amr on turn-off; fix for turning someone off twice | #48 | `20261031150000_buyers.sql` |
 | Phase 2: the Deal CRM shares buyers with the team, shows "The team's buyers" (Amr, managers with the code) and "Buyers who fit" in every real deal | #49 (checks only) | none; private `deal-tools/crm.html` updated, see below |
+| Phase 2: deals split, `deals` (working fields readable, the rest encrypted) and `deal_events` (history, kept on delete); passphrase change and turn-off carry them; `ROADMAP.md` | #50 | `20261031160000_deals_split.sql` (staging, then live). **The CRM side needs Amr's upload, see below** |
 
 Each migration ran on staging first, then on live, and has a line in Admin > Logs > Changes.
 
 ## Waiting on Amr
 1. ~~Backups~~ **Done (Oct 31):** the secrets are in, and the nightly backup in `amrabdelgawad1/portal-backups` runs at 03:17 Cairo time. The first full run says `RESTORE OK` (61 tables, 44 storage files, 10.7 MB). Optional, still open: add `BACKUP_PASSPHRASE` to encrypt the copies.
 2. ~~Team passphrase~~ **Done (Oct 31).**
-3. **The roadmap's five phases and four gates, as text.** The blueprint's diagram didn't come through, so Phase 1 so far covers only what the text names (call logging, end-of-day numbers).
+3. ~~Roadmap as text~~ **Done (Oct 31):** see `ROADMAP.md`.
 4. **The students plan decisions** (section 9 of `PORTAL-STUDENTS.md`).
 
 ## Next, in order
-1. Phase 1 is done for what the blueprint's text names. Anything else in Phase 1 (from the roadmap diagram) waits for Amr's text.
-2. Phase 2, deals: buyers and matching are done. Still to do: split the Deal CRM into readable working fields and encrypted personal fields (plan in `DATA-MODEL.md` section 4). Staging first. The calculators keep their look.
-3. Phase 3: commissions on Cash.
+1. Amr uploads the new `crm.html` (below). Then open the CRM once with the team passphrase: each real deal gets its row. Check in Supabase that `public.deals` has one row per real deal and no street addresses in `county`.
+2. Run and record the Gate 0 test with a real rep account on phone and PC.
+3. Finish Phase 1: Today screen, end-of-day report, pipeline board, notifications.
+4. Rest of Phase 2: deal folder, deal sheet maker, commissions on Cash.
+5. Students and paid sign-up, after Amr's decisions and the legal pages.
 
 ## The private Deal CRM file
-- Live: `deal-tools/crm.html`, 92,839 bytes, sha256 `b3f58ea67ffa6a88e7a616e2ec5735990ab1fbf900d0c218d4703b55f07a1358` (Oct 31, Phase 2 buyers). Use it as the base for the next change.
+- Live: `deal-tools/crm.html`, 92,839 bytes, sha256 `b3f58ea67ffa6a88e7a616e2ec5735990ab1fbf900d0c218d4703b55f07a1358` (Oct 31, Phase 2 buyers).
+- **Ready to upload (deals split):** built from `portal-backups` branch `phase2-deals-split`, 99,004 bytes, sha256 `275d95b691c3aad09dd90b0b034b2776047b972b415cf38f2441bc44f900c0fb`. Keep the current file as `crm-before-split-2026-10-31.html` first. Once uploaded, merge that branch and use this file as the base for the next change.
 - Backups in the same bucket: `crm-before-p2-2026-10-30.html` (round 7 file, `bd9475d1...`) and `crm-before-r7-2026-10-30.html`.
 - Build sources (never in this public repo): private repo `amrabdelgawad1/portal-backups`, folder `crm-build/`. Build with `python3 -I patch.py crm-src.html frame.html ext.js crm.html`, test with `node tools/portal-dev/crm-r7.js http://localhost:8702 crm.html` (97 checks).
 - Uploading: Amr's own signed-in session (two-step) may write the bucket. Browsers may keep the old copy for up to an hour.

@@ -46,16 +46,17 @@ Phase 2 splits it, as the blueprint suggests:
 
 | Table | Status | Readable to the database | Encrypted in the browser |
 |---|---|---|---|
-| `deals` | Phase 2 | `id, owner (user_id), client_id, kind (land or house), county, state, acreage, price fields (value, max offer, paid, sold), stage, follow_up, created, updated, closed_on, result` | `enc`: seller name, phone, email, street address, notes |
-| `deal_events` | Phase 2 | stage changes and results, for countdowns and reports | |
-| `buyers` | Phase 2 | `id, owner, counties[], states[], kinds[], price_min, price_max, exit, proof_of_funds (yes/no), active` | `enc`: name, phone, email, notes |
+| `deals` | built | `id, owner (user_id), client_id, kind (land or house), county, state, acreage, price fields (value, max offer, paid, sold), stage, follow_up, created, updated, closed_on, result` | `enc`: seller name, phone, email, street address, notes |
+| `deal_events` | built | stage changes and results, for countdowns and reports | |
+| `buyers` | built | `id, owner, counties[], states[], kinds[], price_min, price_max, exit, proof_of_funds (yes/no), active` | `enc`: name, phone, email, notes |
 | `buyer_matches` | Phase 2 | which buyers fit a deal (computed in the database) | |
 | `deal_followups` | live | follow-up dates (`deal_key`, `due`), already readable | |
 
-**How the move happens (Phase 2, on staging first):**
-1. Amr opens the CRM with the team passphrase.
-2. The browser decrypts every workspace and writes one row per deal and per buyer: readable fields as they are, sensitive fields encrypted with the same team key.
-3. It checks every row, then saves all of them in one step, like the round 7 passphrase change.
+**How the split works (built Oct 31, `20261031160000_deals_split.sql`):**
+1. On the team passphrase, the Deal CRM keeps one row per real deal in `deals`, in step with the workspace every time a deal is saved: readable fields as they are; the deal's name, location as typed, seller contact and notes encrypted with the team key (`enc`). Practice deals stay out. Deleting a deal deletes its row.
+2. The encrypted workspace in `deal_logs` stays the source the calculators read. Nothing is removed from it in this step, so it can be undone by dropping the two tables.
+3. `deal_events` is written only by the database: a new deal, each stage change, each result.
+4. Changing the team passphrase re-encrypts deal rows in the same single step as workspaces and buyers; turning someone off gives their deal rows to Amr.
 
 The calculators keep their look. Only where they save deals changes.
 
