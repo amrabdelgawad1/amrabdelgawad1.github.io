@@ -47,6 +47,26 @@ const T = [
     await p.click('.lg-rm'); await p.click('.lg-rm'); await p.waitForTimeout(400);
     ok(await p.evaluate(() => (window.SB_CALLS || []).some(c => c[0] === 'rpc' && c[1] === 'dnc_remove' && c[2].p_phone === '8135550142')), 'Remove asks twice, then takes the number off');
   } },
+  { name:'logs-feedback', url:'/app/#logs/feedback', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:Object.assign({}, LOGS, { portal_feedback:[{ id:7, at:ago(10), who:'Sara R.', kind:'problem', page:'/app/#track', message:'The clock froze on my phone', done:false }, { id:6, at:ago(99), who:'Youssef H.', kind:'idea', page:'/app/', message:'A voicemail button', done:true }] }), SB_FROM:ownerFrom }, run: async (p, ok) => {
+    const t = await p.evaluate(() => document.getElementById('pLogs').innerText);
+    ok(/Problem\s*The clock froze on my phone/.test(t) && /Idea\s*A voicemail button/.test(t) && /Mark done/.test(t) && /Reopen/.test(t), 'Feedback: problems and ideas, who, Mark done and Reopen');
+    await p.click('.lg-done-btn[data-id="7"]'); await p.waitForTimeout(300);
+    ok(await p.evaluate(() => (window.SB_CALLS || []).some(c => c[0] === 'rpc' && c[1] === 'feedback_done' && c[2].p_id === 7 && c[2].p_done === true)), 'Mark done saves');
+  } },
+  { name:'agent-feedback-annc', url:'/app/', init:{ SB_SESSION:U, SB_RPC:Object.assign(member(ME.agent, 'Sara R.'), { portal_announcement:{ message:'Team call Monday at 9 am New York time.', updated_at:ago(5) }, send_feedback:null }), SB_FROM:{ live_status:[] } }, run: async (p, ok) => {
+    ok(/From Amr\s*Team call Monday at 9 am New York time\./i.test(await p.evaluate(() => document.getElementById('pView').innerText)), 'Team home: Amr\u2019s announcement pinned at the top');
+    await p.click('.p-apps-btn'); await p.click('[data-fb]');
+    ok(await p.isVisible('.p-fb-box'), 'Apps menu: Report a problem or idea opens a form');
+    await p.check('input[name="pFbKind"][value="idea"]'); await p.fill('.p-fb textarea', 'A voicemail button'); await p.click('.p-fb button[type="submit"]'); await p.waitForTimeout(300);
+    const sent = await p.evaluate(() => (window.SB_CALLS || []).filter(c => c[0] === 'rpc' && c[1] === 'send_feedback').map(c => c[2]));
+    ok(sent.length === 1 && sent[0].p_kind === 'idea' && sent[0].p_message === 'A voicemail button' && /Sent/.test(await p.textContent('.p-fb-msg')), 'and sends it to Amr');
+    const small = await p.evaluate(() => [...document.querySelectorAll('.p-fb button, .p-fb label')].filter(e => e.getBoundingClientRect().height && e.getBoundingClientRect().height < 43.5).length);
+    ok(small === 0, 'its buttons and choices are 44px');
+  } },
+  { name:'owner-annc-post', url:'/app/', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:Object.assign({}, owner, { set_announcement:null }), SB_FROM:ownerFrom }, run: async (p, ok) => {
+    await p.fill('#pvAnncText', 'Team call Monday.'); await p.click('#pvAnncPost'); await p.waitForTimeout(300);
+    ok(await p.evaluate(() => (window.SB_CALLS || []).some(c => c[0] === 'rpc' && c[1] === 'set_announcement' && c[2].p_message === 'Team call Monday.')) && /Posted/.test(await p.textContent('#pvAnncMsg')), 'Admin overview: Amr posts an announcement');
+  } },
   { name:'logs-not-set-up', url:'/app/#logs', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:owner, SB_FROM:ownerFrom }, run: async (p, ok) => {
     ok(/Couldn’t load the log|aren’t set up/.test(await p.evaluate(() => document.getElementById('pLogs').innerText)), 'without the database part: a plain message, no crash');
   } },

@@ -226,3 +226,17 @@ a.p-cont:hover{ border-color:var(--p-accent); }
 
 /* ---------- helpers ---------- */
 .p-vh{ position:absolute !important; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+
+/* "Report a problem or idea" (portal-shell.js) */
+.p-fb-open{ display:inline-flex; align-items:center; min-height:var(--p-tap); padding:0; border:0; background:none; color:var(--p-accent); font:600 14px/1.2 var(--p-body); cursor:pointer; }
+.p-fb{ position:fixed; inset:0; z-index:90; display:grid; place-items:center; padding:16px; background:rgba(20,22,27,.45); font-family:var(--p-body); }
+.p-fb[hidden]{ display:none; }
+.p-fb-box{ box-sizing:border-box; width:min(480px, 100%); display:grid; gap:12px; padding:22px; background:var(--p-card); border-radius:var(--p-r); box-shadow:var(--p-shadow); color:var(--p-ink); }
+.p-fb-h{ margin:0; font:800 22px/1.2 var(--p-display); }
+.p-fb-kind{ display:flex; flex-wrap:wrap; gap:6px 18px; }
+.p-fb-kind label{ display:flex; align-items:center; gap:8px; min-height:var(--p-tap); font-size:15px; cursor:pointer; }
+.p-fb-kind input{ width:18px; height:18px; accent-color:var(--p-accent); }
+.p-fb-l{ display:grid; gap:6px; font:600 14px/1.3 var(--p-body); color:var(--p-ink2); }
+.p-fb-l textarea{ box-sizing:border-box; width:100%; min-height:110px; padding:10px 12px; border:1px solid var(--p-line2); border-radius:var(--p-r-sm); font:16px/1.4 var(--p-body); color:var(--p-ink); resize:vertical; }
+.p-fb-msg{ margin:0; min-height:20px; color:var(--p-ink2); font-size:14px; }
+.p-fb-acts{ display:flex; justify-content:flex-end; gap:8px; }
