@@ -18,6 +18,8 @@ Pick up from here. Every item below is merged to `main` and live unless it says 
 | Phase 2: the Deal CRM shares buyers with the team, shows "The team's buyers" (Amr, managers with the code) and "Buyers who fit" in every real deal | #49 (checks only) | none; private `deal-tools/crm.html` updated, see below |
 | Phase 2: deals split, `deals` (working fields readable, the rest encrypted) and `deal_events` (history, kept on delete); passphrase change and turn-off carry them; `ROADMAP.md` | #50 | `20261031160000_deals_split.sql` (staging, then live). CRM file uploaded Oct 31 |
 | Phase 1: Today screen on the Team home (today's numbers, callbacks due, deals needing action, next lesson); a Today row opens that deal in the CRM | #52 | `20261031170000_today.sql` (`portal_my_today`, staging then live). CRM file uploaded |
+| Phase 1: end-of-day reports on the Admin overview (today or yesterday: sent, no report, on shift, didn't work, with hours, numbers and notes) | (this PR) | `20261031180000_eod.sql` (`portal_eod`) |
+| Fix: clocking out on the tracker now clears Live now, and the same shift is never saved twice (Amr's End on an already-saved shift just clears Live now) | (this PR) | `20261031190000_shift_dupes.sql` (two triggers on `shifts`) |
 
 Each migration ran on staging first, then on live, and has a line in Admin > Logs > Changes.
 
@@ -29,7 +31,7 @@ Each migration ran on staging first, then on live, and has a line in Admin > Log
 
 ## Next, in order
 1. Gate 0: the database half passed on live (acting as Kyle Miller, 17 tables, nothing of anyone else's). Still needed: Kyle signs in once on a phone and once on a PC; check both in Admin > Logs (sign-ins).
-2. Finish Phase 1: end-of-day report, pipeline board, notifications.
+2. Finish Phase 1: pipeline board, notifications.
 4. Rest of Phase 2: deal folder, deal sheet maker, commissions on Cash.
 5. Students and paid sign-up, after Amr's decisions and the legal pages.
 

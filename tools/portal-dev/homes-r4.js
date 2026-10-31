@@ -11,7 +11,11 @@ const member = (me, name, co) => ({ is_tracker_admin:false, my_profile:[{ name, 
   company_names:[], my_shifts:[], my_briefs:[], my_card:{ role:'member' }, fx_rate_on:50,
   course_state:{ totalModules:15, modules:[{ id:'m1', number:1, title:'Finding sellers', openForLearners:true }, { id:'m2', number:2, title:'Getting their number', openForLearners:true }, { id:'m3', number:3, title:'Offers', openForLearners:false }] },
   portal_learner_progress:[{ user_id:'u2', name:'Youssef H.', course:'mkt2', passed:2, sent:1, updated_at:new Date().toISOString() }] });
-const owner = { is_tracker_admin:true, portal_me:{ role:'owner', keys:['course','deals','learn','live','mkt','money','psy','requests','team'], needs_code:[] }, course_admin_waiting:[{ userId:'u1', title:'Module 1 drill' }], visit_stats:{ visitors:1234 },
+const EOD = [{ user_id:'u1', name:'Sara R.', status:'missing', worked_seconds:10800, shifts:2, with_report:1, dials:40, conversations:5, offers:1, appointments:1, reports:[{ note:'Two good talks.\nOne appointment set.' }] },
+  { user_id:'u3', name:'Omar T.', status:'on_shift', worked_seconds:0, shifts:0, with_report:0, dials:12, conversations:1, offers:0, appointments:0, reports:[] },
+  { user_id:'u2', name:'Youssef H.', status:'sent', worked_seconds:14400, shifts:1, with_report:1, dials:55, conversations:6, offers:0, appointments:2, reports:[{ note:'<b>Slow</b> morning.' }] },
+  { user_id:'u4', name:'Mona K.', status:'off', worked_seconds:0, shifts:0, with_report:0, dials:0, conversations:0, offers:0, appointments:0, reports:[] }];
+const owner = { is_tracker_admin:true, portal_eod:EOD, portal_me:{ role:'owner', keys:['course','deals','learn','live','mkt','money','psy','requests','team'], needs_code:[] }, course_admin_waiting:[{ userId:'u1', title:'Module 1 drill' }], visit_stats:{ visitors:1234 },
   course_admin_learners:[{ userId:'u1', name:'Sara R.', done:3, total:15, module:2, lastActive:new Date().toISOString() }],
   portal_learner_progress:[{ user_id:'u2', name:'Youssef H.', course:'mkt2', passed:2, sent:1, updated_at:new Date().toISOString() }] };
 const ownerFrom = { members:[{ user_id:'u1', name:'Sara R.', active:true }, { user_id:'u2', name:'Youssef H.', active:true }], companies:[], live_status:[{ user_id:'u1' }],
@@ -35,6 +39,14 @@ const T = [
       const t = await p.evaluate(() => document.getElementById('pView').innerText);
       ok(/3 things need you today/.test(t) && /Sara R\.|1 waiting/.test(t) && /1,234/.test(t) && /Zoho Campaigns/.test(t) && !/Emails and sign-ups/.test(t), 'overview numbers: 3 things (2 reviews, 1 request), 1,234 visits, Zoho link');
       ok(/People[\s\S]*Learning[\s\S]*Deals[\s\S]*Money[\s\S]*Site/i.test(t), 'boxes People, Learning, Deals, Money, Site');
+      ok(/End-of-day reports\s*1 missing/.test(t), 'People box: 1 end-of-day report missing');
+      const eod = await p.evaluate(() => document.getElementById('pvEodBox').innerText);
+      ok(/1 of 3 people who worked sent a report/.test(await p.textContent('#pvEodSum')), 'summary: 1 of 3 people who worked sent a report');
+      ok(/Sara R\.\s*No report[\s\S]*3:00 worked · 40 dials · 5 conversations · 1 offer · 1 appointment[\s\S]*Two good talks\.\s*One appointment set\.[\s\S]*1 of 2 shifts without a note/.test(eod), 'missing first: hours, numbers, the note that came in, and what is missing');
+      ok(/Omar T\.\s*On shift[\s\S]*Youssef H\.\s*Sent[\s\S]*Mona K\.\s*Didn’t work/.test(eod), 'then on shift, sent, and didn’t work');
+      ok(await p.evaluate(() => !document.querySelector('#pvEodBox b b') && /<b>Slow<\/b>/.test(document.getElementById('pvEodBox').textContent)), 'notes are shown as plain text, never as page code');
+      await p.click('[data-eod="-1"]'); await p.waitForTimeout(400);
+      ok(await p.evaluate(() => { const c = SB_CALLS.filter(x => x[0] === 'rpc' && x[1] === 'portal_eod'); const a = c[c.length - 1][2]; return a && /^\d{4}-\d{2}-\d{2}$/.test(a.p_day); }) && await p.getAttribute('[data-eod="-1"]', 'aria-pressed') === 'true', 'Yesterday asks for the day before (Cairo date) and shows as chosen');
       if (W > 1000) { const s = await sideOf(p); ok(s && JSON.stringify(s) === JSON.stringify(['Overview','People:Live now','People:Team and shifts','People:Missed-shift requests','People:Invite and access','Learning:Learning Hub','Learning:Learner progress','Learning:Review center','Deals:Deal CRM','Deals:Land calculator','Deals:House calculator','Money:Cash','Money:Income','Money:Expenses','Money:My time','Money:Payments (later)','Site:Visits','Site:Emails','Site:Logs','Site:Zoho Campaigns']), 'sidebar groups: ' + (s || []).join(' | ')); }
     } },
   { name:'owner-portal', url:'/app/#portal', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:owner, SB_FROM:ownerFrom }, run: async (p, ok) => {
