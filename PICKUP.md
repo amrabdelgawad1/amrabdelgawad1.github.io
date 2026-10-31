@@ -24,6 +24,7 @@ Pick up from here. Every item below is merged to `main` and live unless it says 
 | Phase 1: notifications. Bell in the shared top bar (`portal-shell.js`), Ask for access on locked courses (Team home, Learning Hub). Fix: the Review center opened empty when /app loaded straight onto #review (app.js now waits for every script before the first route) | #57 | `20261031210000_notifications.sql` (`notifications` table, triggers on shift_requests, hub_uploads, course_submissions, deal_events, feedback) |
 | Phase 2: deal folder. Files on each deal (encrypted in the browser with a per-file key; name, type and key on the team key; private bucket `deal-files`), title company saved with the deal (encrypted), due diligence checklist (readable ticks, progress on the board). Passphrase change carries file names and keys | #59 | `20261031220000_deal_folder.sql` (`deal_files`, `deal_checklist`, bucket and storage rules, `deal_rekey` extended). CRM file updated |
 | Phase 2: deal sheet maker. "Make a deal sheet" in every real deal's folder: one page for buyers (asking price, per acre or value after repairs and repairs, up to 4 folder photos decrypted in the browser, details, contact, as-is and assignment lines), Print or save as PDF (one Letter or A4 page) or Copy as text. Never on it: max offer, opening offer, what we pay, seller, notes, title company, file names. Street address and parcel only when ticked. Details saved inside the encrypted deal | #61 (checks only) | none; CRM file updated |
+| Phase 2: commissions. On a closed deal (Deal CRM, Amr only): pick the rep, type the profit and a percentage (worked out) or the commission; owed or paid. Each one is an expense line in Cash (Commissions), kept in step both ways (paid either side; amount and date only from the CRM; can't be deleted from Cash). Reps see their own on the Team home (never profit or percent) and get a notification when added and paid. Admin Money box: commissions owed | #62 | `20261031230000_commissions.sql` (staging, then live). CRM file: see below |
 
 Each migration ran on staging first, then on live, and has a line in Admin > Logs > Changes.
 
@@ -35,7 +36,7 @@ Each migration ran on staging first, then on live, and has a line in Admin > Log
 
 ## Next, in order (Amr's decisions, Oct 31)
 1. ~~Phase 2: deal sheet maker~~ **Done (Oct 31).**
-2. Phase 2: commissions in the Deal CRM, counted only when a deal closes: what each rep earned per deal, paid or owed, feeding Cash.
+2. ~~Phase 2: commissions~~ **Done (Oct 31).**
 3. Phase 3: team overview (every rep's calls, deals and course progress on one screen).
 4. Phase 3: call scoring with the ACQ 22 50-point scorecard, and roleplay practice.
 5. Phase 3: onboarding checklist per new hire, and the script and objection library.
@@ -47,9 +48,10 @@ Later, by Amr's choice:
 - Website: legal pages and a public outsourcing page, later.
 
 ## The private Deal CRM file
+- **Waiting to upload (Oct 31):** the commissions CRM file, 158,642 bytes, sha256 `07c9f823688c94138a956128eaf2abab6a58abc72f5c7a059b9ec74aff7464da` (sources in `portal-backups` PR #7). Back up the live file as `crm-before-comm-2026-10-31.html` first.
 - Live: `deal-tools/crm.html`, 150,218 bytes, sha256 `94e23d16dd0c429aba250a955e42794ea9ea1ee5eae5afb3f2ce14608f89fc4f` (Oct 31, deal sheet; sources merged in `portal-backups` PR #6). Use it as the base for the next change.
 - Backups in the same bucket: `crm-before-sheet-2026-10-31.html` (deal folder file, `cd7a2820...`), `crm-before-folder-2026-10-31.html` (notifications bell file, `42cf7577...`), `crm-before-bell-2026-10-31.html` (pipeline board file, `5121442c...`), `crm-before-board-2026-10-31.html` (Today links file, `ce9bd876...`), `crm-before-today-2026-10-31.html` (deals split file, `275d95b6...`), `crm-before-split-2026-10-31.html` (Phase 2 buyers file, `b3f58ea6...`), `crm-before-p2-2026-10-30.html` (round 7 file, `bd9475d1...`) and `crm-before-r7-2026-10-30.html`.
-- Build sources (never in this public repo): private repo `amrabdelgawad1/portal-backups`, folder `crm-build/`. Build with `python3 -I patch.py crm-src.html frame.html ext.js crm.html`, test with `node tools/portal-dev/crm-r7.js http://localhost:8702 crm.html` (173 checks).
+- Build sources (never in this public repo): private repo `amrabdelgawad1/portal-backups`, folder `crm-build/`. Build with `python3 -I patch.py crm-src.html frame.html ext.js crm.html`, test with `node tools/portal-dev/crm-r7.js http://localhost:8702 crm.html` (191 checks).
 - Uploading: Amr's own signed-in session (two-step) may write the bucket. How: on amrabdelgawad.site/app/ in his Chrome, make a client from `TRACKER_CONFIG`, add a file input, hand it the built file, check its sha256 in the page, `move` crm.html to the backup name, `upload` the new one, download it back and compare. Browsers may keep the old copy for up to an hour.
 - How buyers work: your own buyers still live in your encrypted workspace (the calculators read them there). When the CRM is on the team passphrase it copies them to `public.buyers`: the buy box readable, name, phone, email and notes encrypted. Areas become counties ("Polk, Hillsborough") or states ("FL, GA"); if both are typed, only the counties count.
 
@@ -57,7 +59,7 @@ Later, by Amr's choice:
 The Supabase SQL editor sometimes keeps showing "Running..." after a migration has finished. Don't run it again blindly: read back what it created (tables, triggers, function bodies) to confirm, as on Oct 31 for the notifications migration.
 
 ## How each round runs now
-1. Build on a branch, with checks in `tools/portal-dev/`. `test-roles.sh` runs every database check, 181 at the moment.
+1. Build on a branch, with checks in `tools/portal-dev/`. `test-roles.sh` runs every database check, 325 at the moment.
 2. Run the SQL on staging, then a read-only check as the owner (see `tools/staging/README.md`).
 3. Run the SQL on live, and add a `change_log` line.
 4. Open the PR, merge it, and confirm the Pages deploy succeeded.

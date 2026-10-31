@@ -8,7 +8,7 @@ One database, where every record links to the others. This file maps what exists
 person ──┬── shifts (hours + end-of-day report) ── call events (Phase 1)
          │
          ├── deals (Deal CRM) ── buyer matches ── buyers (Phase 2)
-         │       └── closed deal ── commission (Phase 3) ── Cash
+         │       └── closed deal ── commission ── Cash
          │
          ├── course progress, drills, feedback (Learning)
          │
@@ -66,7 +66,7 @@ The calculators keep their look. Only where they save deals changes.
 |---|---|---|
 | `cash_entries` | live | Amr's income and expenses (Cash page) |
 | `payslips`, `fx_rates`, `tracker_settings` | live | team pay and rates (owner only) |
-| `commissions` | Phase 3 | `deal_id, user_id, amount, status (owed or paid), paid_on`; shows on Cash and on the rep's own page |
+| `commissions` | live | `deal_id, user_id, rep_name, profit, percent, amount, status (owed or paid), paid_on, cash_entry_id`; each one an expense line in Cash; reps read theirs through `portal_my_commissions` |
 | `orders`, `course_prices` | students plan | course purchases (hosted checkout and webhook only) |
 
 ## 6. Learning

@@ -21,7 +21,8 @@ Done: buyers list and matching ("Buyers who fit" on every deal).
 Done: the deals split (`DATA-MODEL.md` section 4).
 Done: deal folder (files encrypted in the browser before upload: contract, title, comps, photos, inspection; title company with the deal; due diligence checklist with progress on the board).
 Done: deal sheet maker (one page for buyers from the deal's numbers and folder photos: print or save as PDF, or copy as text; area only unless the street address is ticked; never the max offer, what we pay or the seller).
-Not built: commissions per rep per deal feeding Cash (counted only when a deal closes in the Deal CRM).
+Done: commissions per rep per closed deal (Amr types the profit and a percentage, or the amount), owed or paid, each one an expense in Cash; reps see their own on the Team home.
+Phase 2 is fully built; Gate 2 is next (first deal matched to a buyer from the list).
 
 **Gate 2:** first deal matched to a buyer from the list.
 
