@@ -312,7 +312,6 @@
     if (clear) clear.addEventListener('click', () => go(''));
   }
 
-  // Today's calls per person (portal_calls_today): ended shifts' numbers plus the taps of shifts still running
   // ---------- End-of-day reports (Phase 1) ----------
   // Each rep's report is the note they send when they end a shift, with their numbers. portal_eod lists every active
   // person for one Cairo day: sent, missing (worked but a shift has no note), on shift, or didn't work. No pay.
@@ -322,7 +321,9 @@
     const miss = rows.filter(x => x.status === 'missing').length, sent = rows.filter(x => x.status === 'sent').length;
     return miss ? '<span class="p-pill is-no">' + esc(miss + ' missing') + '</span>' : muted(sent ? plural(sent, 'report') + ' in' : 'None yet');
   }
-  const cairoDay = n => { const d = new Date(Date.now() + n * 864e5); return new Intl.DateTimeFormat('en-CA', { timeZone:'Africa/Cairo' }).format(d); };
+  // Today's date in Cairo, then whole calendar days back from it (safe across clock changes)
+  const cairoDay = n => { const [y, m, d] = new Intl.DateTimeFormat('en-CA', { timeZone:'Africa/Cairo' }).format(new Date()).split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); };
   function eodCards(rows){
     if (!rows.length) return '<p class="p-card p-empty">No one on the team yet.</p>';
     return '<div class="p-eod-list">' + rows.map(x => {
@@ -357,6 +358,7 @@
       $('pvEodSum').textContent = eodSum(r.data); $('pvEodBox').innerHTML = eodCards(r.data);
     });
   }
+  // Today's calls per person (portal_calls_today): ended shifts' numbers plus the taps of shifts still running
   function callsToday(ct){
     if (!ct || !ct.length) return '';
     return '<section aria-labelledby="pvCallsH"><h2 class="p-h2" id="pvCallsH">Calls today <small>Live: shifts still running count as they tap</small></h2>' +
