@@ -56,6 +56,14 @@
   const metaN = (n, t) => '<span><b>' + esc(n) + '</b> ' + esc(t) + '</span>';
   const safe = p => p.then(r => r, () => ({}));
   const UNLOCK = 'Unlock the CRM to see deal numbers';
+  // Deals under contract with a date in the next n days (from public.deals: dates only, no names; Amr sees everyone's)
+  function soon(rows, key, n){
+    if (!Array.isArray(rows)) return muted('–');
+    const ymd = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const t = new Date(), today = ymd(t), end = new Date(t); end.setDate(end.getDate() + n); const last = ymd(end);   // calendar days, safe across clock changes
+    const k = rows.filter(r => r[key] && r[key] >= today && r[key] <= last).length;
+    return k ? pillR(plural(k, 'deal')) : muted('None');
+  }
   function dealCounts(){
     try { const c = JSON.parse(sessionStorage.getItem('dealCounts') || 'null'); return c && typeof c.open === 'number' ? c : null; } catch(e) { return null; }
   }
@@ -141,10 +149,21 @@
   const dealName = d => (d.kind === 'house' ? 'House' : 'Land') + (d.county || d.state ? ' · ' + [d.county ? title(d.county) : '', d.state || ''].filter(Boolean).join(', ') : '');
   const daysLate = (due, now) => Math.round((new Date(now + 'T12:00') - new Date(due + 'T12:00')) / 864e5);
   const dealRow = (d, right) => row(dealName(d), right, '/app/deals/#id=' + encodeURIComponent(d.id));
+  // The next contract date still to come (inspection end, then closing), for sorting; '9999' when none is left
+  const nextDate = (d, now) => [d.inspection_ends, d.closing_on].filter(x => x && x >= now)[0] || (d.closing_on && d.closing_on < now ? d.closing_on : '9999');
+  // Under contract: the next date that matters (inspection end, then closing), as a countdown
+  function contractTxt(d, now){
+    const k = x => x ? Math.round((new Date(x + 'T12:00') - new Date(now + 'T12:00')) / 864e5) : null;
+    const ins = k(d.inspection_ends), cl = k(d.closing_on);
+    if (ins != null && ins >= 0) return { t:ins === 0 ? 'Inspection ends today' : 'Inspection ends in ' + plural(ins, 'day'), hot:ins <= 3 };
+    if (ins != null && cl == null) return { t:'Inspection over', hot:false };
+    if (cl != null) return { t:cl > 0 ? 'Closing in ' + plural(cl, 'day') : cl === 0 ? 'Closing today' : 'Closing was ' + plural(-cl, 'day') + ' ago', hot:cl <= 7, late:cl < 0 };
+    return { t:'Under contract · add dates', hot:false };
+  }
   async function today(db, my, deals){
     const T = A(), st = T.clockState ? T.clockState() : null;
     const [n, r] = await Promise.all([safe(db.rpc('portal_my_today')),
-      deals ? safe(db.from('deals').select('id,kind,county,state,stage,follow_up,updated_at').eq('owner', T.user.id).not('stage', 'in', '(closed,passed)')) : Promise.resolve({})]);
+      deals ? safe(db.from('deals').select('id,kind,county,state,stage,follow_up,updated_at,inspection_ends,closing_on').eq('owner', T.user.id).not('stage', 'in', '(closed,passed)')) : Promise.resolve({})]);
     if (my !== run) return;
     const c = (Array.isArray(n.data) ? n.data[0] : n.data) || null;
     const tile = (v, label, href) => '<a class="p-tile" href="' + href + '"><b>' + esc(v) + '</b><span>' + esc(label) + '</span></a>';
@@ -156,14 +175,14 @@
     const now = isoDay(new Date()), list = r.data || [];
     const due = list.filter(d => d.follow_up && d.follow_up <= now).sort((a, b) => a.follow_up < b.follow_up ? -1 : 1);
     const act = list.filter(d => !d.follow_up || d.stage === 'contract').filter(d => !due.includes(d))
-      .sort((a, b) => (a.stage === 'contract' ? 0 : 1) - (b.stage === 'contract' ? 0 : 1) || (a.updated_at < b.updated_at ? -1 : 1));
+      .sort((a, b) => (a.stage === 'contract' ? 0 : 1) - (b.stage === 'contract' ? 0 : 1) || nextDate(a, now).localeCompare(nextDate(b, now)) || String(a.updated_at || '').localeCompare(String(b.updated_at || '')));
     $('pvDueN').textContent = due.length ? plural(due.length, 'deal') : '';
     $('pvActN').textContent = act.length ? plural(act.length, 'deal') : '';
     const lateTxt = d => { const k = daysLate(d.follow_up, now); return k <= 0 ? 'Today' : k === 1 ? '1 day late' : k + ' days late'; };
     $('pvDue').innerHTML = due.length ? due.slice(0, 6).map(d => dealRow(d, '<span class="p-pill' + (d.follow_up < now ? ' is-no' : '') + '">' + esc(lateTxt(d)) + '</span>')).join('') +
         (due.length > 6 ? row('And ' + (due.length - 6) + ' more', muted('Open the CRM'), '/app/deals/') : '')
       : '<p class="p-empty">' + (list.length ? 'No callbacks due today.' : 'No open deals yet. Deals you add in the Deal CRM show up here.') + '</p>';
-    $('pvAct').innerHTML = act.length ? act.slice(0, 6).map(d => dealRow(d, '<span class="p-pill is-plain">' + esc(d.stage === 'contract' ? 'Under contract' : (STAGE[d.stage] || 'Open') + ' · no follow-up') + '</span>')).join('') +
+    $('pvAct').innerHTML = act.length ? act.slice(0, 6).map(d => { const c = d.stage === 'contract' ? contractTxt(d, now) : null; return dealRow(d, '<span class="p-pill' + (c ? (c.late ? ' is-no' : c.hot ? '' : ' is-plain') : ' is-plain') + '">' + esc(c ? c.t : (STAGE[d.stage] || 'Open') + ' · no follow-up') + '</span>'); }).join('') +
         (act.length > 6 ? row('And ' + (act.length - 6) + ' more', muted('Open the CRM'), '/app/deals/') : '')
       : '<p class="p-empty">' + (list.length ? 'Every open deal has a next step.' : 'Nothing yet.') + '</p>';
   }
@@ -263,8 +282,8 @@
   async function admin(my){
     const T = A(), db = T.db;
     box().innerHTML = '<div class="p-wrap">' + hero('Admin', 'Overview', 'Loading…', '') + '</div>';
-    const [live, reqs, revs, lr, mem, vis, calls, ann, eod] = await Promise.all([liveCount(db), pendingRequests(db), reviewsWaiting(db), learners(db, true),
-      safe(db.from('members').select('active')), safe(db.rpc('visit_stats', { p_hours:168 })), safe(db.rpc('portal_calls_today')), safe(db.rpc('portal_announcement')), safe(db.rpc('portal_eod'))]);
+    const [live, reqs, revs, lr, mem, vis, calls, ann, eod, uc] = await Promise.all([liveCount(db), pendingRequests(db), reviewsWaiting(db), learners(db, true),
+      safe(db.from('members').select('active')), safe(db.rpc('visit_stats', { p_hours:168 })), safe(db.rpc('portal_calls_today')), safe(db.rpc('portal_announcement')), safe(db.rpc('portal_eod')), safe(db.from('deals').select('inspection_ends,closing_on').eq('stage', 'contract'))]);
     if (my !== run) return;
     const r = reqs || [], team = (mem.data || []).filter(x => x.active).length, dc = dealCounts();
     const ct = Array.isArray(calls.data) ? calls.data : null, sum = k => (ct || []).reduce((a, x) => a + (Number(x[k]) || 0), 0);
@@ -281,7 +300,7 @@
           row('End-of-day reports', eodPill(eod.data)), row('Invite and access', muted('Manage'), '#people')]) +
         box5('Learning', '3 courses', [row('Review center', revs.length ? pillR(revs.length + ' waiting') : muted('None'), '#review'),
           row('Learner progress', muted(learning + ' learning'), '#progress'), row('Who has which course', muted('Manage'), '/app/learn/')]) +
-        box5('Deals', 'All reps', (dc ? [row('Follow-ups due', dc.due ? pillR(dc.due + ' due') : muted('None'), '/app/deals/#followups'), row('Open deals', muted(String(dc.open)), '/app/deals/'),
+        box5('Deals', 'All reps', [row('Closing in the next 14 days', soon(uc.data, 'closing_on', 14), '/app/deals/#pipeline'), row('Inspection ending in 7 days', soon(uc.data, 'inspection_ends', 7), '/app/deals/#pipeline')].concat(dc ? [row('Follow-ups due', dc.due ? pillR(dc.due + ' due') : muted('None'), '/app/deals/#followups'), row('Open deals', muted(String(dc.open)), '/app/deals/'),
           row('Under contract', muted(String(dc.contract)), '/app/deals/')] : [row(UNLOCK, muted('Unlock'), '/app/deals/')])
           .concat([row('Land calculator', muted('Open'), '/land-calculator/'), row('House calculator', muted('Open'), '/house-calculator/')])) +
         box5('Money', 'Only you', [row('Cash this month', muted('Open'), '#overview'), row('Course payments', muted('Not set up yet'))]) +
