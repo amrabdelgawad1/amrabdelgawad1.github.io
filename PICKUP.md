@@ -11,6 +11,8 @@ Pick up from here. Every item below is merged to `main` and live unless it says 
 | Students plan (`PORTAL-STUDENTS.md`), plan only | #38 | none |
 | Locked-CRM page check in `crm-r7.js` | #39 | none |
 | Phase 1: call counter on My hours | #42 | `20261031110000_call_events.sql` |
+| Phase 1: calls count while the shift runs; Calls today on the Admin overview | #44 | `20261031120000_calls_today.sql` |
+| Phase 1: do-not-call list (reps check and add on My hours; Amr's list and CSV in Logs) | #45 | `20261031130000_dnc.sql` |
 
 Each migration ran on staging first, then on live, and has a line in Admin > Logs > Changes.
 
@@ -21,15 +23,12 @@ Each migration ran on staging first, then on live, and has a line in Admin > Log
 4. **The students plan decisions** (section 9 of `PORTAL-STUDENTS.md`).
 
 ## Next, in order
-1. Phase 1, rest:
-   - "Calls today" on the Admin overview and the Team home, from `portal_calls()`
-   - the weekly board reading taps live, instead of waiting for end-of-shift numbers
-   - a do-not-call list (hashed numbers)
+1. Phase 1 is done for what the blueprint's text names. Anything else in Phase 1 (from the roadmap diagram) waits for Amr's text.
 2. Phase 2, deals: split the Deal CRM into readable working fields and encrypted personal fields (plan in `DATA-MODEL.md` section 4), plus buyers and buyer matching. Staging first. The calculators keep their look.
 3. Phase 3: commissions on Cash.
 
 ## How each round runs now
-1. Build on a branch, with checks in `tools/portal-dev/`. `test-roles.sh` runs every database check, 132 at the moment.
+1. Build on a branch, with checks in `tools/portal-dev/`. `test-roles.sh` runs every database check, 150 at the moment.
 2. Run the SQL on staging, then a read-only check as the owner (see `tools/staging/README.md`).
 3. Run the SQL on live, and add a `change_log` line.
 4. Open the PR, merge it, and confirm the Pages deploy succeeded.

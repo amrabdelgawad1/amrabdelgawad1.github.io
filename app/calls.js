@@ -50,7 +50,21 @@
     $('tCallsMsg').textContent = 'Undone.'; draw();
   }
 
+  // Do-not-call list: check one number, or add one (dnc_check, dnc_add; the list itself is Amr's)
+  async function dnc(add){
+    const db = T().db, phone = $('dncPhone').value.trim(), msg = t => { $('dncMsg').textContent = t; };
+    if (!db) return;
+    if (phone.replace(/\D/g, '').length < 7) return msg('Type the full phone number first.');
+    msg(add ? 'Adding…' : 'Checking…');
+    const r = add ? await db.rpc('dnc_add', { p_phone:phone, p_reason:$('dncReason').value }) : await db.rpc('dnc_check', { p_phone:phone });
+    if (r.error) return msg(/doesn.t look like/.test(r.error.message || '') ? 'That doesn’t look like a phone number.' : 'Couldn’t reach the list. Check your connection.');
+    if (add) { $('dncPhone').value = ''; return msg('Added. Nobody on the team should call that number again.'); }
+    msg(r.data ? 'On the do-not-call list. Don’t call this number.' : 'Not on the list.');
+  }
+
   document.addEventListener('click', e => {
+    if (e.target.closest('#dncCheck')) { dnc(false); return; }
+    if (e.target.closest('#dncAdd')) { dnc(true); return; }
     const b = e.target.closest('#tCalls .call-tap'); if (b) { tap(b.dataset.kind); return; }
     if (e.target.closest('#tCallsUndo')) undo();
   });

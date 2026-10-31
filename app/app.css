@@ -560,3 +560,10 @@ html body #pLogs{ min-height:calc(100vh - var(--p-top)); }
 #tCalls .call-tap[disabled]{ opacity:.5; }
 #tCalls .note:empty{ display:none; }
 #tCalls #tCallsUndo{ min-height:var(--p-tap); }
+#tCalls .dnc{ margin-top:14px; border-top:1px solid var(--p-line); padding-top:10px; }
+#tCalls .dnc summary{ display:flex; align-items:center; min-height:var(--p-tap); cursor:pointer; font:600 15px/1.2 var(--p-body); color:var(--p-ink); }
+#tCalls .dnc .btn{ min-height:var(--p-tap); }
+#tCalls .dnc .label{ margin-top:8px; }
+#tCalls .dnc .row2{ margin-top:10px; }
+#pLogs .lg-acts{ display:flex; justify-content:flex-end; margin-bottom:10px; }
+#pLogs .lg-rm{ min-height:var(--p-tap); padding:6px 12px; font-size:14px; }
