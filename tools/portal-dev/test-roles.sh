@@ -64,4 +64,7 @@ echo "== logs checks"; P -f "$ROOT/tools/portal-dev/test-logs.sql" 2>&1 | sed -n
 MIGC="$ROOT/supabase/migrations/20261031110000_call_events.sql"
 P -f "$MIGC"; P -f "$MIGC"
 echo "== call counter checks"; P -f "$ROOT/tools/portal-dev/test-calls.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
+MIGT="$ROOT/supabase/migrations/20261031120000_calls_today.sql"
+P -f "$MIGT"; P -f "$MIGT"
+echo "== calls today checks"; P -f "$ROOT/tools/portal-dev/test-calls-today.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
 echo "== all checks passed"
