@@ -128,6 +128,9 @@
 
   // ---------- who is this, and what do they get ----------
   async function route(){
+    // Wait until every script on the page has run (review.js, people.js, logs.js... load after this one). Without this,
+    // a fast sign-in could route to #review before the Review center existed, leaving it empty until a reload.
+    if (document.readyState === 'loading') await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once:true }));
     const { data: { session } } = await db.auth.getSession();
     if (!session) { show('vLogin'); return; }
     user = session.user;

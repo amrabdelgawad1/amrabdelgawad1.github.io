@@ -601,3 +601,7 @@ html body #pLogs{ min-height:calc(100vh - var(--p-top)); }
 #pView .p-eod-nums{ margin:6px 0 0; color:var(--p-muted); font-size:13.5px; }
 #pView .p-eod-note{ margin:10px 0 0; padding:10px 12px; background:var(--p-soft); border-radius:8px; color:var(--p-ink); white-space:pre-wrap; overflow-wrap:anywhere; }
 #pView .p-eod-gap{ margin:10px 0 0; color:var(--p-no); font-weight:700; font-size:14px; }
+
+/* Phase 1: "Ask for access" on a locked course */
+#pView .p-locked{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; }
+#pView .p-locked .p-ask{ min-height:44px; margin-inline-start:auto; }

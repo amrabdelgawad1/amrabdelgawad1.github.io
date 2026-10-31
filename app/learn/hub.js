@@ -85,9 +85,18 @@
       ${locked ? `<span class="lh-art-lock">${lockIc}</span>` : ''}</span>`;
   }
   // When a price is added later, this is where the price and a Buy button go
-  function lockedFoot(){
-    return `<p class="lh-lockmsg">${lockIc}<span>Locked. Ask Amr to open this course for you.</span></p>`;
+  // Phase 1: "Ask for access" sends Amr a notification (request_course_access, once a day per course)
+  const ASK = { acq:'course', mkt:'mkt', psy:'psy' };
+  function lockedFoot(c){
+    return `<p class="lh-lockmsg">${lockIc}<span>Locked.</span>${c && ASK[c.id] && !owner ? `<button type="button" class="btn lh-ask" data-ask="${ASK[c.id]}">Ask Amr for access</button>` : '<span>Ask Amr to open this course for you.</span>'}</p>`;
   }
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('[data-ask]'); if (!b || !db || b.disabled) return;
+    e.preventDefault(); b.disabled = true; b.textContent = 'Sending…';
+    const r = await db.rpc('request_course_access', { p_course:b.dataset.ask }).then(x => x, () => ({ error:{} }));
+    b.textContent = r.error ? 'Couldn’t send. Try again' : r.data === 'already' ? 'Already asked today' : 'Sent to Amr';
+    b.disabled = !r.error;
+  });
   function card(c){
     const ok = canOpen(c), p = prog[c.id], mods = (p && p.total) || c.modules;
     const pct = p && p.total ? Math.round(p.done / p.total * 100) : 0;
@@ -100,7 +109,7 @@
         <span class="lh-tags">${c.tags.map(t => `<span>${esc(t)}</span>`).join('')}</span>
         ${meta ? `<span class="lh-meta">${meta}</span>` : ''}
         ${ok && p ? `<span class="lh-prog" role="progressbar" aria-label="${esc(c.title)} progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span class="cp-bar"><i style="width:${pct}%"></i></span><b>${pct}%</b></span>` : ''}
-        ${ok ? `<span class="btn lh-go">${p && p.done ? 'Continue' : 'Open course'} ${arrowIc}</span>` : lockedFoot()}
+        ${ok ? `<span class="btn lh-go">${p && p.done ? 'Continue' : 'Open course'} ${arrowIc}</span>` : lockedFoot(c)}
         ${owner && !asLearner ? `<span class="lh-own">${people[c.id] ? `<b>${people[c.id]}</b> ${people[c.id] === 1 ? 'person has' : 'people have'} access` : 'No one else has access yet'}</span>` : ''}
       </span>`;
     return ok ? `<a class="lh-course" href="${c.href}">${inner}</a>` : `<div class="lh-course is-locked" aria-disabled="true">${inner}</div>`;

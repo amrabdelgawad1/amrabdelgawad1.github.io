@@ -33,7 +33,8 @@
     mic:svg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>'),
     person:svg('<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1-3.6 3.8-5.5 7-5.5s6 1.9 7 5.5"/>'),
     invite:svg('<circle cx="10" cy="8.5" r="3.5"/><path d="M3.5 20c1-3.6 3.6-5.5 6.5-5.5 1.6 0 3 .5 4.2 1.4M18 9v6M15 12h6"/>'),
-    cash:svg('<rect x="3" y="6.5" width="18" height="11" rx="2"/><circle cx="12" cy="12" r="2.5"/>')
+    cash:svg('<rect x="3" y="6.5" width="18" height="11" rx="2"/><circle cx="12" cy="12" r="2.5"/>'),
+    bell:svg('<path d="M6 9.5a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4s2-1.5 2-6.5z"/><path d="M10 19.5a2 2 0 0 0 4 0"/>')
   };
   const COURSE_KEYS = ['course', 'mkt', 'psy'];
 
@@ -57,6 +58,7 @@
   const GROUPS = ['Work', 'Learning', 'Team', 'Money'];
 
   let me = null, counts = {}, opts = null, bars = [], loading = null, page = '';
+  let notes = [], unread = 0, notesTimer = null;
 
   function listed(a){
     if (!me) return false;
@@ -157,6 +159,21 @@
     b.btn.addEventListener('click', () => toggle(b, b.menu.hidden));
     b.menu.addEventListener('click', e => { if (e.target.closest('a')) toggle(b, false); });
     (o.hide || []).forEach(el => { if (el) { el.hidden = true; el.classList.add('p-replaced'); } });
+    // the bell (Phase 1): notifications for this person, newest first
+    const bw = document.createElement('div'); bw.className = 'p-bell-wrap'; bw.hidden = true;
+    const nid = 'pNotes' + bars.length;
+    bw.innerHTML = '<button type="button" class="p-bell" aria-expanded="false" aria-controls="' + nid + '" aria-label="Notifications">' + IC.bell + '<span class="p-badge" hidden></span></button>' +
+      '<div class="p-notes" id="' + nid + '" role="dialog" aria-label="Notifications" hidden></div>';
+    if (o.me && o.me.parentNode) o.me.before(bw); else header.append(bw);
+    b.bell = bw.querySelector('.p-bell'); b.notes = bw.querySelector('.p-notes'); b.bellWrap = bw;
+    b.bell.addEventListener('click', () => bellOpen(b, b.notes.hidden));
+    b.notes.addEventListener('click', e => {
+      if (e.target.closest('[data-allread]')) { markAll(); return; }
+      const a = e.target.closest('a[data-nid]'); if (!a) return;
+      const n = notes.find(x => String(x.id) === a.dataset.nid);
+      closeAll(false);
+      if (n && !n.read_at) { e.preventDefault(); markOne(n).then(() => { location.href = a.href; }); }
+    });
     // me: the page's own account button (it keeps its menu), or the shell's
     if (o.me) {
       b.meName = document.createElement('span'); b.meName.className = 'p-me-name';
@@ -181,6 +198,7 @@
     b.btn.parentElement.hidden = !ok;
     if (!ok) return;
     b.menu.innerHTML = appsHtml();
+    drawBell(b);
     b.btn.querySelector('.p-dot').hidden = !total();
     b.btn.setAttribute('aria-label', 'Apps' + (total() ? ', something is waiting' : ''));
     if (b.meName) b.meName.textContent = me.name || '';
@@ -204,10 +222,63 @@
     bars.forEach(b => {
       if (!b.menu.hidden) { b.menu.hidden = true; b.btn.setAttribute('aria-expanded', 'false'); if (focusBack) b.btn.focus(); }
       if (b.meMenu && !b.meMenu.hidden) { b.meMenu.hidden = true; b.meBtn.setAttribute('aria-expanded', 'false'); if (focusBack) b.meBtn.focus(); }
+      if (b.notes && !b.notes.hidden) { b.notes.hidden = true; b.bell.setAttribute('aria-expanded', 'false'); if (focusBack) b.bell.focus(); }
     });
   }
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(true); });
-  document.addEventListener('click', e => { if (!e.target.closest('.p-apps-wrap, .p-me-wrap')) closeAll(false); });
+  document.addEventListener('click', e => { if (!e.target.closest('.p-apps-wrap, .p-me-wrap, .p-bell-wrap')) closeAll(false); });
+
+  // ---------- notifications (Phase 1) ----------
+  // Rows come from public.notifications under its own rules: each person sees only theirs, and can only mark them read.
+  // Only the database writes them. Checked on load, every minute while the page is open, and when you come back to it.
+  const ago = d => { const s = Math.max(0, (Date.now() - new Date(d).getTime()) / 1000);
+    return s < 60 ? 'just now' : s < 3600 ? Math.floor(s / 60) + ' min ago' : s < 86400 ? Math.floor(s / 3600) + ' h ago' : s < 172800 ? 'yesterday' : new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric' }); };
+  const safeLink = l => /^\/(?![\/\\])/.test(String(l || '')) ? l : '/app/';
+  async function loadNotes(){
+    const t = window.PORTAL_TEST || (opts && opts.test);
+    if (t) { notes = (t.notes || []).slice(); unread = notes.filter(n => !n.read_at).length; return; }
+    if (!opts || !opts.db || !me) return;
+    const db = opts.db;
+    const [l, c] = await Promise.all([
+      db.from('notifications').select('id,kind,title,body,link,created_at,read_at').order('created_at', { ascending:false }).limit(20).then(x => x, () => ({})),
+      db.from('notifications').select('id', { count:'exact', head:true }).is('read_at', null).then(x => x, () => ({}))
+    ]);
+    if (Array.isArray(l.data)) notes = l.data;
+    if (typeof c.count === 'number') unread = c.count; else unread = notes.filter(n => !n.read_at).length;
+  }
+  function drawBell(b, keepList){
+    if (!b.bell) return;
+    b.bellWrap.hidden = !me;
+    const badge = b.bell.querySelector('.p-badge');
+    badge.hidden = !unread; badge.textContent = unread > 9 ? '9+' : String(unread);
+    b.bell.setAttribute('aria-label', unread ? 'Notifications, ' + unread + ' new' : 'Notifications');
+    if (keepList && !b.notes.hidden) return;   // an open panel keeps its list (and keyboard focus); the badge still updates
+    b.notes.innerHTML = '<div class="p-notes-head"><p role="heading" aria-level="2">Notifications</p>' +
+      (unread ? '<button type="button" data-allread>Mark all read</button>' : '') + '</div>' +
+      (notes.length ? '<ul class="p-notes-list">' + notes.map(n => '<li><a href="' + esc(safeLink(n.link)) + '" data-nid="' + esc(n.id) + '"' + (n.read_at ? '' : ' class="is-new"') + '>' +
+          '<b>' + esc(n.title) + '</b>' + (n.body ? '<span>' + esc(n.body) + '</span>' : '') + '<small>' + esc(ago(n.created_at)) + (n.read_at ? '' : ' · New') + '</small></a></li>').join('') + '</ul>'
+        : '<p class="p-notes-empty">Nothing new. Requests, reviews and deal changes show up here.</p>');
+  }
+  function bellOpen(b, open){
+    if (open) closeAll();
+    b.notes.hidden = !open; b.bell.setAttribute('aria-expanded', open);
+    if (open) { const f = b.notes.querySelector('a, button'); if (f) f.focus(); }
+  }
+  // Background refresh (every minute, on coming back to the tab): never redraws a list someone is looking at
+  async function refreshNotes(){ await loadNotes().catch(() => {}); bars.forEach(b => drawBell(b, true)); }
+  async function markOne(n){
+    n.read_at = new Date().toISOString(); unread = Math.max(0, unread - 1); bars.forEach(drawBell);
+    if (opts && opts.db && !window.PORTAL_TEST && !opts.test) await opts.db.from('notifications').update({ read_at:n.read_at }).eq('id', n.id).then(x => x, () => ({}));
+  }
+  async function markAll(){
+    notes.forEach(n => { if (!n.read_at) n.read_at = new Date().toISOString(); }); unread = 0; bars.forEach(drawBell);
+    if (opts && opts.db && !window.PORTAL_TEST && !opts.test) await opts.db.rpc('notifications_read_all').then(x => x, () => ({}));
+  }
+  function watchNotes(){
+    if (notesTimer) return;
+    notesTimer = setInterval(() => { if (!document.hidden) refreshNotes(); }, 60000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshNotes(); });
+  }
 
   // ---------- error reports (Phase 0) ----------
   // Errors this page hits go to log_app_error() (Amr reads them in /app > Logs). At most 5 per page load, each once,
@@ -269,7 +340,7 @@
       if (o.page) page = o.page;
       mount(o.header, o);
       reportErrors(o.db);
-      if (!loading) loading = load().then(drawAll, () => {});
+      if (!loading) loading = load().then(() => loadNotes().catch(() => {})).then(() => { drawAll(); watchNotes(); }, () => {});
       return loading;
     },
     // The page moved to another app (/app's hash routes)
@@ -279,7 +350,9 @@
     // A page that already counted something tells the bar (no second query): setCount('requests', 2), setCount('review', 4)
     setCount(name, n){ counts[name] = Number(n) || 0; drawAll(); },
     // Counts changed (a request was decided, a review approved)
-    async refresh(){ if (!opts) return; loading = load().then(drawAll, () => {}); return loading; },
+    async refresh(){ if (!opts) return; loading = load().then(() => loadNotes().catch(() => {})).then(drawAll, () => {}); return loading; },
+    // Notifications changed (for example after asking for course access)
+    refreshNotes,
     get me(){ return me; }
   };
 })();

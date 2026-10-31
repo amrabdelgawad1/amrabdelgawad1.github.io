@@ -116,9 +116,16 @@
       '<section aria-labelledby="pvAreas"><h2 class="p-h2" id="pvAreas">Your areas</h2><div class="p-grid p-areas">' + areas.map(area).join('') + '</div></section>' +
       '<section aria-labelledby="pvBoard" id="pvBoardWrap" hidden><h2 class="p-h2" id="pvBoard">This week on the team <small>Monday to Sunday</small></h2><div id="pvBoardBox"></div></section>' +
       (locked.length ? '<section aria-labelledby="pvLocked"><h2 class="p-h2 p-h2-sm" id="pvLocked">Not open for you yet</h2><div class="p-lockrow">' +
-        locked.map(c => '<p class="p-locked">' + IC.lock + '<span><b>' + esc(c.name.replace('Real Estate ', '')) + ' course</b> · Ask Amr to open it</span></p>').join('') + '</div></section>' : '') +
+        locked.map(c => '<p class="p-locked">' + IC.lock + '<span><b>' + esc(c.name.replace('Real Estate ', '')) + ' course</b> · Locked</span><button type="button" class="p-btn is-ghost p-ask" data-ask="' + esc(c.key) + '">Ask for access</button></p>').join('') + '</div></section>' : '') +
       '</div>';
     $('pvClockBox').addEventListener('click', e => { const b = e.target.closest('[data-clock]'); if (b) T.clock(b.dataset.clock); });
+    // Phase 1: a locked course's "Ask for access" sends Amr a notification (once a day per course)
+    box().querySelectorAll('[data-ask]').forEach(b => b.addEventListener('click', async () => {
+      if (b.disabled) return; b.disabled = true; b.textContent = 'Sending…';
+      const r = await safe(T.db.rpc('request_course_access', { p_course:b.dataset.ask }));
+      b.textContent = r.error || !r.data ? 'Couldn’t send. Try again' : r.data === 'already' ? 'Already asked today' : 'Sent to Amr';
+      b.disabled = !(r.error || !r.data);
+    }));
     board(T.db, my);
     announcement(T.db, my);
     today(T.db, my, has('deals'));

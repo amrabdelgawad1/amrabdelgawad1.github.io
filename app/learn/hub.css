@@ -66,3 +66,7 @@ a.lh-course:hover .lh-go{ filter:brightness(1.08); }
   .lh-art{ aspect-ratio:16/6; }
   .lh-art-letter{ font-size:104px; }
 }
+
+/* Phase 1: "Ask Amr for access" on a locked course */
+.lh-lockmsg{ flex-wrap:wrap; }
+.lh-ask{ min-height:44px; margin-inline-start:auto; }
