@@ -39,7 +39,7 @@ const ws = deals => ({ v:2, deals, buyers:[], settings:{ weeklyGoal:10, me:{ nam
 // ---------- the in-memory database ----------
 const OWNER = 'o-amr', R1 = 'u-rep1', R2 = 'u-rep2', MG = 'u-mgr';
 const PEOPLE = { [OWNER]:{ name:'Amr', role:'owner', active:true }, [R1]:{ name:'Rep 1', role:'agent', active:true }, [R2]:{ name:'Rep 2', role:'agent', active:true }, [MG]:{ name:'Maya M.', role:'manager', active:true } };
-const DB = { logs:[], fus:[], buyers:[], deals:[], files:[], checklist:[], store:{}, team:null, raceOnce:false };
+const DB = { logs:[], fus:[], buyers:[], deals:[], files:[], checklist:[], store:{}, team:null, raceOnce:false, comm:[], cash:[] };
 const err = m => ({ data:null, error:{ message:m } });
 function handle(me, aal, op){
   const P = PEOPLE[me];
@@ -71,6 +71,25 @@ function handle(me, aal, op){
       }
       return { data:null };
     }
+  }
+  // Phase 2 commissions: Amr only (with the code); only on a closed deal; each one mirrored as a Cash line
+  if (op.kind === 'from' && op.table === 'members') return P.role === 'owner' ? { data:Object.entries(PEOPLE).map(([id, x]) => ({ user_id:id, name:x.name, active:x.active })) } : { data:[] };
+  if (op.kind === 'from' && op.table === 'commissions') {
+    if (!(P.role === 'owner' && aal === 'aal2')) return op.op === 'select' ? { data:[] } : err('new row violates row-level security policy');
+    const f = Object.fromEntries(op.filters), match = r => Object.entries(f).every(([k, v]) => r[k] === v);
+    const today = day(0), sync = c => { const l = DB.cash.find(x => x.id === c.cash) || (DB.cash.push({ id:'cash' + DB.cash.length }), DB.cash[DB.cash.length - 1]); c.cash = l.id; Object.assign(l, { amount:c.amount, settled:c.status === 'paid', category:'Commissions' }); };
+    if (op.op === 'select') return { data:DB.comm.filter(match).map(r => JSON.parse(JSON.stringify(r))) };
+    if (op.op === 'insert') {
+      const v = Object.assign({}, op.value), d = DB.deals.find(x => x.id === v.deal_id);
+      if (!d) return err('Save the deal first, then add its commission.');
+      if (d.stage !== 'closed') return err('Commissions count once the deal is closed. Mark it Closed and save, then add the commission.');
+      if (DB.comm.some(r => r.deal_id === v.deal_id && r.user_id === v.user_id)) return err('duplicate key value violates unique constraint "commissions_once"');
+      if (v.amount == null && v.profit != null && v.percent != null) v.amount = Math.round(v.profit * v.percent) / 100;
+      if (!(v.amount > 0)) return err('Enter the commission, or the profit and a percentage.');
+      v.id = DB.comm.length + 1; v.paid_on = v.status === 'paid' ? today : null; DB.comm.push(v); sync(v); return { data:null };
+    }
+    if (op.op === 'update') { DB.comm.filter(match).forEach(r => { Object.assign(r, op.value); r.paid_on = r.status === 'paid' ? (r.paid_on || today) : null; sync(r); }); return { data:null }; }
+    if (op.op === 'delete') { DB.comm.filter(match).forEach(r => { DB.cash = DB.cash.filter(x => x.id !== r.cash); }); DB.comm = DB.comm.filter(r => !match(r)); return { data:null }; }
   }
   if (op.kind === 'from' && (op.table === 'buyers' || op.table === 'deals')) {
     const TB = op.table, what = TB === 'deals' ? 'deal' : 'buyer';
@@ -180,7 +199,7 @@ const CLIENT = `(() => {
   function q(table){
     const st = { table, filters:[], single:false, op:'select' };
     const o = { select(){ return o; }, order(){ return o; }, eq(k, v){ st.filters.push([k, v]); return o; }, maybeSingle(){ st.single = true; return o; },
-      upsert(v){ st.op = 'upsert'; st.value = v; return o; }, insert(v){ st.op = 'insert'; st.value = v; return o; }, delete(){ st.op = 'delete'; return o; },
+      upsert(v){ st.op = 'upsert'; st.value = v; return o; }, insert(v){ st.op = 'insert'; st.value = v; return o; }, update(v){ st.op = 'update'; st.value = v; return o; }, delete(){ st.op = 'delete'; return o; },
       then(a, b){ return call(Object.assign({ kind:'from' }, st)).then(a, b); } };
     return o;
   }
@@ -571,6 +590,57 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   await shot(p, 'crm-sheet-390');
   ok(!p.errs.length, 'no console errors (deal sheet) ' + p.errs.join(' | '));
   await p.ctx.close();
+
+  console.log('== Phase 2: commissions (Amr, on a closed deal)');
+  p = await open(OWNER, 'aal2', 1440);
+  await unlock(p, TEAM1);
+  await p.waitForTimeout(1500);   // his deals reach the deals table
+  await p.click('[data-stage-go="done"]'); await p.waitForTimeout(300);
+  await p.click('button.crm-prop[data-open="a4"]');
+  await p.waitForSelector('#drawer:not([hidden]) #crmComm #cmWho', { timeout:15000 });
+  ok(/2-bed house/.test(await p.textContent('#drawer')) && /Commission/.test(await p.textContent('#crmComm')), 'a closed deal opens with a Commission box');
+  await p.click('#cmAdd'); await p.waitForTimeout(200);
+  ok(/Pick who/.test(await p.textContent('#cmNote')), 'nobody picked: it asks who');
+  await p.selectOption('#cmWho', R2); await p.click('#cmAdd'); await p.waitForTimeout(200);
+  ok(/Enter the commission, or the profit and a percentage/.test(await p.textContent('#cmNote')) && !DB.comm.length, 'no numbers: it says what to enter, nothing saved');
+  await p.fill('#cmProfit', '20,000'); await p.fill('#cmPct', '10');
+  ok(await p.inputValue('#cmAmt') === '2000', 'profit $20,000 at 10% works out a $2,000 commission');
+  await p.click('#cmAdd'); await p.waitForFunction(() => /Added/.test((document.getElementById('cmNote') || {}).textContent || ''), null, { timeout:10000 });
+  const c1 = DB.comm[0];
+  ok(DB.comm.length === 1 && c1.user_id === R2 && c1.amount === 2000 && c1.profit === 20000 && c1.percent === 10 && c1.status === 'owed' && c1.deal_id === 'a4', 'saved: Rep 2, $2,000 owed on this deal, with the profit and percent');
+  ok(DB.cash.length === 1 && DB.cash[0].amount === 2000 && !DB.cash[0].settled, 'and a Cash line, unpaid');
+  let cm = await p.textContent('#crmComm');
+  ok(/Rep 2 · \$2,000\.00/.test(cm) && /Owed/.test(cm) && /10% of \$20,000\.00 profit/.test(cm), 'the box lists it: Rep 2, $2,000.00, owed, 10% of the profit');
+  ok(!(await p.$$eval('#cmWho option', os => os.map(o => o.value))).includes(R2), 'Rep 2 can’t be picked twice on the same deal');
+  await p.selectOption('#cmWho', R1); await p.fill('#cmProfit', '20000'); await p.fill('#cmPct', '10'); await p.fill('#cmAmt', '750'); await p.fill('#cmPct', '12');
+  ok(await p.inputValue('#cmAmt') === '750', 'a commission typed by hand isn’t overwritten by the percentage');
+  await p.check('#cmPaid'); await p.click('#cmAdd'); await p.waitForFunction(() => /Added/.test((document.getElementById('cmNote') || {}).textContent || ''), null, { timeout:10000 });
+  ok(DB.comm.length === 2 && DB.comm[1].amount === 750 && DB.comm[1].status === 'paid', 'Rep 1: $750 typed, already paid');
+  await p.click('#crmComm [data-cpay="0"]'); await p.waitForFunction(() => /Marked paid/.test((document.getElementById('cmNote') || {}).textContent || ''), null, { timeout:10000 });
+  ok(DB.comm[0].status === 'paid' && DB.cash.find(x => x.id === DB.comm[0].cash).settled, 'Mark paid: paid here and in Cash');
+  await p.click('#crmComm [data-cpay="0"]'); await p.waitForFunction(() => /Marked owed/.test((document.getElementById('cmNote') || {}).textContent || ''), null, { timeout:10000 });
+  ok(DB.comm[0].status === 'owed' && DB.comm[0].paid_on === null, 'Mark owed puts it back');
+  await p.click('#crmComm [data-cdel="1"]'); await p.click('#crmComm [data-cdel="1"]');
+  await p.waitForFunction(() => /Removed/.test((document.getElementById('cmNote') || {}).textContent || ''), null, { timeout:10000 });
+  ok(DB.comm.length === 1 && DB.cash.length === 1, 'Remove (asked twice) removes it and its Cash line');
+  await p.setViewportSize({ width:390, height:844 }); await p.waitForTimeout(300);
+  ok(await p.evaluate(() => document.documentElement.scrollWidth <= 390), 'commission box at 390: nothing wider than the screen');
+  const smallC = await p.evaluate(() => [...document.querySelectorAll('#crmComm button, #crmComm select, #crmComm input[type=text], #crmComm .sh-tick')].filter(e => e.offsetParent && e.getBoundingClientRect().height < 44).map(e => e.id || e.className));
+  ok(!smallC.length, 'commission box at 390: buttons, fields and the tick at least 44px ' + smallC.join(' '));
+  await shot(p, 'crm-commission-390');
+  await p.setViewportSize({ width:1440, height:900 });
+  await p.click('#dX');
+  await p.click('[data-stage-go="open"]'); await p.waitForTimeout(300);
+  await p.click('button.crm-prop[data-open="a1"]'); await p.waitForSelector('#drawer:not([hidden]) #crmComm', { timeout:10000 });
+  ok(/open once the deal is Closed/.test(await p.textContent('#crmComm')) && !(await p.$('#cmAdd')), 'a deal that isn’t closed: no commission yet, and it says why');
+  ok(!p.errs.length, 'no console errors (commissions) ' + p.errs.join(' | '));
+  await p.ctx.close();
+  p = await open(R2, 'aal1', 1440);
+  await unlock(p, TEAM1);
+  await p.click('button.crm-prop[data-open="' + r2d.id + '"]'); await p.waitForSelector('#drawer:not([hidden]) #crmFolder', { timeout:10000 });
+  ok(!(await p.$('#crmComm')), 'a rep never sees the Commission box');
+  await p.ctx.close();
+  DB.comm = []; DB.cash = [];
 
   console.log('== Amr sees the team: Everyone, Only me, Pick people');
   p = await open(OWNER, 'aal2', 1440);

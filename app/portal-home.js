@@ -112,6 +112,7 @@
         (has('deals') ? '<div class="p-grid p-today-lists"><section class="p-card" aria-labelledby="pvDueH"><div class="p-card-head"><h2 id="pvDueH">Callbacks due</h2><span id="pvDueN"></span></div><div id="pvDue"><p class="p-loading">Loading…</p></div></section>' +
           '<section class="p-card" aria-labelledby="pvActH"><div class="p-card-head"><h2 id="pvActH">Deals needing action</h2><span id="pvActN"></span></div><div id="pvAct"><p class="p-loading">Loading…</p></div></section></div>' : '') +
       '</section>' +
+      '<section aria-labelledby="pvCommH" id="pvCommWrap" hidden><div class="p-card"><div class="p-card-head"><h2 id="pvCommH">Your commissions</h2><span id="pvCommN"></span></div><div id="pvComm"></div></div></section>' +
       '<section aria-labelledby="pvCont" id="pvContWrap" hidden><h2 class="p-h2" id="pvCont">Next lesson</h2><div id="pvContBox"></div></section>' +
       '<section aria-labelledby="pvAreas"><h2 class="p-h2" id="pvAreas">Your areas</h2><div class="p-grid p-areas">' + areas.map(area).join('') + '</div></section>' +
       '<section aria-labelledby="pvBoard" id="pvBoardWrap" hidden><h2 class="p-h2" id="pvBoard">This week on the team <small>Monday to Sunday</small></h2><div id="pvBoardBox"></div></section>' +
@@ -129,6 +130,7 @@
     board(T.db, my);
     announcement(T.db, my);
     today(T.db, my, has('deals'));
+    myCommissions(T.db, my);
     if (me.role === 'manager' || has('requests')) {
       const n = (await pendingRequests(T.db) || []).length;
       if (my !== run) return;
@@ -289,8 +291,8 @@
   async function admin(my){
     const T = A(), db = T.db;
     box().innerHTML = '<div class="p-wrap">' + hero('Admin', 'Overview', 'Loading…', '') + '</div>';
-    const [live, reqs, revs, lr, mem, vis, calls, ann, eod, uc] = await Promise.all([liveCount(db), pendingRequests(db), reviewsWaiting(db), learners(db, true),
-      safe(db.from('members').select('active')), safe(db.rpc('visit_stats', { p_hours:168 })), safe(db.rpc('portal_calls_today')), safe(db.rpc('portal_announcement')), safe(db.rpc('portal_eod')), safe(db.from('deals').select('inspection_ends,closing_on').eq('stage', 'contract'))]);
+    const [live, reqs, revs, lr, mem, vis, calls, ann, eod, uc, cms] = await Promise.all([liveCount(db), pendingRequests(db), reviewsWaiting(db), learners(db, true),
+      safe(db.from('members').select('active')), safe(db.rpc('visit_stats', { p_hours:168 })), safe(db.rpc('portal_calls_today')), safe(db.rpc('portal_announcement')), safe(db.rpc('portal_eod')), safe(db.from('deals').select('inspection_ends,closing_on').eq('stage', 'contract')), safe(db.from('commissions').select('amount').eq('status', 'owed'))]);
     if (my !== run) return;
     const r = reqs || [], team = (mem.data || []).filter(x => x.active).length, dc = dealCounts();
     const ct = Array.isArray(calls.data) ? calls.data : null, sum = k => (ct || []).reduce((a, x) => a + (Number(x[k]) || 0), 0);
@@ -310,7 +312,7 @@
         box5('Deals', 'All reps', [row('Closing in the next 14 days', soon(uc.data, 'closing_on', 14), '/app/deals/#pipeline'), row('Inspection ending in 7 days', soon(uc.data, 'inspection_ends', 7), '/app/deals/#pipeline')].concat(dc ? [row('Follow-ups due', dc.due ? pillR(dc.due + ' due') : muted('None'), '/app/deals/#followups'), row('Open deals', muted(String(dc.open)), '/app/deals/'),
           row('Under contract', muted(String(dc.contract)), '/app/deals/')] : [row(UNLOCK, muted('Unlock'), '/app/deals/')])
           .concat([row('Land calculator', muted('Open'), '/land-calculator/'), row('House calculator', muted('Open'), '/house-calculator/')])) +
-        box5('Money', 'Only you', [row('Cash this month', muted('Open'), '#overview'), row('Course payments', muted('Not set up yet'))]) +
+        box5('Money', 'Only you', [row('Cash this month', muted('Open'), '#overview'), row('Commissions owed', owedPill(cms.data), '#expense'), row('Course payments', muted('Not set up yet'))]) +
         box5('Site', 'Public pages', [row('Visits this week', muted(v == null ? 'Open' : v), '#visits'), row('Team emails', muted('Open'), '#emails'), row('Logs', muted('Open'), '#logs'),
           row('Zoho Campaigns', muted('Open'), 'https://campaigns.zoho.com/', true)]) +
       '</div>' + callsToday(ct) + eodSection(eod.data) + annForm(ann.data) + '</div>';
@@ -318,6 +320,26 @@
     wireEod(db, my);
   }
 
+  // Phase 2: commissions. Amr's total still owed to reps (from the commissions table; only he can read it)
+  const money = n => '$' + (Math.round(n * 100) / 100).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  function owedPill(rows){
+    if (!Array.isArray(rows)) return muted('–');
+    const t = rows.reduce((a, x) => a + (Number(x.amount) || 0), 0);
+    return rows.length ? pillR(money(t) + ' · ' + plural(rows.length, 'commission')) : muted('None');
+  }
+  // A rep's own commissions on their Team home (portal_my_commissions: the deal, the amount, owed or paid; never the
+  // profit or the percentage). Hidden until they have one.
+  async function myCommissions(db, my){
+    const r = await safe(db.rpc('portal_my_commissions'));
+    if (my !== run || !Array.isArray(r.data) || !r.data.length || !$('pvCommWrap')) return;
+    const owed = r.data.filter(x => x.status === 'owed'), sum = l => l.reduce((a, x) => a + (Number(x.amount) || 0), 0);
+    $('pvCommN').textContent = owed.length ? money(sum(owed)) + ' owed' : 'All paid';
+    $('pvComm').innerHTML = r.data.slice(0, 8).map(x => row(x.deal_label || 'Deal', '<span class="p-pill' + (x.status === 'paid' ? ' is-ok' : '') + '">' +
+        esc(money(Number(x.amount) || 0) + ' · ' + (x.status === 'paid' ? 'paid' + (x.paid_on ? ' ' + new Date(x.paid_on + 'T12:00').toLocaleDateString('en-US', { month:'short', day:'numeric' }) : '') : 'owed')) + '</span>')).join('') +
+      (r.data.length > 8 ? '<p class="p-empty">And ' + (r.data.length - 8) + ' more.</p>' : '') +
+      '<p class="p-empty">Paid so far: ' + esc(money(sum(r.data.filter(x => x.status === 'paid')))) + '</p>';
+    $('pvCommWrap').hidden = false;
+  }
   // Amr: one announcement pinned on everyone's Team home (set_announcement; empty clears it)
   function annForm(a){
     return '<section class="p-card p-annc-form" aria-labelledby="pvAnncH"><div class="p-card-head"><h2 id="pvAnncH">Announcement</h2><span>Pinned on everyone’s Team home</span></div>' +

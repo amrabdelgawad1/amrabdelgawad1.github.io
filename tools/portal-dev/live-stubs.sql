@@ -135,3 +135,22 @@ drop policy if exists "deal_logs own rows" on public.deal_logs;
 create policy "deal_logs own rows" on public.deal_logs for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 drop policy if exists "deal_followups own rows" on public.deal_followups;
 create policy "deal_followups own rows" on public.deal_followups for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- Cash entries, as live (Cash page; Phase 2 commissions add a line here)
+create table if not exists public.cash_entries (
+  id bigint generated always as identity primary key,
+  kind text not null check (kind in ('income', 'expense')), entry_date date not null,
+  title text not null check (char_length(btrim(title)) between 1 and 120), party text check (char_length(party) <= 80),
+  category text not null default 'Other' check (char_length(btrim(category)) between 1 and 40),
+  hours numeric check (hours >= 0), rate numeric check (rate >= 0), amount numeric not null check (amount >= 0),
+  settled boolean not null default false, settled_at timestamptz, recurring boolean not null default false,
+  note text check (char_length(note) <= 300), created_at timestamptz not null default now(),
+  period_start date, period_end date, currency text not null default 'USD' check (currency = 'USD' or (currency = 'EGP' and fx_rate > 0)),
+  fx_rate numeric, spread boolean not null default false, fx_source text check (fx_source in ('week', 'income', 'typed')),
+  fx_income_id bigint references public.cash_entries(id) on delete set null);
+alter table public.cash_entries enable row level security;
+grant select, insert, update, delete on public.cash_entries to authenticated;
+drop policy if exists "Access: cash" on public.cash_entries;
+create policy "Access: cash" on public.cash_entries for select to authenticated using (public.has_access('money'));
+drop policy if exists "Admin manages cash" on public.cash_entries;
+create policy "Admin manages cash" on public.cash_entries for all to authenticated using (public.is_tracker_admin()) with check (public.is_tracker_admin());
