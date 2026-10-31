@@ -67,7 +67,10 @@ create trigger deal_files_check before insert on public.deal_files for each row 
 -- Storage: read a file when its deal_files row is visible; upload into a deal's folder you may change; remove the same
 drop policy if exists deal_files_read on storage.objects;
 create policy deal_files_read on storage.objects for select to authenticated
-  using (bucket_id = 'deal-files' and exists (select 1 from public.deal_files f where f.path = name));
+  using (bucket_id = 'deal-files' and (exists (select 1 from public.deal_files f where f.path = name)
+                                       or public.deal_folder_can_write((storage.foldername(name))[1])));
+-- (the folder's writer must also see its objects: Postgres only deletes rows the user can see, so without this a
+-- removed file's stored copy, or one left by a failed upload, could never be deleted)
 drop policy if exists deal_files_write on storage.objects;
 create policy deal_files_write on storage.objects for insert to authenticated
   with check (bucket_id = 'deal-files' and public.deal_folder_can_write((storage.foldername(name))[1]));
@@ -87,6 +90,18 @@ create table if not exists public.deal_checklist (
 alter table public.deal_checklist enable row level security;
 revoke all on public.deal_checklist from anon, authenticated;
 grant select, insert, delete on public.deal_checklist to authenticated;
+-- A tick always records who and when, as it happens
+create or replace function public.deal_checklist_stamp()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  new.done_at := now();
+  if auth.uid() is not null then new.done_by := auth.uid(); end if;
+  return new;
+end $$;
+revoke all on function public.deal_checklist_stamp() from public, anon, authenticated;
+drop trigger if exists deal_checklist_stamp on public.deal_checklist;
+create trigger deal_checklist_stamp before insert on public.deal_checklist for each row execute function public.deal_checklist_stamp();
+
 drop policy if exists "deal checklist read" on public.deal_checklist;
 create policy "deal checklist read" on public.deal_checklist for select to authenticated
   using (public.portal_can('deals') and exists (select 1 from public.deals x where x.id = deal_id));

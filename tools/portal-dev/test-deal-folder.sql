@@ -26,7 +26,8 @@ select pg_temp.ok((select owner = :N::uuid and kind = 'contract' from public.dea
 select pg_temp.ok(pg_temp.err($$insert into public.deal_files (deal_id, kind, path, size_bytes, enc) values ('d-f1', 'comps', 'd-f1/22222222-2222-2222-2222-222222222222', 10, '{"salt":"OTHER","iv":"i","ct":"c"}')$$) like '%team passphrase%', 'a file not on the team key is refused');
 select pg_temp.ok(pg_temp.err($$insert into public.deal_files (deal_id, kind, path, size_bytes, enc) values ('d-f1', 'comps', 'other-deal/22222222-2222-2222-2222-222222222222', 10, jsonb_build_object('salt', current_setting('x.ts'), 'iv', 'i', 'ct', 'c'))$$) like '%its deal''s folder%', 'a file must sit in its own deal''s folder');
 select pg_temp.ok(pg_temp.fails($$insert into public.deal_files (deal_id, kind, path, size_bytes, enc) values ('d-f1', 'comps', 'd-f1/33333333-3333-3333-3333-333333333333', 20000000, jsonb_build_object('salt', current_setting('x.ts'), 'iv', 'i', 'ct', 'c'))$$), 'nothing over 10 MB');
-insert into public.deal_checklist (deal_id, item) values ('d-f1', 'title_search'), ('d-f1', 'back_taxes');
+insert into public.deal_checklist (deal_id, item, done_at) values ('d-f1', 'title_search', '2001-01-01'), ('d-f1', 'back_taxes', default);
+select pg_temp.ok((select done_at > now() - interval '1 minute' and done_by = :N::uuid from public.deal_checklist where deal_id = 'd-f1' and item = 'title_search'), 'a tick records who and the real time, whatever the page sends');
 select pg_temp.ok((select count(*) from public.deal_checklist where deal_id = 'd-f1') = 2, 'the rep ticks two checklist items');
 select pg_temp.ok(pg_temp.fails($$insert into public.deal_checklist (deal_id, item) values ('d-f1', 'made_up')$$), 'only real checklist items');
 delete from public.deal_checklist where deal_id = 'd-f1' and item = 'back_taxes';
@@ -61,9 +62,14 @@ select pg_temp.ok((select bool_and(enc ->> 'salt' = 'TEAM5SALTTEAM500') from pub
 
 -- removing: the rep removes their file; deleting the deal clears its folder rows
 select pg_temp.as_user(:N::uuid, 'n@example.com', 'aal1');
+-- an object left by a failed upload (no row) is still visible to the owner, so it can be cleaned up
+insert into storage.objects (bucket_id, name) values ('deal-files', 'd-f1/55555555-5555-5555-5555-555555555555');
 delete from public.deal_files where deal_id = 'd-f1';
 delete from storage.objects where bucket_id = 'deal-files' and name like 'd-f1/%';
-select pg_temp.ok((select count(*) from public.deal_files where deal_id = 'd-f1') = 0 and (select count(*) from storage.objects where bucket_id = 'deal-files') = 0, 'the owner removes the file and its stored copy');
+reset role;
+select pg_temp.ok((select count(*) from public.deal_files where deal_id = 'd-f1') = 0 and (select count(*) from storage.objects where bucket_id = 'deal-files') = 0, 'the owner removes the file and its stored copy, and a stray copy (counted with full access)');
+set role authenticated;
+select pg_temp.as_user(:N::uuid, 'n@example.com', 'aal1');
 delete from public.deals where id = 'd-f1';
 reset role;
 select pg_temp.ok((select count(*) from public.deal_checklist where deal_id = 'd-f1') = 0, 'deleting the deal clears its checklist');
