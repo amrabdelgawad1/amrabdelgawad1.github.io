@@ -100,4 +100,7 @@ echo "== deal folder checks"; P -f "$ROOT/tools/portal-dev/test-deal-folder.sql"
 MIGCO="$ROOT/supabase/migrations/20261031230000_commissions.sql"
 P -f "$MIGCO"; P -f "$MIGCO"
 echo "== commissions checks"; P -f "$ROOT/tools/portal-dev/test-commissions.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
+MIGTO="$ROOT/supabase/migrations/20261031240000_team_overview.sql"
+P -f "$MIGTO"; P -f "$MIGTO"
+echo "== team overview checks"; P -f "$ROOT/tools/portal-dev/test-team-overview.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
 echo "== all checks passed"

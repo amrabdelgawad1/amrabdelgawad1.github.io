@@ -605,3 +605,9 @@ html body #pLogs{ min-height:calc(100vh - var(--p-top)); }
 /* Phase 1: "Ask for access" on a locked course */
 #pView .p-locked{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; }
 #pView .p-locked .p-ask{ min-height:44px; margin-inline-start:auto; }
+/* Phase 3: Team overview */
+#pView #tvBody{ min-width:0; max-width:100%; }
+#pView .p-tv-stats{ margin:0 0 16px; }
+#pView .p-tv td{ vertical-align:top; }
+#pView .p-tv td small{ color:var(--p-muted); font-size:13px; }
+#pView .p-tv .p-pill{ margin-top:4px; }
