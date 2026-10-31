@@ -20,10 +20,14 @@ insert into public.shifts (name, owner, user_id, shift_date, started_at, dials, 
   ('Manager M', false, :M, (now() at time zone 'Africa/Cairo')::date, date_trunc('second', now()) - interval '6 hours', 50, 9, 4);
 insert into public.call_events (user_id, kind, shift_started_at)
   select :N::uuid, k, date_trunc('second', now()) - interval '1 hour' from unnest(array['dial','dial','dial','dial','offer']) k;
+-- Yesterday (Cairo day): an offer tapped just before midnight must not count today
+insert into public.call_events (user_id, kind, shift_started_at, at)
+  values (:N, 'offer', ((now() at time zone 'Africa/Cairo')::date::timestamp at time zone 'Africa/Cairo') - interval '3 hours',
+                       ((now() at time zone 'Africa/Cairo')::date::timestamp at time zone 'Africa/Cairo') - interval '1 minute');
 set role authenticated;
 select pg_temp.as_user(:N::uuid, 'n@example.com', 'aal1');
 select pg_temp.ok((select dials from public.portal_my_today()) = 16, 'my calls today: the ended shift''s 12 plus 4 taps of the open shift');
-select pg_temp.ok((select conversations = 3 and offers = 1 and appointments = 1 from public.portal_my_today()), 'conversations, offers and appointments');
+select pg_temp.ok((select conversations = 3 and offers = 1 and appointments = 1 from public.portal_my_today()), 'conversations, offers and appointments (an offer from before Cairo midnight isn''t counted)');
 select pg_temp.as_user(:M::uuid, 'm@example.com', 'aal2');
 select pg_temp.ok((select dials from public.portal_my_today()) = 50, 'a manager gets only their own, not the team''s');
 select pg_temp.as_user(:F::uuid, 'f@example.com', 'aal1');

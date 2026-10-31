@@ -342,7 +342,11 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   await p.ctx.close();
   p = await open(R2, 'aal1', 1440, '#id=not-a-deal');
   await unlock(p, TEAM1);
-  ok(await p.isHidden('#drawer') && /2-bed house/.test(await text(p)) && !p.errs.length, 'a link to a deal that isn’t there just opens the pipeline');
+  ok(await p.isHidden('#drawer') && /2-bed house/.test(await text(p)) && !p.errs.length && await p.evaluate(() => location.hash) === '#pipeline', 'a link to a deal that isn’t there just opens the pipeline, and the link is cleared');
+  await p.ctx.close();
+  p = await open(R2, 'aal1', 1440, '#id=%E0');
+  await unlock(p, TEAM1);
+  ok(await p.isHidden('#drawer') && !p.errs.length, 'a broken link does nothing and causes no errors');
   await p.ctx.close();
 
   console.log('== Amr sees the team: Everyone, Only me, Pick people');

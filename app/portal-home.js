@@ -129,6 +129,9 @@
     $('pvContWrap').hidden = false;
   }
   // ---------- Today (Phase 1) ----------
+  // Days: the heading and "due" use this device's own day, the same day the Deal CRM uses when a follow-up date is
+  // picked, so a callback set for today shows as today. The call numbers use the Cairo day, like the Admin overview's
+  // Calls today, so the two always agree. On purpose; only far-off time zones late in the evening ever see the gap.
   // The first thing after sign-in: today's numbers (portal_my_today, own counts only), callbacks due and deals needing
   // action. Deals come from public.deals under its rules (your own rows); only the readable fields are used: kind,
   // county, state, stage and dates. Seller names and details stay encrypted in the CRM, which a row opens.
@@ -160,7 +163,7 @@
     $('pvDue').innerHTML = due.length ? due.slice(0, 6).map(d => dealRow(d, '<span class="p-pill' + (d.follow_up < now ? ' is-no' : '') + '">' + esc(lateTxt(d)) + '</span>')).join('') +
         (due.length > 6 ? row('And ' + (due.length - 6) + ' more', muted('Open the CRM'), '/app/deals/') : '')
       : '<p class="p-empty">' + (list.length ? 'No callbacks due today.' : 'No open deals yet. Deals you add in the Deal CRM show up here.') + '</p>';
-    $('pvAct').innerHTML = act.length ? act.slice(0, 6).map(d => dealRow(d, '<span class="p-pill is-plain">' + esc(d.stage === 'contract' ? 'Under contract' : STAGE[d.stage] + ' · no follow-up') + '</span>')).join('') +
+    $('pvAct').innerHTML = act.length ? act.slice(0, 6).map(d => dealRow(d, '<span class="p-pill is-plain">' + esc(d.stage === 'contract' ? 'Under contract' : (STAGE[d.stage] || 'Open') + ' · no follow-up') + '</span>')).join('') +
         (act.length > 6 ? row('And ' + (act.length - 6) + ' more', muted('Open the CRM'), '/app/deals/') : '')
       : '<p class="p-empty">' + (list.length ? 'Every open deal has a next step.' : 'Nothing yet.') + '</p>';
   }
