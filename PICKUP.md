@@ -23,6 +23,7 @@ Pick up from here. Every item below is merged to `main` and live unless it says 
 | Phase 1: pipeline board. Deal CRM Board view (five stage columns) and List/Board switch; contract signed, inspection ends and closing dates on deals under contract, with countdowns in the CRM, on Today and on the Admin overview (Closing in 14 days, Inspection ending in 7 days) | #55 | `20261031200000_deal_dates.sql` (three date columns on `deals`, staging then live). CRM file uploaded |
 | Phase 1: notifications. Bell in the shared top bar (`portal-shell.js`), Ask for access on locked courses (Team home, Learning Hub). Fix: the Review center opened empty when /app loaded straight onto #review (app.js now waits for every script before the first route) | #57 | `20261031210000_notifications.sql` (`notifications` table, triggers on shift_requests, hub_uploads, course_submissions, deal_events, feedback) |
 | Phase 2: deal folder. Files on each deal (encrypted in the browser with a per-file key; name, type and key on the team key; private bucket `deal-files`), title company saved with the deal (encrypted), due diligence checklist (readable ticks, progress on the board). Passphrase change carries file names and keys | #59 | `20261031220000_deal_folder.sql` (`deal_files`, `deal_checklist`, bucket and storage rules, `deal_rekey` extended). CRM file updated |
+| Phase 2: deal sheet maker. "Make a deal sheet" in every real deal's folder: one page for buyers (asking price, per acre or value after repairs and repairs, up to 4 folder photos decrypted in the browser, details, contact, as-is and assignment lines), Print or save as PDF (one Letter or A4 page) or Copy as text. Never on it: max offer, opening offer, what we pay, seller, notes, title company, file names. Street address and parcel only when ticked. Details saved inside the encrypted deal | #61 (checks only) | none; CRM file updated |
 
 Each migration ran on staging first, then on live, and has a line in Admin > Logs > Changes.
 
@@ -33,7 +34,7 @@ Each migration ran on staging first, then on live, and has a line in Admin > Log
 4. **The students plan decisions** (section 9 of `PORTAL-STUDENTS.md`).
 
 ## Next, in order (Amr's decisions, Oct 31)
-1. Phase 2: deal sheet maker (one-page PDF for buyers from the deal's numbers and photos).
+1. ~~Phase 2: deal sheet maker~~ **Done (Oct 31).**
 2. Phase 2: commissions in the Deal CRM, counted only when a deal closes: what each rep earned per deal, paid or owed, feeding Cash.
 3. Phase 3: team overview (every rep's calls, deals and course progress on one screen).
 4. Phase 3: call scoring with the ACQ 22 50-point scorecard, and roleplay practice.
@@ -46,10 +47,10 @@ Later, by Amr's choice:
 - Website: legal pages and a public outsourcing page, later.
 
 ## The private Deal CRM file
-- Live: `deal-tools/crm.html`, 125,993 bytes, sha256 `cd7a282023fedbe2cabcad68accabbf99d8baf3e6d8957fa30ae0ccb19b12c81` (Oct 31, deal folder; sources merged in `portal-backups` PR #5). Use it as the base for the next change.
-- Backups in the same bucket: `crm-before-folder-2026-10-31.html` (notifications bell file, `42cf7577...`), `crm-before-bell-2026-10-31.html` (pipeline board file, `5121442c...`), `crm-before-board-2026-10-31.html` (Today links file, `ce9bd876...`), `crm-before-today-2026-10-31.html` (deals split file, `275d95b6...`), `crm-before-split-2026-10-31.html` (Phase 2 buyers file, `b3f58ea6...`), `crm-before-p2-2026-10-30.html` (round 7 file, `bd9475d1...`) and `crm-before-r7-2026-10-30.html`.
-- Build sources (never in this public repo): private repo `amrabdelgawad1/portal-backups`, folder `crm-build/`. Build with `python3 -I patch.py crm-src.html frame.html ext.js crm.html`, test with `node tools/portal-dev/crm-r7.js http://localhost:8702 crm.html` (97 checks).
-- Uploading: Amr's own signed-in session (two-step) may write the bucket. Browsers may keep the old copy for up to an hour.
+- Live: `deal-tools/crm.html`, 150,218 bytes, sha256 `94e23d16dd0c429aba250a955e42794ea9ea1ee5eae5afb3f2ce14608f89fc4f` (Oct 31, deal sheet; sources merged in `portal-backups` PR #6). Use it as the base for the next change.
+- Backups in the same bucket: `crm-before-sheet-2026-10-31.html` (deal folder file, `cd7a2820...`), `crm-before-folder-2026-10-31.html` (notifications bell file, `42cf7577...`), `crm-before-bell-2026-10-31.html` (pipeline board file, `5121442c...`), `crm-before-board-2026-10-31.html` (Today links file, `ce9bd876...`), `crm-before-today-2026-10-31.html` (deals split file, `275d95b6...`), `crm-before-split-2026-10-31.html` (Phase 2 buyers file, `b3f58ea6...`), `crm-before-p2-2026-10-30.html` (round 7 file, `bd9475d1...`) and `crm-before-r7-2026-10-30.html`.
+- Build sources (never in this public repo): private repo `amrabdelgawad1/portal-backups`, folder `crm-build/`. Build with `python3 -I patch.py crm-src.html frame.html ext.js crm.html`, test with `node tools/portal-dev/crm-r7.js http://localhost:8702 crm.html` (173 checks).
+- Uploading: Amr's own signed-in session (two-step) may write the bucket. How: on amrabdelgawad.site/app/ in his Chrome, make a client from `TRACKER_CONFIG`, add a file input, hand it the built file, check its sha256 in the page, `move` crm.html to the backup name, `upload` the new one, download it back and compare. Browsers may keep the old copy for up to an hour.
 - How buyers work: your own buyers still live in your encrypted workspace (the calculators read them there). When the CRM is on the team passphrase it copies them to `public.buyers`: the buy box readable, name, phone, email and notes encrypted. Areas become counties ("Polk, Hillsborough") or states ("FL, GA"); if both are typed, only the counties count.
 
 ## Note: running SQL
