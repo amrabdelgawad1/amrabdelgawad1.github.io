@@ -329,7 +329,7 @@
       title:'End your shift and send it to Amr?',
       msg:hm(work) + ' worked · ' + hm(brk) + ' break · ' + hhmm(new Date(live.started_at)) + '–' + hhmm(end),
       input:{ multiline:true, label:'How did today go?', value:draft, placeholder:'Anything Amr should know: good calls, problems, follow-ups',
-        numbers: numBoxes(draftNums()),
+        numbers: numBoxes(window.TalentsCalls ? window.TalentsCalls.fill(draftNums()) : draftNums()),
         minLength:10, error:'Write a sentence or two about your day first.',
         onCancel: (v, n) => { try { localStorage.setItem(BRIEF_KEY, v); } catch(e){} keepNums(n); } },
       ok:'Send and end shift', cancel:'Keep working'
@@ -348,7 +348,7 @@
     const ans = await ask({
       title:'Your shift was ended. Add a note about your day?',
       msg:'Your hours are already saved. This note goes with them.',
-      input:{ multiline:true, label:'How did today go?', value:draft, placeholder:'Anything Amr should know: good calls, problems, follow-ups', numbers: numBoxes(draftNums()) },
+      input:{ multiline:true, label:'How did today go?', value:draft, placeholder:'Anything Amr should know: good calls, problems, follow-ups', numbers: numBoxes(window.TalentsCalls ? window.TalentsCalls.fill(draftNums()) : draftNums()) },
       ok:'Send note', cancel:'Skip'
     });
     forgetBrief();
