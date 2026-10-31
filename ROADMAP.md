@@ -19,13 +19,14 @@ Not built:
 ## Phase 2. Deals and money
 Done: buyers list and matching ("Buyers who fit" on every deal).
 Done: the deals split (`DATA-MODEL.md` section 4).
-Not built: deal folder (contract, title company, comps, due diligence checklist), deal sheet maker (one-page PDF for buyers), commissions per rep per deal feeding Cash.
+Not built: deal folder (contract, title company, comps, due diligence checklist), deal sheet maker (one-page PDF for buyers), commissions per rep per deal feeding Cash (counted only when a deal closes in the Deal CRM).
 
 **Gate 2:** first deal matched to a buyer from the list.
 
 ## Phase 3. Grow the team
-Team overview, call scoring with the ACQ 22 50-point scorecard, roleplay practice, certificates after Module 15, onboarding checklist per new hire, script and objection library.
-Paid sign-up goes live here, only once the legal pages (terms, refund, privacy) and staging are in place.
+Team overview, call scoring with the ACQ 22 50-point scorecard, roleplay practice, onboarding checklist per new hire, script and objection library.
+Certificates wait until the Acquisitions modules are settled (more may be added); they'll be issued after the last module rather than Module 15.
+Paid sign-up goes live here, only once the legal pages (terms, refund, privacy) and staging are in place. On hold for now (Oct 31): Amr is working on the students plan and the legal pages.
 
 **Gate 3:** first outsourcing client signs (served with manual reports at first).
 

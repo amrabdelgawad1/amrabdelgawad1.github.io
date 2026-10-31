@@ -20,7 +20,7 @@ Pick up from here. Every item below is merged to `main` and live unless it says 
 | Phase 1: Today screen on the Team home (today's numbers, callbacks due, deals needing action, next lesson); a Today row opens that deal in the CRM | #52 | `20261031170000_today.sql` (`portal_my_today`, staging then live). CRM file uploaded |
 | Phase 1: end-of-day reports on the Admin overview (today or yesterday: sent, no report, on shift, didn't work, with hours, numbers and notes) | #54 | `20261031180000_eod.sql` (`portal_eod`) |
 | Fix: clocking out on the tracker now clears Live now, and the same shift is never saved twice (Amr's End on an already-saved shift just clears Live now) | #54 | `20261031190000_shift_dupes.sql` (two triggers on `shifts`) |
-| Phase 1: pipeline board. Deal CRM Board view (five stage columns) and List/Board switch; contract signed, inspection ends and closing dates on deals under contract, with countdowns in the CRM, on Today and on the Admin overview (Closing in 14 days, Inspection ending in 7 days) | (this PR) | `20261031200000_deal_dates.sql` (three date columns on `deals`). CRM file updated |
+| Phase 1: pipeline board. Deal CRM Board view (five stage columns) and List/Board switch; contract signed, inspection ends and closing dates on deals under contract, with countdowns in the CRM, on Today and on the Admin overview (Closing in 14 days, Inspection ending in 7 days) | #55 | `20261031200000_deal_dates.sql` (three date columns on `deals`, staging then live). CRM file uploaded |
 
 Each migration ran on staging first, then on live, and has a line in Admin > Logs > Changes.
 
@@ -30,15 +30,24 @@ Each migration ran on staging first, then on live, and has a line in Admin > Log
 3. ~~Roadmap as text~~ **Done (Oct 31):** see `ROADMAP.md`.
 4. **The students plan decisions** (section 9 of `PORTAL-STUDENTS.md`).
 
-## Next, in order
-1. Gate 0 passed (Oct 31): database check as Kyle Miller, and his sign-ins from an Android phone and a Windows PC.
-2. Finish Phase 1: notifications.
-4. Rest of Phase 2: deal folder, deal sheet maker, commissions on Cash.
-5. Students and paid sign-up, after Amr's decisions and the legal pages.
+## Next, in order (Amr's decisions, Oct 31)
+1. Phase 1: notifications (a bell in the top bar: access requests, drills sent for review, deal stage changes; payments in later).
+2. Phase 2: deal folder (contract, title company, comps, due diligence checklist with each deal).
+3. Phase 2: deal sheet maker (one-page PDF for buyers from the deal's numbers and photos).
+4. Phase 2: commissions in the Deal CRM, counted only when a deal closes: what each rep earned per deal, paid or owed, feeding Cash.
+5. Phase 3: team overview (every rep's calls, deals and course progress on one screen).
+6. Phase 3: call scoring with the ACQ 22 50-point scorecard, and roleplay practice.
+7. Phase 3: onboarding checklist per new hire, and the script and objection library.
+
+Later, by Amr's choice:
+- Certificates: wait until the Acquisitions modules are settled (more may be added), then issue after the last module, not Module 15.
+- Paid sign-up for outside students: on hold while Amr works on the students plan and the legal pages.
+- Phase 4 (client view, weekly client reports): after the first outsourcing client signs.
+- Website: legal pages and a public outsourcing page, later.
 
 ## The private Deal CRM file
-- Live: `deal-tools/crm.html`, 100,592 bytes, sha256 `ce9bd876a0ff011187e9f1b07fa6faccd1a1ebdfe6cd65e38e514152b44e611f` (Oct 31, Today links; sources merged in `portal-backups` PR #2). Use it as the base for the next change.
-- Backups in the same bucket: `crm-before-today-2026-10-31.html` (deals split file, `275d95b6...`), `crm-before-split-2026-10-31.html` (Phase 2 buyers file, `b3f58ea6...`), `crm-before-p2-2026-10-30.html` (round 7 file, `bd9475d1...`) and `crm-before-r7-2026-10-30.html`.
+- Live: `deal-tools/crm.html`, 111,405 bytes, sha256 `5121442c8793925f159fff4e134d06a5af53816222e6a95eac2bb066ff70220e` (Oct 31, pipeline board; sources merged in `portal-backups` PR #3). Use it as the base for the next change.
+- Backups in the same bucket: `crm-before-board-2026-10-31.html` (Today links file, `ce9bd876...`), `crm-before-today-2026-10-31.html` (deals split file, `275d95b6...`), `crm-before-split-2026-10-31.html` (Phase 2 buyers file, `b3f58ea6...`), `crm-before-p2-2026-10-30.html` (round 7 file, `bd9475d1...`) and `crm-before-r7-2026-10-30.html`.
 - Build sources (never in this public repo): private repo `amrabdelgawad1/portal-backups`, folder `crm-build/`. Build with `python3 -I patch.py crm-src.html frame.html ext.js crm.html`, test with `node tools/portal-dev/crm-r7.js http://localhost:8702 crm.html` (97 checks).
 - Uploading: Amr's own signed-in session (two-step) may write the bucket. Browsers may keep the old copy for up to an hour.
 - How buyers work: your own buyers still live in your encrypted workspace (the calculators read them there). When the CRM is on the team passphrase it copies them to `public.buyers`: the buy box readable, name, phone, email and notes encrypted. Areas become counties ("Polk, Hillsborough") or states ("FL, GA"); if both are typed, only the counties count.
