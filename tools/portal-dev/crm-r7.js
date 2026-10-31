@@ -39,11 +39,28 @@ const ws = deals => ({ v:2, deals, buyers:[], settings:{ weeklyGoal:10, me:{ nam
 // ---------- the in-memory database ----------
 const OWNER = 'o-amr', R1 = 'u-rep1', R2 = 'u-rep2', MG = 'u-mgr';
 const PEOPLE = { [OWNER]:{ name:'Amr', role:'owner', active:true }, [R1]:{ name:'Rep 1', role:'agent', active:true }, [R2]:{ name:'Rep 2', role:'agent', active:true }, [MG]:{ name:'Maya M.', role:'manager', active:true } };
-const DB = { logs:[], fus:[], team:null, raceOnce:false };
+const DB = { logs:[], fus:[], buyers:[], team:null, raceOnce:false };
 const err = m => ({ data:null, error:{ message:m } });
 function handle(me, aal, op){
   const P = PEOPLE[me];
   if (op.kind === 'aal') return { data:{ currentLevel:aal, nextLevel:aal } };
+  if (op.kind === 'from' && op.table === 'buyers') {
+    // Phase 2 rules: Amr and managers with the code see everyone's; others their own. Writes: own rows (Amr any), team key only.
+    const seeAll = P.role === 'owner' || (P.role === 'manager' && aal === 'aal2'), f = Object.fromEntries(op.filters);
+    const mine = r => r.owner === me || P.role === 'owner';
+    const match = r => Object.entries(f).every(([k, v]) => r[k] === v);
+    if (op.op === 'select') return { data:DB.buyers.filter(r => (seeAll || r.owner === me) && match(r)).map(r => JSON.parse(JSON.stringify(r))) };
+    if (op.op === 'delete') { DB.buyers = DB.buyers.filter(r => !(mine(r) && match(r))); return { data:null }; }
+    if (op.op === 'upsert') {
+      const v = op.value;
+      if (!DB.team) return err('Set the team passphrase in the Deal CRM first');
+      if (!v.enc || v.enc.salt !== DB.team.salt) return err('This buyer isn\'t encrypted with the team passphrase. Lock the CRM and open it again.');
+      const i = DB.buyers.findIndex(r => r.id === v.id);
+      if (i >= 0) { if (!mine(DB.buyers[i])) return err('new row violates row-level security policy'); DB.buyers[i] = Object.assign({}, DB.buyers[i], v); }
+      else DB.buyers.push(Object.assign({ owner:me }, v));
+      return { data:null };
+    }
+  }
   if (op.kind === 'from') {
     const T = op.table === 'deal_logs' ? 'logs' : 'fus', f = Object.fromEntries(op.filters);
     if (op.op === 'select') { const rows = DB[T].filter(r => r.user_id === me && Object.entries(f).every(([k, v]) => r[k] === v)); return { data:op.single ? (rows[0] || null) : rows }; }
@@ -70,22 +87,37 @@ function handle(me, aal, op){
         if (!owner) return err('Not allowed: only Amr sets the team passphrase');
         if (DB.team) return err('deal_team: already set.');
         DB.team = { salt:a.p_salt, check:a.p_check }; return { data:null };
+      case 'buyer_matches': {
+        const seeAll = owner || (P.role === 'manager' && aal === 'aal2'), c = String(a.p_county || '').toLowerCase().replace(/\s+(county|parish)$/, '').trim();
+        return { data:DB.buyers.filter(b => (seeAll || b.owner === me) && b.active !== false && (!b.kinds.length || b.kinds.includes(a.p_kind)) &&
+          (a.p_price == null || ((b.price_min == null || a.p_price >= b.price_min) && (b.price_max == null || a.p_price <= b.price_max))) &&
+          ((!b.counties.length && !b.states.length) || b.counties.includes(c) || b.states.includes(a.p_state)))
+          .map(b => Object.assign({}, b, { fit:b.counties.includes(c) ? 'county' : b.states.includes(a.p_state) ? 'state' : 'anywhere' })) };
+      }
       case 'deal_rekey': {
         const old = DB.team && DB.team.salt;
+        const bcopy = JSON.parse(JSON.stringify(DB.buyers));
         if (owner) { if (!a.p_check || a.p_check.salt !== a.p_salt) return err('rekey: the team check must use the new salt'); }
         else { if (a.p_check) return err('Not allowed: only Amr sets the team passphrase'); if (!DB.team || a.p_salt !== DB.team.salt) return err('rekey: use the team passphrase'); }
         const copy = JSON.parse(JSON.stringify(DB.logs));
         if (DB.raceOnce) { DB.raceOnce = false; const r = DB.logs.find(x => x.user_id === R2); if (r) r.blob = Object.assign({}, r.blob, { iv:'changed-meanwhile' }); }
         const inScope = r => /^workspace/.test(r.tool) && (owner ? (r.user_id === me && r.tool === 'workspace') || r.blob.salt === old : r.user_id === me);
         for (const x of a.p_rows) {
-          if (x.blob.salt !== a.p_salt) { DB.logs = copy; return err('rekey: every row must be encrypted with the new key'); }
+          if (x.blob.salt !== a.p_salt) { DB.logs = copy; DB.buyers = bcopy; return err('rekey: every row must be encrypted with the new key'); }
+          if (x.buyer) {
+            if (!owner) { DB.logs = copy; DB.buyers = bcopy; return err('Not allowed: only Amr re-encrypts buyers'); }
+            const b = DB.buyers.find(y => y.id === x.buyer);
+            if (!b || b.enc.iv !== x.old_iv) { DB.logs = copy; DB.buyers = bcopy; return err('rekey: a buyer changed while you were working. Nothing was saved. Reload and try again.'); }
+            b.enc = x.blob; continue;
+          }
           const r = DB.logs.find(y => y.user_id === x.holder && y.tool === x.tool);
           if (!r || !inScope(r)) { DB.logs = copy; return err('Not allowed: that workspace isn\'t yours to change'); }
           if (r.blob.iv !== x.old_iv) { DB.logs = copy; return err('rekey: a row changed while you were working (' + x.tool + '). Nothing was saved. Reload and try again.'); }
           r.blob = x.blob;
         }
         const left = DB.logs.filter(r => r.blob.salt !== a.p_salt && (owner ? (r.user_id === me && r.tool === 'workspace') || (old && copy.find(c => c.user_id === r.user_id && c.tool === r.tool).blob.salt === old) : r.user_id === me) && /^workspace/.test(r.tool));
-        if (left.length) { DB.logs = copy; return err('rekey: ' + left.length + ' workspace(s) would be left on the old passphrase. Nothing was saved.'); }
+        if (owner && DB.buyers.some(b => b.enc.salt !== a.p_salt)) { DB.logs = copy; DB.buyers = bcopy; return err('rekey: 1 buyer(s) would be left on the old passphrase. Nothing was saved.'); }
+        if (left.length) { DB.logs = copy; DB.buyers = bcopy; return err('rekey: ' + left.length + ' workspace(s) would be left on the old passphrase. Nothing was saved.'); }
         if (owner) DB.team = { salt:a.p_salt, check:a.p_check };
         return { data:a.p_rows.length };
       }
@@ -100,7 +132,7 @@ const CLIENT = `(() => {
   const call = op => window.__fake(JSON.stringify(op)).then(r => JSON.parse(r));
   function q(table){
     const st = { table, filters:[], single:false, op:'select' };
-    const o = { select(){ return o; }, eq(k, v){ st.filters.push([k, v]); return o; }, maybeSingle(){ st.single = true; return o; },
+    const o = { select(){ return o; }, order(){ return o; }, eq(k, v){ st.filters.push([k, v]); return o; }, maybeSingle(){ st.single = true; return o; },
       upsert(v){ st.op = 'upsert'; st.value = v; return o; }, insert(v){ st.op = 'insert'; st.value = v; return o; }, delete(){ st.op = 'delete'; return o; },
       then(a, b){ return call(Object.assign({ kind:'from' }, st)).then(a, b); } };
     return o;
@@ -259,6 +291,23 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   await p.waitForTimeout(800);
   const r2 = DB.logs.find(r => r.user_id === R2);
   ok(r2 && r2.blob.salt === DB.team.salt && (await dec(r2.blob, TEAM1)).deals[0].name === '2-bed house', 'Rep 2’s first deal is saved on the team key');
+
+  console.log('== Phase 2: Rep 2 adds cash buyers; they reach the database encrypted');
+  await p.click('[data-go="buyers"]');
+  const addBuyer = async (name, phone, areas, max, kinds) => {
+    await p.fill('#bName', name); await p.fill('#bPhone', phone); await p.fill('#bAreas', areas); await p.fill('#bMax', String(max || '')); await p.selectOption('#bKinds', kinds);
+    await p.click('#bSave'); await p.waitForTimeout(900);
+  };
+  await addBuyer('Cash Carl', '555-0111', 'Ross County, Montgomery', 300000, 'land,house');
+  await addBuyer('Gone Gary', '555-0122', 'TX', 0, 'land');
+  let bc = DB.buyers.find(b => b.owner === R2 && b.price_max === 300000);
+  ok(bc && JSON.stringify(bc.counties) === '["ross","montgomery"]' && !bc.states.length && bc.kinds.join() === 'land,house', 'the buy box: counties ross and montgomery, land and houses, up to $300,000');
+  ok(bc && bc.enc.salt === DB.team.salt && (await dec(bc.enc, TEAM1)).name === 'Cash Carl' && !/Cash Carl|555-0111/.test(JSON.stringify(Object.assign({}, bc, { enc:null }))), 'name and phone are only inside the encrypted part');
+  ok(JSON.stringify(DB.buyers.find(b => b.owner === R2 && b.price_max == null).states) === '["TX"]', 'a state-only buyer: TX');
+  await p.click('#bList [data-bdel]'); await p.click('#bList [data-bdel]'); await p.waitForTimeout(900);
+  ok(DB.buyers.filter(b => b.owner === R2).length === 1, 'removing a buyer removes it from the database');
+  ok(await p.isHidden('#crmTeamBuyers') || !(await p.$('#crmTeamBuyers')), 'a rep has no team buyers list');
+  await layout(p, 'rep buyers 1440');
   ok(!p.errs.length, 'no console errors (Rep 2) ' + p.errs.join(' | '));
   await p.ctx.close();
 
@@ -288,6 +337,28 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   ok(await p.$('#dSave') !== null, 'his own deal opens for editing');
   await p.click('#dX');
 
+  console.log('== Phase 2: Amr sees the team’s buyers and who fits a deal');
+  await p.click('[data-go="buyers"]');
+  await p.waitForFunction(() => /Cash Carl/.test((document.getElementById('crmTeamBuyers') || {}).textContent || ''), null, { timeout:15000 });
+  t = await p.textContent('#crmTeamBuyers');
+  ok(/Cash Carl/.test(t) && /Rep 2/.test(t) && /555-0111/.test(t) && /Ross, Montgomery/.test(t) && !/Gone Gary/.test(t), 'the team’s buyers: Cash Carl, added by Rep 2, decrypted');
+  await p.fill('#bName', 'Hank Houses'); await p.fill('#bAreas', 'Ohio'); await p.selectOption('#bKinds', 'house'); await p.click('#bSave'); await p.waitForTimeout(900);
+  ok(DB.buyers.some(b => b.owner === OWNER && b.states.join() === 'OH' && b.kinds.join() === 'house'), 'Amr’s own buyer reaches the database (Ohio, houses)');
+  ok(/1 buyer on your list/.test(await p.textContent('#hSub')), 'the header count updates after saving a buyer');
+  await shot(p, 'crm-owner-buyers-1440');
+  await layout(p, 'owner buyers 1440');
+  await p.click('[data-stage-go="open"]');
+  await p.click('tr[data-open="a1"] .crm-prop');
+  await p.waitForFunction(() => /Cash Carl|No buyers/.test((document.getElementById('crmFits') || {}).textContent || ''), null, { timeout:15000 });
+  t = await p.textContent('#crmFits');
+  ok(/Cash Carl/.test(t) && /Buys in this county/.test(t) && !/Hank Houses/.test(t), 'land in Ross County, OH: Cash Carl fits by county; the house buyer does not');
+  await shot(p, 'crm-owner-fits-1440');
+  await p.click('#dX');
+  await p.click('tr[data-team] .crm-prop');
+  await p.waitForFunction(() => /Buyers who fit/.test((document.getElementById('crmFits') || {}).textContent || '') && !/Looking/.test(document.getElementById('crmFits').textContent), null, { timeout:15000 });
+  ok(true, 'a teammate’s deal shows buyers who fit too');
+  await p.click('#dX');
+
   console.log('== Amr changes the team passphrase: a race is refused, then everyone moves together');
   await p.click('[data-go="settings"]');
   ok(/Change passphrase/.test(await p.textContent('#tpGo')), 'Settings: Change passphrase');
@@ -307,6 +378,8 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   ok(DB.team.salt !== team1Salt && all.every(r => r.blob.salt === DB.team.salt), 'every workspace on the new key, none left behind');
   let opened = 0; for (const r of all) { try { await dec(r.blob, TEAM2); opened++; } catch (e) {} }
   ok(opened === 3, 'each opens with the new passphrase');
+  let bOpen = 0; for (const b of DB.buyers) { try { if ((await dec(b.enc, TEAM2)).name) bOpen++; } catch (e) {} }
+  ok(DB.buyers.length === 2 && DB.buyers.every(b => b.enc.salt === DB.team.salt) && bOpen === 2, 'both buyers moved to the new passphrase in the same step');
   await p.click('#tpReopen'); await p.waitForSelector('#gate.vault');
   await unlock(p, TEAM1);
   ok(/doesn’t open/.test(await p.textContent('#vErr')), 'the old team passphrase no longer opens Amr’s CRM');
@@ -352,6 +425,11 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   ok(true, 'with the code: the team’s deals');
   await shot(p, 'crm-manager-390');
   await layout(p, 'manager 390');
+  await p.click('[data-go="buyers"]');
+  await p.waitForFunction(() => /Cash Carl/.test((document.getElementById('crmTeamBuyers') || {}).textContent || ''), null, { timeout:15000 });
+  ok(/Hank Houses/.test(await p.textContent('#crmTeamBuyers')), 'a manager with the code sees the team’s buyers (after the passphrase change)');
+  await shot(p, 'crm-manager-buyers-390');
+  await layout(p, 'manager buyers 390');
   await p.ctx.close();
 
   await browser.close();
