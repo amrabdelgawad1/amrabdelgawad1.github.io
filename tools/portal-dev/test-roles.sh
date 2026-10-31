@@ -73,4 +73,7 @@ echo "== do-not-call checks"; P -f "$ROOT/tools/portal-dev/test-dnc.sql" 2>&1 | 
 MIGF="$ROOT/supabase/migrations/20261031140000_feedback_announcements.sql"
 P -f "$MIGF"; P -f "$MIGF"
 echo "== feedback and announcement checks"; P -f "$ROOT/tools/portal-dev/test-feedback.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
+MIGB="$ROOT/supabase/migrations/20261031150000_buyers.sql"
+P -f "$MIGB"; P -f "$MIGB"
+echo "== buyers checks"; P -f "$ROOT/tools/portal-dev/test-buyers.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
 echo "== all checks passed"
