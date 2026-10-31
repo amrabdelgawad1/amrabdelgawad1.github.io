@@ -97,4 +97,7 @@ echo "== notifications checks"; P -f "$ROOT/tools/portal-dev/test-notifications.
 MIGDF="$ROOT/supabase/migrations/20261031220000_deal_folder.sql"
 P -f "$MIGDF"; P -f "$MIGDF"
 echo "== deal folder checks"; P -f "$ROOT/tools/portal-dev/test-deal-folder.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
+MIGCO="$ROOT/supabase/migrations/20261031230000_commissions.sql"
+P -f "$MIGCO"; P -f "$MIGCO"
+echo "== commissions checks"; P -f "$ROOT/tools/portal-dev/test-commissions.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
 echo "== all checks passed"
