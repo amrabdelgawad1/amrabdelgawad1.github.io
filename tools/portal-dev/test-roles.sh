@@ -114,4 +114,7 @@ P -f "$MIGLB"; P -f "$MIGLB"
 MIGLF="$ROOT/supabase/migrations/20261101040000_library_fixes.sql"
 P -f "$MIGLF"; P -f "$MIGLF"
 echo "== library checks"; P -f "$ROOT/tools/portal-dev/test-library.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p; s/^psql:.*gset.*$/  FAIL gset/p'
+MIGG1="$ROOT/supabase/migrations/20261101050000_gate1.sql"
+P -f "$MIGG1"; P -f "$MIGG1"
+echo "== gate 1 checks"; P -f "$ROOT/tools/portal-dev/test-gate1.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
 echo "== all checks passed"

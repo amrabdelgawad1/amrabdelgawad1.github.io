@@ -179,7 +179,7 @@ const T = [
       ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'nothing wider than the screen (the table scrolls inside its box) ' + wide);
       ok(await p.evaluate(() => [...document.querySelectorAll('[data-tv]')].every(b => b.getBoundingClientRect().height >= 44)), 'period buttons at least 44px');
     } },
-  { name:'owner-admin', url:'/app/', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:owner, SB_FROM:ownerFrom }, run: async (p, ok, W) => {
+  { name:'owner-admin', url:'/app/', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:Object.assign({}, owner, { portal_gate1:[{ user_id:'u1', name:'Sara R.', shift_days:6, missed_days:1, last_missed:'2026-10-29', clean_days:3, worked_both_weeks:true }, { user_id:'u2', name:'Youssef H.', shift_days:9, missed_days:0, last_missed:null, clean_days:14, worked_both_weeks:true }] }), SB_FROM:ownerFrom }, run: async (p, ok, W) => {
       ok(await p.evaluate(() => location.hash) === '#admin', 'Amr lands on the Admin overview');
       ok(/Bricolage/.test(await fontOf(p, '#title')), 'page name in Bricolage Grotesque (was Bodoni): ' + (await fontOf(p, '#title')).split(',')[0]);
       ok(/Bricolage/.test(await fontOf(p, '#pView h1')), 'hero heading in Bricolage Grotesque');
@@ -191,6 +191,8 @@ const T = [
       ok(/3 things need you today/.test(t) && /Sara R\.|1 waiting/.test(t) && /1,234/.test(t) && /Zoho Campaigns/.test(t) && !/Emails and sign-ups/.test(t), 'overview numbers: 3 things (2 reviews, 1 request), 1,234 visits, Zoho link');
       ok(/People[\s\S]*Learning[\s\S]*Deals[\s\S]*Money[\s\S]*Site/i.test(t), 'boxes People, Learning, Deals, Money, Site');
       ok(/End-of-day reports\s*1 missing/.test(t), 'People box: 1 end-of-day report missing');
+      const g = await p.evaluate(() => (document.querySelector('.p-g1') || {}).innerText || '');
+      ok(/Gate 1[\s\S]*1 of 2 people are there/.test(g) && /Sara R\.[\s\S]*No calls logged Oct 29/.test(g) && /Youssef H\.[\s\S]*Ready/.test(g), 'Gate 1: 1 of 2 ready; Sara missed calls on Oct 29, Youssef ready');
       ok(/Commissions owed\s*\$2,500\.50 · 2 commissions/.test(t) && await p.evaluate(() => [...document.querySelectorAll('#pView a.p-row')].some(a => /Commissions owed/.test(a.textContent) && a.getAttribute('href') === '#expense')), 'Money box: $2,500.50 owed in 2 commissions, opening Expenses');
       ok(/Closing in the next 14 days\s*1 deal/.test(t) && /Inspection ending in 7 days\s*1 deal/.test(t), 'Deals box: 1 closing in 14 days, 1 inspection ending in 7 days, without unlocking the CRM');
       const eod = await p.evaluate(() => document.getElementById('pvEodBox').innerText);

@@ -31,6 +31,7 @@ Pick up from here. Every item below is merged to `main` and live unless it says 
 | Phase 3: script and objection library (`#library`, Learning menu, Team home card; the calling team reads, Amr writes). Quick find, filters (Objections, Scripts, Updated, Most heard), English wording with why it works in English and Arabic, state notes, scorecard parts; changed wording raises the version, keeps the old one and shows Updated; A seller said this counts (What sellers say most for Amr); examples from real calls scored 45+ (playable by the team, only those); Practice this opens Call scoring with the roleplay filled in; Call scoring's weakest parts link to `#library/part-N`. Content only in the database | #68 | `20261101030000_script_library.sql` (staging then live) |
 | Back button in the shared top bar (`portal-shell.js`): walks back through the portal pages visited in this tab, across /app, the Learning Hub and the courses (sessionStorage `p-trail`, addresses only). The Deal CRM now runs only inside the portal (this site, /app/deals/, after deal-gate.js); anywhere else it stops with a note | #70 | none; CRM file uploaded Nov 1 |
 | Security review fixes (Nov 1): library examples show a neutral label ("Real call, Oct 2026"), play only while the call is still approved, real, consented and 45+, and a turned-off entry hides its earlier wording and examples; Back only follows site paths | #72 | `20261101040000_library_fixes.sql` (staging then live) |
+| Gate 1 tracker on the Admin overview (Amr only): for each person who has Deal tools or worked a calling shift in the last 14 days, shift days, shift days with no calls logged (no dials on the shift and no call taps that day), the last one, clean days in a row, and whether they worked in both weeks. Ready = 14 clean days and shifts in both weeks | #73 | `20261101050000_gate1.sql` (`portal_gate1`, staging then live) |
 
 Each migration ran on staging first, then on live, and has a line in Admin > Logs > Changes.
 
@@ -64,7 +65,7 @@ Later, by Amr's choice:
 The Supabase SQL editor sometimes keeps showing "Running..." after a migration has finished. Don't run it again blindly: read back what it created (tables, triggers, function bodies) to confirm, as on Oct 31 for the notifications migration.
 
 ## How each round runs now
-1. Build on a branch, with checks in `tools/portal-dev/`. `test-roles.sh` runs every database check, 380 at the moment.
+1. Build on a branch, with checks in `tools/portal-dev/`. `test-roles.sh` runs every database check, 386 at the moment.
 2. Run the SQL on staging, then a read-only check as the owner (see `tools/staging/README.md`).
 3. Run the SQL on live, and add a `change_log` line. Never re-run an older migration that a newer one replaced a function from (for example `20261029060000_review_center.sql` after `20261101010000_call_scoring.sql`): re-run only the newest file that defines it.
 4. Open the PR, merge it, and confirm the Pages deploy succeeded.
