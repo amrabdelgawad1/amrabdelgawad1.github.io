@@ -120,7 +120,7 @@
   }
   // Psychology opens its own player at /app/psychology/ (lessons load there only after the access check)
   function psyCard(){
-    const P = window.PSY_COURSE || { modules:27, sub:'' }; let done = 0, total = P.modules;
+    const P = window.PSY_COURSE || { modules:30, sub:'' }; let done = 0, total = P.modules;
     try {
       const d = JSON.parse(localStorage.getItem('lh-psy-sync:' + uid()) || 'null'), kv = (d && d.kv) || {};
       done = [...new Set(Object.keys(kv).map(k => (k.match(/^(?:exam|best):(m\d+)$|^done:(m\d+):exam$/) || []).slice(1).find(Boolean)).filter(Boolean))].filter(id => kv['done:' + id + ':exam'] === '1' || Math.max(+kv['exam:' + id] || 0, +kv['best:' + id] || 0) >= 16).length;   // modules whose exam was passed (16 of 20)

@@ -16,7 +16,7 @@
     { id:'mkt', key:MKT.access || 'mkt', team:MKT.team !== false, letter:'M', title:'Marketing', href:'/app/course/', modules:(MKT.plan || []).length || 16,
       sub:'From knowing your customer to running a full growth system: positioning, copy, brand, content, ads and analytics.',
       tags:['English and Arabic', 'Cost per deal calculator'] },
-    { id:'psy', key:PSY.access || 'psy', team:PSY.team !== false, letter:'P', title:'Psychology and Therapy', href:'/app/psychology/', modules:PSY.modules || 27,
+    { id:'psy', key:PSY.access || 'psy', team:PSY.team !== false, letter:'P', title:'Psychology and Therapy', href:'/app/psychology/', modules:PSY.modules || 30,
       sub:'From the foundations of psychology to therapy models, crisis skills, ethics and coaching practice.',
       tags:['English and Arabic', 'Thought record', 'Goal planner'] }
   ];

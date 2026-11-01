@@ -7,5 +7,5 @@ window.PSY_COURSE = {
   id:'psy', access:'psy', team:true,
   title:'Psychology and Therapy',
   sub:'From the foundations of psychology to therapy models, crisis skills, ethics and coaching practice. For learning only: it does not replace professional training or supervision.',
-  modules:27
+  modules:30
 };

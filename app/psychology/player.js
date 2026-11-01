@@ -112,7 +112,7 @@ function firstOpen(m, items) { for (var i = 0; i < items.length; i++) if (!isDon
 
 /* ---------- Marketing-style layout: top bar, course-content sidebar, lesson pane ---------- */
 var OWNER = !!window.PSY_OWNER, asLearner = false;
-var STAGES = [[0, 1, 2, 3], [4, 5, 6, 7, 8, 9], [10, 11, 12], [13, 14, 15, 16, 17, 18, 19, 20], [21, 22, 23, 24, 25, 26]];
+var STAGES = [[0, 1, 2, 3], [4, 5, 6, 7, 8, 9], [10, 11, 12], [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23], [24, 25, 26, 27, 28, 29]];
 function stageOf(m) { for (var i = 0; i < STAGES.length; i++) if (STAGES[i].indexOf(m.num) >= 0) return i; return STAGES.length - 1; }
 function examItem(m) { for (var i = 0; i < m.items.length; i++) if (m.items[i].type === 'exam') return m.items[i]; return null; }
 function examBest(m) { return Math.max(+Store.get('best:' + m.id) || 0, +Store.get('exam:' + m.id) || 0); }
