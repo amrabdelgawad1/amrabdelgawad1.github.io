@@ -28,6 +28,7 @@ Pick up from here. Every item below is merged to `main` and live unless it says 
 | Phase 3: team overview (`#teamview`, People menu, Admin overview link). One row per person for today, 7 or 30 days: on shift, hours and days, calls (dials, conversations, offers, appointments), end-of-day notes missing, deals (open, under contract, closed, follow-ups late; only for people who may see the team's deals), lessons and drills sent with course progress, last active. Amr, and managers with Team access | #63 | `20261031240000_team_overview.sql` (`portal_team_overview`, staging then live, run through the Supabase connection) |
 | Phase 3: call scoring and roleplay (`#scoring`, Learning menu, Team home card for anyone with Deal tools). Send a real call (consent ticked) or a roleplay against a scenario: recorded in the browser or picked from a file, into `hub-uploads/<user>/calls/`, course `calls` in the Review center, scored on the same 50-point scorecard. Reps see their scores over time, the average per part with the two weakest flagged, and Amr's time-stamped notes. Amr sees Team scores (last, average of 5, trend) and writes the scenarios (with notes only for the person playing the seller) | #65 | `20261101010000_call_scoring.sql` (`roleplay_scenarios`, `calls_can_send`, `hub_uploads.scenario_id`, course `calls`; staging then live) |
 | Phase 3: onboarding checklist (`#onboarding`, People menu, Admin overview link; a read-only Your onboarding card on the Team home until it's all done). `onboarding_items` (15 to start, Amr edits), 8 tick themselves from real work (signed in, authenticator, Deal CRM on the team key, course open, roleplay scored, first shift, 50 dials, real call scored); the rest Amr ticks (`onboarding_ticks`). Nothing private stored, only ticks | #67 | `20261101020000_onboarding.sql` (staging then live) |
+| Phase 3: script and objection library (`#library`, Learning menu, Team home card; the calling team reads, Amr writes). Quick find, filters (Objections, Scripts, Updated, Most heard), English wording with why it works in English and Arabic, state notes, scorecard parts; changed wording raises the version, keeps the old one and shows Updated; A seller said this counts (What sellers say most for Amr); examples from real calls scored 45+ (playable by the team, only those); Practice this opens Call scoring with the roleplay filled in; Call scoring's weakest parts link to `#library/part-N`. Content only in the database | #69 | `20261101030000_script_library.sql` (staging then live) |
 
 Each migration ran on staging first, then on live, and has a line in Admin > Logs > Changes.
 
@@ -42,7 +43,7 @@ Each migration ran on staging first, then on live, and has a line in Admin > Log
 2. ~~Phase 2: commissions~~ **Done (Oct 31).**
 3. ~~Phase 3: team overview~~ **Done (Oct 31).**
 4. ~~Phase 3: call scoring and roleplay~~ **Done (Nov 1).** Amr adds the scenarios on `#scoring`.
-5. ~~Phase 3: onboarding checklist~~ **Done (Nov 1).** Next: the script and objection library.
+5. ~~Phase 3: onboarding checklist, script and objection library~~ **Done (Nov 1).** Amr fills the library and the roleplay scenarios. Phase 3 is built; next by Amr's choice: certificates (after the last module), paid sign-up, Phase 4.
 
 Later, by Amr's choice:
 - Certificates: wait until the Acquisitions modules are settled (more may be added), then issue after the last module, not Module 15.
@@ -61,7 +62,7 @@ Later, by Amr's choice:
 The Supabase SQL editor sometimes keeps showing "Running..." after a migration has finished. Don't run it again blindly: read back what it created (tables, triggers, function bodies) to confirm, as on Oct 31 for the notifications migration.
 
 ## How each round runs now
-1. Build on a branch, with checks in `tools/portal-dev/`. `test-roles.sh` runs every database check, 362 at the moment.
+1. Build on a branch, with checks in `tools/portal-dev/`. `test-roles.sh` runs every database check, 376 at the moment.
 2. Run the SQL on staging, then a read-only check as the owner (see `tools/staging/README.md`).
 3. Run the SQL on live, and add a `change_log` line.
 4. Open the PR, merge it, and confirm the Pages deploy succeeded.
