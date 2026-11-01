@@ -106,4 +106,7 @@ echo "== team overview checks"; P -f "$ROOT/tools/portal-dev/test-team-overview.
 MIGCS="$ROOT/supabase/migrations/20261101010000_call_scoring.sql"
 P -f "$MIGCS"; P -f "$MIGCS"
 echo "== call scoring checks"; P -f "$ROOT/tools/portal-dev/test-call-scoring.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
+MIGOB="$ROOT/supabase/migrations/20261101020000_onboarding.sql"
+P -f "$MIGOB"; P -f "$MIGOB"
+echo "== onboarding checks"; P -f "$ROOT/tools/portal-dev/test-onboarding.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
 echo "== all checks passed"

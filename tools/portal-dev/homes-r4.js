@@ -35,7 +35,29 @@ const scRows = [
   { id:'c2', user_id:'u1', title:'Ross County seller', status:'approved', score:{ cats:[5,4,4,5,4,4,4,2,4,4], total:40 }, real_call:true, scenario_id:null, created_at:'2026-10-28T10:00:00Z' },
   { id:'c1', user_id:'u1', title:'Roleplay: Inherited land', status:'approved', score:{ cats:[4,3,3,4,3,3,3,2,3,2], total:30 }, real_call:false, scenario_id:1, created_at:'2026-10-20T10:00:00Z' }];
 const scScen = [{ id:1, title:'Inherited land', kind:'land', level:'easy', seller:'Linda, inherited 12 acres', know:'Ross County, OH. Taxes are behind.', goal:'Her number and a callback time.', hidden:'She wants $40,000 but will take $25,000.', active:true }];
+const obRows = [{ item_id:1, grp:'Paperwork', title:'Agreement signed', auto:null, done:true, done_at:'2026-10-30T10:00:00Z' }, { item_id:2, grp:'Paperwork', title:'Payment details on file (kept outside the portal)', auto:null, done:false, done_at:null },
+  { item_id:4, grp:'Tools', title:'Signed in to the portal', auto:'signed_in', done:true, done_at:null }, { item_id:6, grp:'Tools', title:'Deal CRM opened with the team passphrase', auto:'crm_ready', done:false, done_at:null },
+  { item_id:12, grp:'Going live', title:'First shift logged', auto:'first_shift', done:false, done_at:null }];
 const T = [
+  { name:'owner-onboarding', url:'/app/#onboarding', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:Object.assign({}, owner, { portal_onboarding_summary:[{ user_id:'u1', name:'Sara R.', done:2, total:5, joined:'2026-10-28T10:00:00Z' }, { user_id:'u2', name:'Youssef H.', done:5, total:5, joined:'2026-09-01T10:00:00Z' }], portal_onboarding:obRows }),
+      SB_FROM:Object.assign({}, ownerFrom, { onboarding_items:[{ id:1, grp:'Paperwork', title:'Agreement signed', auto:null, sort:10, active:true }, { id:4, grp:'Tools', title:'Signed in to the portal', auto:'signed_in', sort:10, active:true }] }) }, run: async (p, ok) => {
+      await p.waitForSelector('.ob-head', { timeout:8000 }).catch(() => {});
+      const t = await p.evaluate(() => document.getElementById('pView').innerText);
+      ok(/Onboarding/.test(await p.textContent('#title')) && /Sara R\.[\s\S]*2 of 5/.test(t) && /Youssef H\.[\s\S]*All done/.test(t), 'Onboarding lists everyone with their progress: Sara 2 of 5, Youssef all done');
+      await p.click('[data-open="u1"]'); await p.waitForSelector('.ob-list:not([hidden]) .ob-item', { timeout:5000 }).catch(() => {});
+      const l = await p.evaluate(() => document.querySelector('.ob-list:not([hidden])').innerText);
+      ok(/PAPERWORK|Paperwork/.test(l) && /Agreement signed\s*Ticked Oct 30/.test(l) && /Deal CRM opened with the team passphrase\s*Ticks itself once it’s done/.test(l), 'Sara’s checklist: grouped, ticked items with the day, self-checking items say so');
+      ok(await p.evaluate(() => document.querySelector('.ob-item.is-auto input').disabled && !document.querySelector('[data-tick="2"]').disabled), 'self-checking items can’t be ticked; Amr’s can');
+      await p.click('[data-tick="2"]'); await p.waitForTimeout(300);
+      ok(await p.evaluate(() => SB_CALLS.some(c => c[0] === 'insert' && c[1] === 'onboarding_ticks' && c[2].user_id === 'u1' && c[2].item_id === 2)), 'ticking saves it for Sara');
+      await p.click('.ob-edit summary'); await p.click('#obAdd'); await p.waitForTimeout(100);
+      ok(/Write the item first/.test(await p.textContent('#obMsg')), 'adding an empty item says so');
+      await p.fill('#obTitle', 'Shadowed two live calls'); await p.selectOption('#obGrp', 'Training'); await p.click('#obAdd'); await p.waitForTimeout(300);
+      ok(await p.evaluate(() => SB_CALLS.some(c => c[0] === 'insert' && c[1] === 'onboarding_items' && c[2].title === 'Shadowed two live calls' && c[2].grp === 'Training')), 'Amr adds an item to the checklist');
+      ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'nothing wider than the screen');
+      const small = await p.evaluate(() => [...document.querySelectorAll('#pView button, #pView select, #pView input[type=text], #pView .ob-item, #pView summary')].filter(e => e.offsetParent && e.getBoundingClientRect().height < 44).map(e => e.id || e.className));
+      ok(!small.length, 'buttons, fields and ticks at least 44px ' + small.join(' '));
+    } },
   { name:'agent-scoring', url:'/app/#scoring', init:{ SB_SESSION:U, SB_RPC:member(ME.agent, 'Sara R.'), SB_FROM:{ live_status:[], roleplay_scenarios:scScen, hub_uploads:scRows, hub_upload_comments:[{ upload_id:'c2', at_s:95, body:'Slow down before the offer.' }] } }, run: async (p, ok, W) => {
       await p.waitForSelector('#scSend', { timeout:8000 }).catch(() => {});
       const t = await p.evaluate(() => document.getElementById('pView').innerText);
@@ -107,7 +129,7 @@ const T = [
       ok(await p.evaluate(() => !document.querySelector('#pvEodBox b b') && /<b>Slow<\/b>/.test(document.getElementById('pvEodBox').textContent)), 'notes are shown as plain text, never as page code');
       await p.click('[data-eod="-1"]'); await p.waitForTimeout(400);
       ok(await p.evaluate(() => { const c = SB_CALLS.filter(x => x[0] === 'rpc' && x[1] === 'portal_eod'); const a = c[c.length - 1][2]; return a && /^\d{4}-\d{2}-\d{2}$/.test(a.p_day); }) && await p.getAttribute('[data-eod="-1"]', 'aria-pressed') === 'true', 'Yesterday asks for the day before (Cairo date) and shows as chosen');
-      if (W > 1000) { const s = await sideOf(p); ok(s && JSON.stringify(s) === JSON.stringify(['Overview','People:Team overview','People:Live now','People:Team and shifts','People:Missed-shift requests','People:Invite and access','Learning:Learning Hub','Learning:Learner progress','Learning:Review center','Learning:Call scoring','Deals:Deal CRM','Deals:Land calculator','Deals:House calculator','Money:Cash','Money:Income','Money:Expenses','Money:My time','Money:Payments (later)','Site:Visits','Site:Emails','Site:Logs','Site:Zoho Campaigns']), 'sidebar groups: ' + (s || []).join(' | ')); }
+      if (W > 1000) { const s = await sideOf(p); ok(s && JSON.stringify(s) === JSON.stringify(['Overview','People:Team overview','People:Live now','People:Team and shifts','People:Missed-shift requests','People:Invite and access','People:Onboarding','Learning:Learning Hub','Learning:Learner progress','Learning:Review center','Learning:Call scoring','Deals:Deal CRM','Deals:Land calculator','Deals:House calculator','Money:Cash','Money:Income','Money:Expenses','Money:My time','Money:Payments (later)','Site:Visits','Site:Emails','Site:Logs','Site:Zoho Campaigns']), 'sidebar groups: ' + (s || []).join(' | ')); }
     } },
   { name:'owner-portal', url:'/app/#portal', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:owner, SB_FROM:ownerFrom }, run: async (p, ok) => {
       ok(await p.evaluate(() => (document.querySelector('.p-mode [aria-current="page"]') || {}).textContent) === 'Portal', 'switch is on Portal');
@@ -153,7 +175,7 @@ const T = [
       await p.evaluate(() => { location.hash = '#track'; }); await p.waitForTimeout(500);
       ok(!(await p.evaluate(() => document.getElementById('pTrack').hidden)), 'old link #track still opens My hours');
     } },
-  { name:'agent-today', url:'/app/', init:{ SB_SESSION:U, SB_RPC:Object.assign(member(ME.agent, 'Sara R.'), { portal_my_today:[{ dials:23, conversations:1, offers:2, appointments:1 }], portal_my_commissions:[{ id:1, deal_label:'House, Pike, OH', amount:1300, status:'owed', paid_on:null }, { id:2, deal_label:'Land, Ross, OH', amount:500, status:'paid', paid_on:'2026-10-20' }] }), SB_FROM:{ live_status:[], deals:[
+  { name:'agent-today', url:'/app/', init:{ SB_SESSION:U, SB_RPC:Object.assign(member(ME.agent, 'Sara R.'), { portal_my_today:[{ dials:23, conversations:1, offers:2, appointments:1 }], portal_onboarding:obRows, portal_my_commissions:[{ id:1, deal_label:'House, Pike, OH', amount:1300, status:'owed', paid_on:null }, { id:2, deal_label:'Land, Ross, OH', amount:500, status:'paid', paid_on:'2026-10-20' }] }), SB_FROM:{ live_status:[], deals:[
       { id:'d1', kind:'land', county:'ross', state:'OH', stage:'offer', follow_up:iso(-3), updated_at:'2026-10-20T10:00:00Z' },
       { id:'d2', kind:'house', county:'polk', state:'FL', stage:'talking', follow_up:iso(0), updated_at:'2026-10-21T10:00:00Z' },
       { id:'d3', kind:'land', county:null, state:'TX', stage:'lead', follow_up:null, updated_at:'2026-10-22T10:00:00Z' },
@@ -170,6 +192,8 @@ const T = [
       const cm = await p.evaluate(() => document.getElementById('pvCommWrap').innerText);
       ok(/Your commissions\s*\$1,300\.00 owed/i.test(cm) && /House, Pike, OH\s*\$1,300\.00 · owed/.test(cm) && /Land, Ross, OH\s*\$500\.00 · paid Oct 20/.test(cm) && /Paid so far: \$500\.00/.test(cm), 'Your commissions: $1,300.00 owed, each deal with owed or paid, and paid so far');
       ok(!/profit|%/.test(cm), 'never the profit or a percentage');
+      await p.waitForSelector('#pvOnb:not([hidden])', { timeout:5000 }).catch(() => {});
+      ok(/Your onboarding\s*2 of 5 done/i.test(await p.evaluate(() => document.getElementById('pvOnb').innerText)) && await p.evaluate(() => [...document.querySelectorAll('#pvOnb input')].every(i => i.disabled)), 'Your onboarding on the Team home: 2 of 5 done, read only');
       ok(await p.evaluate(() => (document.querySelector('#pvDue a.p-row') || {}).getAttribute('href')) === '/app/deals/#id=d1', 'a row opens that deal in the CRM');
       ok(/2 deals/.test(await p.textContent('#pvDueN')) && /3 deals/.test(await p.textContent('#pvActN')), 'counts on both lists');
       ok(await p.evaluate(() => SB_CALLS.some(c => c[0] === 'rpc' && c[1] === 'portal_my_today') && SB_CALLS.some(c => c[0] === 'from' && c[1] === 'deals')), 'reads portal_my_today and the deals table');
@@ -178,6 +202,7 @@ const T = [
     } },
   { name:'agent-today-empty', url:'/app/', init:{ SB_SESSION:U, SB_RPC:Object.assign(member(ME.agent, 'Sara R.'), { portal_my_today:[{ dials:0, conversations:0, offers:0, appointments:0 }] }), SB_FROM:{ live_status:[], deals:[] } }, run: async (p, ok) => {
       ok(await p.isHidden('#pvCommWrap'), 'no commissions yet: the section stays hidden');
+      ok(await p.isHidden('#pvOnb'), 'no checklist to show: no onboarding card');
       ok(/No open deals yet/.test(await p.textContent('#pvDue')) && /1?\s*0\s*calls/.test(await p.evaluate(() => document.getElementById('pvTodayNums').innerText)), 'no deals yet: says so; zero calls');
     } },
   { name:'learner-today', url:'/app/', init:{ SB_SESSION:U, SB_RPC:Object.assign(member({ role:'agent', keys:['course','learn'], needs_code:[] }, 'Lina P.'), { portal_my_today:[{ dials:4, conversations:0, offers:0, appointments:0 }] }), SB_FROM:{ live_status:[] } }, run: async (p, ok) => {
