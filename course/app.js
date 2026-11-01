@@ -217,7 +217,7 @@
   }
   // ---------- the Learning Hub frame ----------
   // Stages group the modules in the sidebar, as in the Marketing course
-  const STAGES = [[1, 'Foundations'], [5, 'The call'], [8, 'Winning the deal'], [10, 'Deal types to closing'], [14, 'Career and certification']];
+  const STAGES = [[1, 'Foundations'], [5, 'The call'], [8, 'Winning the deal'], [12, 'Deal types to closing'], [17, 'The business'], [20, 'Certification']];
   const TOOLS = [['/land-calculator/', 'Land calculator'], ['/house-calculator/', 'House calculator']];
   const ICK = {
     lesson: svg('<path d="M4 5a2 2 0 012-2h12v16H6a2 2 0 00-2 2z"/><path d="M4 19V5"/>'),
@@ -729,7 +729,7 @@
   // ==================================================================
   function checkpointView(mod, e){
     const it = e.it, open = mod.checkpointOpen, q = qState(mod, it);
-    const nextMod = 'Module ' + (mod.number + 1);
+    const nextMod = mod.number >= S.totalModules ? 'your certification' : 'Module ' + (mod.number + 1);
     let body;
     if (!open) {
       const reqs = lessonsOf(mod).filter(x => x.it.quiz).map(x => ({ ok:quizPassed(mod, x.it), text:'Pass ' + quizLabel(x), href:quizHref(mod, x.it) }));
