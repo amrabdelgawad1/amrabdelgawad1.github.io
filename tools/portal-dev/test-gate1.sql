@@ -26,6 +26,14 @@ select pg_temp.ok((select shift_days = 3 and missed_days = 1 and last_missed = (
 select pg_temp.ok((select clean_days = 0 and shift_days = 0 and not worked_both_weeks from public.portal_gate1() where user_id = :M::uuid), 'M hasn''t worked: 0 days');
 select pg_temp.ok(not exists (select 1 from public.portal_gate1() where user_id = :X::uuid), 'a learner off the calling team isn''t counted');
 reset role;
+-- X works a calling shift without the Deal tools key: now counted
+insert into public.shifts (name, owner, user_id, shift_date, started_at, ended_at, work_seconds, dials) values
+  ('X', false, :X, (now() at time zone 'Africa/Cairo')::date - 1, now() - interval '30 hours', now() - interval '28 hours', 7200, 5);
+set role authenticated;
+select pg_temp.as_user(:O::uuid, 'owner@example.com', 'aal2');
+select pg_temp.ok((select shift_days = 1 and missed_days = 0 from public.portal_gate1() where user_id = :X::uuid), 'someone who worked a calling shift is counted even without Deal tools');
+reset role;
+delete from public.shifts where user_id = :X;
 -- a call tap that day counts as logged even if the shift's numbers are empty
 insert into public.call_events (user_id, kind, shift_started_at, at) values (:N, 'dial', now() - interval '72 hours', now() - interval '71 hours');
 set role authenticated;

@@ -1,5 +1,5 @@
 -- Gate 1 tracker: "every rep logs every call for two straight weeks".
--- For each active person on the calling team (Deal tools), over the last 14 Cairo days: the days they had a shift,
+-- For each active person on the calling team (Deal tools, or anyone who worked a calling shift in the last 14 days), over the last 14 Cairo days: the days they had a shift,
 -- the shift days with no calls logged (no dials on the shift and no call taps that day), the last such day, and how
 -- many days in a row they've been clean (days since the last missed shift day, or since their first shift, up to 14).
 -- A day without a shift doesn't count either way. Gate 1 passes when everyone is clean for 14 days and worked in
@@ -13,7 +13,9 @@ begin
   return query
   with people as (
     select m.user_id, m.name from public.members m
-     where m.active and m.user_id is not null and 'deals' = any(public.portal_keys_of(m.role, m.access, m.not_given))),
+     where m.active and m.user_id is not null
+       and ('deals' = any(public.portal_keys_of(m.role, m.access, m.not_given))
+            or exists (select 1 from public.shifts s where s.user_id = m.user_id and not s.owner and s.shift_date > v_today - 14))),
   days as (
     select s.user_id, s.shift_date d, coalesce(sum(s.dials), 0) dials from public.shifts s
      where not s.owner and s.user_id is not null and s.shift_date > v_today - 14 group by s.user_id, s.shift_date),
