@@ -264,3 +264,9 @@ a.p-cont:hover{ border-color:var(--p-accent); }
 /* Course pages: the bar also holds the course menu, search and language. Under 420px the progress number goes (it is
    on the Learning Hub card and the Next lesson card too) and the spacing tightens. */
 @media (max-width:420px){ .p-admin-tag{ display:none; } .p-shelled.p-shelled{ gap:4px; padding-inline:8px; } .p-shelled.p-shelled .cp-prog{ display:none; } }
+/* Back: the page before (portal-shell.js); on a phone it takes the logo's place */
+.p-back{ display:inline-flex; align-items:center; justify-content:center; flex:none; width:var(--p-tap); height:var(--p-tap); border:1px solid var(--p-line2); border-radius:var(--p-r-sm); background:var(--p-card); color:var(--p-ink); cursor:pointer; }
+.p-back svg{ width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+.p-back:hover{ border-color:var(--p-accent); color:var(--p-accent); }
+.p-back[hidden]{ display:none; }
+@media (max-width:640px){ .p-shelled.p-has-back .p-brand{ display:none; } }

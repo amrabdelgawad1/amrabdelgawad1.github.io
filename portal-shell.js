@@ -34,6 +34,7 @@
     person:svg('<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1-3.6 3.8-5.5 7-5.5s6 1.9 7 5.5"/>'),
     invite:svg('<circle cx="10" cy="8.5" r="3.5"/><path d="M3.5 20c1-3.6 3.6-5.5 6.5-5.5 1.6 0 3 .5 4.2 1.4M18 9v6M15 12h6"/>'),
     cash:svg('<rect x="3" y="6.5" width="18" height="11" rx="2"/><circle cx="12" cy="12" r="2.5"/>'),
+    back:svg('<path d="M15 5l-7 7 7 7"/>'),
     bell:svg('<path d="M6 9.5a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4s2-1.5 2-6.5z"/><path d="M10 19.5a2 2 0 0 0 4 0"/>')
   };
   const COURSE_KEYS = ['course', 'mkt', 'psy'];
@@ -58,6 +59,28 @@
   const GROUPS = ['Work', 'Learning', 'Team', 'Money'];
 
   let me = null, counts = {}, opts = null, bars = [], loading = null, page = '';
+
+  // Back: the portal pages visited in this tab (sessionStorage, this tab only; addresses within the site, nothing else).
+  // Going back pops the last one, so Back walks the way you came: Call scoring -> Learning Hub -> Back -> Call scoring.
+  const TRAIL = 'p-trail', here = () => location.pathname + location.hash;
+  const trailGet = () => { try { const t = JSON.parse(sessionStorage.getItem(TRAIL) || '[]'); return Array.isArray(t) ? t.filter(x => typeof x === 'string' && x[0] === '/') : []; } catch (e) { return []; } };
+  const trailSet = t => { try { sessionStorage.setItem(TRAIL, JSON.stringify(t.slice(-30))); } catch (e) {} };
+  function trailNote(){
+    const t = trailGet(), h = here();
+    if (t[t.length - 1] === h) return t;
+    if (t[t.length - 2] === h) t.pop(); else t.push(h);   // came back one step, or moved forward
+    trailSet(t); return t;
+  }
+  function backDraw(){ const t = trailGet(), show = t.length >= 2; bars.forEach(b => { if (b.back) { b.back.hidden = !show; b.header.classList.toggle('p-has-back', show); } }); }
+  function goBack(){
+    const t = trailGet();
+    if (t.length < 2) return;
+    if (history.length > 1) { history.back(); return; }
+    t.pop(); const prev = t[t.length - 1]; trailSet(t); location.href = prev;
+  }
+  trailNote();
+  window.addEventListener('hashchange', () => { trailNote(); backDraw(); });
+  window.addEventListener('pageshow', () => { trailNote(); backDraw(); });
   let notes = [], unread = 0, notesTimer = null;
 
   function listed(a){
@@ -138,6 +161,11 @@
       a.after(name);
       b.brand = name; b.logo = a;
     }
+    // Back, first in the bar (after the /app menu button)
+    const back = document.createElement('button'); back.type = 'button'; back.className = 'p-back'; back.setAttribute('aria-label', 'Back to the page before'); back.title = 'Back';
+    back.innerHTML = IC.back; back.hidden = true; back.addEventListener('click', goBack);
+    const first = b.logo || b.brand;
+    first.before(back); b.back = back;
     let after = b.brand;
     if (o.admin) {
       const tag = document.createElement('span'); tag.className = 'p-admin-tag'; tag.textContent = 'Admin';
@@ -192,6 +220,7 @@
     }
     bars.push(b);
     draw(b);
+    backDraw();
   }
   function draw(b){
     const ok = !!me;
