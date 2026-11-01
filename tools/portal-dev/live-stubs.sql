@@ -154,3 +154,6 @@ drop policy if exists "Access: cash" on public.cash_entries;
 create policy "Access: cash" on public.cash_entries for select to authenticated using (public.has_access('money'));
 drop policy if exists "Admin manages cash" on public.cash_entries;
 create policy "Admin manages cash" on public.cash_entries for all to authenticated using (public.is_tracker_admin()) with check (public.is_tracker_admin());
+
+-- auth.users keeps the last sign-in, as on Supabase (Phase 3 onboarding reads it)
+alter table auth.users add column if not exists last_sign_in_at timestamptz;

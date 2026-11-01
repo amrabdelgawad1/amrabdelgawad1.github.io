@@ -113,6 +113,7 @@
         (has('deals') ? '<div class="p-grid p-today-lists"><section class="p-card" aria-labelledby="pvDueH"><div class="p-card-head"><h2 id="pvDueH">Callbacks due</h2><span id="pvDueN"></span></div><div id="pvDue"><p class="p-loading">Loading…</p></div></section>' +
           '<section class="p-card" aria-labelledby="pvActH"><div class="p-card-head"><h2 id="pvActH">Deals needing action</h2><span id="pvActN"></span></div><div id="pvAct"><p class="p-loading">Loading…</p></div></section></div>' : '') +
       '</section>' +
+      '<div id="pvOnb" hidden></div>' +
       '<section aria-labelledby="pvCommH" id="pvCommWrap" hidden><div class="p-card"><div class="p-card-head"><h2 id="pvCommH">Your commissions</h2><span id="pvCommN"></span></div><div id="pvComm"></div></div></section>' +
       '<section aria-labelledby="pvCont" id="pvContWrap" hidden><h2 class="p-h2" id="pvCont">Next lesson</h2><div id="pvContBox"></div></section>' +
       '<section aria-labelledby="pvAreas"><h2 class="p-h2" id="pvAreas">Your areas</h2><div class="p-grid p-areas">' + areas.map(area).join('') + '</div></section>' +
@@ -132,6 +133,7 @@
     announcement(T.db, my);
     today(T.db, my, has('deals'));
     myCommissions(T.db, my);
+    if (window.Onboarding) window.Onboarding.card(T.db, $('pvOnb'), () => my === run);
     if (me.role === 'manager' || has('requests')) {
       const n = (await pendingRequests(T.db) || []).length;
       if (my !== run) return;
@@ -304,7 +306,7 @@
       hero('Admin', 'Overview', need ? plural(need, 'thing') + ' need you today' : 'Nothing needs you right now',
         '<div class="p-stats">' + stat(revs.length, 'to review', '#review') + stat(r.length, r.length === 1 ? 'shift request' : 'shift requests', '#requests') + stat(live == null ? '–' : live, 'clocked in now', '#live') + '</div>') +
       '<div class="p-grid p-boxes">' +
-        box5('People', plural(team, 'person', 'people') + ' on the team', [row('Team overview', muted('Open'), '#teamview'), row('Clocked in now', muted(live == null ? '–' : plural(live, 'person', 'people')), '#live'),
+        box5('People', plural(team, 'person', 'people') + ' on the team', [row('Team overview', muted('Open'), '#teamview'), row('Onboarding', muted('Open'), '#onboarding'), row('Clocked in now', muted(live == null ? '–' : plural(live, 'person', 'people')), '#live'),
           row('Missed-shift requests', r.length ? pillR(r.length + ' waiting') : muted('None'), '#requests'),
           row('Calls today', muted(ct ? plural(sum('dials'), 'dial') + ' · ' + plural(sum('appointments'), 'appointment') : '–')),
           row('End-of-day reports', eodPill(eod.data)), row('Invite and access', muted('Manage'), '#people')]) +
@@ -477,7 +479,8 @@
   }
 
   window.PortalHome = {
-    open(page){ view = page; const my = ++run; ({ home, portal, admin, progress, teamview, scoring:m => window.CallScoring ? window.CallScoring.open(box(), () => m === run) : Promise.resolve() })[page](my).catch(() => { if (my === run) box().insertAdjacentHTML('beforeend', '<p class="p-card p-empty">Couldn’t load everything. Check your connection and try again.</p>'); }); },
+    open(page){ view = page; const my = ++run; ({ home, portal, admin, progress, teamview, scoring:m => window.CallScoring ? window.CallScoring.open(box(), () => m === run) : Promise.resolve(),
+      onboarding:m => window.Onboarding ? window.Onboarding.open(box(), () => m === run) : Promise.resolve() })[page](my).catch(() => { if (my === run) box().insertAdjacentHTML('beforeend', '<p class="p-card p-empty">Couldn’t load everything. Check your connection and try again.</p>'); }); },
     // every second from app.js: keep the Team home's clock line and button current
     tick(){
       if (view !== 'home' || !$('pvSub') || $('pView').hidden) return;
