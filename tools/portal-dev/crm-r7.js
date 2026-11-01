@@ -772,6 +772,21 @@ let bad = 0; const ok = (c, label) => { if (c) console.log('  ok   ' + label); e
   await layout(p, 'manager buyers 390');
   await p.ctx.close();
 
+  console.log('== The CRM runs only inside the portal');
+  for (const [where, url, withGate] of [['a copy at another address on this site', BASE + '/elsewhere/crm.html', true], ['a copy on another website', 'http://copy.example/app/deals/crm.html', true], ['the file opened without the portal’s sign-in check', BASE + '/app/deals/raw.html', false]]) {
+    const ctx = await browser.newContext({ serviceWorkers:'block' });
+    await ctx.addInitScript(i => { window.__I = i; }, { userId:R1, name:'Rep 1', role:'agent' });
+    await ctx.exposeFunction('__fake', s => JSON.stringify(handle(R1, 'aal1', JSON.parse(s))));
+    await ctx.route(url, r => r.fulfill({ contentType:'text/html', body:withGate ? HTML.replace('<head>', '<head><script>' + CLIENT + '</script>') : HTML }));
+    await ctx.route(/fonts\.g/, r => r.abort());
+    const pg = await ctx.newPage(); const errs = [];
+    pg.on('pageerror', e => { if (!/outside the portal/.test(e.message)) errs.push(e.message); });
+    await pg.goto(url); await pg.waitForTimeout(800);
+    const out = await pg.evaluate(() => ({ note:(document.getElementById('crmOutside') || {}).textContent || '', app:!!document.getElementById('app'), gate:!!document.querySelector('#gate.vault') }));
+    ok(/opens only inside the portal/.test(out.note) && !out.app && !out.gate, where + ': it stops and says to open it in the portal');
+    await ctx.close();
+  }
+
   await browser.close();
   console.log(bad ? '== ' + bad + ' FAILED' : '== all CRM checks passed');
   process.exit(bad ? 1 : 0);

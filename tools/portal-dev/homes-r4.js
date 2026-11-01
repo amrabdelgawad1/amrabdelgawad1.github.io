@@ -43,6 +43,19 @@ const lbRows = [
   { id:2, kind:'script', section:'Opening', title:'First call opener', body:'Hi, this is Sara with ...', why:'', why_ar:'', state_notes:[], parts:[1], applies:'both', sort:10, active:true, version:1 },
   { id:3, kind:'objection', section:'Timing', title:'It is already listed', body:'Got it. When does the listing end?', why:'', why_ar:'', state_notes:[], parts:[8], applies:'land', sort:20, active:true, version:1 }];
 const T = [
+  { name:'owner-back', url:'/app/#admin', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:Object.assign({}, owner, { portal_team_overview:tvRows, portal_onboarding_summary:[], library_heard_counts:[], library_example_calls:[] }), SB_FROM:Object.assign({}, ownerFrom, { library_entries:[] }) }, run: async (p, ok, W) => {
+      await p.waitForTimeout(500);
+      ok(await p.evaluate(() => { const b = document.querySelector('.p-back'); return !!b && b.hidden; }), 'no Back on the first page of the visit');
+      await p.evaluate(() => { location.hash = '#teamview'; }); await p.waitForTimeout(400);
+      await p.evaluate(() => { location.hash = '#library'; }); await p.waitForTimeout(400);
+      ok(await p.isVisible('.p-back') && await p.getAttribute('.p-back', 'aria-label') === 'Back to the page before', 'after moving on, Back shows in the top bar');
+      ok(await p.evaluate(() => document.querySelector('.p-back').getBoundingClientRect().height >= 44), 'Back is at least 44px');
+      await p.click('.p-back'); await p.waitForTimeout(500);
+      ok(await p.evaluate(() => location.hash) === '#teamview' && /Team overview/.test(await p.textContent('#title')), 'Back goes to the page before: Team overview');
+      await p.click('.p-back'); await p.waitForTimeout(500);
+      ok(await p.evaluate(() => location.hash) === '#admin' && await p.isHidden('.p-back'), 'and Back again to the Admin overview, where Back goes away');
+      ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'the top bar still fits with Back in it');
+    } },
   { name:'agent-library', url:'/app/#library', init:{ SB_SESSION:U, SB_RPC:Object.assign(member(ME.agent, 'Sara R.'), { library_heard_counts:[{ entry_id:1, heard:12, mine:3 }], library_example_calls:[{ entry_id:1, upload_id:'x1', path:'u2/calls/g.m4a', title:'Great call', total:47, rep:'Youssef', created_at:'2026-10-29T10:00:00Z' }] }),
       SB_FROM:{ live_status:[], library_entries:lbRows, library_reads:[{ entry_id:1, version:1 }], library_versions:[{ entry_id:1, version:1, body:'Old wording.', replaced_at:'2026-10-30T10:00:00Z' }] } }, run: async (p, ok, W) => {
       await p.waitForSelector('.lb-entry', { timeout:8000 }).catch(() => {});
