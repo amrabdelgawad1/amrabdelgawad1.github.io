@@ -101,6 +101,7 @@
     areas.push({ href:'#track', icon:'clock', name:'My hours', sub:'Shifts, hours and requests.' });
     if (has('deals')) areas.push({ href:'/land-calculator/', icon:'calc', name:'Calculators', sub:'Land and house deal tools.' });
     if (has('deals')) areas.push({ href:'#scoring', icon:'mic', name:'Call scoring', sub:'Send a call or a roleplay; see your scores.' });
+    if (has('deals')) areas.push({ href:'#library', icon:'book', name:'Scripts and objections', sub:'What to say, and why. Search it mid-call.' });
     if (has('live') || has('requests')) areas.push({ href:has('live') ? '#live' : '#requests', icon:'people', name:'Team and shifts', sub:'Live now, hours and requests.', id:'team' });
     if (me.role === 'manager') areas.push({ href:'#progress', icon:'chart', name:'Learner progress', sub:'How the team is doing in each course.' });
     const open = c => c.key === 'course' ? has('course') : has('learn') && has(c.key);
@@ -480,7 +481,8 @@
 
   window.PortalHome = {
     open(page){ view = page; const my = ++run; ({ home, portal, admin, progress, teamview, scoring:m => window.CallScoring ? window.CallScoring.open(box(), () => m === run) : Promise.resolve(),
-      onboarding:m => window.Onboarding ? window.Onboarding.open(box(), () => m === run) : Promise.resolve() })[page](my).catch(() => { if (my === run) box().insertAdjacentHTML('beforeend', '<p class="p-card p-empty">Couldn’t load everything. Check your connection and try again.</p>'); }); },
+      onboarding:m => window.Onboarding ? window.Onboarding.open(box(), () => m === run) : Promise.resolve(),
+      library:m => window.ScriptLibrary ? window.ScriptLibrary.open(box(), () => m === run) : Promise.resolve() })[page](my).catch(() => { if (my === run) box().insertAdjacentHTML('beforeend', '<p class="p-card p-empty">Couldn’t load everything. Check your connection and try again.</p>'); }); },
     // every second from app.js: keep the Team home's clock line and button current
     tick(){
       if (view !== 'home' || !$('pvSub') || $('pView').hidden) return;

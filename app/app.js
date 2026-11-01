@@ -59,7 +59,7 @@
   const signedIn = () => { shell(); document.dispatchEvent(new Event('talents-signed-in')); };
   // The shared top bar (/portal-shell.js): logo, page name, Apps menu, the person's name; ADMIN label for Amr.
   // The menu button, the theme switch and the account circle (account.js) stay as they are.
-  const APP_OF = { track:'hours', live:'team', requests:'team', team:'team', people:'people', review:'review', overview:'cash', income:'cash', expense:'cash', mytime:'cash', learn:'learn', progress:'learn', teamview:'team', scoring:'review', onboarding:'people' };
+  const APP_OF = { track:'hours', live:'team', requests:'team', team:'team', people:'people', review:'review', overview:'cash', income:'cash', expense:'cash', mytime:'cash', learn:'learn', progress:'learn', teamview:'team', scoring:'review', onboarding:'people', library:'review' };
   const pageNow = () => location.hash.slice(1).split('/')[0] || (role === 'owner' ? 'admin' : 'home');
   // Amr's two sides of /app: the Portal view (#portal) and everything else (the Admin side)
   const modeOf = p => p === 'portal' ? 'portal' : 'admin';
@@ -512,10 +512,10 @@
   // Owner: menu, Live now, Invite and access, and the /cash pages
   // ======================================================================
   const OWNER_PAGES = { live:'Live now', requests:'Missed-shift requests', emails:'Team emails', people:'Invite and access', visits:'Website visitors', logs:'Logs', learn:'Learning Hub', review:'Review center', mytime:'My time', overview:'Cash', team:'Team and shifts', income:'Income', expense:'Expenses', track:'My hours',
-    home:'Portal', portal:'Portal', admin:'Admin', progress:'Learner progress', teamview:'Team overview', scoring:'Call scoring', onboarding:'Onboarding' };   // the last four: portal-home.js
+    home:'Portal', portal:'Portal', admin:'Admin', progress:'Learner progress', teamview:'Team overview', scoring:'Call scoring', onboarding:'Onboarding', library:'Scripts and objections' };   // the last four: portal-home.js
   // Which switch in Invite and access opens each page; "owner" pages are Amr's alone
   const SECTION = { live:'live', requests:'requests', team:'team', overview:'money', income:'money', expense:'money', mytime:'owner', emails:'owner', people:'owner', visits:'owner', logs:'owner', learn:'learn', review:'owner', track:'track',
-    home:'home', portal:'owner', admin:'owner', progress:'progress', teamview:'teamview', scoring:'scoring', onboarding:'owner' };
+    home:'home', portal:'owner', admin:'owner', progress:'progress', teamview:'teamview', scoring:'scoring', onboarding:'owner', library:'scoring' };
   const SECTION_NAMES = { live:'Live now', requests:'Missed-shift requests', team:'Team', money:'Money', deals:'Deal tools', learn:'Learning Hub', mkt:'Marketing course', psy:'Psychology course', course:'Acquisitions course' };
   // Course switches sit under Learning Hub: a course opens only when Learning Hub is on too.
   // New course? Add its switch here and in SECTION_NAMES, and give its track the same key in learn.js (TRACKS[].key).
@@ -599,7 +599,7 @@
     if (!OWNER_PAGES[page] || !canSee(SECTION[page])) { page = role === 'owner' ? 'admin' : 'home'; history.replaceState(null, '', '#' + page); }
     const here = page + (page === 'team' && person ? '/' + person : '');
     if (window.PortalShell) { window.PortalShell.setPage(APP_OF[page] || ''); window.PortalShell.setMode(modeOf(page)); }
-    const view = ['home', 'portal', 'admin', 'progress', 'teamview', 'scoring', 'onboarding'].includes(page);
+    const view = ['home', 'portal', 'admin', 'progress', 'teamview', 'scoring', 'onboarding', 'library'].includes(page);
     $('pView').hidden = !view; document.body.classList.toggle('p-viewing', view || page === 'people' || page === 'logs');
     if (view && window.PortalHome) window.PortalHome.open(page); else if (window.PortalHome) window.PortalHome.close();
     $('title').textContent = OWNER_PAGES[page];
@@ -608,7 +608,7 @@
     $('pLive').hidden = page !== 'live'; $('pPeople').hidden = page !== 'people'; $('pRequests').hidden = page !== 'requests';
     $('pVisits').hidden = page !== 'visits'; $('pEmails').hidden = page !== 'emails'; $('pLearn').hidden = page !== 'learn';
     $('pReview').hidden = page !== 'review'; $('pLogs').hidden = page !== 'logs';
-    const cashPage = !['live', 'people', 'requests', 'track', 'visits', 'emails', 'logs', 'learn', 'review', 'home', 'portal', 'admin', 'progress', 'teamview', 'scoring', 'onboarding'].includes(page);
+    const cashPage = !['live', 'people', 'requests', 'track', 'visits', 'emails', 'logs', 'learn', 'review', 'home', 'portal', 'admin', 'progress', 'teamview', 'scoring', 'onboarding', 'library'].includes(page);
     $('pCash').hidden = !cashPage;
     // A person's Team page gets a bar for their payslips (Amr only; uploading is his)
     let who = ''; try { who = page === 'team' && person ? decodeURIComponent(person) : ''; } catch(e) {}
