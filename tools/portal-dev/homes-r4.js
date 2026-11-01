@@ -38,7 +38,65 @@ const scScen = [{ id:1, title:'Inherited land', kind:'land', level:'easy', selle
 const obRows = [{ item_id:1, grp:'Paperwork', title:'Agreement signed', auto:null, done:true, done_at:'2026-10-30T10:00:00Z' }, { item_id:2, grp:'Paperwork', title:'Payment details on file (kept outside the portal)', auto:null, done:false, done_at:null },
   { item_id:4, grp:'Tools', title:'Signed in to the portal', auto:'signed_in', done:true, done_at:null }, { item_id:6, grp:'Tools', title:'Deal CRM opened with the team passphrase', auto:'crm_ready', done:false, done_at:null },
   { item_id:12, grp:'Going live', title:'First shift logged', auto:'first_shift', done:false, done_at:null }];
+const lbRows = [
+  { id:1, kind:'objection', section:'Price', title:'Your offer is too low', body:'I hear you. What number would work for you?', why:'Gets their number first.', why_ar:'يخلي البائع يقول رقمه الأول', state_notes:[{ state:'OH', note:'Ohio sellers expect the auditor value.' }], parts:[6, 8], applies:'both', sort:10, active:true, version:2 },
+  { id:2, kind:'script', section:'Opening', title:'First call opener', body:'Hi, this is Sara with ...', why:'', why_ar:'', state_notes:[], parts:[1], applies:'both', sort:10, active:true, version:1 },
+  { id:3, kind:'objection', section:'Timing', title:'It is already listed', body:'Got it. When does the listing end?', why:'', why_ar:'', state_notes:[], parts:[8], applies:'land', sort:20, active:true, version:1 }];
 const T = [
+  { name:'agent-library', url:'/app/#library', init:{ SB_SESSION:U, SB_RPC:Object.assign(member(ME.agent, 'Sara R.'), { library_heard_counts:[{ entry_id:1, heard:12, mine:3 }], library_example_calls:[{ entry_id:1, upload_id:'x1', path:'u2/calls/g.m4a', title:'Great call', total:47, rep:'Youssef', created_at:'2026-10-29T10:00:00Z' }] }),
+      SB_FROM:{ live_status:[], library_entries:lbRows, library_reads:[{ entry_id:1, version:1 }], library_versions:[{ entry_id:1, version:1, body:'Old wording.', replaced_at:'2026-10-30T10:00:00Z' }] } }, run: async (p, ok, W) => {
+      await p.waitForSelector('.lb-entry', { timeout:8000 }).catch(() => {});
+      let t = await p.evaluate(() => document.getElementById('lbList').innerText);
+      ok(/Scripts and objections/.test(await p.textContent('#title')) && /PRICE|Price/.test(t) && /“Your offer is too low”[\s\S]*Updated[\s\S]*Heard 12[\s\S]*Example/.test(t), 'the library lists entries by section, with Updated, Heard and Example');
+      await p.fill('#lbQ', 'listed'); await p.waitForTimeout(100);
+      t = await p.evaluate(() => document.getElementById('lbList').innerText);
+      ok(/already listed/.test(t) && !/too low/.test(t), 'quick find: “listed” finds the listing objection only');
+      await p.fill('#lbQ', ''); await p.click('[data-filter="updated"]'); await p.waitForTimeout(100);
+      t = await p.evaluate(() => document.getElementById('lbList').innerText);
+      ok(/too low/.test(t) && !/opener|listed/.test(t), 'Updated shows only what changed since you read it');
+      await p.click('[data-filter="all"]'); await p.click('[data-open="1"]'); await p.waitForTimeout(300);
+      t = await p.evaluate(() => document.querySelector('.lb-entry.is-open').innerText);
+      ok(/changed since you last read it/.test(t) && /What number would work for you\?/.test(t) && /Gets their number first/.test(t) && /OH Ohio sellers expect the auditor value/.test(t) && /Trains: Getting their number · Objection handling/.test(t),
+        'an entry: the words, why it works, state notes, the scorecard parts it trains');
+      ok(await p.evaluate(() => { const a = document.querySelector('.lb-ar'); return a && a.dir === 'rtl' && a.lang === 'ar'; }), 'the Arabic explanation reads right to left');
+      ok(/Great call · Youssef · 47 of 50/.test(t) && await p.evaluate(() => !!document.querySelector('.lb-ex audio')), 'an example recording from the team’s best calls');
+      ok(/Earlier wording \(1\)/.test(t), 'earlier wording is kept');
+      ok(await p.evaluate(() => SB_CALLS.some(c => c[0] === 'upsert' && c[1] === 'library_reads' && c[2].entry_id === 1 && c[2].version === 2)), 'opening it marks the new version read');
+      await p.click('[data-heard="1"]'); await p.waitForTimeout(200);
+      ok(await p.evaluate(() => SB_CALLS.some(c => c[0] === 'insert' && c[1] === 'library_heard' && c[2].entry_id === 1)) && /13 times[\s\S]*4 on your calls[\s\S]*Counted/.test(await p.textContent('#lbHeard1')), 'A seller said this: counted, 13 for the team, 4 yours');
+      ok(await p.getAttribute('.lb-entry.is-open a[href^="#scoring"]', 'href') === '#scoring/obj-1', 'Practice this opens Call scoring for this objection');
+      ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'nothing wider than the screen');
+      const small = await p.evaluate(() => [...document.querySelectorAll('#pView button, #pView a.p-btn, #pView input, #pView summary')].filter(e => e.offsetParent && e.getBoundingClientRect().height < 44).map(e => e.id || e.className));
+      ok(!small.length, 'buttons, chips and search at least 44px ' + small.join(' '));
+      ok(!(await p.$('#lfSave')), 'a rep has no editor');
+    } },
+  { name:'agent-library-part', url:'/app/#library/part-6', init:{ SB_SESSION:U, SB_RPC:Object.assign(member(ME.agent, 'Sara R.'), { library_heard_counts:[], library_example_calls:[] }), SB_FROM:{ live_status:[], library_entries:lbRows } }, run: async (p, ok) => {
+      await p.waitForSelector('.lb-entry', { timeout:8000 }).catch(() => {});
+      const t = await p.evaluate(() => document.getElementById('pView').innerText);
+      ok(/Showing what trains Getting their number/.test(t) && /too low/.test(t) && !/opener|listed/.test(t), 'from a weak scorecard part: only what trains it');
+    } },
+  { name:'agent-practice-obj', url:'/app/#scoring/obj-1', init:{ SB_SESSION:U, SB_RPC:member(ME.agent, 'Sara R.'), SB_FROM:{ live_status:[], roleplay_scenarios:scScen, hub_uploads:scRows, hub_upload_comments:[], library_entries:lbRows } }, run: async (p, ok) => {
+      await p.waitForFunction(() => /Objection:/.test((document.getElementById('scTitle') || {}).value || ''), null, { timeout:8000 }).catch(() => {});
+      ok(await p.inputValue('#scTitle') === 'Objection: Your offer is too low' && /answer to “Your offer is too low”/.test(await p.inputValue('#scNote')) && await p.getAttribute('[data-kind="roleplay"]', 'aria-pressed') === 'true', 'Practice this: a roleplay on that objection, title and note filled in');
+      ok(await p.evaluate(() => [...document.querySelectorAll('.sc-cat.is-weak a')].map(a => a.getAttribute('href')).join(',')) === '#library/part-8,#library/part-10', 'the weakest parts link to the library for that part');
+    } },
+  { name:'owner-library', url:'/app/#library', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:Object.assign({}, owner, { library_heard_counts:[{ entry_id:1, heard:12, mine:0 }, { entry_id:3, heard:5, mine:0 }], library_example_calls:[] }),
+      SB_FROM:Object.assign({}, ownerFrom, { library_entries:lbRows, library_reads:[], library_versions:[], hub_uploads:[{ id:'g1', title:'Great call', score:{ total:47 }, created_at:'2026-10-29T10:00:00Z', real_call:true, consent:true }, { id:'k1', title:'OK call', score:{ total:40 }, created_at:'2026-10-28T10:00:00Z', real_call:true, consent:true }] }) }, run: async (p, ok) => {
+      await p.waitForSelector('#lfSave', { timeout:8000 }).catch(() => {});
+      const t = await p.evaluate(() => document.getElementById('pView').innerText);
+      ok(/What sellers say most[\s\S]*Your offer is too low[\s\S]*12[\s\S]*already listed[\s\S]*5/.test(t), 'Amr sees what sellers say most');
+      await p.click('#lfSave'); await p.waitForTimeout(100);
+      ok(/Give it a title/.test(await p.textContent('#lfMsg')), 'an entry needs a title');
+      await p.fill('#lfTitle', 'I need to talk to my wife'); await p.fill('#lfSection', 'Decision makers'); await p.fill('#lfBody', 'Of course. When are you two talking tonight?');
+      await p.fill('#lfStates', 'OH: test note\nnot a state line'); await p.check('.lb-partpick input[value="5"]'); await p.click('#lfSave'); await p.waitForTimeout(300);
+      const ins = await p.evaluate(() => (SB_CALLS.find(c => c[0] === 'insert' && c[1] === 'library_entries') || [])[2]);
+      ok(ins && ins.kind === 'objection' && ins.section === 'Decision makers' && JSON.stringify(ins.state_notes) === '[{"state":"OH","note":"test note"}]' && JSON.stringify(ins.parts) === '[5]', 'Amr adds an objection with a state note and the part it trains');
+      await p.waitForSelector('[data-open="1"]', { timeout:5000 }).catch(() => {});
+      await p.click('[data-open="1"]'); await p.waitForTimeout(200);
+      ok(await p.evaluate(() => [...document.querySelectorAll('[data-expick] option')].map(o => o.textContent).join('|')).then(x => /Great call · 47 of 50/.test(x) && !/OK call/.test(x)), 'only calls scored 45 or more can be added as examples');
+      await p.selectOption('[data-expick="1"]', 'g1'); await p.waitForTimeout(200);
+      ok(await p.evaluate(() => SB_CALLS.some(c => c[0] === 'insert' && c[1] === 'library_examples' && c[2].upload_id === 'g1' && c[2].entry_id === 1)), 'Amr attaches the call as an example');
+    } },
   { name:'owner-onboarding', url:'/app/#onboarding', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:Object.assign({}, owner, { portal_onboarding_summary:[{ user_id:'u1', name:'Sara R.', done:2, total:5, joined:'2026-10-28T10:00:00Z' }, { user_id:'u2', name:'Youssef H.', done:5, total:5, joined:'2026-09-01T10:00:00Z' }], portal_onboarding:obRows }),
       SB_FROM:Object.assign({}, ownerFrom, { onboarding_items:[{ id:1, grp:'Paperwork', title:'Agreement signed', auto:null, sort:10, active:true }, { id:4, grp:'Tools', title:'Signed in to the portal', auto:'signed_in', sort:10, active:true }] }) }, run: async (p, ok) => {
       await p.waitForSelector('.ob-head', { timeout:8000 }).catch(() => {});
@@ -129,7 +187,7 @@ const T = [
       ok(await p.evaluate(() => !document.querySelector('#pvEodBox b b') && /<b>Slow<\/b>/.test(document.getElementById('pvEodBox').textContent)), 'notes are shown as plain text, never as page code');
       await p.click('[data-eod="-1"]'); await p.waitForTimeout(400);
       ok(await p.evaluate(() => { const c = SB_CALLS.filter(x => x[0] === 'rpc' && x[1] === 'portal_eod'); const a = c[c.length - 1][2]; return a && /^\d{4}-\d{2}-\d{2}$/.test(a.p_day); }) && await p.getAttribute('[data-eod="-1"]', 'aria-pressed') === 'true', 'Yesterday asks for the day before (Cairo date) and shows as chosen');
-      if (W > 1000) { const s = await sideOf(p); ok(s && JSON.stringify(s) === JSON.stringify(['Overview','People:Team overview','People:Live now','People:Team and shifts','People:Missed-shift requests','People:Invite and access','People:Onboarding','Learning:Learning Hub','Learning:Learner progress','Learning:Review center','Learning:Call scoring','Deals:Deal CRM','Deals:Land calculator','Deals:House calculator','Money:Cash','Money:Income','Money:Expenses','Money:My time','Money:Payments (later)','Site:Visits','Site:Emails','Site:Logs','Site:Zoho Campaigns']), 'sidebar groups: ' + (s || []).join(' | ')); }
+      if (W > 1000) { const s = await sideOf(p); ok(s && JSON.stringify(s) === JSON.stringify(['Overview','People:Team overview','People:Live now','People:Team and shifts','People:Missed-shift requests','People:Invite and access','People:Onboarding','Learning:Learning Hub','Learning:Learner progress','Learning:Review center','Learning:Call scoring','Learning:Scripts and objections','Deals:Deal CRM','Deals:Land calculator','Deals:House calculator','Money:Cash','Money:Income','Money:Expenses','Money:My time','Money:Payments (later)','Site:Visits','Site:Emails','Site:Logs','Site:Zoho Campaigns']), 'sidebar groups: ' + (s || []).join(' | ')); }
     } },
   { name:'owner-portal', url:'/app/#portal', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:owner, SB_FROM:ownerFrom }, run: async (p, ok) => {
       ok(await p.evaluate(() => (document.querySelector('.p-mode [aria-current="page"]') || {}).textContent) === 'Portal', 'switch is on Portal');
@@ -154,7 +212,7 @@ const T = [
       ok(!(await p.$('.p-mode')) && !(await p.isVisible('.p-admin-tag')), 'no ADMIN label or switch (Amr only)');
       const t = await p.evaluate(() => document.getElementById('pView').innerText);
       ok(/Hi, Mona/.test(t) && /Team and shifts/.test(t) && /1 request/.test(t) && /Learner progress/.test(t), 'manager areas: Team and shifts with 1 request, Learner progress');
-      if (W > 1000) { const s = await sideOf(p); ok(s && JSON.stringify(s) === JSON.stringify(['Portal','My hours','People:Team overview','People:Live now','People:Team and shifts','People:Missed-shift requests','Learning:Learning Hub','Learning:Learner progress','Learning:Call scoring','Deals:Deal CRM','Deals:Land calculator','Deals:House calculator']), 'smaller Admin side: ' + (s || []).join(' | ')); }
+      if (W > 1000) { const s = await sideOf(p); ok(s && JSON.stringify(s) === JSON.stringify(['Portal','My hours','People:Team overview','People:Live now','People:Team and shifts','People:Missed-shift requests','Learning:Learning Hub','Learning:Learner progress','Learning:Call scoring','Learning:Scripts and objections','Deals:Deal CRM','Deals:Land calculator','Deals:House calculator']), 'smaller Admin side: ' + (s || []).join(' | ')); }
       await p.evaluate(() => { location.hash = '#progress'; }); await p.waitForTimeout(800);
       ok(/Youssef H\.\s+Marketing\s+2 of 16/.test(await p.evaluate(() => document.getElementById('pView').innerText)), 'manager sees learner progress');
     } },

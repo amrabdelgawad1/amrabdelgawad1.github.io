@@ -61,7 +61,7 @@
         '<p class="sc-band">' + esc(band(avg)) + '</p>' +
         '<div class="sc-trend" role="img" aria-label="' + esc('Scores, oldest to newest: ' + bars.map(r => r.score.total).join(', ')) + '">' + bars.map(r => '<span class="sc-bar' + (r.real_call ? ' is-real' : '') + '" data-h="' + Math.round((+r.score.total || 0) * 2) + '"><i>' + esc(r.score.total) + '</i></span>').join('') + '</div>' +
         '<p class="sc-legend"><span class="sc-key"></span> Roleplay <span class="sc-key is-real"></span> Real call</p>' +
-        '<h3 class="sc-h3">Each part, average of your last ' + last5.length + '</h3><div class="sc-cats">' + cat.map(x => '<div class="sc-cat' + (weak.includes(x.c) ? ' is-weak' : '') + '"><span>' + esc(x.c) + (weak.includes(x.c) ? ' <b>Work on this</b>' : '') + '</span><span class="sc-meter" data-w="' + Math.round(x.v * 20) + '"><i></i></span><em>' + x.v.toFixed(1) + '</em></div>').join('') + '</div>';
+        '<h3 class="sc-h3">Each part, average of your last ' + last5.length + '</h3><div class="sc-cats">' + cat.map((x, i) => '<div class="sc-cat' + (weak.includes(x.c) ? ' is-weak' : '') + '"><span>' + esc(x.c) + (weak.includes(x.c) ? ' <b>Work on this</b> <a href="#library/part-' + (i + 1) + '">Read the library</a>' : '') + '</span><span class="sc-meter" data-w="' + Math.round(x.v * 20) + '"><i></i></span><em>' + x.v.toFixed(1) + '</em></div>').join('') + '</div>';
     }
     return top + '<h3 class="sc-h3">Your calls</h3><div class="p-card sc-list">' + rows.slice(0, 20).map(r => {
       const notes = comments.filter(c => c.upload_id === r.id);
@@ -124,6 +124,17 @@
     wrap.querySelectorAll('[data-w] i').forEach(i => { i.style.width = i.parentElement.dataset.w + '%'; });
     $('scKindBox').innerHTML = kindBox();
     wire(el, isCurrent, db, T);
+    // From the library's "Practice this" (#scoring/obj-ID): a roleplay on that script or objection
+    const m = (location.hash.split('/')[1] || '').match(/^obj-(\d+)$/);
+    if (m) {
+      const r = await safe(db.from('library_entries').select('id,kind,title').eq('id', +m[1]).maybeSingle());
+      if (!isCurrent() || !r.data) return;
+      S.kind = 'roleplay'; el.querySelectorAll('[data-kind]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.kind === 'roleplay'))); $('scKindBox').innerHTML = kindBox();
+      $('scTitle').value = (r.data.kind === 'objection' ? 'Objection: ' : 'Script: ') + r.data.title;
+      $('scNote').value = 'Practicing ' + (r.data.kind === 'objection' ? 'the answer to “' + r.data.title + '”' : 'the “' + r.data.title + '” script') + ' from the library.';
+      say('Have a teammate play the seller and use this line, then record your answer.');
+      $('scSendH').scrollIntoView({ block:'start' });
+    }
   }
 
   function say(m, bad){ const n = $('scMsg'); if (n) { n.textContent = m; n.classList.toggle('is-bad', !!bad); } }

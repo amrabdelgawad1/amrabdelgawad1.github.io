@@ -109,4 +109,7 @@ echo "== call scoring checks"; P -f "$ROOT/tools/portal-dev/test-call-scoring.sq
 MIGOB="$ROOT/supabase/migrations/20261101020000_onboarding.sql"
 P -f "$MIGOB"; P -f "$MIGOB"
 echo "== onboarding checks"; P -f "$ROOT/tools/portal-dev/test-onboarding.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p'
+MIGLB="$ROOT/supabase/migrations/20261101030000_script_library.sql"
+P -f "$MIGLB"; P -f "$MIGLB"
+echo "== library checks"; P -f "$ROOT/tools/portal-dev/test-library.sql" 2>&1 | sed -n 's/^psql:[^:]*:[0-9]*: NOTICE:  /  /p; s/^.*ERROR: *//p; s/^psql:.*gset.*$/  FAIL gset/p'
 echo "== all checks passed"
