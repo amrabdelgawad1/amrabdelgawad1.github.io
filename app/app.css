@@ -725,3 +725,11 @@ html body #pLogs{ min-height:calc(100vh - var(--p-top)); }
 #pView .sc-cat a{ font-size:12px; font-weight:700; }
 #pView .lb-find, #pView #lbList{ min-width:0; max-width:100%; }
 #pView .lb-partnote a, #pView .sc-cat a{ display:inline-flex; align-items:center; min-height:44px; padding:0 4px; }
+/* Gate 1 tracker on the Admin overview */
+#pView .p-g1 .p-h2 small{ display:block; font-size:13px; font-weight:500; color:var(--p-muted); margin-top:2px; }
+#pView .p-g1-sum{ margin:0 0 8px; }
+#pView .p-g1-row{ display:grid; grid-template-columns:minmax(0, 1fr) minmax(60px, 1fr) auto; gap:12px; align-items:center; }
+#pView .p-g1-row small{ display:block; color:var(--p-muted); font-size:12.5px; }
+#pView .p-g1-bar{ display:block; height:8px; background:var(--p-soft); border-radius:99px; overflow:hidden; }
+#pView .p-g1-bar i{ display:block; height:100%; background:var(--p-ok); border-radius:99px; }
+@media (max-width:520px){ #pView .p-g1-row{ grid-template-columns:minmax(0, 1fr) auto; } #pView .p-g1-bar{ grid-column:1 / -1; grid-row:2; } }

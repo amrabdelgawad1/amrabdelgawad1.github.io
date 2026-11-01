@@ -295,8 +295,8 @@
   async function admin(my){
     const T = A(), db = T.db;
     box().innerHTML = '<div class="p-wrap">' + hero('Admin', 'Overview', 'Loading…', '') + '</div>';
-    const [live, reqs, revs, lr, mem, vis, calls, ann, eod, uc, cms] = await Promise.all([liveCount(db), pendingRequests(db), reviewsWaiting(db), learners(db, true),
-      safe(db.from('members').select('active')), safe(db.rpc('visit_stats', { p_hours:168 })), safe(db.rpc('portal_calls_today')), safe(db.rpc('portal_announcement')), safe(db.rpc('portal_eod')), safe(db.from('deals').select('inspection_ends,closing_on').eq('stage', 'contract')), safe(db.from('commissions').select('amount').eq('status', 'owed'))]);
+    const [live, reqs, revs, lr, mem, vis, calls, ann, eod, uc, cms, g1] = await Promise.all([liveCount(db), pendingRequests(db), reviewsWaiting(db), learners(db, true),
+      safe(db.from('members').select('active')), safe(db.rpc('visit_stats', { p_hours:168 })), safe(db.rpc('portal_calls_today')), safe(db.rpc('portal_announcement')), safe(db.rpc('portal_eod')), safe(db.from('deals').select('inspection_ends,closing_on').eq('stage', 'contract')), safe(db.from('commissions').select('amount').eq('status', 'owed')), safe(db.rpc('portal_gate1'))]);
     if (my !== run) return;
     const r = reqs || [], team = (mem.data || []).filter(x => x.active).length, dc = dealCounts();
     const ct = Array.isArray(calls.data) ? calls.data : null, sum = k => (ct || []).reduce((a, x) => a + (Number(x[k]) || 0), 0);
@@ -319,11 +319,25 @@
         box5('Money', 'Only you', [row('Cash this month', muted('Open'), '#overview'), row('Commissions owed', owedPill(cms.data), '#expense'), row('Course payments', muted('Not set up yet'))]) +
         box5('Site', 'Public pages', [row('Visits this week', muted(v == null ? 'Open' : v), '#visits'), row('Team emails', muted('Open'), '#emails'), row('Logs', muted('Open'), '#logs'),
           row('Zoho Campaigns', muted('Open'), 'https://campaigns.zoho.com/', true)]) +
-      '</div>' + callsToday(ct) + eodSection(eod.data) + annForm(ann.data) + '</div>';
+      '</div>' + gate1(g1.data) + callsToday(ct) + eodSection(eod.data) + annForm(ann.data) + '</div>';
     wireAnnForm(db);
     wireEod(db, my);
+    box().querySelectorAll('.p-g1-bar i[data-w]').forEach(i => { i.style.width = i.dataset.w + '%'; });
   }
 
+  // Gate 1: every rep logs every call for two straight weeks (portal_gate1). Clean days run from the last shift day
+  // with no calls logged; ready = 14 clean days and worked in both weeks.
+  function gate1(rows){
+    if (!Array.isArray(rows) || !rows.length) return '';
+    const ready = rows.filter(x => x.clean_days >= 14 && x.worked_both_weeks).length;
+    const shortDay = d => new Date(d + 'T12:00').toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    return '<section aria-labelledby="pvG1H" class="p-g1"><h2 class="p-h2" id="pvG1H">Gate 1 <small>Every rep logs every call for two straight weeks</small></h2>' +
+      '<div class="p-card"><p class="p-g1-sum"><b>' + ready + ' of ' + rows.length + '</b> ' + (rows.length === 1 ? 'person is' : 'people are') + ' there' + (ready === rows.length ? '. Gate 1 is passed.' : '.') + '</p>' +
+      rows.map(x => { const ok = x.clean_days >= 14 && x.worked_both_weeks;
+        return '<div class="p-row p-g1-row"><span>' + esc(x.name || 'Someone') + '<small>' + (x.shift_days ? plural(x.shift_days, 'shift day') + ' in 14 days' : 'No shifts in 14 days') + '</small></span>' +
+          '<span class="p-g1-bar" role="progressbar" aria-label="' + esc((x.name || 'Someone') + ': ' + x.clean_days + ' of 14 days') + '" aria-valuemin="0" aria-valuemax="14" aria-valuenow="' + x.clean_days + '"><i data-w="' + Math.round(x.clean_days / 14 * 100) + '"></i></span>' +
+          '<span class="p-pill' + (ok ? ' is-ok' : x.last_missed ? ' is-no' : ' is-plain') + '">' + (ok ? 'Ready' : x.last_missed ? 'No calls logged ' + esc(shortDay(x.last_missed)) : x.clean_days + ' of 14 days') + '</span></div>'; }).join('') + '</div></section>';
+  }
   // Phase 2: commissions. Amr's total still owed to reps (from the commissions table; only he can read it)
   const money = n => '$' + (Math.round(n * 100) / 100).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
   function owedPill(rows){
