@@ -9,6 +9,7 @@ const STUB = fs.readFileSync(path.join(__dirname, 'stub-supabase.js'), 'utf8');
 const NOW = Date.now(), iso = ms => new Date(NOW - ms).toISOString();
 const O = { user:{ id:'o1', email:'owner@example.com' } }, U = { user:{ id:'u1', email:'sara@example.com' } };
 const OWNER_ME = { role:'owner', keys:['course','deals','learn','live','mkt','money','psy','requests','team'], needs_code:[] };
+const MON = (d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'))(new Date());
 const FROM = {
   members:[{ user_id:'u1', name:'Sara R.', email:'sara@example.com', active:true, role:'agent', access:[], not_given:[], company_id:1, created_at:'2026-09-01' }],
   companies:[{ id:1, name:'Sample Co' }],
@@ -17,8 +18,9 @@ const FROM = {
   shift_requests:[{ id:1, user_id:'u1', name:'Sara R.', shift_date:'2026-10-27', work_seconds:28800, break_seconds:1800, started_at:'2026-10-27T13:00:00Z', ended_at:'2026-10-27T21:30:00Z', company_id:1, status:'pending', created_at:iso(86400e3), note:'Phone died' }],
   hub_uploads:[{ id:'h1', user_id:'u1', course:'mkt', module:'m3', title:'Call recording', kind:'recording', path:'u1/mkt/a.webm', status:'waiting', created_at:iso(3600e3) }],
   hub_upload_comments:[], tracker_settings:[{ key:'hourly_rate', value:'5' }], access_log:[], agents:[{ id:1, name:'Sara R.', active:true, role:'member', created_at:'2026-09-01' }], agent_companies:[], profiles:[], payslips:[],
-  cash_entries:[{ id:1, kind:'income', entry_date:'2026-10-05', title:'Client A', category:'Team profit', amount:1200, currency:'USD', settled:true, created_at:'2026-10-05' },
-                { id:2, kind:'expense', entry_date:'2026-10-07', title:'Software', category:'Tools', amount:80, currency:'USD', settled:true, created_at:'2026-10-07' }],
+  // this month's dates, so the Cash month view always has them (it opens on the current month)
+  cash_entries:[{ id:1, kind:'income', entry_date:MON + '-01', title:'Client A', category:'Team profit', amount:1200, currency:'USD', settled:true, created_at:MON + '-01' },
+                { id:2, kind:'expense', entry_date:MON + '-01', title:'Software', category:'Tools', amount:80, currency:'USD', settled:true, created_at:MON + '-01' }],
   shifts:[{ id:1, name:'Sara R.', shift_date:'2026-10-27', work_seconds:28800, break_seconds:0, company_id:1, source:'tracker', created_at:'2026-10-27T21:00:00Z', owner:false, dials:40, conversations:8, appointments:1, rate:5, user_id:'u1' }],
   fx_rates:[{ rate_date:'2026-10-01', rate:48 }]
 };

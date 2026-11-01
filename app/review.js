@@ -10,7 +10,7 @@
   const A = () => window.TalentsApp || {};
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
   const $ = id => document.getElementById(id);
-  const COURSES = { acq:'Acquisitions', mkt:'Marketing', psy:'Psychology' };
+  const COURSES = { acq:'Acquisitions', mkt:'Marketing', psy:'Psychology', calls:'Call scoring' };
   const CATS = ['Opening and upfront agreement', 'Rapport', 'Property discovery', 'Pain depth', 'Timeline, money, decision makers',
     'Getting their number', 'Offer framing', 'Objection handling', 'Listening and talk ratio', 'Close and next step'];
   const band = t => t >= 45 ? 'Ready for live leads' : t >= 38 ? 'Solid. Sharpen one or two areas' : t >= 30 ? 'Keep drilling the stages' : 'Back to the script daily';
