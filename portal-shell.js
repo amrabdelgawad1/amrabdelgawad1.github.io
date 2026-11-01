@@ -63,7 +63,7 @@
   // Back: the portal pages visited in this tab (sessionStorage, this tab only; addresses within the site, nothing else).
   // Going back pops the last one, so Back walks the way you came: Call scoring -> Learning Hub -> Back -> Call scoring.
   const TRAIL = 'p-trail', here = () => location.pathname + location.hash;
-  const trailGet = () => { try { const t = JSON.parse(sessionStorage.getItem(TRAIL) || '[]'); return Array.isArray(t) ? t.filter(x => typeof x === 'string' && x[0] === '/') : []; } catch (e) { return []; } };
+  const trailGet = () => { try { const t = JSON.parse(sessionStorage.getItem(TRAIL) || '[]'); return Array.isArray(t) ? t.filter(x => typeof x === 'string' && /^\/(?![\/\\])/.test(x)) : []; } catch (e) { return []; } };   // site paths only, never //other-site
   const trailSet = t => { try { sessionStorage.setItem(TRAIL, JSON.stringify(t.slice(-30))); } catch (e) {} };
   function trailNote(){
     const t = trailGet(), h = here();
