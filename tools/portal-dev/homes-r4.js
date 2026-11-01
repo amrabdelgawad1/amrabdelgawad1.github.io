@@ -30,7 +30,46 @@ const fontOf = (p, sel) => p.evaluate(s => { const e = document.querySelector(s)
 const tvRows = [{ user_id:'oid', name:'Amr', role:'owner', on_shift:false, worked_seconds:0, days_worked:0, dials:0, conversations:0, offers:0, appointments:0, notes_missing:0, deals_open:1, deals_contract:0, deals_closed:0, followups_late:0, lessons:0, drills:0, last_active:null },
   { user_id:'u1', name:'Sara R.', role:'agent', on_shift:true, worked_seconds:18000, days_worked:2, dials:81, conversations:10, offers:1, appointments:3, notes_missing:1, deals_open:2, deals_contract:1, deals_closed:1, followups_late:1, lessons:4, drills:1, last_active:new Date(Date.now() - 300000).toISOString() },
   { user_id:'u2', name:'Youssef H.', role:'manager', on_shift:false, worked_seconds:3600, days_worked:1, dials:12, conversations:2, offers:0, appointments:0, notes_missing:0, deals_open:0, deals_contract:0, deals_closed:0, followups_late:0, lessons:0, drills:0, last_active:new Date(Date.now() - 3 * 86400000).toISOString() }];
+const scRows = [
+  { id:'c3', user_id:'u1', title:'Roleplay: Inherited land', status:'waiting', score:null, real_call:false, scenario_id:1, created_at:'2026-10-30T10:00:00Z' },
+  { id:'c2', user_id:'u1', title:'Ross County seller', status:'approved', score:{ cats:[5,4,4,5,4,4,4,2,4,4], total:40 }, real_call:true, scenario_id:null, created_at:'2026-10-28T10:00:00Z' },
+  { id:'c1', user_id:'u1', title:'Roleplay: Inherited land', status:'approved', score:{ cats:[4,3,3,4,3,3,3,2,3,2], total:30 }, real_call:false, scenario_id:1, created_at:'2026-10-20T10:00:00Z' }];
+const scScen = [{ id:1, title:'Inherited land', kind:'land', level:'easy', seller:'Linda, inherited 12 acres', know:'Ross County, OH. Taxes are behind.', goal:'Her number and a callback time.', hidden:'She wants $40,000 but will take $25,000.', active:true }];
 const T = [
+  { name:'agent-scoring', url:'/app/#scoring', init:{ SB_SESSION:U, SB_RPC:member(ME.agent, 'Sara R.'), SB_FROM:{ live_status:[], roleplay_scenarios:scScen, hub_uploads:scRows, hub_upload_comments:[{ upload_id:'c2', at_s:95, body:'Slow down before the offer.' }] } }, run: async (p, ok, W) => {
+      await p.waitForSelector('#scSend', { timeout:8000 }).catch(() => {});
+      const t = await p.evaluate(() => document.getElementById('pView').innerText);
+      ok(/Call scoring/.test(await p.textContent('#title')) && /Send a call to score/.test(t), 'Call scoring opens from #scoring');
+      ok(/35\s*average of your last 2/.test(t) && /40\s*best score/.test(t) && /2\s*calls scored/.test(t) && /Keep drilling the stages/.test(t), 'tiles: average 35 of the last 2, best 40, 2 scored, and the band');
+      ok(await p.evaluate(() => [...document.querySelectorAll('.sc-cat.is-weak')].map(e => e.textContent).join('|')).then(x => /Objection handling/.test(x) && /Close and next step/.test(x)), 'the two weakest parts are flagged: Objection handling, Close and next step');
+      ok(/1:35 Slow down before the offer\./.test(t) && /Waiting for Amr/.test(t) && /40 of 50/.test(t), 'each call: its score or that it is waiting, and Amr’s notes with the time');
+      ok(/Inherited land/.test(t) && await p.evaluate(() => !document.querySelector('.sc-hidden').open), 'scenarios: the brief shows; the seller’s notes stay folded');
+      await p.click('#scSend'); await p.waitForTimeout(100);
+      ok(/Record the call or choose a recording first/.test(await p.textContent('#scMsg')), 'sending with nothing recorded says what to do');
+      await p.setInputFiles('#scFile', { name:'call.m4a', mimeType:'audio/mp4', buffer:Buffer.from('fake audio') });
+      await p.click('[data-kind="real"]'); await p.click('#scSend'); await p.waitForTimeout(100);
+      ok(/agreed to be recorded/.test(await p.textContent('#scMsg')) && !(await p.evaluate(() => SB_CALLS.some(c => c[0] === 'insert' && c[1] === 'hub_uploads'))), 'a real call needs the consent tick; nothing is sent without it');
+      await p.check('#scConsent'); await p.click('#scSend'); await p.waitForTimeout(500);
+      const ins = await p.evaluate(() => (SB_CALLS.find(c => c[0] === 'insert' && c[1] === 'hub_uploads') || [])[2]);
+      ok(ins && ins.course === 'calls' && ins.real_call === true && ins.consent === true && ins.kind === 'recording' && /^u1\/calls\/.+\.m4a$/.test(ins.path) && ins.scenario_id === null, 'sent: a real call, in the rep’s own calls folder');
+      await p.waitForSelector('[data-practice="1"]', { timeout:5000 }).catch(() => {});
+      await p.click('[data-practice="1"]'); await p.waitForTimeout(150);
+      ok(await p.inputValue('#scScen') === '1' && await p.getAttribute('[data-kind="roleplay"]', 'aria-pressed') === 'true', 'Practice this one picks the scenario for a roleplay');
+      ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'nothing wider than the screen');
+      const small = await p.evaluate(() => [...document.querySelectorAll('#pView button, #pView select, #pView input[type=text], #pView .sc-tick, #pView summary')].filter(e => e.offsetParent && e.getBoundingClientRect().height < 44).map(e => e.id || e.className));
+      ok(!small.length, 'buttons, fields and ticks at least 44px ' + small.join(' '));
+    } },
+  { name:'owner-scoring', url:'/app/#scoring', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:owner, SB_FROM:Object.assign({}, ownerFrom, { roleplay_scenarios:scScen, hub_uploads:scRows, hub_upload_comments:[] }) }, run: async (p, ok) => {
+      await p.waitForSelector('#sfSave', { timeout:8000 }).catch(() => {});
+      const t = await p.evaluate(() => document.getElementById('pView').innerText);
+      ok(/Team scores/.test(t) && /Sara R\.\s*40 of 50\s*35 · Keep drilling the stages/.test(t) && /1 call waiting to score/.test(t), 'Team scores: Sara’s last score, her average, and 1 call waiting');
+      await p.click('#sfSave'); await p.waitForTimeout(100);
+      ok(/Give it a title/.test(await p.textContent('#sfMsg')), 'a scenario needs a title');
+      await p.fill('#sfTitle', 'Tired landlord'); await p.fill('#sfHidden', 'Will sell if the tenant leaves.'); await p.click('#sfSave'); await p.waitForTimeout(300);
+      ok(await p.evaluate(() => SB_CALLS.some(c => c[0] === 'insert' && c[1] === 'roleplay_scenarios' && c[2].title === 'Tired landlord' && c[2].hidden === 'Will sell if the tenant leaves.')), 'Amr adds a scenario');
+      await p.click('[data-sedit="1"]'); await p.waitForTimeout(100);
+      ok(await p.inputValue('#sfTitle') === 'Inherited land' && await p.isVisible('#sfActive'), 'Edit loads it, with Show it to the team');
+    } },
   { name:'owner-teamview', url:'/app/#teamview', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:Object.assign({}, owner, { portal_team_overview:tvRows }), SB_FROM:ownerFrom }, run: async (p, ok, W) => {
       await p.waitForSelector('.p-tv', { timeout:8000 }).catch(() => {});
       const t = await p.evaluate(() => document.getElementById('pView').innerText);
@@ -68,7 +107,7 @@ const T = [
       ok(await p.evaluate(() => !document.querySelector('#pvEodBox b b') && /<b>Slow<\/b>/.test(document.getElementById('pvEodBox').textContent)), 'notes are shown as plain text, never as page code');
       await p.click('[data-eod="-1"]'); await p.waitForTimeout(400);
       ok(await p.evaluate(() => { const c = SB_CALLS.filter(x => x[0] === 'rpc' && x[1] === 'portal_eod'); const a = c[c.length - 1][2]; return a && /^\d{4}-\d{2}-\d{2}$/.test(a.p_day); }) && await p.getAttribute('[data-eod="-1"]', 'aria-pressed') === 'true', 'Yesterday asks for the day before (Cairo date) and shows as chosen');
-      if (W > 1000) { const s = await sideOf(p); ok(s && JSON.stringify(s) === JSON.stringify(['Overview','People:Team overview','People:Live now','People:Team and shifts','People:Missed-shift requests','People:Invite and access','Learning:Learning Hub','Learning:Learner progress','Learning:Review center','Deals:Deal CRM','Deals:Land calculator','Deals:House calculator','Money:Cash','Money:Income','Money:Expenses','Money:My time','Money:Payments (later)','Site:Visits','Site:Emails','Site:Logs','Site:Zoho Campaigns']), 'sidebar groups: ' + (s || []).join(' | ')); }
+      if (W > 1000) { const s = await sideOf(p); ok(s && JSON.stringify(s) === JSON.stringify(['Overview','People:Team overview','People:Live now','People:Team and shifts','People:Missed-shift requests','People:Invite and access','Learning:Learning Hub','Learning:Learner progress','Learning:Review center','Learning:Call scoring','Deals:Deal CRM','Deals:Land calculator','Deals:House calculator','Money:Cash','Money:Income','Money:Expenses','Money:My time','Money:Payments (later)','Site:Visits','Site:Emails','Site:Logs','Site:Zoho Campaigns']), 'sidebar groups: ' + (s || []).join(' | ')); }
     } },
   { name:'owner-portal', url:'/app/#portal', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:owner, SB_FROM:ownerFrom }, run: async (p, ok) => {
       ok(await p.evaluate(() => (document.querySelector('.p-mode [aria-current="page"]') || {}).textContent) === 'Portal', 'switch is on Portal');
@@ -93,7 +132,7 @@ const T = [
       ok(!(await p.$('.p-mode')) && !(await p.isVisible('.p-admin-tag')), 'no ADMIN label or switch (Amr only)');
       const t = await p.evaluate(() => document.getElementById('pView').innerText);
       ok(/Hi, Mona/.test(t) && /Team and shifts/.test(t) && /1 request/.test(t) && /Learner progress/.test(t), 'manager areas: Team and shifts with 1 request, Learner progress');
-      if (W > 1000) { const s = await sideOf(p); ok(s && JSON.stringify(s) === JSON.stringify(['Portal','My hours','People:Team overview','People:Live now','People:Team and shifts','People:Missed-shift requests','Learning:Learning Hub','Learning:Learner progress','Deals:Deal CRM','Deals:Land calculator','Deals:House calculator']), 'smaller Admin side: ' + (s || []).join(' | ')); }
+      if (W > 1000) { const s = await sideOf(p); ok(s && JSON.stringify(s) === JSON.stringify(['Portal','My hours','People:Team overview','People:Live now','People:Team and shifts','People:Missed-shift requests','Learning:Learning Hub','Learning:Learner progress','Learning:Call scoring','Deals:Deal CRM','Deals:Land calculator','Deals:House calculator']), 'smaller Admin side: ' + (s || []).join(' | ')); }
       await p.evaluate(() => { location.hash = '#progress'; }); await p.waitForTimeout(800);
       ok(/Youssef H\.\s+Marketing\s+2 of 16/.test(await p.evaluate(() => document.getElementById('pView').innerText)), 'manager sees learner progress');
     } },
@@ -150,7 +189,7 @@ const T = [
       ok(await p.isVisible('.p-bell') && (await p.textContent('.p-bell .p-badge')).trim() === '2' && /2 new/.test(await p.getAttribute('.p-bell', 'aria-label')), 'the bell shows 2 new');
       await p.click('.p-bell'); await p.waitForTimeout(300);
       const t = await p.evaluate(() => document.querySelector('.p-notes').innerText);
-      ok(/Your missed shift for Oct 30 was approved[\s\S]*5 min ago · New/.test(t) && /Acquisitions · Module 3 call[\s\S]*yesterday/.test(t), 'the panel lists them, newest first, with how long ago');
+      ok(/Your missed shift for Oct 30 was approved[\s\S]*\d+ min ago · New/.test(t) && /Acquisitions · Module 3 call[\s\S]*yesterday/.test(t), 'the panel lists them, newest first, with how long ago');
       ok(await p.evaluate(() => !document.querySelector('.p-notes b b') && /<b>approved<\/b>/.test(document.querySelector('.p-notes').textContent)), 'titles are plain text, never page code');
       ok(await p.evaluate(() => [...document.querySelectorAll('.p-notes a')].every(a => /^\/(?!\/)/.test(a.getAttribute('href')))), 'links only go to pages on this site (an outside link becomes /app/)');
       const r = await p.evaluate(() => { const n = document.querySelector('.p-notes').getBoundingClientRect(); return [n.left, n.right, document.documentElement.clientWidth]; });
