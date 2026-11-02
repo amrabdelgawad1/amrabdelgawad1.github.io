@@ -33,7 +33,7 @@
   const COURSES = [
     { key:'course', name:'Real Estate Acquisitions', short:'Acquisitions', href:'/course/', total:15 },
     { key:'mkt', name:'Marketing', short:'Marketing', href:'/app/course/', total:16, id:'mkt2' },
-    { key:'psy', name:'Psychology and Therapy', short:'Psychology', href:'/app/psychology/', total:27, id:'psy' }
+    { key:'psy', name:'Psychology and Therapy', short:'Psychology', href:'/app/psychology/', total:30, id:'psy' }
   ];
   let view = '', run = 0;
   const box = () => $('pViewBody');
