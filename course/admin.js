@@ -5,6 +5,7 @@
 //   #/admin/u/<user>/a/<attempt>    one quiz attempt, with the correct options
 //   #/admin/u/<user>/s/<mod>/<item> one drill, with the reviewer answer key; approve or return
 //   #/admin/add                     add or update a module from module-N.json, then its images
+//   #/admin/missed                  the questions learners miss most on their first try
 // The database refuses all of this for anyone else (course_require_admin).
 (function(){
   'use strict';
@@ -50,6 +51,7 @@
           (people.length ? '<ul class="people">' + rows + '</ul>' : '<p class="note">No one has the course yet. Switch on Acquisitions course for someone in the Talents app, under Invite and access.</p>') + '</section>' +
         '<section class="card stack"><h2 class="sub">Modules</h2><p class="note">' + A.S.modules.map(m => 'Module ' + m.number + ': ' + esc(m.title)).join('<br>') + '</p>' +
           '<a class="btn line" href="#/admin/add">Add or update a module</a></section>' +
+        '<section class="card stack"><h2 class="sub">Most-missed questions</h2><p class="note">Which questions learners get wrong most on their first try. A high one usually means the lesson needs clearer wording.</p><a class="btn line" href="#/admin/missed">See them</a></section>' +
       '</div></main>', { title:'Admin', at });
   }
 
@@ -68,9 +70,33 @@
       '<main id="main" class="col"><div class="page">' +
         '<div class="stack" data-s="g4"><h1 data-s="h22">' + esc(L.name) + '</h1><span class="small muted">' + esc(L.email || '') + '</span></div>' +
         '<section class="card stack" aria-label="Progress">' + (mods || '<p class="note">No progress yet.</p>') + '</section>' +
+        '<section class="card stack" aria-labelledby="ftH"><h2 class="sub" id="ftH">Fast track</h2><p class="note">For someone who already calls well: the Module 1 to 4 checkpoints open without the lessons. They still pass each at 85% to move on.</p><button class="btn line" type="button" data-act="fast" id="ftBtn" disabled>Checking…</button></section>' +
         '<section class="stack" aria-labelledby="sH"><h2 class="sub" id="sH">Written drills</h2>' + (subs ? '<ul class="items">' + subs + '</ul>' : '<p class="note">Nothing started yet.</p>') + '</section>' +
         '<section class="stack" aria-labelledby="aH"><h2 class="sub" id="aH">Quiz attempts (' + L.attempts.length + ')</h2>' + (atts ? '<ul class="items">' + atts + '</ul>' : '<p class="note">No finished quizzes yet.</p>') + '</section>' +
-      '</div></main>', { title:L.name, at });
+      '</div></main>', { title:L.name, at, acts:{
+        fast: async b => {
+          const on = b.dataset.on !== 'true'; b.disabled = true;
+          try { await rpc('course_fast_track_set', { p_user:uid, p_on:on }); } catch(e){ b.disabled = false; toast(errText(e)); return; }
+          b.dataset.on = String(on); b.textContent = on ? 'Turn the fast track off' : 'Turn the fast track on'; b.disabled = false; toast(on ? 'Fast track on' : 'Fast track off');
+        } } });
+    const ft = await db.from('course_fast_track').select('user_id').eq('user_id', uid).then(x => x, () => ({}));
+    const fb = $('ftBtn'); if (!fb) return;
+    const on = Array.isArray(ft.data) && ft.data.length > 0;
+    fb.dataset.on = String(on); fb.textContent = on ? 'Turn the fast track off' : 'Turn the fast track on'; fb.disabled = !!ft.error;
+  }
+
+  async function missedView(){
+    const at = location.hash, head = header(Object.assign(back('#/admin', 'Back to learners'), { ctx:'Admin', title:'Most-missed questions' }));
+    msgView('Loading…', { header:head });
+    let rows; try { rows = await rpc('course_missed_questions', { p_min:2 }); } catch(e){ return msgView(errText(e), { retry:true, at, header:head }); }
+    const mods = A.S.modules;
+    const list = rows.map(r => { const m = mods.find(x => x.id === r.module_id);
+      return '<li class="card stack" data-s="g4"><span class="small muted">' + (m ? 'Module ' + m.number + ' · ' : '') + 'Quiz ' + esc(r.item_id) + '</span><b>' + esc(r.prompt || r.question_id) + '</b>' +
+        '<span class="small">Missed by ' + r.missed + ' of ' + r.tries + ' (' + pct(r.missed, r.tries) + '%) on their first try</span>' + bar(pct(r.missed, r.tries)) +
+        (m ? '<a class="small" href="#/m/' + esc(m.id) + '/l/' + esc(r.item_id) + '">Open the lesson</a>' : '') + '</li>'; }).join('');
+    mount(head + '<main id="main" class="col"><div class="page"><h1 class="display">Most-missed questions</h1>' +
+      '<p class="note">Each learner’s first finished try at every quiz, for questions at least two people answered. Retakes don’t count, so this shows what the lesson didn’t teach.</p>' +
+      (list ? '<ul class="stack" data-s="g8">' + list + '</ul>' : '<p class="note">Not enough answers yet. This fills in as learners take quizzes.</p>') + '</div></main>', { title:'Most-missed questions', at });
   }
   const statusChip = s => s === 'approved' ? chip('Approved', 'ok') : s === 'submitted' ? chip('Waiting for you', 'warm') : s === 'needs_changes' ? chip('Returned') : chip('Draft');
   function duration(a, b){
@@ -214,6 +240,7 @@
   function route(parts){
     if (!parts.length) return homeView();
     if (parts[0] === 'add') return addView();
+    if (parts[0] === 'missed') return missedView();
     if (parts[0] === 'u' && parts[1]) {
       if (parts[2] === 'a' && parts[3]) return attemptView(parts[1], parts[3]);
       if (parts[2] === 's' && parts[4]) return submissionView(parts[1], parts[3], parts[4]);
