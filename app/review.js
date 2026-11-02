@@ -77,7 +77,7 @@
       rows.push({ c:'Marketing', pct:Math.round(passed * 100 / total), t:passed + ' of ' + total + ' modules passed · ' + asg + (asg === 1 ? ' assignment' : ' assignments') + ' sent', at:h.mkt2.updated_at });
     }
     if (h.psy) {
-      const passed = h.psy.passed || 0, total = (window.PSY_COURSE && window.PSY_COURSE.modules) || 27;
+      const passed = h.psy.passed || 0, total = (window.PSY_COURSE && window.PSY_COURSE.modules) || 30;
       rows.push({ c:'Psychology', pct:Math.round(passed * 100 / total), t:passed + ' of ' + total + ' modules passed', at:h.psy.updated_at });
     }
     return rows;

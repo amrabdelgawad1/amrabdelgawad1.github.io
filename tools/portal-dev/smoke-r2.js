@@ -28,7 +28,7 @@ const T = [
     want: s => /Live now/.test(s) && !/Learning Hub/.test(s) },
   { name:'review-progress', url:'/app/#review/u1', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:ownerRpc, SB_FROM:{ members, hub_uploads:[], companies:[] } },
     check: async p => p.evaluate(() => document.getElementById('reviewBody').innerText),
-    want: s => /3 of 16 modules passed · 2 assignments sent/.test(s) && /5 of 27 modules passed/.test(s) },
+    want: s => /3 of 16 modules passed · 2 assignments sent/.test(s) && /5 of 30 modules passed/.test(s) },
   { name:'people-role', url:'/app/#people', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_RPC:ownerRpc, SB_FROM:{ members, companies:[{ id:1, name:'Sample Co' }] } },
     // round 5: the access drop-down became the Invite and access page (people-r5.js checks it fully)
     check: async p => { await p.waitForSelector('.pp-row'); return p.evaluate(() => document.querySelector('.pp-row .p-pill').textContent + ' | ' + ([...document.querySelectorAll('#pPeople input')].some(i => i.value === 'money') ? 'money' : 'no money')); },
