@@ -3,9 +3,10 @@
 // With input: { label, value, placeholder, type } it resolves the typed text, or null on Cancel.
 // input.multiline gives a bigger text box; input.minLength + input.error keep the box open until enough is typed;
 // input.onCancel(text, nums) gets what was typed when they back out.
-// input.numbers: [{ key, label, value }] adds optional number boxes above the text; it then resolves { text, nums } instead of the text.
+// input.numbers: [{ key, label, value, required }] adds number boxes above the text; it then resolves { text, nums } instead of the text.
+// A required box keeps the dialog open until something is typed in it (0 counts); input.numbersError is the message shown.
 (function(){
-  let dlg, ttl, msg, inp, ta, lbl, err, okB, noB, nb, done = null, need = 0, needMsg = '', keep = null, numKeys = null;
+  let dlg, ttl, msg, inp, ta, lbl, err, okB, noB, nb, done = null, need = 0, needMsg = '', keep = null, numKeys = null, numNeed = [], numMsg = '';
   function build(){
     dlg = document.createElement('dialog'); dlg.className = 'ask';
     dlg.innerHTML = '<form method="dialog" novalidate><h3 class="ask-t"></h3><p class="ask-m"></p><div class="ask-nums" hidden></div><label class="ask-l"><span></span><input class="ask-i" autocomplete="off"><textarea class="ask-i ask-ta" rows="5"></textarea></label>' +
@@ -23,10 +24,13 @@
       e.preventDefault();
       if (lbl.hidden) return end(true);
       const v = field().value;
+      const missing = numNeed.map(k => nb.querySelector('[name="' + k + '"]')).find(i => i && (i.value.trim() === '' || isNaN(parseInt(i.value, 10)) || parseInt(i.value, 10) < 0));
+      if (missing) { err.textContent = numMsg; err.hidden = false; missing.setAttribute('aria-invalid', 'true'); missing.focus(); return; }
       if (v.trim().length < need) { err.textContent = needMsg; err.hidden = false; field().focus(); return; }
       end(numKeys ? { text: v, nums: nums() } : v);
     });
     [inp, ta].forEach(el => el.addEventListener('input', () => { err.hidden = true; }));
+    nb.addEventListener('input', e => { err.hidden = true; if (e.target.removeAttribute) e.target.removeAttribute('aria-invalid'); });
     noB.addEventListener('click', () => end(lbl.hidden ? false : null));
     dlg.addEventListener('cancel', e => { e.preventDefault(); end(lbl.hidden ? false : null); }); // Esc
     dlg.addEventListener('click', e => { if (e.target === dlg) end(lbl.hidden ? false : null); }); // tap outside
@@ -52,11 +56,14 @@
     need = (o.input && o.input.minLength) || 0; needMsg = (o.input && o.input.error) || 'Type a little more first.';
     const list = (o.input && o.input.numbers) || null;
     numKeys = list ? list.map(n => n.key) : null;
+    numNeed = (list || []).filter(n => n.required).map(n => n.key);
+    numMsg = (o.input && o.input.numbersError) || 'Fill in every number first. Type 0 if there were none.';
     nb.hidden = !list; nb.innerHTML = '';
     (list || []).forEach(n => {
       const l = document.createElement('label'); l.className = 'ask-num';
       const s = document.createElement('span'); s.textContent = n.label;
       const i = document.createElement('input'); i.className = 'ask-i'; i.type = 'number'; i.min = '0'; i.step = '1'; i.inputMode = 'numeric'; i.name = n.key;
+      if (n.required) { i.required = true; i.setAttribute('aria-required', 'true'); }
       if (n.value != null) i.value = n.value;
       l.append(s, i); nb.appendChild(l);
     });
