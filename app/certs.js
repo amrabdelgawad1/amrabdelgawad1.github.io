@@ -11,12 +11,13 @@
   const today = () => new Date().toLocaleDateString('en-CA', { timeZone:'Africa/Cairo' });
   const link = code => '/cert/?c=' + encodeURIComponent(code);
   const yes = (ok, label) => '<span class="p-pill ' + (ok ? 'is-ok' : 'is-plain') + '">' + esc(label) + '</span>';
-  const errMsg = r => ((r && r.error && r.error.message) || '').replace(/^.*?:\s*/, '') || 'Couldn’t save. Try again.';
+  const errMsg = r => { const m = (r && r.error && r.error.message) || ''; return /duplicate key|certificates_one_active/.test(m) ? 'They already have a current certificate.' : m.replace(/^.*?:\s*/, '') || 'Couldn’t save. Try again.'; };
 
   // ---------- Team home card (anyone who has a certificate) ----------
   async function card(db, el, isCurrent){
     if (!el) return;
-    const r = await safe(db.from('certificates').select('code,issued_on,valid_until').is('revoked_at', null).order('created_at', { ascending:false }).limit(1));
+    const me = ((window.TalentsApp || {}).user || {}).id; if (!me) return;
+    const r = await safe(db.from('certificates').select('code,issued_on,valid_until').eq('user_id', me).is('revoked_at', null).order('created_at', { ascending:false }).limit(1));
     if (!isCurrent() || !Array.isArray(r.data) || !r.data.length) return;
     const c = r.data[0], due = c.valid_until < today();
     el.innerHTML = '<section class="p-card" aria-labelledby="ctMineH"><div class="p-card-head"><h2 id="ctMineH">Your certificate</h2>' + yes(!due, due ? 'Renewal due' : 'Current') + '</div>' +
@@ -66,7 +67,7 @@
     const people = pp.data, list = Array.isArray(all.data) ? all.data : [];
     $('ctBody').innerHTML =
       (people.length ? people.map(personRow).join('') : '<p class="p-card p-empty">No one has the Acquisitions course yet. Turn it on in Invite and access.</p>') +
-      (list.length ? '<details class="p-card"><summary>Every certificate issued (' + list.length + ')</summary><div class="p-tablewrap"><table class="p-table"><thead><tr><th scope="col">Name</th><th scope="col">Code</th><th scope="col">Issued</th><th scope="col">Status</th></tr></thead><tbody>' +
+      (list.length ? '<details class="p-card ct-all"><summary>Every certificate issued (' + list.length + ')</summary><div class="p-tablewrap"><table class="p-table"><thead><tr><th scope="col">Name</th><th scope="col">Code</th><th scope="col">Issued</th><th scope="col">Status</th></tr></thead><tbody>' +
         list.map(c => '<tr><td>' + esc(c.name) + '</td><td><a href="' + link(c.code) + '" target="_blank" rel="noopener">' + esc(c.code) + '</a></td><td>' + esc(day(c.issued_on)) + '</td><td>' +
           (c.revoked_at ? '<span class="p-pill is-no">Revoked</span>' + (c.revoked_note ? '<br><small>' + esc(c.revoked_note) + '</small>' : '') : c.valid_until < today() ? '<span class="p-pill is-plain">Renewal due</span>' : '<span class="p-pill is-ok">Current to ' + esc(day(c.valid_until)) + '</span>') + '</td></tr>').join('') +
         '</tbody></table></div></details>' : '');

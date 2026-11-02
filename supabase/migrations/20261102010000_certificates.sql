@@ -26,7 +26,9 @@ create table if not exists public.certificates (
 create unique index if not exists certificates_one_active on public.certificates (user_id, course) where revoked_at is null;
 alter table public.certificates enable row level security;
 revoke all on public.certificates from anon, authenticated;
-grant select on public.certificates to authenticated;
+-- Only the columns a person's own card needs: never Amr's revoke note or who issued it
+revoke select on public.certificates from authenticated;
+grant select (id, code, user_id, course, name, issued_on, valid_until, renewed_on, revoked_at, created_at) on public.certificates to authenticated;
 drop policy if exists "certificates read" on public.certificates;
 create policy "certificates read" on public.certificates for select to authenticated
   using (user_id = auth.uid() or coalesce(public.is_tracker_admin(), false));
@@ -43,15 +45,16 @@ begin
   return query
   with ok as (
     select (h.score ->> 'total')::integer total from public.hub_uploads h
-     where h.user_id = p_user and h.course in ('acq', 'calls') and h.score is not null
+     where h.user_id = p_user and h.course in ('acq', 'calls') and h.status = 'approved' and h.score is not null
+       and jsonb_typeof(h.score -> 'cats') = 'array' and jsonb_array_length(h.score -> 'cats') = 10
        and (h.score ->> 'total') ~ '^[0-9]+$' and (h.score ->> 'total')::integer >= 40
        and not exists (select 1 from jsonb_array_elements_text(h.score -> 'cats') c where c !~ '^[0-9]+$' or c::integer < 3))
   select
     (select count(distinct a.module_id)::integer from public.course_attempts a
-      where a.user_id = p_user and a.passed and a.finished_at is not null and not a.abandoned
+      where a.user_id = p_user and a.passed and a.score >= 85 and a.finished_at is not null and not a.abandoned
         and a.item_id ~ '^([1-9]|1[0-9])\.checkpoint$' and a.module_id = 'm' || split_part(a.item_id, '.', 1)),
     exists (select 1 from public.course_attempts a where a.user_id = p_user and a.module_id = 'm20' and a.item_id = '20.checkpoint'
-             and a.passed and a.finished_at is not null and not a.abandoned),
+             and a.passed and a.score >= 85 and a.finished_at is not null and not a.abandoned),
     exists (select 1 from public.course_submissions s where s.user_id = p_user and s.module_id = 'm20' and s.item_id = '20.assignment' and s.status = 'approved'),
     (select count(*)::integer from ok),
     (select max(total) from ok);
@@ -97,7 +100,7 @@ declare v_code text; v_today date := (now() at time zone 'Africa/Cairo')::date; 
 begin
   if not coalesce(public.course_is_admin(), false) then raise exception 'Not allowed' using errcode = '42501'; end if;
   if char_length(v_name) not between 2 and 80 then raise exception 'Type the name as it should appear (2 to 80 letters).' using errcode = '22023'; end if;
-  if not exists (select 1 from public.members m where m.user_id = p_user and to_jsonb(m.access) ? 'course') then
+  if not exists (select 1 from public.members m where m.user_id = p_user and m.active and to_jsonb(m.access) ? 'course') then
     raise exception 'Pick someone with the Acquisitions course.' using errcode = '22023';
   end if;
   if exists (select 1 from public.certificates c where c.user_id = p_user and c.course = 'acq' and c.revoked_at is null) then
@@ -146,7 +149,9 @@ grant execute on function public.certificate_revoke(bigint, text) to authenticat
 create or replace function public.certificate_check(p_code text)
 returns table(code text, name text, course text, issued_on date, valid_until date, renewed_on date, status text)
 language sql stable security definer set search_path = '' as $$
-  select c.code, c.name, 'Acquisitions Playbook'::text, c.issued_on, c.valid_until, c.renewed_on,
+  select c.code, case when c.revoked_at is null then c.name end, 'Acquisitions Playbook'::text,
+         case when c.revoked_at is null then c.issued_on end, case when c.revoked_at is null then c.valid_until end,
+         case when c.revoked_at is null then c.renewed_on end,
          case when c.revoked_at is not null then 'revoked'
               when c.valid_until < (now() at time zone 'Africa/Cairo')::date then 'renewal_due'
               else 'current' end

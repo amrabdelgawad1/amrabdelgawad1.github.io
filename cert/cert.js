@@ -8,7 +8,7 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
   const day = d => { try { const [y, m, dd] = String(d).split('-').map(Number); return new Date(Date.UTC(y, m - 1, dd)).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric', timeZone:'UTC' }); } catch (e) { return d; } };
   const CODE_RE = /^ACQ-[0-9A-F]{5}-[0-9A-F]{5}$/;
-  const tidy = s => String(s || '').toUpperCase().replace(/[^0-9A-Z]/g, '').replace(/^ACQ/, '').replace(/^(.{5})(.{5}).*$/, 'ACQ-$1-$2');
+  const tidy = s => { const t = String(s || '').toUpperCase().replace(/[^0-9A-Z]/g, '').replace(/^ACQ/, ''); return t.length === 10 ? 'ACQ-' + t.slice(0, 5) + '-' + t.slice(5) : t; };
 
   function form(msg, value){
     main.innerHTML = '<section class="ct-card ct-ask"><span class="ct-bar" aria-hidden="true"></span><h1>Check a certificate</h1>' +
@@ -75,7 +75,7 @@
     let rows;
     try {
       const res = await fetch(CFG.supabaseUrl + '/rest/v1/rpc/certificate_check', {
-        method:'POST', headers:{ 'Content-Type':'application/json', apikey:CFG.supabaseKey, Authorization:'Bearer ' + CFG.supabaseKey },
+        method:'POST', headers:{ 'Content-Type':'application/json', apikey:CFG.supabaseKey },
         body:JSON.stringify({ p_code:code }), cache:'no-store', credentials:'omit', referrerPolicy:'no-referrer' });
       if (!res.ok) throw new Error('http ' + res.status);
       rows = await res.json();

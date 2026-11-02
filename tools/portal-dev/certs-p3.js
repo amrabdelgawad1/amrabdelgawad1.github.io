@@ -110,8 +110,8 @@ const T = [
     const wide = await p.evaluate(() => document.documentElement.scrollWidth);
     ok(wide <= W, 'nothing wider than the screen (' + wide + 'px)');
     try { await t.run(p, ok, W); } catch(e) { ok(false, 'check crashed: ' + e.message.split('\n')[0]); }
-    const small = await p.evaluate(() => [...document.querySelectorAll('#pView a, #pView button, main a.ct-btn, main button')].filter(e => e.offsetParent && !e.closest('td, .p-apps, summary')).map(e => { const r = e.getBoundingClientRect(); return [e.textContent.trim().slice(0, 24), Math.round(r.height)]; }).filter(x => x[1] < 40));
-    ok(!small.length, 'tap targets at least 40px' + (small.length ? ' (small: ' + small.map(x => x.join(' ')).join(', ') + ')' : ''));
+    const small = await p.evaluate(() => [...document.querySelectorAll('#pView a, #pView button, main a, main button, #pView summary')].filter(e => e.offsetParent && !e.closest('.p-apps')).map(e => { const r = e.getBoundingClientRect(); return [e.textContent.trim().slice(0, 24), Math.round(r.height)]; }).filter(x => x[1] < 44));
+    ok(!small.length, 'tap targets at least 44px' + (small.length ? ' (small: ' + small.map(x => x.join(' ')).join(', ') + ')' : ''));
     ok(!errs.length, 'no console errors' + (errs.length ? ' (' + errs.join(' / ') + ')' : ''));
     await ctx.close();
   }

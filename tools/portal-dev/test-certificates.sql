@@ -26,16 +26,21 @@ insert into public.course_attempts (user_id, module_id, item_id, total, pass_mar
 select :N::uuid, 'm' || g, g || '.checkpoint', 25, 85, 23, 92, true, now() - interval '2 days' from generate_series(1, 19) g;
 insert into public.course_attempts (user_id, module_id, item_id, total, pass_mark, correct, score, passed, finished_at)
 values (:N::uuid, 'm20', '20.checkpoint', 50, 85, 45, 90, true, now()), (:N::uuid, 'm3', '3.checkpoint', 25, 85, 10, 40, false, now());
+-- A (no course) and an old 80% pass mark: 82% marked passed doesn't count toward the 85% Lesson 20.1 asks for
+insert into public.course_attempts (user_id, module_id, item_id, total, pass_mark, correct, score, passed, finished_at)
+values (:A::uuid, 'm1', '1.checkpoint', 25, 80, 20, 82, true, now());
 insert into public.course_submissions (user_id, module_id, item_id, status, submitted_at) values (:N::uuid, 'm20', '20.assignment', 'approved', now());
 insert into public.hub_uploads (user_id, course, title, kind, path, mime, status, score) values
  (:N::uuid, 'acq', 'Cert call 1', 'recording', '00000000-0000-0000-0000-000000000006/acq/c1.m4a', 'audio/mp4', 'approved', '{"cats":[4,4,5,4,5,4,4,5,4,5],"total":44}'),
  (:N::uuid, 'calls', 'Cert call 2', 'recording', '00000000-0000-0000-0000-000000000006/calls/c2.m4a', 'audio/mp4', 'approved', '{"cats":[5,5,5,4,5,4,5,4,4,5],"total":46}'),
- (:N::uuid, 'calls', 'Cert call 3', 'recording', '00000000-0000-0000-0000-000000000006/calls/c3.m4a', 'audio/mp4', 'approved', '{"cats":[5,5,5,5,5,5,5,5,5,2],"total":47}');
+ (:N::uuid, 'calls', 'Cert call 3', 'recording', '00000000-0000-0000-0000-000000000006/calls/c3.m4a', 'audio/mp4', 'approved', '{"cats":[5,5,5,5,5,5,5,5,5,2],"total":47}'),
+ (:N::uuid, 'calls', 'Sent back', 'recording', '00000000-0000-0000-0000-000000000006/calls/c4.m4a', 'audio/mp4', 'redo', '{"cats":[5,5,5,5,5,5,5,5,5,5],"total":50}');
 
 set role authenticated;
 select pg_temp.as_user(:O::uuid, 'owner@example.com', 'aal2');
 select pg_temp.ok((select checkpoints = 19 and final_exam and capstone and calls_40 = 2 and best_call = 46 from public.certificate_readiness(:N::uuid)),
-  'readiness: 19 checkpoints, final exam, capstone approved, two calls of 40+ with no part below 3 (best 46)');
+  'readiness: 19 checkpoints, final exam, capstone approved, two approved calls of 40+ with no part below 3 (best 46; a sent-back 50 doesn''t count)');
+select pg_temp.ok((select checkpoints = 0 from public.certificate_readiness(:A::uuid)), 'a checkpoint passed at an old 80% mark (82%) doesn''t count: Lesson 20.1 asks for 85%');
 select pg_temp.ok((select count(*) = 1 from public.certificate_people() where user_id = :N::uuid) and not exists (select 1 from public.certificate_people() where user_id = :A::uuid),
   'Amr''s list shows people with the Acquisitions course only');
 select pg_temp.ok(pg_temp.err($$select public.certificate_issue('00000000-0000-0000-0000-000000000001', 'Agent A')$$) like '%Acquisitions course%', 'no certificate for someone without the course');
@@ -73,7 +78,10 @@ select pg_temp.ok((select status = 'renewal_due' from public.certificate_check(:
 select public.certificate_renew(:cid);
 select pg_temp.ok((select status = 'current' and renewed_on is not null and valid_until > current_date + 360 from public.certificate_check(:'code')), 'renewing gives a year from today');
 select public.certificate_revoke(:cid, 'Left the team');
-select pg_temp.ok((select status = 'revoked' from public.certificate_check(:'code')), 'revoked: the link still works and says so');
+select pg_temp.ok((select status = 'revoked' and name is null and issued_on is null and valid_until is null from public.certificate_check(:'code')), 'revoked: the link still works and says so, without the name or dates');
+select pg_temp.as_user(:N::uuid, 'n@example.com', 'aal1');
+select pg_temp.ok(pg_temp.fails('select revoked_note from public.certificates') and pg_temp.fails('select * from public.certificates') and (select count(*) = 1 from public.certificates where revoked_at is not null), 'N sees their revoked one but never Amr''s note');
+select pg_temp.as_user(:O::uuid, 'owner@example.com', 'aal2');
 select pg_temp.ok(pg_temp.err(format('select public.certificate_renew(%s)', :cid)) like '%isn''t current%', 'a revoked one can''t be renewed');
 select public.certificate_issue(:N::uuid, 'Nadia Hassan') as code2 \gset
 select pg_temp.ok(:'code2' <> :'code' and (select count(*) = 2 from public.certificate_list()), 'after revoking, a new one can be issued; both stay on record');

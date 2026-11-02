@@ -413,6 +413,7 @@ html body #pView a.p-row, html body #pView a.p-area, html body #pView a.p-cont{ 
 html body :is(#pView, #pPeople) .p-btn{ color:var(--p-on-accent); }
 html body :is(#pView, #pPeople) .p-btn.is-ghost{ color:var(--p-ink); }
 html body #pView .p-btn.is-danger{ color:var(--p-no); }
+html body :is(#pView, #pPeople) .p-btn.is-ghost:hover{ color:var(--p-accent); }
 html body #pPeople .p-btn.is-danger{ color:var(--p-no); }
 html body header.app-bar h1#title.p-name{ font-family:var(--p-display) !important; font-weight:800; font-size:19px; letter-spacing:0; text-transform:none; color:var(--p-ink); }
 
@@ -744,3 +745,5 @@ html body #pLogs{ min-height:calc(100vh - var(--p-top)); }
 #pView .ct-anyway{ display:flex; align-items:center; gap:8px; min-height:44px; margin:4px 0; font-size:14px; }
 #pView .ct-anyway input{ width:20px; height:20px; }
 #pView .ct-person a{ overflow-wrap:anywhere; }
+#pView details.ct-all > summary{ min-height:44px; display:flex; align-items:center; cursor:pointer; }
+#pView .ct-all td a{ display:inline-flex; align-items:center; min-height:44px; }

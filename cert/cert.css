@@ -72,3 +72,4 @@ a:focus-visible, button:focus-visible, input:focus-visible{ outline:3px solid va
   .ct-frame{ padding:32px 40px 24px; }
   * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 }
+.ct-note a{ display:inline-flex; align-items:center; min-height:44px; padding:0 4px; }
