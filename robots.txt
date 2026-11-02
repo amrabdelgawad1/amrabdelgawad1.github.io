@@ -4,6 +4,7 @@ Allow: /
 Disallow: /app/
 Disallow: /cash/
 Disallow: /tracker/
+Disallow: /cert/
 Disallow: /land-calculator/
 Disallow: /house-calculator/
 

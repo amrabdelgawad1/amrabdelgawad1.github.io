@@ -411,7 +411,8 @@ html body #pView .p-card-head h2, html body #pView .p-cont-txt b{ font-family:va
 html body :is(#pView, #pPeople, #pLogs) :focus-visible{ outline:2px solid var(--p-accent); outline-offset:2px; }
 html body #pView a.p-row, html body #pView a.p-area, html body #pView a.p-cont{ color:var(--p-ink); }
 html body :is(#pView, #pPeople) .p-btn{ color:var(--p-on-accent); }
-html body #pPeople .p-btn.is-ghost{ color:var(--p-ink); }
+html body :is(#pView, #pPeople) .p-btn.is-ghost{ color:var(--p-ink); }
+html body #pView .p-btn.is-danger{ color:var(--p-no); }
 html body #pPeople .p-btn.is-danger{ color:var(--p-no); }
 html body header.app-bar h1#title.p-name{ font-family:var(--p-display) !important; font-weight:800; font-size:19px; letter-spacing:0; text-transform:none; color:var(--p-ink); }
 
@@ -733,3 +734,13 @@ html body #pLogs{ min-height:calc(100vh - var(--p-top)); }
 #pView .p-g1-bar{ display:block; height:8px; background:var(--p-soft); border-radius:99px; overflow:hidden; }
 #pView .p-g1-bar i{ display:block; height:100%; background:var(--p-ok); border-radius:99px; }
 @media (max-width:520px){ #pView .p-g1-row{ grid-template-columns:minmax(0, 1fr) auto; } #pView .p-g1-bar{ grid-column:1 / -1; grid-row:2; } }
+/* Phase 3: certificates (#certs, and the Team home card) */
+#pView .ct-person{ margin-bottom:12px; }
+#pView .ct-person h3{ margin:0; font-size:17px; }
+#pView .ct-facts{ display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 10px; }
+#pView .ct-btns{ display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 4px; }
+#pView .ct-btns .p-btn{ min-height:44px; }
+#pView .ct-issue .sc-f, #pView .ct-revoke .sc-f{ max-width:420px; }
+#pView .ct-anyway{ display:flex; align-items:center; gap:8px; min-height:44px; margin:4px 0; font-size:14px; }
+#pView .ct-anyway input{ width:20px; height:20px; }
+#pView .ct-person a{ overflow-wrap:anywhere; }
