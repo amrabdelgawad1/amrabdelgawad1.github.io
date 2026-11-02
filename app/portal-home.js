@@ -287,7 +287,7 @@
         acard({ band:'Money', icon:'cash', kick:'Only you', name:'Cash', sub:'Income, expenses and profit for the month, in one place.', meta:metaN(month, 'this month'), href:'#overview', btn:'Open Cash' }),
         acard({ band:'Team', icon:'people', kick:'Live now', name:'Team and shifts', sub:'Who is clocked in, hours, missed-shift requests and invites.', meta:metaN(live == null ? '–' : live, 'clocked in') + ' ' + metaN(r.length, r.length === 1 ? 'request' : 'requests'), href:'#live', btn:'Open Team' }),
         acard({ band:'Reviews', icon:'mic', kick:revs.length + ' waiting', name:'Review center', sub:'Call recordings, files and written drills from every course, scored in one place.', meta:metaN(revs.length, 'to review'), href:'#review', btn:'Open Review center' }),
-        acard({ band:'Tools', icon:'calc', kick:'Opens in its own look', name:'Deal calculators', sub:'Land and house calculators, kept exactly as they are, one click away.', meta:metaN(2, 'calculators'), href:'/land-calculator/', btn:'Open calculators' })
+        acard({ band:'Tools', icon:'calc', kick:'In the portal, own look', name:'Deal calculators', sub:'Land and house calculators, kept exactly as they are, one click away.', meta:metaN(2, 'calculators'), href:'/land-calculator/', btn:'Open calculators' })
       ].join('') + '</div></section>' +
       '<section aria-labelledby="pvWait"><h2 class="p-h2" id="pvWait">Waiting for you</h2>' + waitingList(revs, r, names) + '</section>' +
       '</div>';

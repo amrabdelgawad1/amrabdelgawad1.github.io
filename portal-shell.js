@@ -44,8 +44,8 @@
   const APPS = [
     { id:'hours', group:'Work', name:'My hours', sub:'Clock in, shifts and requests', href:'/app/#track', icon:'clock', can:me => me.role !== 'owner' },
     { id:'deals', group:'Work', name:'Deal CRM', sub:'Leads, deals and follow-ups', href:'/app/deals/', icon:'house', needs:['deals'] },
-    { id:'calc', group:'Work', name:'Land calculator', sub:'Opens in its own look', href:'/land-calculator/', icon:'calc', needs:['deals'] },
-    { id:'calc-house', group:'Work', name:'House calculator', sub:'Opens in its own look', href:'/house-calculator/', icon:'calc', needs:['deals'] },
+    { id:'calc', group:'Work', name:'Land calculator', sub:'Land deals, in its own look', href:'/land-calculator/', icon:'calc', needs:['deals'] },
+    { id:'calc-house', group:'Work', name:'House calculator', sub:'House deals, in its own look', href:'/house-calculator/', icon:'calc', needs:['deals'] },
     { id:'learn', group:'Learning', name:'Learning Hub', sub:me => me.role === 'owner' ? 'All 3 courses' : 'Your courses and progress', href:'/app/learn/', icon:'book',
       can:me => me.role === 'owner' || me.keys.includes('learn') || COURSE_KEYS.some(k => me.keys.includes(k)) },
     { id:'review', group:'Learning', name:'Review center', sub:'Recordings and drills', href:'/app/#review', icon:'mic', can:me => me.role === 'owner',
