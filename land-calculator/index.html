@@ -6,6 +6,7 @@
 <meta name="robots" content="noindex">
 <title>Land Deal Calculator</title>
 <script src="/guard.js?v=1"></script>
+<link rel="stylesheet" href="/portal.css?v=8">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;0,6..96,900;1,6..96,500;1,6..96,600&family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap">
 <style>
@@ -20,6 +21,11 @@ html,body{margin:0;min-height:100%;background:#0B0B0B;color:#F1EBE0;font:15px/1.
 .dg .btn{display:inline-block;text-decoration:none;font:700 12px "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.22em;text-transform:uppercase;background:#C9A96E;color:#0B0B0B;padding:11px 18px}
 .dg .btn:focus-visible{outline:2px solid #E46BB0;outline-offset:2px}
 .dg small{display:block;margin-top:16px;color:#A39B8E;font-size:12px}
+/* In the portal (calc-frame.js): the portal bar on top, the calculator unchanged in the frame below */
+html.cf-on, html.cf-on body{height:100%;overflow:hidden;background:var(--p-paper,#F7F5F0)}
+html.cf-on body{display:flex;flex-direction:column;color-scheme:light}
+html.cf-on .cf-top{flex:none}
+html.cf-on .cf-frame{display:block;flex:1 1 auto;width:100%;min-height:0;border:0;background:#0B0B0B}
 </style>
 </head>
 <body>
@@ -37,6 +43,8 @@ html,body{margin:0;min-height:100%;background:#0B0B0B;color:#F1EBE0;font:15px/1.
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="/tracker/config.js"></script>
 <script src="/deal-gate.js?v=2"></script>
-<script>DealGateStart({ file: 'land-calculator-v2.html' });</script>
+<script src="/portal-shell.js?v=9"></script>
+<script src="/calc-frame.js?v=1"></script>
+<script>CalcFrame({ file: 'land-calculator-v2.html', page: 'calc', name: 'Land calculator' });</script>
 </body>
 </html>
