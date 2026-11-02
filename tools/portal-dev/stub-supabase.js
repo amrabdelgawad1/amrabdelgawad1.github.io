@@ -39,7 +39,19 @@
     from: query,
     channel: () => { const c = { on: () => c, subscribe: () => c }; return c; }, removeChannel(){},
     functions: { invoke: async (n, o) => { calls.push(['invoke', n, o]); return later({ data:(window.SB_INVOKE || {})[n] || {}, error:null }); } },
-    storage: { from: () => ({ download: async () => ({ error:{ message:'not found' } }), createSignedUrl: async () => ({ error:{} }),
+    // With window.SB_STORE = { name: { text, updated_at } } the bucket keeps files in memory (Tool files checks);
+    // SB_STORE_FAIL = 'upload' makes the next upload fail. Without SB_STORE, the old fixed answers.
+    storage: { from: () => window.SB_STORE ? store() : ({ download: async () => ({ error:{ message:'not found' } }), createSignedUrl: async () => ({ error:{} }),
       createSignedUrls: async () => ({ data:[] }), upload: async () => ({ error:null }), remove: async () => ({}) }) }
   }) };
+  function store(){
+    const S = window.SB_STORE, now = () => new Date().toISOString();
+    return {
+      list: async (dir, o) => { calls.push(['list', o && o.search]); return later({ data:Object.keys(S).filter(n => !(o && o.search) || n.indexOf(o.search) >= 0).map(n => ({ id:n, name:n, updated_at:S[n].updated_at, metadata:{ size:S[n].text.length } })), error:null }); },
+      move: async (a, b) => { calls.push(['move', a, b]); if (!S[a]) return later({ error:{ message:'not found' } }); S[b] = S[a]; delete S[a]; return later({ data:{}, error:null }); },
+      upload: async (n, blob) => { calls.push(['upload', n]); if (window.SB_STORE_FAIL === 'upload') { window.SB_STORE_FAIL = ''; return later({ error:{ message:'network' } }); } if (S[n]) return later({ error:{ message:'exists' } }); S[n] = { text:await blob.text(), updated_at:now() }; return later({ data:{ path:n }, error:null }); },
+      download: async n => { calls.push(['download', n]); return S[n] ? later({ data:new Blob([S[n].text]), error:null }) : later({ data:null, error:{ message:'not found' } }); },
+      createSignedUrl: async () => ({ error:{} }), createSignedUrls: async () => ({ data:[] }), remove: async () => ({})
+    };
+  }
 })();
