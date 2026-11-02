@@ -90,6 +90,7 @@
       '<label class="sc-f">Why it works<textarea id="lfWhy" rows="2" maxlength="1500">' + esc(r.why) + '</textarea></label>' +
       '<label class="sc-f">Why it works, in Arabic (optional)<textarea id="lfWhyAr" rows="2" maxlength="1500" dir="rtl" lang="ar">' + esc(r.why_ar) + '</textarea></label>' +
       '<label class="sc-f">By state (one per line, like “OH: Ohio sellers expect the auditor value.”)<textarea id="lfStates" rows="2">' + esc((r.state_notes || []).map(s => s.state + ': ' + s.note).join('\n')) + '</textarea></label>' +
+      '<label class="sc-f">Course lessons it goes with (optional, like 10.2, 10.1). It then shows on those lessons with its example calls.<input type="text" id="lfLessons" maxlength="80" inputmode="decimal" value="' + esc((r.lessons || []).join(', ')) + '"></label>' +
       '<fieldset class="lb-partpick"><legend>Which scorecard parts it trains</legend>' + PARTS.map((p, i) => '<label class="sc-tick"><input type="checkbox" value="' + (i + 1) + '"' + ((r.parts || []).includes(i + 1) ? ' checked' : '') + '><span>' + esc(p) + '</span></label>').join('') + '</fieldset>' +
       (r.id ? '<label class="sc-tick"><input type="checkbox" id="lfActive"' + (r.active ? ' checked' : '') + '><span>Show it to the team</span></label>' : '') +
       '<div class="sc-acts"><button type="button" class="p-btn" id="lfSave" data-id="' + (r.id || '') + '">' + (r.id ? 'Save' : 'Add it') + '</button>' + (r.id ? '<button type="button" class="p-btn lb-ghost" id="lfCancel">Cancel</button>' : '') + '</div>' +
@@ -178,7 +179,8 @@
     const id = +$('lfSave').dataset.id || null, msg = $('lfMsg');
     const states = $('lfStates').value.split('\n').map(l => l.match(/^\s*([A-Za-z]{2})\s*[:\-]\s*(.+)$/)).filter(Boolean).map(m => ({ state:m[1].toUpperCase(), note:m[2].trim() }));
     const row = { kind:$('lfKind').value, section:$('lfSection').value.trim() || 'General', title:$('lfTitle').value.trim(), body:$('lfBody').value.trim(), why:$('lfWhy').value.trim(), why_ar:$('lfWhyAr').value.trim(),
-      state_notes:states, parts:[...document.querySelectorAll('.lb-partpick input:checked')].map(i => +i.value) };
+      state_notes:states, parts:[...document.querySelectorAll('.lb-partpick input:checked')].map(i => +i.value),
+      lessons:[...new Set(($('lfLessons').value.toLowerCase().match(/\d{1,2}\.\d{1,2}(\.[a-z0-9]{1,6})?/g) || []))].slice(0, 10) };
     if (!row.title) { msg.textContent = 'Give it a title.'; $('lfTitle').focus(); return; }
     if (id) row.active = $('lfActive').checked;
     $('lfSave').disabled = true;

@@ -307,7 +307,7 @@
     const top = side.scrollTop;
     let h = '<h2>Course content</h2>';
     if (S.isAdmin) h += '<a class="cp-tool" href="#/admin"' + (location.hash.startsWith('#/admin') ? ' aria-current="page"' : '') + '>' + IC.users + '<span>Admin: learners and reviews</span></a>';
-    h += '<div class="cp-stage">Tools</div>' + TOOLS.map(t => '<a class="cp-tool" href="' + t[0] + '">' + ICK.tool + '<span>' + esc(t[1]) + '</span></a>').join('');
+    h += '<div class="cp-stage">Tools</div>' + '<a class="cp-tool" href="#/drill"' + (location.hash === '#/drill' ? ' aria-current="page"' : '') + '>' + ICK.quiz + '<span>Daily drill</span></a>' + TOOLS.map(t => '<a class="cp-tool" href="' + t[0] + '">' + ICK.tool + '<span>' + esc(t[1]) + '</span></a>').join('');
     const last = Math.max(S.totalModules, S.modules.length ? S.modules[S.modules.length - 1].number : 0);
     for (let n = 1; n <= last; n++) {
       const st = STAGES.find(s => s[0] === n);
@@ -443,7 +443,7 @@
     const hero = '<section class="course-hero" aria-labelledby="heroT"><i></i><span class="k">Course</span>' +
       '<h1 id="heroT">' + esc(S.title) + '</h1><p>' + total + ' modules · from the first call to a signed contract</p></section>';
     mount(header({ home:true, title:S.title }) +
-      '<main id="main" class="col"><div class="page">' + hero + top +
+      '<main id="main" class="col"><div class="page">' + hero + top + '<div id="drillCard"></div>' +
         '<section class="stack" aria-labelledby="modsH"><h2 class="sect" id="modsH">Modules</h2><ul class="mod-list">' + rows.join('') + '</ul>' +
         (hidden ? '<button class="link-btn more" type="button" data-act="more" aria-expanded="false">+ ' + plural(hidden, 'more module') + '</button>' : '') + '</section>' +
         installCard() +
@@ -452,6 +452,7 @@
         more: b => { appEl.querySelectorAll('.more-row').forEach(r => r.hidden = false); b.remove(); },
         install: () => promptInstall(), installNo: () => { try { localStorage.setItem('ap-install-no', '1'); } catch(e){} homeView(); }
       } });
+    if (window.CourseExtras) window.CourseExtras.card($('drillCard'));
   }
 
   // ==================================================================
@@ -546,6 +547,7 @@
         '<h1>' + esc(heading(it)) + '</h1>' +
         '<div class="prose">' + MD.render(it.bodyMarkdown) + '</div>' +
         '<div id="practiceBox"></div>' +
+        '<div id="hearBox"></div>' +
         (files.length ? '<section class="stack" aria-labelledby="filesH"><h2 class="sub" id="filesH" data-s="fs16">Files</h2><p class="note">Original guide page. Where it differs from the lesson, the lesson is correct.</p><div class="files">' + files.join('') + '</div></section>' : '') +
       '</article></main>' +
       '<div class="bar-foot lesson-foot"><div class="col">' +
@@ -564,6 +566,7 @@
         },
         view: b => openViewer(contentPath(mod, b.dataset.file), b.dataset.name)
       } });
+    if (window.CourseExtras) window.CourseExtras.hear($('hearBox'), it);
     if (window.CoursePractice && user) CoursePractice.mount($('practiceBox'), { db, user, mod, it, title:it.shortTitle || heading(it), toast }).then(f => { leaving = f; }).catch(() => {});
   }
 
@@ -1003,6 +1006,7 @@
       return window.CourseAdmin.route(parts.slice(1));
     }
     if (parts[0] === 'install') return installView();
+    if (parts[0] === 'drill') return window.CourseExtras ? window.CourseExtras.drill() : homeView();
     if (parts[0] === 'locked') return lockedView(parseInt(parts[1], 10) || 2);
     if (parts[0] === 'm') {
       const mod = MOD(parts[1]);

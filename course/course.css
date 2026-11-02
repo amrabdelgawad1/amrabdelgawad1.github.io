@@ -373,3 +373,9 @@ a.person:hover{ border-color:var(--ink); color:var(--ink); }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
 }
+/* Daily drill and "Hear it on a real call" (extras.js) */
+.drill-q{ border:0; padding:0; margin:0 0 22px; min-width:0; }
+.drill-q legend{ padding:0; margin-bottom:8px; }
+.hear audio{ width:100%; min-height:44px; }
+.hear-say{ white-space:pre-wrap; margin:0; }
+.drill-back{ display:inline-flex; align-items:center; min-height:44px; }

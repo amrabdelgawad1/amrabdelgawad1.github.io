@@ -5,6 +5,7 @@
 //   * a bullet list where every item starts with a bold term ("- **ARV.** ...") becomes term cards:
 //     the term in orange, the plain meaning, then "Example:", "On the job:" (any *Label:*) on their own lines
 // Everything is escaped first, so content can never inject HTML.
+// Paragraphs, headings and list items get dir="auto": an Arabic help note reads right to left, English stays as it is.
 (function(){
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 
@@ -58,20 +59,20 @@
         while (i < lines.length && /^\s*[-*] /.test(lines[i])) items.push(lines[i++].replace(/^\s*[-*] /, ''));
         out.push(items.every(t => TERM.test(t) && /[.?!]"?$/.test(t.match(TERM)[1]))
           ? '<div class="terms">' + items.map(termCard).join('') + '</div>'
-          : '<ul>' + items.map(t => '<li>' + inline(t) + '</li>').join('') + '</ul>');
+          : '<ul>' + items.map(t => '<li dir="auto">' + inline(t) + '</li>').join('') + '</ul>');
         continue;
       }
       if (/^\s*\d+[.)] /.test(l)) {
         const items = [], start = parseInt(l, 10);
         while (i < lines.length && /^\s*\d+[.)] /.test(lines[i])) items.push(lines[i++].replace(/^\s*\d+[.)] /, ''));
-        out.push('<ol' + (start !== 1 ? ' start="' + start + '"' : '') + '>' + items.map(t => '<li>' + inline(t) + '</li>').join('') + '</ol>');
+        out.push('<ol' + (start !== 1 ? ' start="' + start + '"' : '') + '>' + items.map(t => '<li dir="auto">' + inline(t) + '</li>').join('') + '</ol>');
         continue;
       }
       if (/^#{1,6} /.test(l)) { out.push('<h2>' + inline(l.replace(/^#+ /, '')) + '</h2>'); i++; continue; }
       const para = [];
       while (i < lines.length && lines[i].trim() && !/^\s*([-*] |\d+[.)] |\||#{1,6} )/.test(lines[i])) para.push(lines[i++].trim());
       const text = para.join(' ');
-      out.push(/^\*\*[^*]+\*\*$/.test(text) ? '<h2>' + inline(text.slice(2, -2)) + '</h2>' : '<p>' + inline(text) + '</p>');
+      out.push(/^\*\*[^*]+\*\*$/.test(text) ? '<h2 dir="auto">' + inline(text.slice(2, -2)) + '</h2>' : '<p dir="auto">' + inline(text) + '</p>');
     }
     return out.join('\n');
   }
