@@ -91,9 +91,9 @@
     let rows; try { rows = await rpc('course_missed_questions', { p_min:2 }); } catch(e){ return msgView(errText(e), { retry:true, at, header:head }); }
     const mods = A.S.modules;
     const list = rows.map(r => { const m = mods.find(x => x.id === r.module_id);
-      return '<li class="card stack" data-s="g4"><span class="small muted">' + (m ? 'Module ' + m.number + ' · ' : '') + 'Quiz ' + esc(r.item_id) + '</span><b>' + esc(r.prompt || r.question_id) + '</b>' +
+      return '<li class="card stack" data-s="g4"><span class="small muted">' + (m ? 'Module ' + m.number + ' · ' : '') + (/\.checkpoint$/.test(r.item_id) ? 'Checkpoint' : 'Quiz ' + esc(r.item_id)) + '</span><b>' + esc(r.prompt || r.question_id) + '</b>' +
         '<span class="small">Missed by ' + r.missed + ' of ' + r.tries + ' (' + pct(r.missed, r.tries) + '%) on their first try</span>' + bar(pct(r.missed, r.tries)) +
-        (m ? '<a class="small" href="#/m/' + esc(m.id) + '/l/' + esc(r.item_id) + '">Open the lesson</a>' : '') + '</li>'; }).join('');
+        (m ? '<a class="small drill-back" href="#/m/' + esc(m.id) + (/\.checkpoint$/.test(r.item_id) ? '/c/' : '/l/') + esc(r.item_id) + '">' + (/\.checkpoint$/.test(r.item_id) ? 'Open the checkpoint' : 'Open the lesson') + '</a>' : '') + '</li>'; }).join('');
     mount(head + '<main id="main" class="col"><div class="page"><h1 class="display">Most-missed questions</h1>' +
       '<p class="note">Each learner’s first finished try at every quiz, for questions at least two people answered. Retakes don’t count, so this shows what the lesson didn’t teach.</p>' +
       (list ? '<ul class="stack" data-s="g8">' + list + '</ul>' : '<p class="note">Not enough answers yet. This fills in as learners take quizzes.</p>') + '</div></main>', { title:'Most-missed questions', at });

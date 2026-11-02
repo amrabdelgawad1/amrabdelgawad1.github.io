@@ -12,7 +12,7 @@ const MODS = [
     { id:'1.checkpoint', type:'checkpoint', title:'Module 1 Checkpoint', quiz:{ id:'cp1', passMark:85, count:0, questions:[] } }] },
   { id:'m2', number:2, title:'How People Decide', open:false, openForLearners:false, checkpointOpen:false, items:[] }];
 const STATE = admin => ({ title:'Acquisitions Playbook', totalModules:20, isAdmin:admin, me:{ id:'u1', name:'Sara R.' }, modules:MODS, done:{}, quizzes:{ 'm1/1.1':{ passed:true, best:100, tries:1, latest:{ id:'a1', score:100, passed:true } } }, submissions:{} });
-const DRILL = { done:false, streak:3, days:5, fastTrack:true, questions:[q('m1-q1', 'Is this the first?'), q('m1-q2', 'Pick both', 'multiple'), q('m1-q3', 'Third'), q('m1-q4', 'Fourth'), q('m1-q5', 'Fifth')].map(x => Object.assign(x, { module:'m1', lesson:'1.1' })) };
+const DRILL = { done:false, streak:3, days:5, fastTrack:true, questions:[q('m1/1.1/m1-q1', 'Is this the first?'), q('m1-q2', 'Pick both', 'multiple'), q('m1-q3', 'Third'), q('m1-q4', 'Fourth'), q('m1-q5', 'Fifth')].map(x => Object.assign(x, { module:'m1', lesson:'1.1' })) };
 const RESULT = { correct:4, total:5, streak:4, results:DRILL.questions.map((x, i) => ({ id:x.id, right:i !== 1, explanation:'Because ' + i, module:'m1', lesson:'1.1' })) };
 const HEAR = [{ entry_id:1, kind:'objection', title:'Your offer is too low', body:'I hear you. What number works for you?', why:'Gets their number first.', why_ar:'يخلي البايع يقول رقمه الأول', calls:[{ path:'u/calls/x.m4a', title:'Real call, Oct 2026', total:47 }] }];
 const MISSED = [{ module_id:'m1', item_id:'1.1', question_id:'m1-q2', prompt:'Q two', tries:4, missed:3 }];
@@ -34,7 +34,7 @@ const T = [
       const qs = p.locator('.drill-q'); for (let i = 0; i < 5; i++) await qs.nth(i).locator('label.opt').first().click();
       await p.click('#drCheck'); await p.waitForTimeout(300);
       const call = await p.evaluate(() => SB_CALLS.find(c => c[1] === 'course_drill_submit'));
-      ok(call && Object.keys(call[2].p_picks).length === 5 && call[2].p_picks['m1-q1'][0] === 'A', 'sends all five picks');
+      ok(call && Object.keys(call[2].p_picks).length === 5 && call[2].p_picks['m1/1.1/m1-q1'][0] === 'A', 'sends all five picks');
       ok(/4 of 5 right/.test(await p.textContent('#drMsg')) && await p.locator('.verdict.no').count() === 1 && /Go back to Lesson 1.1/.test(await p.textContent('.verdict.no')), 'shows the score, which were wrong and a link back to the lesson');
     } },
   { name:'lesson', url:'/course/#/m/m1/l/1.1', rpc:{ course_state:STATE(false), library_for_lesson:HEAR },

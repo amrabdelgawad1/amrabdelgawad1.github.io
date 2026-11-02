@@ -180,7 +180,7 @@
     const states = $('lfStates').value.split('\n').map(l => l.match(/^\s*([A-Za-z]{2})\s*[:\-]\s*(.+)$/)).filter(Boolean).map(m => ({ state:m[1].toUpperCase(), note:m[2].trim() }));
     const row = { kind:$('lfKind').value, section:$('lfSection').value.trim() || 'General', title:$('lfTitle').value.trim(), body:$('lfBody').value.trim(), why:$('lfWhy').value.trim(), why_ar:$('lfWhyAr').value.trim(),
       state_notes:states, parts:[...document.querySelectorAll('.lb-partpick input:checked')].map(i => +i.value),
-      lessons:[...new Set(($('lfLessons').value.match(/\d{1,2}\.\d{1,2}/g) || []))].slice(0, 10) };
+      lessons:[...new Set(($('lfLessons').value.toLowerCase().match(/\d{1,2}\.\d{1,2}(\.[a-z0-9]{1,6})?/g) || []))].slice(0, 10) };
     if (!row.title) { msg.textContent = 'Give it a title.'; $('lfTitle').focus(); return; }
     if (id) row.active = $('lfActive').checked;
     $('lfSave').disabled = true;

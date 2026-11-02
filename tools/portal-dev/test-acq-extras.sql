@@ -49,19 +49,19 @@ insert into public.course_drill_days (user_id, day, total, correct) values
 set role authenticated;
 select pg_temp.as_user(:N::uuid, 'n@example.com', 'aal1');
 select public.course_drill_today() as d \gset
-select pg_temp.ok(jsonb_array_length((:'d')::jsonb -> 'questions') = 5 and ((:'d')::jsonb ->> 'streak')::int = 2, 'five questions from passed lessons, typed ones skipped; streak 2 (yesterday and the day before)');
+select pg_temp.ok(jsonb_array_length((:'d')::jsonb -> 'questions') = 5 and ((:'d')::jsonb ->> 'streak')::int = 2, 'five questions from lessons passed before today, keyed module/lesson/question, typed ones skipped; streak 2');
 select pg_temp.ok(position('correct' in (:'d')::jsonb::text) = 0 and position('explanation' in (:'d')::jsonb::text) = 0, 'no right answers or explanations are sent with the questions');
 select pg_temp.ok(public.course_drill_today() -> 'questions' = (:'d')::jsonb -> 'questions', 'the same five all day');
 select pg_temp.ok(pg_temp.fails($$select public.course_drill_submit('{"q1":["A"]}')$$), 'all five must be answered');
 -- answer every question with "A": q1, q5, q6, q7 right; q2 and q3 (if picked) wrong
 select public.course_drill_submit((select jsonb_object_agg(q ->> 'id', '["A"]'::jsonb) from jsonb_array_elements((:'d')::jsonb -> 'questions') q)) as r \gset
 select pg_temp.ok(((:'r')::jsonb ->> 'total')::int = 5 and ((:'r')::jsonb ->> 'streak')::int = 3
-  and ((:'r')::jsonb ->> 'correct')::int = (select count(*) from jsonb_array_elements((:'d')::jsonb -> 'questions') q where q ->> 'id' in ('q1', 'q5', 'q6', 'q7')),
+  and ((:'r')::jsonb ->> 'correct')::int = (select count(*) from jsonb_array_elements((:'d')::jsonb -> 'questions') q where split_part(q ->> 'id', '/', 3) in ('q1', 'q5', 'q6', 'q7') and q ->> 'id' like 'm1/1._/q_'),
   'graded in the database; the streak goes to 3');
 select pg_temp.ok(position('"correct": true' in (:'r')::text) = 0 and (select bool_and(x ? 'explanation') from jsonb_array_elements((:'r')::jsonb -> 'results') x), 'results give right or wrong and the explanation, never the right option');
 select pg_temp.ok((public.course_drill_today() ->> 'done')::boolean and jsonb_array_length(public.course_drill_today() -> 'questions') = 0, 'done for today');
-select public.course_drill_submit((select jsonb_object_agg(q ->> 'id', '["B"]'::jsonb) from jsonb_array_elements((:'d')::jsonb -> 'questions') q));
-select pg_temp.ok((select count(*) = 1 and min(correct) = ((:'r')::jsonb ->> 'correct')::int from public.course_drill_days where user_id = :N::uuid and day = (now() at time zone 'Africa/Cairo')::date), 'a second try the same day doesn''t change the score');
+select pg_temp.ok(pg_temp.fails(format('select public.course_drill_submit(%L::jsonb)', (select jsonb_object_agg(q ->> 'id', '["B"]'::jsonb) from jsonb_array_elements((:'d')::jsonb -> 'questions') q)))
+  and (select count(*) = 1 and min(correct) = ((:'r')::jsonb ->> 'correct')::int from public.course_drill_days where user_id = :N::uuid and day = (now() at time zone 'Africa/Cairo')::date), 'once done, a second try is refused, so other options can''t reveal the right one');
 select pg_temp.ok(pg_temp.fails('insert into public.course_drill_days (user_id, day, total, correct) values (''00000000-0000-0000-0000-000000000006'', current_date + 1, 5, 5)'), 'no one writes drill days directly');
 select pg_temp.ok((select count(*) = 0 from public.course_drill_days where user_id = :A::uuid) and pg_temp.fails('select * from public.course_missed_questions()'), 'N sees only their own days and can''t see most-missed');
 
@@ -79,7 +79,7 @@ select pg_temp.as_user(:O::uuid, 'owner@example.com', 'aal2');
 select public.course_fast_track_set(:A::uuid, true);
 reset role; select pg_temp.ok(public.course_checkpoint_open(:A::uuid, 'm1') and public.course_checkpoint_open(:A::uuid, 'm4'), 'Amr turns on the fast track: checkpoints 1 to 4 open'); set role authenticated;
 select pg_temp.as_user(:A::uuid, 'a@example.com', 'aal1');
-select pg_temp.ok((public.course_drill_today() ->> 'fastTrack')::boolean, 'A''s drill card knows about the fast track');
+select pg_temp.ok((public.course_drill_today() ->> 'fastTrack')::boolean and jsonb_array_length(public.course_drill_today() -> 'questions') = 0, 'A''s drill card knows about the fast track; A passed only today, so no drill until tomorrow');
 select pg_temp.as_user(:O::uuid, 'owner@example.com', 'aal2');
 select public.course_fast_track_set(:A::uuid, false);
 reset role; select pg_temp.ok(not public.course_checkpoint_open(:A::uuid, 'm1'), 'and off again');
@@ -91,9 +91,11 @@ insert into public.hub_uploads (id, user_id, course, title, kind, path, mime, st
  ('00000000-0000-0000-0000-0000000000c1', :N::uuid, 'calls', 'Great', 'recording', '00000000-0000-0000-0000-000000000006/calls/g.m4a', 'audio/mp4', 'approved', '{"cats":[5,5,5,5,5,4,4,4,4,5],"total":46}', true, true);
 insert into public.library_examples (entry_id, upload_id) select id, '00000000-0000-0000-0000-0000000000c1' from public.library_entries where title = 'Too low';
 select pg_temp.ok(pg_temp.fails($$insert into public.library_entries (kind, title, lessons) values ('script', 'Bad', '{ten}')$$), 'lessons must look like 10.2');
+update public.library_entries set lessons = '{1.2}' where title = 'Opener';
 set role authenticated;
 select pg_temp.as_user(:O::uuid, 'owner@example.com', 'aal2');
 select pg_temp.ok((select count(*) = 1 and min(title) = 'Too low' and min(jsonb_array_length(calls)) = 1 from public.library_for_lesson('10.2')), 'Lesson 10.2 shows its entry and the 46 call');
+select pg_temp.ok((select count(*) = 1 from public.library_for_lesson('1.2.s2')), 'an entry linked to 1.2 also shows on its sub-lesson 1.2.s2');
 select pg_temp.as_user(:A::uuid, 'a@example.com', 'aal1');
 select pg_temp.ok((select count(*) = 0 from public.library_for_lesson('10.2')), 'someone who can''t read the library sees nothing (no error)');
 reset role;

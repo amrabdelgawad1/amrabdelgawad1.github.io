@@ -21,7 +21,7 @@
     else if (n) h = '<section class="card stack drill-card" aria-labelledby="drH"><div class="between"><b id="drH">Daily drill</b><span class="small muted">' + (streak ? 'Streak: ' + days(streak) : 'Start a streak') + '</span></div>' +
       '<p class="note">' + n + ' questions from lessons you’ve already passed. About two minutes, once a day, so nothing slips.</p>' +
       '<a class="btn dark" href="#/drill">Start today’s drill</a></section>';
-    if (d.fastTrack) h += '<section class="card stack" aria-labelledby="ftH"><b id="ftH">Fast track is on</b><p class="note">Amr opened the Module 1 to 4 checkpoints for you. Take each one without the lessons; pass it at 85% and the next module opens. The lessons stay there if you want them.</p></section>';
+    if (d.fastTrack) h += '<section class="card stack" aria-labelledby="ftH"><b id="ftH">Fast track is on</b><p class="note">Amr opened the Module 1 to 4 checkpoints for you. Take each one without the lessons; pass it and the next module opens. The lessons stay there if you want them.</p></section>';
     el.innerHTML = h;
   }
 
@@ -52,7 +52,7 @@
             const f = document.querySelector('.drill-q[data-q="' + CSS.escape(x.id) + '"]'); if (!f) return;
             f.querySelectorAll('input').forEach(i => { i.disabled = true; });
             f.querySelector('.drill-fb').innerHTML = '<div class="verdict ' + (x.right ? 'ok' : 'no') + '"><b>' + (x.right ? 'Correct' : 'Not quite') + '</b><p>' + esc(x.explanation || '') + '</p>' +
-              (x.right ? '' : '<p><a href="#/m/' + esc(x.module) + '/l/' + esc(x.lesson) + '">Go back to Lesson ' + esc(x.lesson) + '</a></p>') + '</div>';
+              (x.right ? '' : '<p><a class="drill-back" href="#/m/' + esc(x.module) + '/l/' + esc(x.lesson) + '">Go back to Lesson ' + esc(x.lesson) + '</a></p>') + '</div>';
           });
           $('drMsg').textContent = r.correct + ' of ' + r.total + ' right. Streak: ' + days(r.streak || 1) + '.';
           b.outerHTML = '<a class="btn dark lg" href="#/">Done</a>';
