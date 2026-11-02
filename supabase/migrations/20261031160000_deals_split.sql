@@ -1,4 +1,4 @@
--- Phase 2: the deals split (DATA-MODEL.md section 4).
+-- Phase 2: the deals split (DATA-MODEL.md section 4, now in the private portal-backups repo, docs/).
 -- Each real deal in the Deal CRM is mirrored into public.deals. The working fields are readable to the database
 -- (kind, county, state, acreage, numbers, stage, follow-up, result), so it can count, sort, match and later drive the
 -- Today screen, the pipeline board and commissions. Who and where exactly (the deal's name, the location as typed,
