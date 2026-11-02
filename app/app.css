@@ -747,3 +747,25 @@ html body #pLogs{ min-height:calc(100vh - var(--p-top)); }
 #pView .ct-person a{ overflow-wrap:anywhere; }
 #pView details.ct-all > summary{ min-height:44px; display:flex; align-items:center; cursor:pointer; }
 #pView .ct-all td a{ display:inline-flex; align-items:center; min-height:44px; }
+
+/* Tool files (#logs/files, tool-files.js): put a new build of the Deal CRM or a calculator live */
+#pLogs #lgBody{ display:grid; gap:16px; }
+#pLogs .tf-intro, #pLogs .tf-now{ margin:0; color:var(--p-ink2); font:14px/1.5 var(--p-body); }
+#pLogs .tf-now a{ color:var(--p-accent); }
+#pLogs .tf-tool{ display:grid; gap:12px; }
+#pLogs .tf-pick, #pLogs .tf-want{ display:grid; gap:6px; color:var(--p-ink2); font:600 14px/1.3 var(--p-body); }
+#pLogs .tf-pick input{ min-height:var(--p-tap); font:15px var(--p-body); color:var(--p-ink); max-width:100%; }
+#pLogs .tf-want input{ min-height:var(--p-tap); padding:0 12px; border:1px solid var(--p-line2); border-radius:var(--p-r-sm); background:var(--p-card); color:var(--p-ink); font:14px ui-monospace, Menlo, Consolas, monospace; width:100%; }
+#pLogs .tf-info{ display:grid; gap:10px; padding:14px; border:1px solid var(--p-line); border-radius:var(--p-r-sm); background:var(--p-soft); }
+#pLogs .tf-info p{ margin:0; }
+#pLogs .tf-hash code{ display:block; margin-top:2px; font:13px/1.4 ui-monospace, Menlo, Consolas, monospace; word-break:break-all; color:var(--p-ink2); }
+#pLogs .tf-acts{ display:flex; flex-wrap:wrap; gap:10px; }
+#pLogs .tf-acts .p-btn[disabled]{ opacity:.5; cursor:not-allowed; }
+#pLogs .tf-ok, #pLogs .tf-bad{ margin:0; padding:10px 12px; border-radius:var(--p-r-sm); font:500 14px/1.45 var(--p-body); }
+#pLogs .tf-ok{ background:var(--p-ok-soft); color:var(--p-ok); }
+#pLogs .tf-bad{ background:var(--p-no-soft); color:var(--p-no); }
+#pLogs .tf-backups{ list-style:none; margin:0; padding:0; }
+#pLogs .tf-backups li{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 12px; padding:8px 0; border-bottom:1px solid var(--p-line); font:14px/1.4 var(--p-body); word-break:break-all; }
+#pLogs .tf-backups li:last-child{ border-bottom:0; }
+#pLogs .tf-backups small{ color:var(--p-muted); }
+#pLogs .lg-bar .p-mode{ flex-wrap:wrap; max-width:100%; }

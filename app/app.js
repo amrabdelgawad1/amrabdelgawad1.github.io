@@ -317,10 +317,13 @@
 
   // "End your shift?" with a required brief about the day. Resolves the brief, or null when they keep working.
   // A sent brief stays on this device until the shift saves, so a failed save doesn't make them type it again.
-  // Optional numbers for the day go with the brief; they feed Amr's weekly scoreboard. Empty boxes are saved as "not given".
+  // Numbers for the day go with the brief; they feed Amr's scoreboard, the Admin overview and the Gate 1 card.
+  // For the calling team (anyone with Deal tools) they're required at clock-out (0 is fine), so no calling shift is saved
+  // without them. Everyone else, and the later note after a shift ended elsewhere, keeps them optional ("not given").
   const BRIEF_KEY = 'talents-brief', NUMS_KEY = 'talents-brief-nums';
-  const numBoxes = draft => [
-    { key:'dials', label:'Dials', value: draft.dials }, { key:'conversations', label:'Conversations', value: draft.conversations }, { key:'appointments', label:'Appointments', value: draft.appointments }
+  const callsRequired = () => role === 'member' && access.includes('deals');
+  const numBoxes = (draft, req) => [
+    { key:'dials', label:'Dials', value: draft.dials, required:req }, { key:'conversations', label:'Conversations', value: draft.conversations, required:req }, { key:'appointments', label:'Appointments', value: draft.appointments, required:req }
   ];
   const keepNums = n => { try { localStorage.setItem(NUMS_KEY, JSON.stringify(n || {})); } catch(e){} };
   const draftNums = () => { try { return JSON.parse(localStorage.getItem(NUMS_KEY) || '{}') || {}; } catch(e){ return {}; } };
@@ -332,7 +335,8 @@
       title:'End your shift and send it to Amr?',
       msg:hm(work) + ' worked · ' + hm(brk) + ' break · ' + hhmm(new Date(live.started_at)) + '–' + hhmm(end),
       input:{ multiline:true, label:'How did today go?', value:draft, placeholder:'Anything Amr should know: good calls, problems, follow-ups',
-        numbers: numBoxes(window.TalentsCalls ? window.TalentsCalls.fill(draftNums()) : draftNums()),
+        numbers: numBoxes(window.TalentsCalls ? window.TalentsCalls.fill(draftNums()) : draftNums(), callsRequired()),
+        numbersError:'Fill in your dials, conversations and appointments for today. Type 0 if there were none.',
         minLength:10, error:'Write a sentence or two about your day first.',
         onCancel: (v, n) => { try { localStorage.setItem(BRIEF_KEY, v); } catch(e){} keepNums(n); } },
       ok:'Send and end shift', cancel:'Keep working'
@@ -351,7 +355,7 @@
     const ans = await ask({
       title:'Your shift was ended. Add a note about your day?',
       msg:'Your hours are already saved. This note goes with them.',
-      input:{ multiline:true, label:'How did today go?', value:draft, placeholder:'Anything Amr should know: good calls, problems, follow-ups', numbers: numBoxes(window.TalentsCalls ? window.TalentsCalls.fill(draftNums()) : draftNums()) },
+      input:{ multiline:true, label:'How did today go?', value:draft, placeholder:'Anything Amr should know: good calls, problems, follow-ups', numbers: numBoxes(window.TalentsCalls ? window.TalentsCalls.fill(draftNums()) : draftNums(), false) },
       ok:'Send note', cancel:'Skip'
     });
     forgetBrief();

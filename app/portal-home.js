@@ -33,7 +33,7 @@
   const COURSES = [
     { key:'course', name:'Real Estate Acquisitions', short:'Acquisitions', href:'/course/', total:15 },
     { key:'mkt', name:'Marketing', short:'Marketing', href:'/app/course/', total:16, id:'mkt2' },
-    { key:'psy', name:'Psychology and Therapy', short:'Psychology', href:'/app/psychology/', total:27, id:'psy' }
+    { key:'psy', name:'Psychology and Therapy', short:'Psychology', href:'/app/psychology/', total:30, id:'psy' }
   ];
   let view = '', run = 0;
   const box = () => $('pViewBody');
@@ -106,22 +106,30 @@
     if (me.role === 'manager') areas.push({ href:'#progress', icon:'chart', name:'Learner progress', sub:'How the team is doing in each course.' });
     const open = c => c.key === 'course' ? has('course') : has('learn') && has(c.key);
     const locked = COURSES.filter(c => !open(c));
-    box().innerHTML = '<div class="p-wrap">' +
+    // The calling team (Deal tools, not a manager) gets a short home: clock, log calls, today's numbers and callbacks,
+    // with everything else folded under "More" one tap away. Managers and everyone else keep the full home.
+    const simple = callingRep();
+    const actCard = '<section class="p-card" aria-labelledby="pvActH"><div class="p-card-head"><h2 id="pvActH">Deals needing action</h2><span id="pvActN"></span></div><div id="pvAct"><p class="p-loading">Loading…</p></div></section>';
+    const moreStart = simple ? '<details class="p-more" id="pvMore"><summary>More: deals needing action, lessons, your areas and the team board</summary><div class="p-more-body">' : '';
+    const moreEnd = simple ? '</div></details>' : '';
+    box().innerHTML = '<div class="p-wrap' + (simple ? ' is-simple' : '') + '">' +
       hero('Portal', 'Hi, ' + first(prof.name), clockLine(), '<div class="p-hero-act" id="pvClockBox">' + clockBtn() + '</div>') +
       '<div id="pvAnnc"></div>' +
       '<section aria-labelledby="pvToday" class="p-today-wrap"><h2 class="p-h2" id="pvToday">Today <small>' + esc(new Date().toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' })) + '</small></h2>' +
         '<div class="p-today" id="pvTodayNums"><p class="p-loading">Loading…</p></div>' +
         (has('deals') ? '<div class="p-grid p-today-lists"><section class="p-card" aria-labelledby="pvDueH"><div class="p-card-head"><h2 id="pvDueH">Callbacks due</h2><span id="pvDueN"></span></div><div id="pvDue"><p class="p-loading">Loading…</p></div></section>' +
-          '<section class="p-card" aria-labelledby="pvActH"><div class="p-card-head"><h2 id="pvActH">Deals needing action</h2><span id="pvActN"></span></div><div id="pvAct"><p class="p-loading">Loading…</p></div></section></div>' : '') +
+          (simple ? '' : actCard) + '</div>' : '') +
       '</section>' +
       '<div id="pvOnb" hidden></div>' +
       '<div id="pvCert" hidden></div>' +
       '<section aria-labelledby="pvCommH" id="pvCommWrap" hidden><div class="p-card"><div class="p-card-head"><h2 id="pvCommH">Your commissions</h2><span id="pvCommN"></span></div><div id="pvComm"></div></div></section>' +
+      moreStart + (simple ? '<div class="p-grid p-today-lists">' + actCard + '</div>' : '') +
       '<section aria-labelledby="pvCont" id="pvContWrap" hidden><h2 class="p-h2" id="pvCont">Next lesson</h2><div id="pvContBox"></div></section>' +
       '<section aria-labelledby="pvAreas"><h2 class="p-h2" id="pvAreas">Your areas</h2><div class="p-grid p-areas">' + areas.map(area).join('') + '</div></section>' +
       '<section aria-labelledby="pvBoard" id="pvBoardWrap" hidden><h2 class="p-h2" id="pvBoard">This week on the team <small>Monday to Sunday</small></h2><div id="pvBoardBox"></div></section>' +
       (locked.length ? '<section aria-labelledby="pvLocked"><h2 class="p-h2 p-h2-sm" id="pvLocked">Not open for you yet</h2><div class="p-lockrow">' +
         locked.map(c => '<p class="p-locked">' + IC.lock + '<span><b>' + esc(c.name.replace('Real Estate ', '')) + ' course</b> · Locked</span><button type="button" class="p-btn is-ghost p-ask" data-ask="' + esc(c.key) + '">Ask for access</button></p>').join('') + '</div></section>' : '') +
+      moreEnd +
       '</div>';
     $('pvClockBox').addEventListener('click', e => { const b = e.target.closest('[data-clock]'); if (b) T.clock(b.dataset.clock); });
     // Phase 1: a locked course's "Ask for access" sends Amr a notification (once a day per course)
@@ -227,7 +235,13 @@
   function clockBtn(){
     const T = A(), st = T.clockState ? T.clockState() : null, prof = T.profile || {};
     if (!prof.company_id) return '';
-    return st && st.live ? '<button type="button" class="p-btn is-hi" data-clock="off">Clock out</button>' : '<button type="button" class="p-btn is-hi" data-clock="run">Clock in</button>';
+    if (!(st && st.live)) return '<button type="button" class="p-btn is-hi" data-clock="run">Clock in</button>';
+    return (callingRep() ? '<a class="p-btn" href="#track">Log calls</a>' : '') + '<button type="button" class="p-btn ' + (callingRep() ? 'is-ghost' : 'is-hi') + '" data-clock="off">Clock out</button>';
+  }
+  // Someone on the calling team: Deal tools, and not a manager (managers keep the full home)
+  function callingRep(){
+    const T = A(), me = T.me || { role:'agent', keys:T.access || [] };
+    return T.role === 'member' && (me.keys || []).includes('deals') && me.role !== 'manager';
   }
   async function continueLearning(db, open){
     for (const c of COURSES) {
@@ -275,7 +289,7 @@
         acard({ band:'Money', icon:'cash', kick:'Only you', name:'Cash', sub:'Income, expenses and profit for the month, in one place.', meta:metaN(month, 'this month'), href:'#overview', btn:'Open Cash' }),
         acard({ band:'Team', icon:'people', kick:'Live now', name:'Team and shifts', sub:'Who is clocked in, hours, missed-shift requests and invites.', meta:metaN(live == null ? '–' : live, 'clocked in') + ' ' + metaN(r.length, r.length === 1 ? 'request' : 'requests'), href:'#live', btn:'Open Team' }),
         acard({ band:'Reviews', icon:'mic', kick:revs.length + ' waiting', name:'Review center', sub:'Call recordings, files and written drills from every course, scored in one place.', meta:metaN(revs.length, 'to review'), href:'#review', btn:'Open Review center' }),
-        acard({ band:'Tools', icon:'calc', kick:'Opens in its own look', name:'Deal calculators', sub:'Land and house calculators, kept exactly as they are, one click away.', meta:metaN(2, 'calculators'), href:'/land-calculator/', btn:'Open calculators' })
+        acard({ band:'Tools', icon:'calc', kick:'In the portal, own look', name:'Deal calculators', sub:'Land and house calculators, kept exactly as they are, one click away.', meta:metaN(2, 'calculators'), href:'/land-calculator/', btn:'Open calculators' })
       ].join('') + '</div></section>' +
       '<section aria-labelledby="pvWait"><h2 class="p-h2" id="pvWait">Waiting for you</h2>' + waitingList(revs, r, names) + '</section>' +
       '</div>';

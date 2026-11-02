@@ -236,13 +236,18 @@ const T = [
       ok(await p.evaluate(() => document.getElementById('drawer').hidden && document.getElementById('burger').hidden), 'no sidebar or menu button for agents');
       const t = await p.evaluate(() => document.getElementById('pView').innerText);
       ok(/Hi, Sara/.test(t) && /not clocked in/.test(t), 'hero: name and clock state');
-      ok(/Real Estate Acquisitions · Module 2/i.test(t) && /Getting their number/.test(t) && /7%/.test(t), 'continue learning: Acquisitions module 2, 7%');
-      ok(/My deals[\s\S]*Learning Hub[\s\S]*My hours[\s\S]*Calculators/.test(t) && !/Team and shifts/.test(t), 'areas: My deals, Learning Hub, My hours, Calculators');
-      ok(/Marketing course · Locked[\s\S]*Ask for access/.test(t) && /Psychology and Therapy course · Locked/.test(t), 'locked courses listed, each with Ask for access');
+      ok(await p.evaluate(() => { const m = document.getElementById('pvMore'); return !!m && !m.open && !!document.getElementById('pvDue') && !m.contains(document.getElementById('pvDue')) && m.contains(document.querySelector('.p-areas')); }),
+        'calling rep: a short home (clock, today, callbacks); lessons, areas and the board folded under More');
+      await p.click('#pvMore summary'); await p.waitForTimeout(200);
+      const t2 = await p.evaluate(() => document.getElementById('pView').innerText);
+      ok(/Real Estate Acquisitions · Module 2/i.test(t2) && /Getting their number/.test(t2) && /7%/.test(t2), 'continue learning: Acquisitions module 2, 7%');
+      ok(/My deals[\s\S]*Learning Hub[\s\S]*My hours[\s\S]*Calculators/.test(t2) && !/Team and shifts/.test(t2), 'areas: My deals, Learning Hub, My hours, Calculators');
+      ok(/Marketing course · Locked[\s\S]*Ask for access/.test(t2) && /Psychology and Therapy course · Locked/.test(t2), 'locked courses listed, each with Ask for access');
       ok(/Bricolage/.test(await fontOf(p, '#pView h1')), 'hero heading in Bricolage Grotesque');
       await p.click('[data-clock="run"]'); await p.waitForTimeout(800);
       const up = await p.evaluate(() => SB_CALLS.some(c => c[0] === 'upsert' && c[1] === 'live_status'));
       ok(up && /clocked in/.test(await p.evaluate(() => document.getElementById('pvSub').textContent)) && await p.isVisible('[data-clock="off"]'), 'Clock in starts the shift (same code as the tracker) and the button turns to Clock out');
+      ok(await p.isVisible('#pvClockBox a[href="#track"]') && /Log calls/.test(await p.textContent('#pvClockBox')), 'clocked in: a Log calls button next to Clock out');
       await p.evaluate(() => { location.hash = '#live'; }); await p.waitForTimeout(500);
       ok(await p.evaluate(() => location.hash) === '#home', 'an agent opening #live goes back to the Team home');
       await p.evaluate(() => { location.hash = '#track'; }); await p.waitForTimeout(500);
@@ -255,6 +260,7 @@ const T = [
       { id:'d4', kind:'house', county:'dayton', state:'OH', stage:'contract', follow_up:iso(5), inspection_ends:iso(2), closing_on:iso(15), updated_at:'2026-10-23T10:00:00Z' },
       { id:'d5', kind:'land', county:'athens', state:'OH', stage:'lead', follow_up:iso(4), updated_at:'2026-10-24T10:00:00Z' },
       { id:'d6', kind:'land', county:'pike', state:'OH', stage:'contract', follow_up:null, inspection_ends:iso(-2), closing_on:null, updated_at:'2026-10-25T10:00:00Z' }] } }, run: async (p, ok) => {
+      await p.click('#pvMore summary').catch(() => {}); await p.waitForTimeout(200);
       const t = await p.evaluate(() => document.getElementById('pView').innerText);
       ok(/Today/.test(t) && /23\s*calls/.test(t) && /1\s*conversation\b/.test(t) && /3\s*offers and appointments/.test(t) && /0:00\s*hours today/.test(t), 'today’s numbers: 23 calls, 1 conversation, 3 offers and appointments, 0:00 hours');
       const due = await p.evaluate(() => document.getElementById('pvDue').innerText), act = await p.evaluate(() => document.getElementById('pvAct').innerText);
@@ -296,6 +302,7 @@ const T = [
       ok(await p.isHidden('.p-bell .p-badge') && await p.evaluate(() => SB_CALLS.some(c => c[0] === 'rpc' && c[1] === 'notifications_read_all')), 'Mark all read clears the badge');
       await p.keyboard.press('Escape'); await p.waitForTimeout(200);
       ok(await p.isHidden('.p-notes'), 'Escape closes it');
+      await p.click('#pvMore summary').catch(() => {}); await p.waitForTimeout(200);
       const ask = await p.$$('[data-ask]');
       ok(ask.length === 2, 'two locked courses, each with Ask for access');
       await ask[0].click(); await p.waitForTimeout(400);

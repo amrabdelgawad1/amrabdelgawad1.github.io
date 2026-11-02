@@ -42,6 +42,24 @@ const T = [
     await p.click('.ctl.off'); await p.waitForTimeout(600);
     const nums = await p.evaluate(() => [...document.querySelectorAll('input[type="number"], input[inputmode="numeric"]')].filter(i => i.offsetParent).map(i => i.value));
     ok(nums.slice(0, 3).join(',') === '4,1,', 'ending the shift: dials and conversations fill in from the counter (' + nums.join(',') + ')');
+    // Required for the calling team: an empty box keeps the dialog open; 0 is accepted
+    await p.fill('dialog.ask textarea', 'Good day, two callbacks set for tomorrow.');
+    await p.click('dialog.ask .ask-ok'); await p.waitForTimeout(400);
+    const blocked = await p.evaluate(() => ({ open: document.querySelector('dialog.ask').open, err: document.querySelector('dialog.ask .ask-e').hidden ? '' : document.querySelector('dialog.ask .ask-e').textContent,
+      sent: (window.SB_CALLS || []).filter(c => c[0] === 'rpc' && c[1] === 'member_log_shift').length, focus: document.activeElement && document.activeElement.name }));
+    ok(blocked.open && /Type 0 if there were none/.test(blocked.err) && !blocked.sent && blocked.focus === 'appointments', 'appointments empty: not sent, the box is pointed out');
+    await p.fill('dialog.ask input[name="appointments"]', '0');
+    await p.click('dialog.ask .ask-ok'); await p.waitForTimeout(800);
+    const sent = await p.evaluate(() => (window.SB_CALLS || []).filter(c => c[0] === 'rpc' && c[1] === 'member_log_shift').map(c => c[2]));
+    ok(sent.length === 1 && sent[0].p_dials === 4 && sent[0].p_conversations === 1 && sent[0].p_appointments === 0, '0 is accepted and the shift saves with all three numbers');
+  } },
+  { name:'calls-optional-no-deals', url:'/app/#track', init:{ SB_SESSION:U, SB_RPC:Object.assign(member({ role:'agent', keys:['learn'], needs_code:[] }, 'Mona K.'), {}), SB_FROM:{ live_status:LIVE, call_events:[] } }, run: async (p, ok) => {
+    await p.waitForTimeout(1500);
+    await p.click('.ctl.off'); await p.waitForTimeout(600);
+    await p.fill('dialog.ask textarea', 'Worked on the course and the onboarding docs.');
+    await p.click('dialog.ask .ask-ok'); await p.waitForTimeout(800);
+    const sent = await p.evaluate(() => (window.SB_CALLS || []).filter(c => c[0] === 'rpc' && c[1] === 'member_log_shift').map(c => c[2]));
+    ok(sent.length === 1 && sent[0].p_dials === null, 'no Deal tools (not on the calling team): numbers stay optional');
   } },
   { name:'admin-calls-today', url:'/app/', init:{ SB_SESSION:O, SB_AAL:'aal2', SB_FROM:ownerFrom, SB_RPC:Object.assign({}, owner, { portal_calls_today:[
       { user_id:'u1', name:'Sara R.', dials:25, conversations:5, offers:1, appointments:2, on_shift:true }, { user_id:'u2', name:'Youssef H.', dials:40, conversations:7, offers:0, appointments:1, on_shift:false }] }) }, run: async (p, ok) => {
