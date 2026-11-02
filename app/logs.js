@@ -5,6 +5,7 @@
 //   Changes   what shipped and what database changes ran (portal_changes)
 //   Feedback  "Report a problem or idea" from every page (portal_feedback), with Mark done
 //   Do not call  the do-not-call list reps add to (portal_dnc), with a CSV download for the dialer
+//   Tool files   put a new build of the Deal CRM or a calculator live (tool-files.js)
 // Tables: supabase/migrations/20261031090000_portal_logs.sql. Styles: /portal.css (.p-*) and app.css (#pLogs).
 (function(){
   'use strict';
@@ -54,8 +55,8 @@
     $('pLogs').innerHTML = '<div class="p-main"><div class="p-wrap">' +
       '<section class="p-hero"><div><span class="p-hero-bar"></span><span class="p-hero-kick">Site</span><h1>Logs</h1><p>What happened on the portal, newest first. Only you see this.</p></div></section>' +
       '<div class="lg-bar"><nav class="p-mode" aria-label="Which log">' +
-        ['activity', 'feedback', 'errors', 'changes', 'dnc'].map(t => '<a href="#logs/' + t + '" data-tab="' + t + '"' + (t === tab ? ' aria-current="page"' : '') + '>' + { activity:'Activity', feedback:'Feedback', errors:'Errors', changes:'Changes', dnc:'Do not call' }[t] + '</a>').join('') +
-      '</nav><label class="lg-days"' + (tab === 'changes' || tab === 'dnc' ? ' hidden' : '') + '><span>Period</span><select id="lgDays"><option value="1">Last 24 hours</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select></label></div>' +
+        ['activity', 'feedback', 'errors', 'changes', 'dnc', 'files'].map(t => '<a href="#logs/' + t + '" data-tab="' + t + '"' + (t === tab ? ' aria-current="page"' : '') + '>' + { activity:'Activity', feedback:'Feedback', errors:'Errors', changes:'Changes', dnc:'Do not call', files:'Tool files' }[t] + '</a>').join('') +
+      '</nav><label class="lg-days"' + (tab === 'changes' || tab === 'dnc' || tab === 'files' ? ' hidden' : '') + '><span>Period</span><select id="lgDays"><option value="1">Last 24 hours</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select></label></div>' +
       '<div id="lgBody"><p class="p-loading">Loading…</p></div></div></div>';
     $('lgDays').value = String(days);
     $('lgDays').addEventListener('change', () => { days = Number($('lgDays').value) || 7; load(); });
@@ -66,6 +67,8 @@
   async function load(){
     const my = ++run, db = window.TalentsApp && window.TalentsApp.db, box = $('lgBody');
     if (!db) return;
+    if (tab === 'files') { if (window.ToolFiles) window.ToolFiles.open(box, db); else box.innerHTML = empty('Couldn’t load this part. Refresh the page.'); return; }
+    if (window.ToolFiles) window.ToolFiles.close();
     box.innerHTML = '<p class="p-loading">Loading…</p>';
     let r;
     try { r = tab === 'feedback' ? await db.rpc('portal_feedback', { p_days:Math.max(days, 30) }) : tab === 'dnc' ? await db.rpc('portal_dnc') : tab === 'changes' ? await db.rpc('portal_changes') : await db.rpc(tab === 'errors' ? 'portal_errors' : 'portal_activity', { p_days:days }); }
@@ -89,7 +92,7 @@
   }
 
   window.PortalLogs = {
-    open(which){ tab = ['activity', 'feedback', 'errors', 'changes', 'dnc'].includes(which) ? which : 'activity'; frame(); load(); },
-    close(){ run++; }
+    open(which){ tab = ['activity', 'feedback', 'errors', 'changes', 'dnc', 'files'].includes(which) ? which : 'activity'; frame(); load(); },
+    close(){ run++; if (window.ToolFiles) window.ToolFiles.close(); }
   };
 })();
