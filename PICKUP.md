@@ -1,4 +1,4 @@
-# Where things stand (Oct 31, 2026)
+# Where things stand (Nov 2, 2026)
 
 Pick up from here. Every item below is merged to `main` and live unless it says otherwise.
 
@@ -33,7 +33,8 @@ Pick up from here. Every item below is merged to `main` and live unless it says 
 | Security review fixes (Nov 1): library examples show a neutral label ("Real call, Oct 2026"), play only while the call is still approved, real, consented and 45+, and a turned-off entry hides its earlier wording and examples; Back only follows site paths | #72 | `20261101040000_library_fixes.sql` (staging then live) |
 | Gate 1 tracker on the Admin overview (Amr only): for each person who has Deal tools or worked a calling shift in the last 14 days, shift days, shift days with no calls logged (no dials on the shift and no call taps that day), the last one, clean days in a row, and whether they worked in both weeks. Ready = 14 clean days and shifts in both weeks | #73 | `20261101050000_gate1.sql` (`portal_gate1`, staging then live) |
 | The land and house calculators now run only inside the portal (this site, their own page, after deal-gate.js), the same guard as the Deal CRM; anywhere else they stop with a short note. Inside the portal they look and work exactly as before (checked: same elements, text and height). Guard kept in the private `portal-backups` repo, `calc-build/`; old files kept in the bucket as `*-before-guard-2026-11-01.html`. Pinned announcement posted for the team (log every call, Back button, Call scoring and Scripts) | none | none; calculator files in `deal-tools` updated Nov 1 |
-
+| Phase 3: certificates (`#certs`, Learning menu, Amr only): where each person stands against Lesson 20.1 (checkpoints 1 to 19 at 85%, final exam, capstone approved, approved calls of 40+ with no part below 3), Issue (name as printed), Renew a year, Revoke (note only Amr sees). Public check page `/cert/?c=ACQ-XXXXX-XXXXX` (name, course, dates, status; a revoked code shows no name). Your certificate card on the Team home | (branch `certificates`) | `20261102010000_certificates.sql` |
+| Acquisitions extras: daily drill (`/course/#/drill`, Home card, streak; graded in the database), most-missed questions (`/course/#/admin/missed`), fast track per learner (learner page in course Admin: checkpoints 1 to 4 open without the lessons), library entries linked to lessons (Course lessons field in the library editor; the lesson shows Hear it on a real call). Lesson text renders `dir=auto` | (branch `certificates`) | `20261102020000_acq_extras.sql` |
 Each migration ran on staging first, then on live, and has a line in Admin > Logs > Changes.
 
 ## Waiting on Amr
@@ -70,3 +71,7 @@ The Supabase SQL editor sometimes keeps showing "Running..." after a migration h
 2. Run the SQL on staging, then a read-only check as the owner (see `tools/staging/README.md`).
 3. Run the SQL on live, and add a `change_log` line. Never re-run an older migration that a newer one replaced a function from (for example `20261029060000_review_center.sql` after `20261101010000_call_scoring.sql`): re-run only the newest file that defines it.
 4. Open the PR, merge it, and confirm the Pages deploy succeeded.
+
+## Course content changed in the database only (Nov 2)
+The Acquisitions module source scripts live outside this repo. These were changed directly in `course_modules` (live): Module 18 state table (20 states, 18.1, 18.3 quiz, 18.4, checkpoint), Lesson 20.1 wording (course certificate, not a license; renewal uses Lesson 20.5), new Lesson 20.5 (law update and renewal quiz), and Arabic help notes ("بالعربي، باختصار") at the end of Lessons 9.1, 9.2, 12.2 to 12.5, 13.3, 14.3, 14.4, 15.1, 15.2. Rewrite Lesson 20.5 after each 3-monthly law check.
+18 role-play scenarios were added to `roleplay_scenarios` (live), including the three certification calls.
