@@ -52,7 +52,7 @@
     del(k){ try { localStorage.removeItem(k); } catch(e){} }
   };
   const DONE = { income:'Received', expense:'Paid' }, OPEN = { income:'Not received', expense:'Unpaid' };
-  const CATS = { income:['Own work', 'Team profit', 'Salary', 'Hourly work', 'Project', 'Client', 'Other'], expense:['Subscriptions', 'Software', 'Equipment', 'Team', 'Commissions', 'Transport', 'Savings', 'Other'] };
+  const CATS = { income:['Own work', 'Team profit', 'Deal income', 'Salary', 'Hourly work', 'Project', 'Client', 'Other'], expense:['Subscriptions', 'Software', 'Equipment', 'Team', 'Commissions', 'Transport', 'Savings', 'Other'] };
   const TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
   const PEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>';
 
@@ -160,6 +160,8 @@
   const isOwnWork = e => e.kind === 'income' && key(e.category) === 'own work';
   // Savings are logged as an expense with this category, but they're money set aside, not spent: they don't lower profit
   const isSavings = e => e.kind === 'expense' && key(e.category) === 'savings';
+  // Money from your own real estate deals (assignment fees, flips, sold land), kept apart from client work in the split
+  const isDeal = e => e.kind === 'income' && ['deal income', 'deal', 'deals'].includes(key(e.category));
   // Project pay period, like "Sep 28 – Oct 9 · 12 days"
   const periodText = e => {
     const a = new Date(e.periodStart + 'T00:00'), b = new Date(e.periodEnd + 'T00:00');
@@ -370,6 +372,8 @@
     $('tSaved').textContent = savedE ? egp(savedE) + ' saved' + (allSaved > savedE + .004 ? ' · ' + egp(allSaved) + ' in total' : '') : allSaved ? egp(allSaved) + ' saved in total' : '';
     paintEgp();
 
+    renderSplit(t);
+
     const p = [];
     if (t.toReceive > 0) p.push('Still to receive <b>' + egp(t.E.toReceive) + '</b>');
     if (t.toPay > 0) p.push('Expenses still unpaid <b>' + egp(t.E.toPay) + '</b>');
@@ -396,7 +400,7 @@
         label:g.label, tag, sub:[...g.titles].slice(0, 3).join(', ') + (g.open ? ' · ' + egp(g.open) + ' not received' : ''), amt:g.amt, go:'income'
       }));
     };
-    sources(t.ownInc, 'You'); sources(t.teamInc, 'Team'); sources(t.inc);
+    sources(t.ownInc, 'You'); sources(t.teamInc, 'Team'); sources(t.inc.filter(e => !isDeal(e))); sources(t.inc.filter(isDeal), 'Deal');
     shade(inRows, GREENS);
     drawDonut($('cameDonut'), inRows, 'came in');
     drawBars($('cameFrom'), inRows, 'in', 'Nothing came in for this period yet.');
@@ -416,6 +420,20 @@
     $('kSave').hidden = !t.savings;
 
     renderMonths();
+  }
+
+  // Client work vs deals, in pounds: own hours, team profit and other income are client work; "Deal income" is deals
+  function renderSplit(t){
+    const deals = t.inc.filter(isDeal).reduce((a, e) => a + egpOf(e), 0);
+    const all = t.E.own + t.E.team + t.E.income, client = all - deals;
+    $('split').hidden = !(all > 0);
+    if (!(all > 0)) return;
+    const pc = n => Math.round(n / all * 100);
+    const cw = Math.max(0, client / all * 100), dw = Math.max(0, deals / all * 100);
+    $('splitBar').innerHTML = '<i class="c" style="width:' + cw.toFixed(2) + '%"></i><i class="d" style="width:' + dw.toFixed(2) + '%"></i>';
+    $('splitBar').setAttribute('aria-label', 'Client work ' + pc(client) + '%, deals ' + pc(deals) + '%');
+    $('splitNums').innerHTML = '<span><i class="dot c"></i>Client work <b>' + egp(client) + '</b> · ' + pc(client) + '%</span>'
+      + '<span><i class="dot d"></i>Deals <b>' + egp(deals) + '</b> · ' + pc(deals) + '%</span>';
   }
 
   // ---------- month by month chart ----------
@@ -540,7 +558,7 @@
     if (e.pointerType === 'touch' && !e.target.closest('#moneyFlow .band, #moneyFlow .hit, #moneyFlow .fi')) hideFlowTip($('moneyFlow'));
   });
   function drawFlow(el, inRows, outRows, saved = 0){
-    const WHO = { You:'Your work', Team:'Team’s work' };
+    const WHO = { You:'Your work', Team:'Team’s work', Deal:'Your deals' };
     const GREEN = getComputedStyle(el).getPropertyValue('--green').trim() || '#10b981', RED = cssv('--c-out', '#ff8a8a'), GOLD = cssv('--c-save', '#C99014');
     const IN = cssv('--c-in', GREEN), KEPT = cssv('--c-kept', GREEN);
     const fill = kind => kind === 'net' ? KEPT : kind === 'save' ? GOLD : RED;

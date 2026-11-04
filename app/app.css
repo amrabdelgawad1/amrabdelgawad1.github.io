@@ -571,6 +571,9 @@ html body #pLogs{ min-height:calc(100vh - var(--p-top)); }
 #pLogs .lg-fb{ white-space:pre-wrap; }
 #pLogs .lg-done-btn{ min-height:var(--p-tap); padding:6px 12px; font-size:14px; white-space:nowrap; }
 #pLogs .p-mode{ flex-wrap:wrap; }
+#pLogs .lg-note{ margin:0 0 12px; color:var(--p-ink2); font-size:14px; }
+#pLogs .lg-acts-cell{ display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; }
+#pLogs .lg-bs{ min-height:var(--p-tap); padding:6px 12px; font-size:14px; white-space:nowrap; }
 /* announcement: Team home banner and Amr's form on the Admin overview */
 #pView .p-annc{ display:flex; gap:12px; align-items:flex-start; padding:16px 18px; border:1px solid var(--p-accent); border-radius:var(--p-r); background:var(--p-accent-soft); color:var(--p-ink); }
 #pView .p-annc b{ display:block; color:var(--p-accent-deep); font:700 12px/1.4 var(--p-body); letter-spacing:.12em; text-transform:uppercase; }

@@ -5,6 +5,7 @@
 //   Changes   what shipped and what database changes ran (portal_changes)
 //   Feedback  "Report a problem or idea" from every page (portal_feedback), with Mark done
 //   Do not call  the do-not-call list reps add to (portal_dnc), with a CSV download for the dialer
+//   Buyer sign-ups  people who joined the cash buyers list at /buyers/ (portal_buyer_signups), to add to the Deal CRM
 //   Tool files   put a new build of the Deal CRM or a calculator live (tool-files.js)
 // Tables: supabase/migrations/20261031090000_portal_logs.sql. Styles: /portal.css (.p-*) and app.css (#pLogs).
 (function(){
@@ -32,12 +33,39 @@
   const REASON = { asked:'Asked not to be called', wrong_number:'Wrong number', registry:'Do Not Call Registry', attorney:'Has an attorney', other:'Other' };
   const fmt = p => /^\d{10}$/.test(p) ? '(' + p.slice(0, 3) + ') ' + p.slice(3, 6) + '-' + p.slice(6) : p;
   let dncRows = [];
+  // Buyer sign-ups: one buyer's details as plain text, ready to paste into the Deal CRM's buyer form
+  let buyerRows = [];
+  const FUND = { cash:'Cash', hard_money:'Hard money', private:'Private money', other:'Other' };
+  const usd0 = n => n == null ? '' : '$' + Number(n).toLocaleString('en-US');
+  const priceText = x => x.price_min == null && x.price_max == null ? 'Any price' : x.price_min == null ? 'Up to ' + usd0(x.price_max) : x.price_max == null ? usd0(x.price_min) + ' and up' : usd0(x.price_min) + ' to ' + usd0(x.price_max);
+  const kindText = k => !k || !k.length ? 'Any' : k.map(v => v === 'land' ? 'Land' : 'Houses').join(', ');
+  const buyerText = x => [
+    'Name: ' + x.name + (x.company ? ' (' + x.company + ')' : ''), 'Phone: ' + fmt(x.phone), 'Email: ' + x.email,
+    'Buys: ' + kindText(x.kinds), 'States: ' + ((x.states || []).join(', ') || 'Any'), x.areas ? 'Areas: ' + x.areas : '',
+    'Price: ' + priceText(x), x.funding ? 'Funding: ' + FUND[x.funding] : '', x.close_days ? 'Closes in: ' + x.close_days + ' days' : '',
+    x.per_year ? 'Deals a year: ' + x.per_year : '', 'Texts OK: ' + (x.texts_ok ? 'yes' : 'no'), x.notes ? 'Notes: ' + x.notes : '',
+    'Signed up: ' + String(x.created_at).slice(0, 10)
+  ].filter(Boolean).join('\n');
+  const BSTATUS = { new:'New', added:'Added to CRM', not_a_fit:'Not a fit' };
   document.addEventListener('click', async e => {
     if (e.target.closest('#lgCsv')) {
       const csv = 'phone,reason,added\n' + dncRows.map(x => x.phone + ',' + x.reason + ',' + String(x.added_at).slice(0, 10)).join('\n') + '\n';
       const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' })); a.download = 'do-not-call.csv';
       document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
       return;
+    }
+    const bs = e.target.closest('.lg-bs');
+    if (bs) {
+      const db = window.TalentsApp && window.TalentsApp.db; if (!db) return;
+      if (bs.dataset.st === 'copy') {
+        const x = buyerRows.find(r => String(r.id) === bs.dataset.id); if (!x) return;
+        try { await navigator.clipboard.writeText(buyerText(x)); bs.textContent = 'Copied'; } catch(err) { bs.textContent = 'Couldn’t copy'; }
+        return;
+      }
+      if (bs.dataset.st === 'remove' && !bs.dataset.armed) { bs.dataset.armed = '1'; bs.textContent = 'Remove for good?'; return; }
+      bs.disabled = true; const r = await db.rpc('buyer_signup_set', { p_id:Number(bs.dataset.id), p_status:bs.dataset.st });
+      if (r.error) { bs.disabled = false; bs.textContent = 'Couldn’t save'; return; }
+      load(); return;
     }
     const dn = e.target.closest('.lg-done-btn');
     if (dn) { const db = window.TalentsApp && window.TalentsApp.db; if (!db) return; dn.disabled = true; await db.rpc('feedback_done', { p_id:Number(dn.dataset.id), p_done:dn.dataset.done === '1' }); load(); return; }
@@ -55,8 +83,8 @@
     $('pLogs').innerHTML = '<div class="p-main"><div class="p-wrap">' +
       '<section class="p-hero"><div><span class="p-hero-bar"></span><span class="p-hero-kick">Site</span><h1>Logs</h1><p>What happened on the portal, newest first. Only you see this.</p></div></section>' +
       '<div class="lg-bar"><nav class="p-mode" aria-label="Which log">' +
-        ['activity', 'feedback', 'errors', 'changes', 'dnc', 'files'].map(t => '<a href="#logs/' + t + '" data-tab="' + t + '"' + (t === tab ? ' aria-current="page"' : '') + '>' + { activity:'Activity', feedback:'Feedback', errors:'Errors', changes:'Changes', dnc:'Do not call', files:'Tool files' }[t] + '</a>').join('') +
-      '</nav><label class="lg-days"' + (tab === 'changes' || tab === 'dnc' || tab === 'files' ? ' hidden' : '') + '><span>Period</span><select id="lgDays"><option value="1">Last 24 hours</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select></label></div>' +
+        ['activity', 'feedback', 'errors', 'changes', 'dnc', 'buyers', 'files'].map(t => '<a href="#logs/' + t + '" data-tab="' + t + '"' + (t === tab ? ' aria-current="page"' : '') + '>' + { activity:'Activity', feedback:'Feedback', errors:'Errors', changes:'Changes', dnc:'Do not call', buyers:'Buyer sign-ups', files:'Tool files' }[t] + '</a>').join('') +
+      '</nav><label class="lg-days"' + (tab === 'changes' || tab === 'dnc' || tab === 'buyers' || tab === 'files' ? ' hidden' : '') + '><span>Period</span><select id="lgDays"><option value="1">Last 24 hours</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select></label></div>' +
       '<div id="lgBody"><p class="p-loading">Loading…</p></div></div></div>';
     $('lgDays').value = String(days);
     $('lgDays').addEventListener('change', () => { days = Number($('lgDays').value) || 7; load(); });
@@ -71,7 +99,7 @@
     if (window.ToolFiles) window.ToolFiles.close();
     box.innerHTML = '<p class="p-loading">Loading…</p>';
     let r;
-    try { r = tab === 'feedback' ? await db.rpc('portal_feedback', { p_days:Math.max(days, 30) }) : tab === 'dnc' ? await db.rpc('portal_dnc') : tab === 'changes' ? await db.rpc('portal_changes') : await db.rpc(tab === 'errors' ? 'portal_errors' : 'portal_activity', { p_days:days }); }
+    try { r = tab === 'feedback' ? await db.rpc('portal_feedback', { p_days:Math.max(days, 30) }) : tab === 'dnc' ? await db.rpc('portal_dnc') : tab === 'buyers' ? await db.rpc('portal_buyer_signups') : tab === 'changes' ? await db.rpc('portal_changes') : await db.rpc(tab === 'errors' ? 'portal_errors' : 'portal_activity', { p_days:days }); }
     catch(e) { r = { error:e }; }
     if (my !== run) return;
     if (r.error) { box.innerHTML = empty(/does not exist|not find|404/i.test(r.error.message || '') ? 'Logs aren’t set up in the database yet.' : 'Couldn’t load the log. Check your connection and try again.'); return; }
@@ -88,11 +116,22 @@
           '</td><td>' + esc(x.who) + '</td><td class="lg-when">' + esc(when(x.added_at)) + '</td><td><button type="button" class="p-btn is-ghost lg-rm" data-phone="' + esc(x.phone) + '">Remove</button></td></tr>'))
         : empty('No numbers yet. Reps add them from My hours while they call.'));
     }
+    else if (tab === 'buyers') {
+      buyerRows = rows;
+      const btn = (x, st, label) => '<button type="button" class="p-btn is-ghost lg-bs" data-id="' + x.id + '" data-st="' + st + '">' + label + '</button>';
+      box.innerHTML = '<p class="lg-note">From the public form at <a href="/buyers/" target="_blank" rel="noopener">amrabdelgawad.site/buyers</a>. Copy a buyer into the Deal CRM’s buyers (where it’s encrypted), then mark it added and remove it here.</p>' +
+        (rows.length ? table(['When', 'Buyer', 'Buy box', ''], rows.map(x => '<tr' + (x.status !== 'new' ? ' class="lg-done"' : '') + '><td class="lg-when">' + esc(when(x.created_at)) +
+          '<small><span class="p-pill' + (x.status === 'new' ? '' : ' is-plain') + '">' + esc(BSTATUS[x.status] || x.status) + '</span></small></td><td><b>' + esc(x.name) + '</b>' + (x.company ? '<small>' + esc(x.company) + '</small>' : '') +
+          '<small>' + esc(fmt(x.phone)) + ' · ' + esc(x.email) + (x.texts_ok ? ' · texts OK' : '') + '</small></td><td class="lg-detail"><b>' + esc(kindText(x.kinds)) + ' · ' + esc((x.states || []).join(', ') || 'any state') + ' · ' + esc(priceText(x)) + '</b>' +
+          '<small>' + esc([x.areas, x.funding && FUND[x.funding], x.close_days && 'closes in ' + x.close_days + ' days', x.per_year && x.per_year + ' deals a year'].filter(Boolean).join(' · ')) + '</small>' + (x.notes ? '<small>' + esc(x.notes) + '</small>' : '') +
+          '</td><td class="lg-acts-cell">' + btn(x, 'copy', 'Copy details') + (x.status === 'new' ? btn(x, 'added', 'Added to CRM') + btn(x, 'not_a_fit', 'Not a fit') : btn(x, 'new', 'Back to new')) + btn(x, 'remove', 'Remove') + '</td></tr>'))
+        : empty('No sign-ups yet. Share amrabdelgawad.site/buyers with cash buyers.'));
+    }
     else box.innerHTML = rows.length ? table(['When', 'What shipped', 'Database changes'], rows.map(x => '<tr><td class="lg-when">' + esc(when(x.at)) + '</td><td><b>' + (x.link ? '<a href="' + esc(x.link) + '" target="_blank" rel="noopener">' + esc(x.title) + '</a>' : esc(x.title)) + '</b>' + (x.detail ? '<small>' + esc(x.detail) + '</small>' : '') + '</td><td class="lg-detail">' + esc(x.sql_ran || '') + '</td></tr>')) : empty('No releases logged yet.');
   }
 
   window.PortalLogs = {
-    open(which){ tab = ['activity', 'feedback', 'errors', 'changes', 'dnc', 'files'].includes(which) ? which : 'activity'; frame(); load(); },
+    open(which){ tab = ['activity', 'feedback', 'errors', 'changes', 'dnc', 'buyers', 'files'].includes(which) ? which : 'activity'; frame(); load(); },
     close(){ run++; if (window.ToolFiles) window.ToolFiles.close(); }
   };
 })();

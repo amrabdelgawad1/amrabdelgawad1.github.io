@@ -346,6 +346,16 @@
   .money.net.neg strong{ color:#ff8a8a; }
   .pending{ display:flex; gap:18px; flex-wrap:wrap; margin-top:16px; font-size:13.5px; color:var(--light); }
   .pending b{ font-family:"JetBrains Mono", monospace; font-weight:600; color:var(--gold); }
+  /* Client work vs deals: where the money came from */
+  .split{ margin-top:16px; }
+  .split .sbar{ display:flex; height:10px; border-radius:6px; overflow:hidden; background:var(--border2); }
+  .split .sbar i{ display:block; height:100%; }
+  .split .sbar .c{ background:var(--green); } .split .sbar .d{ background:var(--gold); }
+  .split .snums{ display:flex; gap:18px; flex-wrap:wrap; margin-top:8px; font-size:13.5px; color:var(--light); }
+  .split .snums b{ font-family:"JetBrains Mono", monospace; font-weight:600; color:var(--text); }
+  .split .dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:baseline; }
+  .split .dot.c{ background:var(--green); } .split .dot.d{ background:var(--gold); }
+  .split .hint{ display:block; margin-top:4px; font-size:12.5px; color:var(--light); }
 
   .split .block{ margin-bottom:0; }
   .cash-split{ margin-bottom:24px; }
@@ -726,6 +736,11 @@
           <div class="money net" id="tNetBox"><p>Net profit</p><strong id="tNet" data-egp>$0.00</strong><small id="tNetSub"></small><small class="egp"></small><small class="saved" id="tSaved"></small><button type="button" class="btn btn-ghost btn-sm team-add" id="tSaveAdd">+ Add savings</button></div>
         </div>
         <div class="pending" id="pending"></div>
+        <div class="split" id="split" hidden>
+          <div class="sbar" role="img" id="splitBar"></div>
+          <div class="snums" id="splitNums"></div>
+          <small class="hint">Deals are income with the category “Deal income” (assignment fees, flips, sold deals). Everything else is client work.</small>
+        </div>
       </section>
 
       <section class="t-card block">
@@ -1129,6 +1144,6 @@
 <script src="../tracker/config.js"></script>
 <script src="../ask.js?v=5"></script>
 <script src="team.js?v=19"></script>
-<script src="cash.js?v=28"></script>
+<script src="cash.js?v=29"></script>
 </body>
 </html>

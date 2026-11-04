@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Browser safety rules: this page only talks to the site's own Supabase project, through the buyer_signup() form call -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://ztlpgyomjuzmjmuifbbd.supabase.co; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<!-- Shared by direct link with cash buyers; kept out of search results -->
+<meta name="robots" content="noindex, follow">
+<title>Join the Cash Buyers List · Amr Abdelgawad</title>
+<meta name="description" content="Get off-market land and house deals that fit your buy box. Tell me what you buy, where, and your price range.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://amrabdelgawad.site/buyers/">
+<meta property="og:title" content="Join the Cash Buyers List">
+<meta property="og:description" content="Off-market land and house deals that fit your buy box, sent only when they match.">
+<meta property="og:image" content="https://amrabdelgawad.site/assets/share-card.png?v=1">
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF7F1; --card:#FFFFFF; --ink:#14213D; --text:#1F2733; --light:#5B6472; --border:#E4DCCB;
+  --accent:#E3AA35; --accent2:#94650C; --on-accent:#14213D; --ok:#2F7D4F; --err:#B4372A; --field:#FFFFFF;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0E1626; --card:#16213A; --ink:#F5EFE3; --text:#E7E2D8; --light:#A8B0BE; --border:#2A3756; --accent2:#E3AA35; --field:#101A2E; --ok:#5FBF86; --err:#E57A6C; }
+}
+*{ box-sizing:border-box; } [hidden]{ display:none !important; }
+html,body{ margin:0; background:var(--bg); color:var(--text); font:16px/1.55 Inter, system-ui, sans-serif; }
+a{ color:var(--accent2); }
+.wrap{ max-width:760px; margin:0 auto; padding:40px 16px 64px; }
+.top{ display:flex; align-items:center; gap:10px; font-weight:700; color:var(--ink); text-decoration:none; font-size:15px; }
+.top svg{ width:26px; height:26px; color:var(--ink); }
+.eyebrow{ margin:36px 0 8px; font-size:12px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--accent2); }
+h1{ font-family:"DM Serif Display", Georgia, serif; font-weight:400; color:var(--ink); font-size:clamp(34px, 6vw, 48px); line-height:1.05; margin:0; }
+.lede{ font-size:17px; color:var(--light); margin:14px 0 0; max-width:60ch; }
+.points{ display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin:26px 0 30px; padding:0; list-style:none; }
+.points li{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px; font-size:14.5px; }
+.points b{ display:block; color:var(--ink); margin-bottom:2px; }
+form{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px 20px; }
+fieldset{ border:0; margin:0 0 22px; padding:0; }
+legend{ font-family:"DM Serif Display", Georgia, serif; color:var(--ink); font-size:22px; margin-bottom:12px; padding:0; }
+.grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.grid .full{ grid-column:1 / -1; }
+@media (max-width:560px){ .grid{ grid-template-columns:1fr; } }
+label{ display:block; font-size:14px; font-weight:600; color:var(--ink); }
+label small{ font-weight:400; color:var(--light); }
+input[type=text], input[type=email], input[type=tel], input[type=number], select, textarea{
+  display:block; width:100%; margin-top:6px; padding:11px 12px; font:inherit; color:var(--text);
+  background:var(--field); border:1px solid var(--border); border-radius:10px;
+}
+textarea{ min-height:84px; resize:vertical; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, .chip input:focus-visible + span{ outline:2px solid var(--accent); outline-offset:2px; }
+.chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.chip{ position:relative; font-weight:500; }
+.chip input{ position:absolute; opacity:0; inset:0; cursor:pointer; }
+.chip span{ display:inline-block; padding:8px 14px; border:1px solid var(--border); border-radius:999px; background:var(--field); font-size:14px; }
+.chip input:checked + span{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:600; }
+.check{ display:flex; gap:10px; align-items:flex-start; font-weight:400; font-size:13.5px; color:var(--light); }
+.check input{ margin-top:4px; width:18px; height:18px; flex:none; accent-color:var(--accent2); }
+.hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+.btn{ display:inline-block; border:0; cursor:pointer; font:700 15px Inter, sans-serif; background:var(--accent); color:var(--on-accent); padding:14px 24px; border-radius:999px; }
+.btn[disabled]{ opacity:.6; cursor:wait; }
+.msg{ margin:14px 0 0; font-size:14.5px; }
+.msg.err{ color:var(--err); }
+.done{ text-align:center; padding:36px 20px; }
+.done h2{ font-family:"DM Serif Display", Georgia, serif; font-weight:400; color:var(--ink); font-size:30px; margin:0 0 8px; }
+.done svg{ width:48px; height:48px; color:var(--ok); }
+.foot{ margin-top:28px; font-size:13px; color:var(--light); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="top" href="/"><svg viewBox="-4 6 96 96" aria-hidden="true"><g transform="translate(13 0) skewX(-12)"><rect x="6" y="68" width="82" height="18" rx="4" fill="currentColor"/><rect x="20" y="45" width="56" height="18" rx="4" fill="currentColor"/><rect x="34" y="22" width="28" height="18" rx="4" fill="#E3AA35"/></g></svg>Amr Abdelgawad</a>
+
+  <p class="eyebrow">Cash buyers list</p>
+  <h1>Get off-market deals that fit your buy box</h1>
+  <p class="lede">I work directly with motivated land and house sellers. Tell me what you buy and where, and I'll send you deals that match. No spam, and only properties inside your buy box.</p>
+
+  <ul class="points">
+    <li><b>Matched to you</b>Deals go out by state, county, property type and price.</li>
+    <li><b>Off-market</b>Sellers I've spoken with myself, not recycled MLS listings.</li>
+    <li><b>Easy to leave</b>Reply STOP or email me and you're off the list.</li>
+  </ul>
+
+  <form id="bForm" novalidate>
+    <fieldset>
+      <legend>About you</legend>
+      <div class="grid">
+        <label>Full name<input type="text" id="bName" autocomplete="name" required maxlength="80"></label>
+        <label>Company <small>(optional)</small><input type="text" id="bCompany" autocomplete="organization" maxlength="80"></label>
+        <label>Phone<input type="tel" id="bPhone" autocomplete="tel" required placeholder="(555) 123-4567"></label>
+        <label>Email<input type="email" id="bEmail" autocomplete="email" required maxlength="120"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Your buy box</legend>
+      <div class="grid">
+        <div class="full">
+          <label id="kindsL">What do you buy?</label>
+          <div class="chips" role="group" aria-labelledby="kindsL">
+            <label class="chip"><input type="checkbox" name="kind" value="land"><span>Land</span></label>
+            <label class="chip"><input type="checkbox" name="kind" value="house"><span>Houses</span></label>
+          </div>
+        </div>
+        <label class="full">States <small>(two-letter codes, separated by commas, like OH, NC, TX)</small><input type="text" id="bStates" placeholder="OH, NC" autocomplete="off"></label>
+        <label class="full">Counties or cities <small>(optional)</small><input type="text" id="bAreas" maxlength="300" placeholder="Cuyahoga County, Summit County"></label>
+        <label>Lowest price <small>($)</small><input type="number" id="bMin" min="0" step="1000" inputmode="numeric"></label>
+        <label>Highest price <small>($)</small><input type="number" id="bMax" min="0" step="1000" inputmode="numeric"></label>
+        <label>How do you buy?
+          <select id="bFunding"><option value="">Pick one</option><option value="cash">Cash</option><option value="hard_money">Hard money</option><option value="private">Private money</option><option value="other">Other</option></select>
+        </label>
+        <label>Usual time to close <small>(days)</small><input type="number" id="bClose" min="1" max="365" inputmode="numeric" placeholder="14"></label>
+        <label>Deals you buy a year
+          <select id="bYear"><option value="">Pick one</option><option>1-2</option><option>3-5</option><option>6-10</option><option>10+</option></select>
+        </label>
+        <label class="full">Anything else I should know? <small>(optional)</small><textarea id="bNotes" maxlength="600" placeholder="Lot size, road access, condition you're fine with, what you don't want"></textarea></label>
+      </div>
+    </fieldset>
+
+    <label class="check"><input type="checkbox" id="bTexts"><span>Text me deal alerts at the number above. Message and data rates may apply; frequency varies. Reply STOP to stop at any time. This is optional and not needed to join.</span></label>
+
+    <div class="hp" aria-hidden="true"><label>Website<input type="text" id="bWebsite" tabindex="-1" autocomplete="off"></label></div>
+
+    <p style="margin-top:20px"><button class="btn" type="submit" id="bGo">Join the buyers list</button></p>
+    <p class="msg err" id="bMsg" role="alert" hidden></p>
+  </form>
+
+  <div class="done" id="bDone" hidden tabindex="-1">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>
+    <h2>You're on the list</h2>
+    <p>Thank you! When a deal fits your buy box, you'll hear from me first.</p>
+  </div>
+
+  <p class="foot">Questions? Email <a href="mailto:amr@amrabdelgawad.site">amr@amrabdelgawad.site</a>. Your details are only used to send you deals and are never sold or shared.</p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+<script src="/tracker/config.js?v=3"></script>
+<script src="buyers.js?v=1"></script>
+</body>
+</html>
