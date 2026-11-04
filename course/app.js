@@ -65,6 +65,9 @@
     if (/checkpoint locked/.test(m)) return 'The checkpoint is still locked.';
     if (/already approved/.test(m)) return 'This was already approved, so it can’t change.';
     if (/answer every task/.test(m)) return 'Answer every task before you submit.';
+    const cd = m.match(/cooldown until (\S+)/);
+    if (cd) { const t = new Date(cd[1]); return 'You can try again ' + (isNaN(t) ? 'later' : (t - Date.now() > 12 * 3600e3 ? t.toLocaleString([], { weekday:'short', hour:'numeric', minute:'2-digit' }) : 'at ' + t.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' }))) + '. Use the time to review the lessons.'; }
+    if (/final needs unlock/.test(m)) return 'You’ve used three tries on the final exam. Amr reviews your results and unlocks the next try.';
     if (/Failed to fetch|NetworkError|network/i.test(m)) return 'You seem to be offline. Check your connection and try again.';
     return 'Something went wrong. Try again.';
   }
@@ -624,23 +627,25 @@
     catch(err){ return msgView(errText(err), { header:header({ back:'#/m/' + mod.id, title:'Quiz' }), link:['#/m/' + mod.id, 'Back to Module ' + mod.number] }); }
     if (!location.hash.startsWith('#/m/' + mod.id + '/q/' + e.it.id)) return; // they left while it loaded
     if (restart) history.replaceState(null, '', '#/m/' + mod.id + '/q/' + e.it.id);
-    const qs = e.it.quiz.questions;
-    Q = { mod, e, attempt:r.attempt, answered:r.answered || {}, idx:0, picks:new Set(), submitted:false };
+    const qs = r.questions || (e.it.quiz && e.it.quiz.questions) || [];
+    Q = { mod, e, qs, exam:!!r.mode && r.mode !== 'practice', attempt:r.attempt, answered:r.answered || {}, idx:0, picks:new Set(), submitted:false };
     Q.idx = qs.findIndex(q => !Q.answered[q.id]);
     if (Q.idx < 0) return quizFinish();
     await refresh().catch(() => {});
     questionView();
   }
   function questionView(){
-    const { mod, e } = Q, it = e.it, qs = it.quiz.questions, q = qs[Q.idx], multi = q.type === 'multiple';
+    const { mod, e } = Q, it = e.it, qs = Q.qs, q = qs[Q.idx], multi = q.type === 'multiple';
     const fb = Q.submitted ? Q.answered[q.id] : null;
+    const graded = fb && !Q.exam; // exams: no right/wrong until the attempt is finished
     const back = it.type === 'checkpoint' ? '#/m/' + mod.id + '/c/' + it.id : '#/m/' + mod.id + '/l/' + it.id;
     const ctx = it.type === 'checkpoint' ? 'Module ' + mod.number + ' checkpoint' : 'Quiz · ' + idLabel(e);
-    const opts = q.options.map(o => {
+    const opts = q.options.map((o, oi) => {
+      const L = String.fromCharCode(65 + oi);
       const sel = fb ? fb.picks.includes(o.id) : Q.picks.has(o.id);
-      const cls = fb && sel ? (fb.right ? ' right' : ' wrong') : sel ? ' sel' : '';
+      const cls = graded && sel ? (fb.right ? ' right' : ' wrong') : sel ? ' sel' : '';
       return '<label class="opt' + cls + '"><input type="' + (multi ? 'checkbox' : 'radio') + '" name="opt" value="' + esc(o.id) + '"' + (sel ? ' checked' : '') + (fb ? ' disabled' : '') + '>' +
-        '<span class="bdg" aria-hidden="true">' + esc(o.id) + '</span><span><span class="vh">Option ' + esc(o.id) + ': </span>' + esc(o.text) + '</span></label>';
+        '<span class="bdg" aria-hidden="true">' + L + '</span><span><span class="vh">Option ' + L + ': </span>' + esc(o.text) + '</span></label>';
     }).join('');
     const last = Q.idx === qs.length - 1;
     mount(header({ back, close:true, backLabel:'Leave the quiz. Your answers so far are saved.', ctx, title:'Question ' + (Q.idx + 1) + ' of ' + qs.length, aside:passText(it) }) +
@@ -650,7 +655,7 @@
         '<h1 class="q-prompt" id="qp">' + esc(q.prompt) + '</h1>' +
         (multi && !fb ? '<p class="hint">Pick every answer that’s right.</p>' : '') +
         '<fieldset class="opts' + (multi ? ' multi' : '') + (fb ? ' locked-opts' : '') + '" aria-labelledby="qp"><legend class="vh">' + esc(q.prompt) + '</legend>' + opts + '</fieldset>' +
-        '<div id="fb" aria-live="polite">' + (fb ? '<div class="verdict ' + (fb.right ? 'ok' : 'no') + '"><b>' + (fb.right ? 'Correct' : 'Not quite') + '</b><p>' + esc(fb.explanation || '') + '</p></div>' : '') + '</div>' +
+        '<div id="fb" aria-live="polite">' + (graded ? '<div class="verdict ' + (fb.right ? 'ok' : 'no') + '"><b>' + (fb.right ? 'Correct' : 'Not quite') + '</b><p>' + esc(fb.explanation || '') + '</p></div>' : fb ? '<p class="note">Answer saved. You’ll see what you got right when you finish.</p>' : '') + '</div>' +
       '</div></main>' +
       '<div class="bar-foot"><div class="col">' + (fb
         ? '<button class="btn dark lg" type="button" data-act="next" id="qNext">' + (last ? 'See your result' : 'Next question') + '</button>'
@@ -666,7 +671,7 @@
           } catch(err){ b.removeAttribute('aria-busy'); toast(errText(err)); return; }
           questionView();
           const n = $('qNext'); if (n) n.focus();
-          announce(Q.answered[q.id].right ? 'Correct. ' + Q.answered[q.id].explanation : 'Not quite. ' + Q.answered[q.id].explanation);
+          announce(Q.exam ? 'Answer saved.' : Q.answered[q.id].right ? 'Correct. ' + Q.answered[q.id].explanation : 'Not quite. ' + Q.answered[q.id].explanation);
         },
         next: () => {
           if (last) return quizFinish();
@@ -689,7 +694,7 @@
     mount(header({ back:isCp ? '#/m/' + mod.id + '/c/' + it.id : '#/m/' + mod.id + '/l/' + it.id, backLabel:'Back', ctx:isCp ? 'Module ' + mod.number + ' checkpoint' : 'Quiz · ' + idLabel(e), title:'Start over?' }) +
       '<main id="main" class="col"><div class="page has-bar"><div class="stack" data-s="g8">' +
         '<h1 data-s="h22">Start ' + name + ' over?</h1>' +
-        '<p class="lead" data-s="fs15">You’ve answered ' + plural(q.open.answered, 'question') + ' so far. Your answers so far stay on record but won’t count. You’ll start again from question 1.</p>' +
+        '<p class="lead" data-s="fs15">You’ve answered ' + plural(q.open.answered, 'question') + ' so far. ' + (isCp ? 'Starting over counts as a try that didn’t pass, so the wait before the next try applies. You’ll get a new set of questions.' : 'Your answers so far stay on record but won’t count. You’ll start again from question 1.') + '</p>' +
       '</div></div></main>' +
       '<div class="bar-foot"><div class="col">' +
         '<a class="btn line lg" href="#/m/' + esc(mod.id) + '/q/' + esc(it.id) + '">Continue where I left off</a>' +
