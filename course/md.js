@@ -105,6 +105,9 @@
     return '<figure class="md-fig">' + img + (m[3] ? '<figcaption' + dirAttr(m[3]) + '>' + inline(m[3]) + '</figcaption>' : '') + '</figure>';
   }
 
+  // Two images on one line: a before/after pair shown side by side (stacked on phones)
+  const IMG1 = '!\\[[^\\]]*\\]\\(\\s*\\S+?(?:\\s+"[^"]*")?\\s*\\)';
+  const PAIR = new RegExp('^(' + IMG1 + ')\\s+(' + IMG1 + ')$');
   const CHECK = /^\[( |x|X)\]\s+/;
   function listItem(t){
     const c = t.match(CHECK);
@@ -145,6 +148,8 @@
       while (i < lines.length && lines[i].trim() && !/^\s*([-*] |\d+[.)] |\||#{1,6} )/.test(lines[i])) para.push(lines[i++].trim());
       const text = para.join(' ');
       if (FIG.test(text)) { out.push(figure(text)); continue; }
+      const pair = text.match(PAIR);
+      if (pair) { out.push('<div class="md-pair">' + figure(pair[1]) + figure(pair[2]) + '</div>'); continue; }
       out.push(/^\*\*[^*]+\*\*$/.test(text) ? '<h2' + dirAttr(text) + '>' + inline(text.slice(2, -2)) + '</h2>' : '<p' + dirAttr(text) + '>' + inline(text) + '</p>');
     }
     return out.join('\n');

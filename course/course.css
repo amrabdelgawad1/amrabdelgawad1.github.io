@@ -171,6 +171,9 @@ a.srow:hover{ border-color:var(--ink); color:var(--ink); }
 .prose .md-fig{ margin:4px 0; display:flex; flex-direction:column; gap:6px; }
 .prose img{ display:block; max-width:100%; height:auto; border-radius:10px; border:1px solid var(--line); background:var(--card); }
 .prose figcaption{ font-size:12.5px; line-height:1.45; color:var(--muted); }
+.prose .md-pair{ display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; }
+.prose .md-pair .md-fig{ margin:0; }
+@media (max-width:520px){ .prose .md-pair{ grid-template-columns:1fr; } }
 .terms{ display:flex; flex-direction:column; gap:10px; }
 .term{ border:1px solid var(--line); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:5px; }
 .term p{ margin:0; }
@@ -409,6 +412,7 @@ a.person:hover{ border-color:var(--ink); color:var(--ink); }
   .term{ break-inside:avoid; page-break-inside:avoid; border:0.5pt solid #999; margin-bottom:5pt; }
   .term-name{ color:#000 !important; }
   .prose img{ max-height:110mm; width:auto; break-inside:avoid; }
+  .prose .md-pair{ break-inside:avoid; page-break-inside:avoid; }
   .md-fig{ break-inside:avoid; page-break-inside:avoid; }
   .prose .rtl{ direction:rtl; text-align:right; }
   .prose li.check input{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
