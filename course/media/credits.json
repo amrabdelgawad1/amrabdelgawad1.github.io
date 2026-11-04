@@ -9,8 +9,7 @@
   "author": "Newell Post",
   "license": "Public domain",
   "licenseUrl": "",
-  "source": "https://commons.wikimedia.org/wiki/File:Crawl-space-inside.jpg",
-  "n": 1
+  "source": "https://commons.wikimedia.org/wiki/File:Crawl-space-inside.jpg"
  },
  {
   "key": "sagging-joists",
@@ -23,7 +22,16 @@
   "license": "CC BY-SA 2.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
   "source": "https://commons.wikimedia.org/wiki/File:Floor_Joists_with_Railroad_Boxcar_Numbers_(9000979286).jpg",
-  "n": 2
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/sagging-joists-after.svg",
+   "alt": "Typical repair: joists sistered",
+   "caption": "Typical repair: joists sistered. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "stair-step-crack",
@@ -36,7 +44,16 @@
   "license": "CC BY 3.0",
   "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
   "source": "https://commons.wikimedia.org/wiki/File:Willowbank_crack_1.jpg",
-  "n": 3
+  "after": {
+   "kind": "photo",
+   "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Repointing_the_wall_%2849160488472%29.png?width=1280",
+   "alt": "Mason repointing mortar joints in a wall",
+   "caption": "Typical repair: cracked joints repointed with new mortar. Photo: Oregon Department of Transportation, CC BY 2.0, Wikimedia Commons",
+   "author": "Oregon Department of Transportation",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+   "source": "https://commons.wikimedia.org/wiki/File:Repointing_the_wall_(49160488472).png"
+  }
  },
  {
   "key": "bowing-wall",
@@ -49,7 +66,16 @@
   "license": "",
   "licenseUrl": "",
   "source": "",
-  "n": 4
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/bowing-wall-after.svg",
+   "alt": "After: the wall braced with steel beams",
+   "caption": "After: the wall braced with steel beams. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "hairline-crack",
@@ -62,7 +88,16 @@
   "license": "",
   "licenseUrl": "",
   "source": "",
-  "n": 5
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/hairline-crack-after.svg",
+   "alt": "After: the crack sealed",
+   "caption": "After: the crack sealed. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "asbestos-siding",
@@ -74,8 +109,7 @@
   "author": "Amiant",
   "license": "CC BY-SA 3.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
-  "source": "https://commons.wikimedia.org/wiki/File:Asbest_leien_-_Asbestos_Roof_Shingles.jpg",
-  "n": 6
+  "source": "https://commons.wikimedia.org/wiki/File:Asbest_leien_-_Asbestos_Roof_Shingles.jpg"
  },
  {
   "key": "chimney-flashing",
@@ -87,8 +121,7 @@
   "author": "Kolforn",
   "license": "CC BY-SA 4.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-  "source": "https://commons.wikimedia.org/wiki/File:-2020-02-28_Lead_flashing_around_a_chimney_stack,_Trimingham.JPG",
-  "n": 7
+  "source": "https://commons.wikimedia.org/wiki/File:-2020-02-28_Lead_flashing_around_a_chimney_stack,_Trimingham.JPG"
  },
  {
   "key": "curling-shingles",
@@ -101,7 +134,16 @@
   "license": "CC BY-SA 3.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
   "source": "https://commons.wikimedia.org/wiki/File:Failure_of_asphalt_shingles_allowing_roof_leakage.JPG",
-  "n": 8
+  "after": {
+   "kind": "photo",
+   "url": "https://commons.wikimedia.org/wiki/Special:FilePath/US_Navy_090611-N-9712C-001_Aviation_Electronics_Technician_2nd_Class_Sonny_Abernathy_nails_shingles_to_the_roof_of_a_Habitat_for_Humanity_house.jpg?width=1280",
+   "alt": "Roofer nailing new asphalt shingles",
+   "caption": "Typical repair: a new shingle roof. Photo: U.S. Navy, Public domain, Wikimedia Commons",
+   "author": "U.S. Navy",
+   "license": "Public domain",
+   "licenseUrl": "",
+   "source": "https://commons.wikimedia.org/wiki/File:US_Navy_090611-N-9712C-001_Aviation_Electronics_Technician_2nd_Class_Sonny_Abernathy_nails_shingles_to_the_roof_of_a_Habitat_for_Humanity_house.jpg"
+  }
  },
  {
   "key": "flat-roof",
@@ -113,8 +155,7 @@
   "author": "Htm",
   "license": "CC BY-SA 3.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
-  "source": "https://commons.wikimedia.org/wiki/File:Flat_roof_bitumen_felt.jpg",
-  "n": 9
+  "source": "https://commons.wikimedia.org/wiki/File:Flat_roof_bitumen_felt.jpg"
  },
  {
   "key": "rotten-siding",
@@ -127,7 +168,16 @@
   "license": "CC0",
   "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
   "source": "https://commons.wikimedia.org/wiki/File:Rotted_out_timber_window_frame.jpg",
-  "n": 10
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/rotten-siding-after.svg",
+   "alt": "Typical repair: rotted trim replaced",
+   "caption": "Typical repair: rotted trim replaced. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "stucco-crack",
@@ -140,7 +190,16 @@
   "license": "CC BY-SA 4.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
   "source": "https://commons.wikimedia.org/wiki/File:Bad_Rappenau_-_Bonfeld_-_Evangelische_Kirche_-_Orgelempore_-_Risse_im_Stuck.jpg",
-  "n": 11
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/stucco-crack-after.svg",
+   "alt": "Typical repair: stucco patched",
+   "caption": "Typical repair: stucco patched. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "tile-roof",
@@ -152,8 +211,7 @@
   "author": "iMahesh",
   "license": "CC BY-SA 4.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-  "source": "https://commons.wikimedia.org/wiki/File:An_old_house_in_Velagapudi.jpg",
-  "n": 12
+  "source": "https://commons.wikimedia.org/wiki/File:An_old_house_in_Velagapudi.jpg"
  },
  {
   "key": "wood-shake",
@@ -165,8 +223,7 @@
   "author": "USDA Forest Service, Eastern Region",
   "license": "Public domain",
   "licenseUrl": "",
-  "source": "https://commons.wikimedia.org/wiki/File:MNF_StuartPavilion_FC092215_01_(29853679422).jpg",
-  "n": 13
+  "source": "https://commons.wikimedia.org/wiki/File:MNF_StuartPavilion_FC092215_01_(29853679422).jpg"
  },
  {
   "key": "metal-roof",
@@ -178,8 +235,7 @@
   "author": "Acquisitions Playbook",
   "license": "",
   "licenseUrl": "",
-  "source": "",
-  "n": 14
+  "source": ""
  },
  {
   "key": "missing-shingles",
@@ -192,7 +248,16 @@
   "license": "",
   "licenseUrl": "",
   "source": "",
-  "n": 15
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/missing-shingles-after.svg",
+   "alt": "After: shingles replaced",
+   "caption": "After: shingles replaced. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "roof-valley",
@@ -204,8 +269,7 @@
   "author": "Acquisitions Playbook",
   "license": "",
   "licenseUrl": "",
-  "source": "",
-  "n": 16
+  "source": ""
  },
  {
   "key": "gfci-outlet",
@@ -217,8 +281,7 @@
   "author": "Ben Kurtovic",
   "license": "CC BY-SA 4.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-  "source": "https://commons.wikimedia.org/wiki/File:Residential_GFCI_receptacle.jpg",
-  "n": 17
+  "source": "https://commons.wikimedia.org/wiki/File:Residential_GFCI_receptacle.jpg"
  },
  {
   "key": "knob-and-tube",
@@ -231,7 +294,16 @@
   "license": "CC BY-SA 2.5",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5/",
   "source": "https://commons.wikimedia.org/wiki/File:Knob-and-tubes.jpg",
-  "n": 18
+  "after": {
+   "kind": "photo",
+   "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Romex_cable.agr.jpg?width=1280",
+   "alt": "Modern plastic-sheathed electrical cable",
+   "caption": "Typical repair: rewired with modern grounded cable. Photo: ArnoldReinhold, CC BY-SA 3.0, Wikimedia Commons",
+   "author": "ArnoldReinhold",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source": "https://commons.wikimedia.org/wiki/File:Romex_cable.agr.jpg"
+  }
  },
  {
   "key": "two-prong-outlet",
@@ -244,7 +316,16 @@
   "license": "CC BY-SA 4.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
   "source": "https://commons.wikimedia.org/wiki/File:Ornate_US_outlet_and_wallplate.jpg",
-  "n": 19
+  "after": {
+   "kind": "photo",
+   "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Electrical-Outlet-8830c.jpg?width=1280",
+   "alt": "Three-prong grounded outlet",
+   "caption": "Typical repair: grounded three-prong outlet. Photo: David R. Tribble, CC BY-SA 3.0, Wikimedia Commons",
+   "author": "David R. Tribble",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+   "source": "https://commons.wikimedia.org/wiki/File:Electrical-Outlet-8830c.jpg"
+  }
  },
  {
   "key": "aluminum-wiring",
@@ -257,7 +338,16 @@
   "license": "",
   "licenseUrl": "",
   "source": "",
-  "n": 20
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/aluminum-wiring-after.svg",
+   "alt": "After: copper pigtails with rated connectors",
+   "caption": "After: copper pigtails with rated connectors. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "fpe-panel",
@@ -270,7 +360,16 @@
   "license": "",
   "licenseUrl": "",
   "source": "",
-  "n": 21
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/fpe-panel-after.svg",
+   "alt": "After: a modern 200 amp panel",
+   "caption": "After: a modern 200 amp panel. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "fuse-box",
@@ -283,7 +382,16 @@
   "license": "",
   "licenseUrl": "",
   "source": "",
-  "n": 22
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/fuse-box-after.svg",
+   "alt": "After: upgraded to a breaker panel",
+   "caption": "After: upgraded to a breaker panel. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "zinsco-panel",
@@ -296,7 +404,16 @@
   "license": "",
   "licenseUrl": "",
   "source": "",
-  "n": 23
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/zinsco-panel-after.svg",
+   "alt": "After: a modern 200 amp panel",
+   "caption": "After: a modern 200 amp panel. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "cast-iron-drain",
@@ -309,7 +426,16 @@
   "license": "CC BY-SA 3.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
   "source": "https://commons.wikimedia.org/wiki/File:Cast-iron_plumbing_pipe.jpg",
-  "n": 24
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/cast-iron-drain-after.svg",
+   "alt": "Typical repair: PVC drain stack",
+   "caption": "Typical repair: PVC drain stack. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "pex-plumbing",
@@ -321,8 +447,7 @@
   "author": "Tomwsulcer",
   "license": "CC0",
   "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-  "source": "https://commons.wikimedia.org/wiki/File:Shower_project_cutting_half_inch_PEX_pipe_with_tube_cutter.jpg",
-  "n": 25
+  "source": "https://commons.wikimedia.org/wiki/File:Shower_project_cutting_half_inch_PEX_pipe_with_tube_cutter.jpg"
  },
  {
   "key": "septic-tank",
@@ -334,8 +459,7 @@
   "author": "Wikideas1",
   "license": "CC0",
   "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-  "source": "https://commons.wikimedia.org/wiki/File:Septic_tank_image_01.jpg",
-  "n": 26
+  "source": "https://commons.wikimedia.org/wiki/File:Septic_tank_image_01.jpg"
  },
  {
   "key": "water-heater",
@@ -348,7 +472,16 @@
   "license": "CC0",
   "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
   "source": "https://commons.wikimedia.org/wiki/File:Handyman_project_to_disassemble_hot_water_heater_21.JPG",
-  "n": 27
+  "after": {
+   "kind": "photo",
+   "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Rheem_home_gas_water_heater_tank_-_newly_installed.jpg?width=1280",
+   "alt": "Newly installed gas water heater",
+   "caption": "Typical repair: a new water heater. Photo: Tim Evanson, CC BY-SA 2.0, Wikimedia Commons",
+   "author": "Tim Evanson",
+   "license": "CC BY-SA 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
+   "source": "https://commons.wikimedia.org/wiki/File:Rheem_home_gas_water_heater_tank_-_newly_installed.jpg"
+  }
  },
  {
   "key": "galvanized-pipe",
@@ -361,7 +494,16 @@
   "license": "",
   "licenseUrl": "",
   "source": "",
-  "n": 28
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/galvanized-pipe-after.svg",
+   "alt": "After: repiped in copper",
+   "caption": "After: repiped in copper. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "orangeburg-pipe",
@@ -374,7 +516,16 @@
   "license": "",
   "licenseUrl": "",
   "source": "",
-  "n": 29
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/orangeburg-pipe-after.svg",
+   "alt": "After: new PVC sewer line",
+   "caption": "After: new PVC sewer line. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "polybutylene-pipe",
@@ -387,7 +538,16 @@
   "license": "",
   "licenseUrl": "",
   "source": "",
-  "n": 30
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/polybutylene-pipe-after.svg",
+   "alt": "After: repiped in PEX",
+   "caption": "After: repiped in PEX. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "water-well",
@@ -399,8 +559,7 @@
   "author": "Acquisitions Playbook",
   "license": "",
   "licenseUrl": "",
-  "source": "",
-  "n": 31
+  "source": ""
  },
  {
   "key": "old-furnace",
@@ -413,7 +572,16 @@
   "license": "CC BY-SA 2.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
   "source": "https://commons.wikimedia.org/wiki/File:Basement_(7029986093).jpg",
-  "n": 32
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/old-furnace-after.svg",
+   "alt": "Typical repair: a new high-efficiency furnace",
+   "caption": "Typical repair: a new high-efficiency furnace. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "plaster-lath",
@@ -425,8 +593,7 @@
   "author": "Tomwsulcer",
   "license": "CC0",
   "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-  "source": "https://commons.wikimedia.org/wiki/File:Demolition_project_removing_plaster_and_lath_walls_to_expose_bare_bricks.JPG",
-  "n": 33
+  "source": "https://commons.wikimedia.org/wiki/File:Demolition_project_removing_plaster_and_lath_walls_to_expose_bare_bricks.JPG"
  },
  {
   "key": "popcorn-ceiling",
@@ -439,7 +606,16 @@
   "license": "CC BY 2.0",
   "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
   "source": "https://commons.wikimedia.org/wiki/File:Popcorn_ceiling_texture_close_up.jpg",
-  "n": 34
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/popcorn-ceiling-after.svg",
+   "alt": "Typical repair: smooth ceiling",
+   "caption": "Typical repair: smooth ceiling. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "radiator",
@@ -451,8 +627,7 @@
   "author": "sunfishtommy",
   "license": "CC BY-SA 3.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
-  "source": "https://commons.wikimedia.org/wiki/File:Steam_Radiator.jpg",
-  "n": 35
+  "source": "https://commons.wikimedia.org/wiki/File:Steam_Radiator.jpg"
  },
  {
   "key": "vinyl-asbestos-tile",
@@ -465,7 +640,16 @@
   "license": "CC BY 2.0",
   "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
   "source": "https://commons.wikimedia.org/wiki/File:Vintage_Vinyl_Tile_Flooring_South_Beach_(45568707481).jpg",
-  "n": 36
+  "after": {
+   "kind": "photo",
+   "url": "https://commons.wikimedia.org/wiki/Special:FilePath/2021_Popular_Vinyl_Plank_Flooring_Color.jpg?width=1280",
+   "alt": "Wood-look vinyl plank floor",
+   "caption": "Typical repair: luxury vinyl plank, often laid over the old tile. Photo: BestRugPrices, CC BY-SA 4.0, Wikimedia Commons",
+   "author": "BestRugPrices",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source": "https://commons.wikimedia.org/wiki/File:2021_Popular_Vinyl_Plank_Flooring_Color.jpg"
+  }
  },
  {
   "key": "window-ac",
@@ -477,8 +661,7 @@
   "author": "Infrogmation",
   "license": "CC BY-SA 4.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-  "source": "https://commons.wikimedia.org/wiki/File:Royal_Street,_Bywater,_New_Orleans_Sept_2024_-_air_conditioner.jpg",
-  "n": 37
+  "source": "https://commons.wikimedia.org/wiki/File:Royal_Street,_Bywater,_New_Orleans_Sept_2024_-_air_conditioner.jpg"
  },
  {
   "key": "asbestos-pipe",
@@ -491,7 +674,16 @@
   "license": "CC BY-SA 2.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
   "source": "https://commons.wikimedia.org/wiki/File:Asbestos_(2406196215).jpg",
-  "n": 38
+  "after": {
+   "kind": "photo",
+   "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Calcium_silicate_pipe_covering%2C_scored_block_sheets%2C_used_above_20%22_pipe_diameter.png?width=1280",
+   "alt": "Asbestos-free pipe insulation sections",
+   "caption": "Typical repair: asbestos removed by a licensed crew, new insulation installed. Photo: Achim Hering, CC BY 3.0, Wikimedia Commons",
+   "author": "Achim Hering",
+   "license": "CC BY 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+   "source": "https://commons.wikimedia.org/wiki/File:Calcium_silicate_pipe_covering,_scored_block_sheets,_used_above_20\"_pipe_diameter.png"
+  }
  },
  {
   "key": "carpenter-ant",
@@ -503,8 +695,7 @@
   "author": "Richard Bartz",
   "license": "CC BY-SA 2.5",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5/",
-  "source": "https://commons.wikimedia.org/wiki/File:Camponotus_sideview_2.jpg",
-  "n": 39
+  "source": "https://commons.wikimedia.org/wiki/File:Camponotus_sideview_2.jpg"
  },
  {
   "key": "ceiling-stain",
@@ -517,7 +708,16 @@
   "license": "CC BY 3.0",
   "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
   "source": "https://commons.wikimedia.org/wiki/File:Ceiling_water_damage.jpg",
-  "n": 40
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/ceiling-stain-after.svg",
+   "alt": "Typical repair: leak fixed and ceiling repainted",
+   "caption": "Typical repair: leak fixed and ceiling repainted. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "clogged-gutter",
@@ -530,7 +730,16 @@
   "license": "CC BY-SA 2.5",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5/",
   "source": "https://commons.wikimedia.org/wiki/File:Dead-gutter-plant-1.JPG",
-  "n": 41
+  "after": {
+   "kind": "photo",
+   "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Gutter_Guard_04.jpg?width=1280",
+   "alt": "Mesh gutter guard",
+   "caption": "Typical repair: gutters cleaned and fitted with guards. Photo: Stilfehler, CC BY-SA 4.0, Wikimedia Commons",
+   "author": "Stilfehler",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source": "https://commons.wikimedia.org/wiki/File:Gutter_Guard_04.jpg"
+  }
  },
  {
   "key": "fire-damage",
@@ -543,7 +752,16 @@
   "license": "CC BY-SA 4.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
   "source": "https://commons.wikimedia.org/wiki/File:Asvadurov_fire_damaged_08.jpg",
-  "n": 42
+  "after": {
+   "kind": "photo",
+   "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Faubourg_Marigny%2C_New_Orleans_-_Interior_of_recently_renovated_house_-_04.jpg?width=1280",
+   "alt": "Interior of a recently renovated house",
+   "caption": "Typical repair: a fully renovated interior. Photo: Infrogmation of New Orleans, CC BY 2.0, Wikimedia Commons",
+   "author": "Infrogmation of New Orleans",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+   "source": "https://commons.wikimedia.org/wiki/File:Faubourg_Marigny,_New_Orleans_-_Interior_of_recently_renovated_house_-_04.jpg"
+  }
  },
  {
   "key": "peeling-paint",
@@ -556,7 +774,16 @@
   "license": "CC BY-SA 4.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
   "source": "https://commons.wikimedia.org/wiki/File:Old_house_door,_Torrão,_Portugal_julesvernex2.jpg",
-  "n": 43
+  "after": {
+   "kind": "photo",
+   "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Modern-Trade-Painter.jpg?width=1280",
+   "alt": "Painter repainting a wall from a ladder",
+   "caption": "Typical repair: scraped, primed and repainted (lead-safe work on older houses). Photo: Lukeroberts, CC BY-SA 2.5, Wikimedia Commons",
+   "author": "Lukeroberts",
+   "license": "CC BY-SA 2.5",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5/",
+   "source": "https://commons.wikimedia.org/wiki/File:Modern-Trade-Painter.jpg"
+  }
  },
  {
   "key": "sump-pump",
@@ -568,8 +795,7 @@
   "author": "Famartin",
   "license": "CC BY-SA 4.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-  "source": "https://commons.wikimedia.org/wiki/File:2023-07-30_20_08_18_A_newly-installed_sump_pump_in_the_basement_of_a_house_along_Aquetong_Lane_in_the_Mountainview_section_of_Ewing_Township,_Mercer_County,_New_Jersey.jpg",
-  "n": 44
+  "source": "https://commons.wikimedia.org/wiki/File:2023-07-30_20_08_18_A_newly-installed_sump_pump_in_the_basement_of_a_house_along_Aquetong_Lane_in_the_Mountainview_section_of_Ewing_Township,_Mercer_County,_New_Jersey.jpg"
  },
  {
   "key": "termite-damage",
@@ -582,7 +808,16 @@
   "license": "CC BY-SA 3.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
   "source": "https://commons.wikimedia.org/wiki/File:Termite_damage.JPG",
-  "n": 45
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/termite-damage-after.svg",
+   "alt": "Typical repair: damaged wood replaced",
+   "caption": "Typical repair: damaged wood replaced. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "buckled-floor",
@@ -595,7 +830,16 @@
   "license": "",
   "licenseUrl": "",
   "source": "",
-  "n": 46
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/buckled-floor-after.svg",
+   "alt": "After: damaged boards replaced",
+   "caption": "After: damaged boards replaced. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "efflorescence",
@@ -608,7 +852,16 @@
   "license": "",
   "licenseUrl": "",
   "source": "",
-  "n": 47
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/efflorescence-after.svg",
+   "alt": "After: wall sealed and drained",
+   "caption": "After: wall sealed and drained. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "mold-wall",
@@ -621,7 +874,16 @@
   "license": "",
   "licenseUrl": "",
   "source": "",
-  "n": 48
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/mold-wall-after.svg",
+   "alt": "After: mold remediated, new drywall",
+   "caption": "After: mold remediated, new drywall. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "oil-tank",
@@ -634,7 +896,16 @@
   "license": "",
   "licenseUrl": "",
   "source": "",
-  "n": 49
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/oil-tank-after.svg",
+   "alt": "After: tank removed",
+   "caption": "After: tank removed. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "powderpost-beetle",
@@ -647,7 +918,16 @@
   "license": "",
   "licenseUrl": "",
   "source": "",
-  "n": 50
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/powderpost-beetle-after.svg",
+   "alt": "After: wood replaced and treated",
+   "caption": "After: wood replaced and treated. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  },
  {
   "key": "radon-system",
@@ -659,8 +939,7 @@
   "author": "Acquisitions Playbook",
   "license": "",
   "licenseUrl": "",
-  "source": "",
-  "n": 51
+  "source": ""
  },
  {
   "key": "sagging-ridge",
@@ -673,6 +952,15 @@
   "license": "",
   "licenseUrl": "",
   "source": "",
-  "n": 52
+  "after": {
+   "kind": "illustration",
+   "url": "/course/media/illus/sagging-ridge-after.svg",
+   "alt": "After: the roof reframed",
+   "caption": "After: the roof reframed. Illustration",
+   "author": "Acquisitions Playbook",
+   "license": "",
+   "licenseUrl": "",
+   "source": ""
+  }
  }
 ]
