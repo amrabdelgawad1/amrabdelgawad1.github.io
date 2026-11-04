@@ -106,6 +106,33 @@
   const lessonsOf = mod => entries(mod).filter(e => e.it.type === 'lesson');
   const find = (mod, id) => entries(mod).find(e => e.it.id === id);
   const key = (mod, it) => mod.id + '/' + it.id;
+
+  // One-time move of browser-saved state after the Nov 2026 module reorder.
+  // Module ids (m5...) stayed the same; only the number at the front of item ids changed,
+  // e.g. "m5/5.8" is now "m5/7.8". Drafts and open/closed groups move to the new ids so nothing is lost.
+  (function migrateLocal(){
+    const MARK = 'ap-state-v', NOW = '2';
+    const NEW_NUM = { m5:7, m6:5, m7:6, m13:16, m16:17, m17:18, m18:13 };
+    try {
+      if (localStorage.getItem(MARK) === NOW) return;
+      const moves = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        // ap-draft:<user>:m5/5.8   and   ap-group:m5:5.g1
+        const m = k && (k.match(/^(ap-draft:[^:]*:)(m\d+)\/(\d+)(\..*)$/) || k.match(/^(ap-group:)(m\d+):(\d+)(\..*)$/));
+        if (!m) continue;
+        const n = NEW_NUM[m[2]], oldNum = m[2].slice(1);
+        if (!n || m[3] !== oldNum) continue; // not a moved module, or already on the new number
+        const sep = m[1].indexOf('ap-draft') === 0 ? '/' : ':';
+        moves.push([k, m[1] + m[2] + sep + n + m[4]]);
+      }
+      moves.forEach(([from, to]) => {
+        if (localStorage.getItem(to) == null) localStorage.setItem(to, localStorage.getItem(from));
+        localStorage.removeItem(from);
+      });
+      localStorage.setItem(MARK, NOW);
+    } catch(e){}
+  })();
   const qState = (mod, it) => S.quizzes[key(mod, it)] || {};
   const sub = (mod, it) => S.submissions[key(mod, it)] || null;
   const isDone = (mod, it) => !!S.done[key(mod, it)];
@@ -217,7 +244,7 @@
   }
   // ---------- the Learning Hub frame ----------
   // Stages group the modules in the sidebar, as in the Marketing course
-  const STAGES = [[1, 'Foundations'], [5, 'The call'], [8, 'Winning the deal'], [12, 'Deal types to closing'], [17, 'The business'], [20, 'Certification']];
+  const STAGES = [[1, 'Foundations'], [5, 'On the phones'], [8, 'Winning the deal'], [12, 'Deal types, law and closing'], [17, 'The business'], [20, 'Certification']];
   const TOOLS = [['/land-calculator/', 'Land calculator'], ['/house-calculator/', 'House calculator']];
   const ICK = {
     lesson: svg('<path d="M4 5a2 2 0 012-2h12v16H6a2 2 0 00-2 2z"/><path d="M4 19V5"/>'),
