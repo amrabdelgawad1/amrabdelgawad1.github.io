@@ -572,7 +572,8 @@
     mount(header({ back:'#/m/' + mod.id, backLabel:'Back to Module ' + mod.number, ctx:'Module ' + mod.number + (e.group ? ' · ' + e.group.title : ''), title:e.group ? inGroupLabel(e) : 'Lesson ' + it.id }) +
       '<main id="main" class="col">' + thumbOf(mod, it, 'banner', it.title) +
       '<article class="lesson page has-bar">' +
-        '<span class="label o">Lesson ' + n + ' of ' + ls.length + (it.subtitle ? ' · ' + esc(it.subtitle) : '') + '</span>' +
+        '<div class="between"><span class="label o">Lesson ' + n + ' of ' + ls.length + (it.subtitle ? ' · ' + esc(it.subtitle) : '') + '</span>' +
+          '<button class="link-btn print-btn" type="button" data-act="print">Print</button></div>' +
         '<h1>' + esc(heading(it)) + '</h1>' +
         '<div class="prose">' + MD.render(it.bodyMarkdown) + '</div>' +
         '<div id="renewBox"></div>' +
@@ -593,7 +594,8 @@
           b.className = 'btn ' + (now ? 'done' : 'line'); b.setAttribute('aria-pressed', now); b.textContent = now ? 'Completed ✓' : 'Mark complete';
           announce(now ? 'Marked complete' : 'Marked not complete');
         },
-        view: b => openViewer(contentPath(mod, b.dataset.file), b.dataset.name)
+        view: b => openViewer(contentPath(mod, b.dataset.file), b.dataset.name),
+        print: () => window.print()
       } });
     if (window.CoursePractice && user) CoursePractice.mount($('practiceBox'), { db, user, mod, it, title:it.shortTitle || heading(it), toast }).then(f => { leaving = f; }).catch(() => {});
     if (mod.number === S.totalModules && /staying certified/i.test(it.title || '')) renewCard(it);

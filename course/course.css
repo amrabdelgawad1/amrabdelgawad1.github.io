@@ -382,3 +382,34 @@ a.person:hover{ border-color:var(--ink); color:var(--ink); }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
 }
+
+/* ---------- Print: lessons on A4. Only the lesson itself; tables wrap to the page width. ---------- */
+@page{ size:A4; margin:14mm 13mm 16mm; }
+@media print{
+  :root{ --bg:#fff; --card:#fff; --ink:#000; --body:#111; --ink-2:#222; --muted:#444; --line:#bbb; }
+  html, body{ background:#fff !important; color:#111; font-size:10.5pt; }
+  .cp-top, .cp-side, .cp-scrim, .crumb, .bar-foot, .skip, .toast, #practiceBox, #renewBox, .print-btn,
+  .lesson .files, section[aria-labelledby="filesH"], .banner, .thumb, [data-act="view"]{ display:none !important; }
+  .cp-body, .cp-main, main, .col, .page, .lesson{ display:block !important; width:auto !important; max-width:none !important; margin:0 !important; padding:0 !important; box-shadow:none !important; border:0 !important; }
+  .lesson h1{ font-size:18pt; margin:0 0 6pt; }
+  .lesson .label{ font-size:8.5pt; }
+  .prose{ display:block; font-size:10.5pt; line-height:1.45; }
+  .prose > * + *{ margin-top:7pt !important; }
+  .prose h2{ font-size:12.5pt; break-after:avoid; page-break-after:avoid; margin-top:12pt !important; }
+  .prose p, .prose li{ orphans:3; widows:3; }
+  .prose a{ color:#111; text-decoration:underline; }
+  .table-wrap{ overflow:visible !important; border:0; border-radius:0; }
+  .table-wrap table{ width:100%; min-width:0 !important; table-layout:auto; border-collapse:collapse; font-size:8.5pt; line-height:1.35; }
+  .table-wrap th, .table-wrap td{ white-space:normal !important; min-width:0 !important; padding:4pt 5pt; border:0.5pt solid #999; vertical-align:top; overflow-wrap:break-word; word-break:normal; }
+  .table-wrap td a{ word-break:break-all; }
+  .table-wrap th{ background:#eee !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .table-wrap thead{ display:table-header-group; }
+  .table-wrap tr{ break-inside:avoid; page-break-inside:avoid; }
+  .terms{ display:block !important; }
+  .term{ break-inside:avoid; page-break-inside:avoid; border:0.5pt solid #999; margin-bottom:5pt; }
+  .term-name{ color:#000 !important; }
+  .prose img{ max-height:110mm; width:auto; break-inside:avoid; }
+  .md-fig{ break-inside:avoid; page-break-inside:avoid; }
+  .prose .rtl{ direction:rtl; text-align:right; }
+  .prose li.check input{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+}

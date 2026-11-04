@@ -17,6 +17,7 @@
     if (/^https?:\/\//i.test(u)) return u;
     if (/^\/(?!\/)/.test(u)) return u;
     if (/^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}\//i.test(u)) return 'https://' + u; // codes.ohio.gov/...
+    if (/^[\w\-.%~]+(\/[\w\-.%~]+)*$/.test(u) && !/^\.\./.test(u)) return u;    // relative file, no scheme
     return '';
   }
   const linkHtml = (href, text) => '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + text + '</a>';
