@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://ztlpgyomjuzmjmuifbbd.supabase.co; img-src 'self' data:; base-uri 'none'; form-action 'self'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>Certificate check · Acquisitions Playbook</title>
+<meta name="description" content="Check an Acquisitions Playbook course certificate.">
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#F4F6F3; --card:#FFFFFF; --ink:#13211A; --body:#2C3832; --muted:#56635B; --line:#DCE2DD;
+    --orange:#E2602A; --orange-text:#B8461A; --ok:#1F6B45; --ok-fill:#E3F1E8; --warn:#8A4B07; --warn-fill:#FBEBD3; --err:#A3261D; --err-fill:#FBE3E0;
+    --serif:'DM Serif Display', Georgia, 'Times New Roman', serif; --sans:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; background:var(--bg); color:var(--ink); font:400 15px/1.55 var(--sans); }
+  main{ max-width:920px; margin:0 auto; padding:32px 16px 48px; }
+  .top{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:20px; }
+  .brand{ font-weight:700; letter-spacing:.02em; color:var(--ink); text-decoration:none; }
+  .brand span{ color:var(--orange-text); }
+  .muted{ color:var(--muted); }
+  .status{ display:flex; gap:12px; align-items:flex-start; border-radius:12px; padding:14px 16px; margin-bottom:18px; border:1px solid transparent; }
+  .status b{ display:block; font-size:16px; }
+  .status p{ margin:2px 0 0; font-size:14px; }
+  .status.ok{ background:var(--ok-fill); color:var(--ok); border-color:#BFDDCB; }
+  .status.warn{ background:var(--warn-fill); color:var(--warn); border-color:#F0D3A8; }
+  .status.err{ background:var(--err-fill); color:var(--err); border-color:#F2C2BC; }
+  .dot{ width:12px; height:12px; border-radius:50%; background:currentColor; flex:none; margin-top:6px; }
+
+  .cert{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:clamp(24px, 6vw, 56px); position:relative; text-align:center; }
+  .cert::before{ content:""; position:absolute; inset:10px; border:2px solid var(--orange); border-radius:8px; pointer-events:none; opacity:.85; }
+  .kicker{ font-size:12px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--orange-text); margin:0; }
+  .cert h1{ font:400 clamp(30px, 7vw, 52px)/1.1 var(--serif); margin:18px 0 6px; color:var(--ink); overflow-wrap:anywhere; }
+  .lead{ margin:0 auto; max-width:560px; color:var(--body); font-size:16px; }
+  .course{ font:400 clamp(22px, 4.5vw, 30px)/1.2 var(--serif); margin:6px 0 22px; }
+  .facts{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; max-width:640px; margin:0 auto; text-align:center; }
+  .facts div{ border-top:1px solid var(--line); padding-top:10px; }
+  .facts dt{ font-size:11.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  .facts dd{ margin:4px 0 0; font-weight:600; }
+  .sign{ margin-top:30px; display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; max-width:640px; margin-inline:auto; }
+  .sign .who{ text-align:left; }
+  .sign .who b{ display:block; font:400 22px var(--serif); }
+  .sign .code{ text-align:right; font-size:13px; color:var(--muted); }
+  .sign .code b{ display:block; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color:var(--ink); font-size:15px; letter-spacing:.04em; }
+  .fine{ margin:22px auto 0; max-width:600px; font-size:12.5px; color:var(--muted); }
+
+  .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+  .btn{ appearance:none; border:1.5px solid var(--ink); background:var(--card); color:var(--ink); border-radius:10px; padding:10px 16px; font:600 14px var(--sans); cursor:pointer; min-height:44px; }
+  .btn.primary{ background:var(--ink); color:#fff; }
+  .btn:focus-visible, input:focus-visible{ outline:3px solid var(--orange); outline-offset:2px; }
+
+  form.lookup{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; margin-top:22px; }
+  form.lookup label{ display:block; font-weight:600; margin-bottom:6px; }
+  .row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .row input{ flex:1 1 220px; min-height:44px; border:1.5px solid var(--line); border-radius:10px; padding:10px 12px; font:600 15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-transform:uppercase; background:#fff; color:var(--ink); }
+  .hint{ font-size:13px; color:var(--muted); margin:8px 0 0; }
+  [hidden]{ display:none !important; }
+
+  @media (max-width:560px){
+    .facts{ grid-template-columns:1fr; }
+    .sign{ flex-direction:column; align-items:center; }
+    .sign .who, .sign .code{ text-align:center; }
+  }
+  @page{ size:A4 landscape; margin:12mm; }
+  @media print{
+    html,body{ background:#fff; }
+    main{ max-width:none; padding:0; }
+    .top, .status, .actions, form.lookup{ display:none !important; }
+    .cert{ border:0; padding:18mm; break-inside:avoid; min-height:176mm; display:flex; flex-direction:column; justify-content:center; }
+    .cert::before{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <a class="brand" href="/">Amr Abdelgawad <span>·</span> Acquisitions Playbook</a>
+    <span class="muted" id="checked"></span>
+  </div>
+
+  <div id="status" class="status" role="status" aria-live="polite" hidden><span class="dot" aria-hidden="true"></span><div><b id="stTitle"></b><p id="stText"></p></div></div>
+
+  <article class="cert" id="cert" hidden aria-labelledby="certName">
+    <p class="kicker">Certificate of completion</p>
+    <h1 id="certName"></h1>
+    <p class="lead">has completed the full course, passed every checkpoint and the final exam, and was scored on recorded calls against the course standard in</p>
+    <p class="course">The Acquisitions Playbook</p>
+    <dl class="facts">
+      <div><dt>Issued</dt><dd id="fIssued"></dd></div>
+      <div><dt id="fValidLabel">Valid until</dt><dd id="fValid"></dd></div>
+      <div><dt>Last renewed</dt><dd id="fRenewed"></dd></div>
+    </dl>
+    <div class="sign">
+      <div class="who"><b>Amr Abdelgawad</b><span class="muted">Course author and reviewer</span></div>
+      <div class="code">Certificate code<b id="fCode"></b>Check it at amrabdelgawad.site/cert</div>
+    </div>
+    <p class="fine">A course certificate from Amr Abdelgawad. It isn't a state license or an accredited credential, and it never replaces a real estate license where a state requires one. Certificates are valid for one year and are renewed with a new scored call and the yearly law update.</p>
+  </article>
+
+  <div class="actions" id="actions" hidden>
+    <button class="btn primary" type="button" id="printBtn">Print or save as PDF</button>
+    <button class="btn" type="button" id="copyBtn">Copy link</button>
+  </div>
+
+  <form class="lookup" id="lookup" novalidate>
+    <label for="code">Check a certificate</label>
+    <div class="row">
+      <input id="code" name="c" autocomplete="off" spellcheck="false" placeholder="ACQ-XXXXX-XXXXX" maxlength="15" aria-describedby="codeHint">
+      <button class="btn primary" type="submit">Check</button>
+    </div>
+    <p class="hint" id="codeHint">The code is printed on the certificate, for example ACQ-3F9A2-7C1D0.</p>
+  </form>
+</main>
+
+<script src="/tracker/config.js?v=3"></script>
+<script src="cert.js?v=1"></script>
+</body>
+</html>

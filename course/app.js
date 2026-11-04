@@ -609,7 +609,8 @@
     box.innerHTML = '<section class="card stack" data-s="g8" aria-labelledby="rnH"><h2 class="sub" id="rnH">Your renewal</h2>' +
       '<p class="note">Your certificate ' + esc(r.code) + ' is valid until ' + esc(new Date(r.validUntil + 'T12:00:00').toLocaleDateString([], { year:'numeric', month:'long', day:'numeric' })) + (r.due ? ', so it’s due for renewal now.' : '.') + '</p>' +
       '<ul class="stack" data-s="g6">' + step(r.callOk, 'Send one new recorded call that scores 40 or more') + step(r.quizOk, 'Pass this lesson’s quiz') + '</ul>' +
-      '<p class="note">' + (r.canRenew ? 'Both done. Amr renews your certificate for another year.' : 'Both have to come after your last renewal date.') + '</p></section>';
+      '<p class="note">' + (r.canRenew ? 'Both done. Amr renews your certificate for another year.' : 'Both have to come after your last renewal date.') + '</p>' +
+      '<a class="btn line" href="/cert/?c=' + encodeURIComponent(r.code) + '" target="_blank" rel="noopener">View your certificate</a></section>';
   }
 
   // Guide page viewer: full screen, pinch to zoom on phones, a zoom button for everyone
