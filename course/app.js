@@ -575,6 +575,7 @@
         '<span class="label o">Lesson ' + n + ' of ' + ls.length + (it.subtitle ? ' · ' + esc(it.subtitle) : '') + '</span>' +
         '<h1>' + esc(heading(it)) + '</h1>' +
         '<div class="prose">' + MD.render(it.bodyMarkdown) + '</div>' +
+        '<div id="renewBox"></div>' +
         '<div id="practiceBox"></div>' +
         (files.length ? '<section class="stack" aria-labelledby="filesH"><h2 class="sub" id="filesH" data-s="fs16">Files</h2><p class="note">Original guide page. Where it differs from the lesson, the lesson is correct.</p><div class="files">' + files.join('') + '</div></section>' : '') +
       '</article></main>' +
@@ -595,6 +596,18 @@
         view: b => openViewer(contentPath(mod, b.dataset.file), b.dataset.name)
       } });
     if (window.CoursePractice && user) CoursePractice.mount($('practiceBox'), { db, user, mod, it, title:it.shortTitle || heading(it), toast }).then(f => { leaving = f; }).catch(() => {});
+    if (mod.number === S.totalModules && /staying certified/i.test(it.title || '')) renewCard(it);
+  }
+  // Lesson 20.5: where the learner stands on renewing their certificate
+  async function renewCard(it){
+    const at = location.hash;
+    let r; try { r = await rpc('certificate_renewal_status', {}); } catch(e){ return; }
+    const box = $('renewBox'); if (!box || location.hash !== at || !r || !r.certified) return;
+    const step = (ok, text) => '<li class="between"><span class="small">' + esc(text) + '</span>' + chip(ok ? 'Done' : 'To do', ok ? 'ok' : 'warm') + '</li>';
+    box.innerHTML = '<section class="card stack" data-s="g8" aria-labelledby="rnH"><h2 class="sub" id="rnH">Your renewal</h2>' +
+      '<p class="note">Your certificate ' + esc(r.code) + ' is valid until ' + esc(new Date(r.validUntil + 'T12:00:00').toLocaleDateString([], { year:'numeric', month:'long', day:'numeric' })) + (r.due ? ', so it’s due for renewal now.' : '.') + '</p>' +
+      '<ul class="stack" data-s="g6">' + step(r.callOk, 'Send one new recorded call that scores 40 or more') + step(r.quizOk, 'Pass this lesson’s quiz') + '</ul>' +
+      '<p class="note">' + (r.canRenew ? 'Both done. Amr renews your certificate for another year.' : 'Both have to come after your last renewal date.') + '</p></section>';
   }
 
   // Guide page viewer: full screen, pinch to zoom on phones, a zoom button for everyone

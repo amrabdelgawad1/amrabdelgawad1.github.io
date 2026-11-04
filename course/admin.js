@@ -70,7 +70,63 @@
         '<section class="card stack" aria-label="Progress">' + (mods || '<p class="note">No progress yet.</p>') + '</section>' +
         '<section class="stack" aria-labelledby="sH"><h2 class="sub" id="sH">Written drills</h2>' + (subs ? '<ul class="items">' + subs + '</ul>' : '<p class="note">Nothing started yet.</p>') + '</section>' +
         '<section class="stack" aria-labelledby="aH"><h2 class="sub" id="aH">Quiz attempts (' + L.attempts.length + ')</h2>' + (atts ? '<ul class="items">' + atts + '</ul>' : '<p class="note">No finished quizzes yet.</p>') + '</section>' +
+        '<section class="stack" aria-labelledby="cH" id="certBox"><h2 class="sub" id="cH">Certification</h2><p class="note">Loading…</p></section>' +
       '</div></main>', { title:L.name, at });
+    certSection(uid, L, at);
+  }
+
+  // ---------- Certification: requirements, live-call checklist, issue, renew, final-exam unlock ----------
+  async function certSection(uid, L, at){
+    const box = $('certBox'); if (!box) return;
+    let rd, live, ren;
+    try { [rd, live, ren] = await Promise.all([rpc('certificate_readiness', { p_user:uid }), rpc('certificate_live_get', { p_user:uid }), rpc('certificate_renewal_status', { p_user:uid })]); }
+    catch(e){ if (location.hash === at) box.innerHTML = '<h2 class="sub">Certification</h2><p class="err">' + esc(errText(e)) + '</p>'; return; }
+    if (location.hash !== at) return;
+    const r = Array.isArray(rd) ? rd[0] || {} : rd || {};
+    const row = (ok, text) => '<li class="between"><span class="small">' + esc(text) + '</span>' + chip(ok ? 'Done' : 'Not yet', ok ? 'ok' : 'warm') + '</li>';
+    const reqs = '<ul class="stack" data-s="g6">' +
+      row(r.checkpoints >= r.checkpoints_needed, 'Checkpoints at 85%: ' + (r.checkpoints || 0) + ' of ' + (r.checkpoints_needed || 19)) +
+      row(r.final_exam, 'Final exam at 85%') +
+      row(r.capstone, 'Capstone deal file approved') +
+      row(r.calls_40 >= 3, 'Three certification calls at 40+ with no area below 3: ' + (r.calls_40 || 0) + ' (' + plural(r.roleplays || 0, 'role-play') + (r.real_calls ? ', a real call can count for one' : '') + ')') +
+      row(r.calls_45 >= 1, 'At least one of them at 45+' + (r.best_call ? ' (best ' + r.best_call + ')' : '')) +
+      row(r.human_scored >= 1, 'At least one scored by you') +
+      row(r.compliance, 'Compliance quizzes passed') +
+      row(r.live_signed, 'Live-call readiness checklist signed') + '</ul>';
+    const cb = (id, on, text) => '<label class="row" data-s="g8"><input type="checkbox" id="' + id + '"' + (on ? ' checked' : '') + '><span class="small">' + esc(text) + '</span></label>';
+    const liveHtml = '<div class="card stack" data-s="g8"><b class="small">Live-call readiness checklist</b>' +
+      '<p class="note">' + (live.complianceQuiz ? 'Compliance quizzes passed (' : 'Compliance quizzes not passed yet (') + esc((live.complianceItems || []).join(', ')) + ').</p>' +
+      cb('lcDisc', live.disclosure, 'The disclosure is read correctly on a recorded call') +
+      cb('lcCall', live.call, 'One call scores 40+ with no area below 3') +
+      cb('lcCrm', live.crm, 'The CRM notes are clean on a practice queue') +
+      '<label class="small" for="lcNote">Note (optional)</label><textarea id="lcNote" rows="2">' + esc(live.note || '') + '</textarea>' +
+      (live.signedAt ? '<p class="note">Signed ' + dateTime(live.signedAt) + (live.signedBy ? ' by ' + esc(live.signedBy) : '') + '. Changing a box removes the signature.</p>' : '') +
+      '<div class="row"><button class="btn line" type="button" data-act="liveSave">Save</button><button class="btn orange" type="button" data-act="liveSign">Sign</button></div></div>';
+    let certHtml;
+    if (ren && ren.certified) {
+      certHtml = '<div class="card stack" data-s="g8"><b class="small">Certificate ' + esc(ren.code) + '</b>' +
+        '<p class="note">Valid until ' + esc(ren.validUntil) + (ren.due ? ' (renewal due)' : '') + '. For renewal, since ' + esc(ren.since) + ': ' +
+        (ren.callOk ? 'new call 40+ done' : 'needs one new call scored 40+') + ', ' + (ren.quizOk ? 'Lesson 20.5 quiz passed' : 'needs the Lesson 20.5 quiz') + '.</p>' +
+        '<button class="btn orange" type="button" data-act="renew"' + (ren.canRenew ? '' : ' disabled') + '>Renew for one year</button></div>';
+    } else {
+      certHtml = '<div class="card stack" data-s="g8"><b class="small">Issue the certificate</b>' +
+        '<label class="small" for="certName">Name as it should appear</label><input id="certName" type="text" maxlength="80" value="' + esc(L.name || '') + '">' +
+        '<button class="btn orange" type="button" data-act="issue"' + (r.ready ? '' : ' disabled') + '>Issue certificate</button>' +
+        (r.ready ? '' : '<p class="note">Every requirement above has to be done first.</p>') + '</div>';
+    }
+    const unlockHtml = '<div class="card stack" data-s="g8"><b class="small">Final exam</b><p class="note">After three failed tries the learner waits for you. Unlocking allows one more try and lifts the 24-hour wait.</p>' +
+      '<button class="btn line" type="button" data-act="unlock">Unlock one more try</button></div>';
+    box.innerHTML = '<h2 class="sub" id="cH">Certification</h2><div class="card">' + reqs + '</div>' + liveHtml + certHtml + unlockHtml;
+    const val = id => $(id) && $(id).checked;
+    const run = async (b, fn, ok) => { b.setAttribute('aria-busy', 'true'); try { await fn(); toast(ok); certSection(uid, L, at); } catch(e){ toast(e && e.message && !/^course:|^hub:/.test(e.message) ? e.message : errText(e)); } finally { b.removeAttribute('aria-busy'); } };
+    box.onclick = ev => {
+      const b = ev.target.closest('[data-act]'); if (!b || b.disabled) return;
+      const a = b.dataset.act;
+      if (a === 'liveSave' || a === 'liveSign') run(b, () => rpc('certificate_live_sign', { p_user:uid, p_disclosure:val('lcDisc'), p_call:val('lcCall'), p_crm:val('lcCrm'), p_note:$('lcNote').value, p_sign:a === 'liveSign' }), a === 'liveSign' ? 'Checklist signed.' : 'Checklist saved.');
+      else if (a === 'issue') run(b, () => rpc('certificate_issue', { p_user:uid, p_name:$('certName').value }), 'Certificate issued.');
+      else if (a === 'renew') run(b, () => rpc('certificate_renew', { p_id:ren.id }), 'Certificate renewed.');
+      else if (a === 'unlock' && confirm('Allow one more final exam try for ' + L.name + '?')) run(b, () => rpc('course_exam_unlock', { p_user:uid }), 'Unlocked. They can take the final exam again.');
+    };
   }
   const statusChip = s => s === 'approved' ? chip('Approved', 'ok') : s === 'submitted' ? chip('Waiting for you', 'warm') : s === 'needs_changes' ? chip('Returned') : chip('Draft');
   function duration(a, b){
@@ -84,9 +140,9 @@
     msgView('Loading…', { header:header(Object.assign(back('#/admin/u/' + uid, 'Back to the learner'), { ctx:'Admin', title:'Quiz attempt' })) });
     let a;
     try { a = await rpc('course_admin_attempt', { p_attempt:id }); } catch(e){ return msgView(errText(e), { retry:true, at }); }
-    const qs = a.questions.map(q => {
+    const qs = a.questions.map((q, qi) => {
       const picks = (q.answer && q.answer.picks) || [], right = q.answer && q.answer.right;
-      return '<li class="card stack"><div class="between"><b class="small">Q' + q.number + ' · ' + (q.type === 'multiple' ? 'Multiple choice' : 'Single choice') + '</b>' +
+      return '<li class="card stack"><div class="between"><b class="small">Q' + (qi + 1) + ' · ' + (q.type === 'multiple' ? 'Multiple choice' : 'Single choice') + '</b>' +
         (q.answer ? '<span class="rv-v ' + (right ? 'ok' : 'no') + '">' + (right ? 'Right' : 'Wrong') + '</span>' : '<span class="small muted">Not answered</span>') + '</div>' +
         '<p data-s="p600">' + esc(q.prompt) + '</p>' +
         q.options.map(o => { const p = picks.includes(o.id); return '<div class="aopt' + (o.correct ? ' correct' : p ? ' picked-wrong' : '') + '"><span class="bdg">' + esc(o.id) + '</span><span class="t">' + esc(o.text) +
