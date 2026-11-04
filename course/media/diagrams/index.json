@@ -1,0 +1,122 @@
+[
+ {
+  "key": "deal-pipeline",
+  "lesson": "1.1",
+  "title": "Where acquisitions sits in the deal",
+  "alt": "The deal pipeline in seven steps: marketing, cold caller, lead manager, acquisitions (highlighted), transaction coordinator and title, dispositions, closing."
+ },
+ {
+  "key": "follow-up-ladder",
+  "lesson": "5.8",
+  "title": "The follow-up ladder",
+  "alt": "Follow-up ladder: hot within 24 hours then every 2 to 3 days; warm in 1 week then every 2 weeks; nurture in 30 days then monthly; cold in 90 days then every 3 to 6 months; do-not-call never."
+ },
+ {
+  "key": "four-pillars-score",
+  "lesson": "6.2",
+  "title": "Scoring a lead on the four pillars",
+  "alt": "Four pillars scorecard: motivation, timeline, condition and price each scored 1 to 3; totals of 10 to 12 hot, 7 to 9 warm, 5 to 6 nurture, 4 dead for now."
+ },
+ {
+  "key": "lead-status-flow",
+  "lesson": "6.5",
+  "title": "How a lead moves through the CRM",
+  "alt": "Lead status flow: new, attempting, contacted, qualified, appointment set, offer made, under contract; from any step a lead can move to nurture, dead or do-not-call."
+ },
+ {
+  "key": "queue-order",
+  "lesson": "6.5",
+  "title": "The order you work the queue",
+  "alt": "Queue order: 1 brand-new inbound leads, 2 scheduled callbacks, 3 hot leads waiting on a next step, 4 today's follow-ups, 5 attempting leads, 6 cold lists in power-hour blocks."
+ },
+ {
+  "key": "call-stages",
+  "lesson": "7.1",
+  "title": "The 10 stages of the acquisition call",
+  "alt": "The ten stages of the call: intro and permission, upfront agreement, rapport, property walkthrough, motivation and pain, timeline, money and decision makers, price, offer and negotiation, close and next steps."
+ },
+ {
+  "key": "call-time",
+  "lesson": "7.1",
+  "title": "Where the time goes on a 30-minute call",
+  "alt": "Time on a 30-minute call: open and rapport 10%, discovery and qualifying 45%, gap summary 5%, presenting the offer 20%, price, objections and close 20%."
+ },
+ {
+  "key": "house-layers",
+  "lesson": "8.1",
+  "title": "A house in four layers",
+  "alt": "A house in four layers: interior (cosmetic), systems, envelope (roof most common big repair) and structure (most expensive, can kill a deal), with cost rising toward structure."
+ },
+ {
+  "key": "mao-waterfall",
+  "lesson": "9.2",
+  "title": "Linda's MAO, step by step",
+  "alt": "MAO waterfall for Linda's house: ARV $215,000, times 70% is $150,500, minus $59,000 repairs gives $91,500 end buyer price, minus $15,000 fee gives $76,500 MAO; opening offer $65,000 to $68,000."
+ },
+ {
+  "key": "flipper-max",
+  "lesson": "9.3",
+  "title": "What a flipper can pay for Linda's house",
+  "alt": "Flipper's maximum: of a $215,000 ARV, rehab $59,000, profit target $32,250, selling costs $17,200, holding $9,000, buying costs $1,913, leaving about $95,600; with a $74,000 contract the fee room is about $17,500 to $21,000."
+ },
+ {
+  "key": "objection-system",
+  "lesson": "10.1",
+  "title": "One objection system, three lengths",
+  "alt": "Objection system in three lengths: full six steps pause, acknowledge, clarify, isolate, respond, re-close; short four steps acknowledge, clarify, respond, advance; quick three steps acknowledge, ask, answer then check in."
+ },
+ {
+  "key": "four-numbers",
+  "lesson": "11.1",
+  "title": "The four numbers in every negotiation",
+  "alt": "Four numbers on Linda's deal: opening offer $68,000, signed $74,000, walk-away MAO $76,500, asking price $180,000; if her real minimum is below the MAO there is a deal, above it cash will not work."
+ },
+ {
+  "key": "exit-decision-tree",
+  "lesson": "12.1",
+  "title": "Choosing the deal structure",
+  "alt": "Exit decision tree: cash if there is equity at or under MAO; otherwise novation, subject-to, seller finance, or short sale, and if none fit, a scheduled follow-up or referral."
+ },
+ {
+  "key": "closing-timeline",
+  "lesson": "14.2",
+  "title": "The timeline of a typical cash deal",
+  "alt": "Cash deal timeline: day 0 contract signed, days 1 to 3 earnest money, days 3 to 10 title search, title commitment, curative work, dispo assigns or double closes, settlement statement approved, then signing, funding and recording."
+ },
+ {
+  "key": "closing-players",
+  "lesson": "14.2",
+  "title": "Who is at the closing table",
+  "alt": "Closing players: the title company or escrow in the center, surrounded by the transaction coordinator, closing attorney, underwriter, notary or mobile signer, and county recorder."
+ },
+ {
+  "key": "foreclosure-path",
+  "lesson": "15.1",
+  "title": "The general path to foreclosure",
+  "alt": "Foreclosure path: missed payments, the 120-day line, first filing, sale date set, auction, after the sale; judicial foreclosure is slower and goes through court, non-judicial is faster under a power of sale."
+ },
+ {
+  "key": "land-access",
+  "lesson": "16.3",
+  "title": "Land access, best to worst",
+  "alt": "Land access ladder: public road frontage is best, then private road with a recorded agreement, recorded easement, physical path only (risky), and landlocked (big discount)."
+ },
+ {
+  "key": "dispo-clock",
+  "lesson": "17.1",
+  "title": "The dispo clock",
+  "alt": "Dispo clock: hand-off and underwriting on day 0 to 1, package by day 2, hot list then full blast days 2 to 3, showings days 3 to 6, offers days 5 to 7, assignment signed days 7 to 9, close day 10 to 30; inspection period often 7 to 14 days."
+ },
+ {
+  "key": "marketing-funnel",
+  "lesson": "18.6",
+  "title": "From marketing dollars to closed deals",
+  "alt": "Marketing funnel: 120 leads become 4 contracts (3.3%) and 3 closed deals (75%); spend $6,000, cost per lead $50, cost per contract $1,500, cost per deal $2,000, average fee $11,000, marketing return 450%."
+ },
+ {
+  "key": "certification-path",
+  "lesson": "20.1",
+  "title": "How certification works",
+  "alt": "Certification path: pass modules 1 to 19 at 85%, the final exam at 85%, three role-plays (40+ each, one 45+), the compliance quiz at 90% and the capstone deal file; then certified for one year and renewed yearly."
+ }
+]
