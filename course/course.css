@@ -162,6 +162,15 @@ a.srow:hover{ border-color:var(--ink); color:var(--ink); }
 .prose ul,.prose ol{ padding-left:22px; display:flex; flex-direction:column; gap:6px; }
 .prose strong{ color:var(--ink); }
 .prose h2{ margin:4px 0 0; font-size:16px; font-weight:700; color:var(--ink); line-height:1.35; }
+.prose a{ color:var(--orange-text); text-decoration:underline; text-underline-offset:2px; overflow-wrap:anywhere; }
+.prose .rtl{ direction:rtl; text-align:right; unicode-bidi:isolate; }
+.prose ul.rtl,.prose ol.rtl{ padding-left:0; padding-right:22px; }
+.prose ul.checklist{ list-style:none; padding-left:0; }
+.prose li.check{ display:flex; gap:10px; align-items:flex-start; }
+.prose li.check input{ width:18px; height:18px; margin:2px 0 0; flex:none; accent-color:var(--orange-btn); }
+.prose .md-fig{ margin:4px 0; display:flex; flex-direction:column; gap:6px; }
+.prose img{ display:block; max-width:100%; height:auto; border-radius:10px; border:1px solid var(--line); background:var(--card); }
+.prose figcaption{ font-size:12.5px; line-height:1.45; color:var(--muted); }
 .terms{ display:flex; flex-direction:column; gap:10px; }
 .term{ border:1px solid var(--line); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:5px; }
 .term p{ margin:0; }
