@@ -78,6 +78,10 @@
 .tm-rate b{ font-family:var(--font-display); font-weight:400; font-size:30px; line-height:1; color:var(--accent2); }
 .tm-rate span{ font-size:14px; color:var(--light); }
 .tm-rate em{ flex-basis:100%; font-style:normal; font-size:13.5px; color:var(--light); }
+.tm-terms{ list-style:none; margin:22px 0 0; padding:0; display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; }
+.tm-terms li{ background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:14px 18px; color:var(--light); font-size:15px; line-height:1.55; }
+.tm-terms b{ color:var(--text); }
+@media (max-width:720px){ .tm-terms{ grid-template-columns:minmax(0,1fr); } }
 .tm-pnote{ margin-top:18px; color:var(--light); }
 .tm-photo{ display:block; width:96px; height:96px; border-radius:50%; object-fit:cover; margin-bottom:16px; border:2px solid var(--accent); }
 .main-nav a[aria-current="page"]{ color:var(--accent2); }
@@ -127,7 +131,7 @@
         <a href="#roles"><span>Acquisition Rep</span><b>from $12<small>/hr</small></b></a>
         <a href="#roles"><span>Lead Manager</span><b>from $10<small>/hr</small></b></a>
         <a href="#roles"><span>Virtual Assistant</span><b>from $7<small>/hr</small></b></a>
-        <p class="tm-glance-note">Hiring, training, coaching and reporting included. Paid trial week available.</p>
+        <p class="tm-glance-note">Hiring, training, coaching and reporting included. No long-term contract. Paid trial week available.</p>
       </aside>
       </div>
       <div class="tm-facts">
@@ -267,9 +271,18 @@
   <section class="section" id="pricing">
     <div class="container">
       <p class="eyebrow">Pricing</p>
-      <h2 class="section-heading">What Every Rate Includes</h2>
+      <h2 class="section-heading">Simple, Fair Terms</h2>
       <p class="section-lede">The hourly rate on each role covers the person and everything around them: hiring, training on your business, daily coaching, call reviews, cover for absences and reporting. No setup fee. Full-time is about 173 hours a month. Final rates depend on the hours and the work, and you get them in writing before anything starts.</p>
-      <p class="tm-pnote">Part-time shifts are welcome. Start with a paid trial week at a reduced rate, so you see the work on your own lists before committing.</p>
+      <ul class="tm-terms">
+        <li><b>No long-term contract.</b> Month to month.</li>
+        <li><b>Paid trial week</b> at a reduced rate, paid up front. Either side can stop after it.</li>
+        <li><b>Billed weekly</b> for hours worked, invoiced every Monday, due within 3 days.</li>
+        <li><b>Hours tracked</b> with clock-in, shown on your invoice and daily reports.</li>
+        <li><b>Minimum 20 hours a week</b> per person. Full-time is recommended for cold callers.</li>
+        <li><b>2 weeks' notice</b> to cancel or reduce hours. Add people or hours anytime.</li>
+        <li><b>No setup fee.</b> Free replacement, and absences are covered.</li>
+        <li><b>Rates reviewed once a year</b>, never changed without your OK.</li>
+      </ul>
     </div>
   </section>
 
@@ -279,6 +292,8 @@
       <h2 class="section-heading">Before You Hire a Team</h2>
       <div class="faq-list">
         <details><summary>What do the rates include?</summary><p>The person's time plus everything around it: hiring, training on your business, daily coaching, call reviews, cover for absences and reporting. Your dialer, CRM, lists and phone numbers stay on your accounts.</p></details>
+        <details><summary>How does billing work?</summary><p>The trial week is paid up front. After that you get an invoice every Monday for the hours worked the week before, due within 3 days. Hours come from each person's clock-in and match the daily reports, so there are no surprises.</p></details>
+        <details><summary>Is there a minimum commitment?</summary><p>No long-term contract. It runs month to month with 20 hours a week per person as the minimum, and you can cancel or reduce hours with 2 weeks' notice.</p></details>
         <details><summary>Can we start small?</summary><p>Yes. You can start with one or two callers on a paid trial week and grow once you've seen the results.</p></details>
         <details><summary>Do they work in our CRM and dialer?</summary><p>Yes. The team works inside your systems and follows your workflow. GoHighLevel, Podio, Follow Up Boss, Mojo, BatchDialer and ReadyMode are all familiar.</p></details>
         <details><summary>How soon can a team start?</summary><p>Once we agree on the roles, hours and access to your systems, I give you a start date on our call. One or two people can usually start sooner than a full team.</p></details>
