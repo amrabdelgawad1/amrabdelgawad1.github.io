@@ -605,7 +605,7 @@
 
   // ---------- Lesson video ----------
   // A lesson has a video when content/<module>/videos/<lesson id>.mp4 is in the private bucket.
-  // Learners get a 15-minute link, no download or picture-in-picture menu, and a fixed brand badge with the viewer's email.
+  // Learners get a 15-minute link, no download or picture-in-picture menu, and a fixed brand badge (name and site email).
   // Admins can upload or replace the video from the lesson page.
   const videoPath = (mod, it) => contentPath(mod, 'videos/' + it.id + '.mp4');
   async function videoUrl(path){
@@ -619,10 +619,9 @@
     if (!document.contains(box)) return; // the learner moved to another page while the link was loading
     const up = S.isAdmin ? '<label class="link-btn vup"><input type="file" class="vh" id="vidFile" accept="video/mp4">' + (url ? 'Replace video' : 'Upload a video for this lesson (MP4)') + '</label><span class="note" id="vidState" role="status"></span>' : '';
     if (!url) { box.innerHTML = up ? '<div class="vbox">' + up + '</div>' : ''; return bindVideoUpload(mod, it, path, box); }
-    const who = [(S.me && S.me.name) || '', (user && user.email) || ''].filter(Boolean).join(' · ');
     box.innerHTML = '<section class="vbox" aria-label="Lesson video"><div class="vwrap" id="vwrap">' +
       '<video id="lv" controls controlslist="nodownload nofullscreen noremoteplayback noplaybackrate" disablepictureinpicture disableremoteplayback playsinline preload="metadata"></video>' +
-      '<div class="wm" aria-hidden="true"><span class="wm-logo">A</span><span class="wm-txt"><b>Amr Abdelgawad</b>' + (who ? '<small>' + esc(who) + '</small>' : '') + '</span></div>' +
+      '<div class="wm" aria-hidden="true"><span class="wm-logo">A</span><span class="wm-txt"><b>Amr Abdelgawad</b><small>amr@amrabdelgawad.site</small></span></div>' +
       '<button class="vfs" type="button" id="vfs" aria-label="Full screen"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h6v2H6v4H4zM14 4h6v6h-2V6h-4zM4 14h2v4h4v2H4zM18 14h2v6h-6v-2h4z"/></svg></button>' +
       '</div>' + up + '</section>';
     const wrap = $('vwrap'), v = $('lv');
