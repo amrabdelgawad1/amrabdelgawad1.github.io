@@ -942,14 +942,13 @@
       <div class="card-title"><h2>Add a shift by hand</h2><span>For hours logged outside the tracker</span></div>
       <form id="tm-addForm" novalidate>
         <div class="add-grid">
-          <label class="wide"><span class="label">Name</span><input class="field" id="tm-aName" list="tm-nameList" placeholder="Youssef Khfaga" autocomplete="off" /></label>
+          <label class="wide"><span class="label">Agent</span><select class="field" id="tm-aName"><option value="">Loading agents…</option></select></label>
           <label class="wide"><span class="label">Shift date</span><input class="field" id="tm-aDate" type="date" /></label>
           <label><span class="label">Hours</span><input class="field" id="tm-aH" type="number" min="0" max="24" step="1" placeholder="4" /></label>
           <label><span class="label">Minutes</span><input class="field" id="tm-aM" type="number" min="0" max="59" step="5" placeholder="30" /></label>
           <label><span class="label">Break min</span><input class="field" id="tm-aB" type="number" min="0" max="600" step="5" placeholder="0" /></label>
           <label class="wide"><span class="label">Company</span><select class="field" id="tm-aCo"></select></label>
         </div>
-        <datalist id="tm-nameList"></datalist>
         <div class="add-foot">
           <label class="check"><input type="checkbox" id="tm-aPaid" /> Already paid</label>
           <span class="add-err" id="tm-addErr"></span>

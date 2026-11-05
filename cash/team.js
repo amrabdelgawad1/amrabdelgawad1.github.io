@@ -335,7 +335,7 @@ window.CashTeam = function(db){
       db.from('agents').select('id,name,active').order('id'),
       db.from('agent_companies').select('agent_id,company_id')
     ]);
-    if (a.error || ac.error) { $('agentErr').textContent = "Couldn't load agents. Refresh the page to try again."; return; }
+    if (a.error || ac.error) { $('agentErr').textContent = "Couldn't load agents. Refresh the page to try again."; $('aName').innerHTML = '<option value="">Couldn’t load agents, refresh the page</option>'; return; }
     $('agentErr').textContent = '';
     agents = a.data.map(x => ({ ...x, cos: new Set(ac.data.filter(r => r.agent_id === x.id).map(r => r.company_id)) }));
     renderAgents();
@@ -347,7 +347,16 @@ window.CashTeam = function(db){
     b.addEventListener('click', () => onClick(b));
     return b;
   }
+  // Agent dropdown on "Add a shift by hand": active agents only, by name
+  function fillAgentSelect(){
+    const sel = $('aName'), cur = sel.value;
+    const list = agents.filter(a => a.active).sort((x, y) => x.name.localeCompare(y.name));
+    sel.innerHTML = '<option value="">' + (list.length ? 'Pick an agent' : 'No active agents yet') + '</option>';
+    list.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; o.dataset.id = a.id; sel.appendChild(o); });
+    sel.value = list.some(a => a.name === cur) ? cur : '';
+  }
   function renderAgents(){
+    fillAgentSelect();
     // Companies for a new agent: keep what was ticked; with one company, tick it for them
     const box = $('agentCos');
     const ticked = new Set([...box.querySelectorAll('[aria-pressed="true"]')].map(b => Number(b.dataset.co)));
@@ -441,8 +450,6 @@ window.CashTeam = function(db){
     sel.innerHTML = '<option value="">Everyone</option>';
     sorted.forEach(([k, n]) => { const o = document.createElement('option'); o.value = k; o.textContent = n; sel.appendChild(o); });
     sel.value = names.has(cur) ? cur : '';
-    $('nameList').innerHTML = '';
-    sorted.forEach(([, n]) => { const o = document.createElement('option'); o.value = n; $('nameList').appendChild(o); });
 
     const rows = visible();
     const sum = (list, f) => list.reduce((a,r) => a + f(r), 0);
@@ -1067,9 +1074,17 @@ window.CashTeam = function(db){
   });
 
   // ---------- add shift by hand ----------
-  $('addToggle').addEventListener('click', () => {
+  $('addToggle').addEventListener('click', async () => {
     $('addBox').hidden = !$('addBox').hidden;
-    if (!$('addBox').hidden) { if (!$('aDate').value) $('aDate').value = iso(new Date()); $('aName').focus(); }
+    if ($('addBox').hidden) return;
+    if (!$('aDate').value) $('aDate').value = iso(new Date());
+    if (!agents.length) await loadAgents(); else fillAgentSelect();
+    $('aName').focus();
+  });
+  // Picking an agent who works for one company fills in that company
+  $('aName').addEventListener('change', () => {
+    const a = agents.find(x => String(x.id) === $('aName').selectedOptions[0]?.dataset.id);
+    if (a && a.cos.size === 1) $('aCo').value = String([...a.cos][0]);
   });
   $('addCancel').addEventListener('click', () => { $('addBox').hidden = true; $('addErr').textContent = ''; });
   $('aCo').addEventListener('change', async () => {
@@ -1082,7 +1097,7 @@ window.CashTeam = function(db){
     e.preventDefault();
     let name = $('aName').value.trim().replace(/\s+/g, ' ');
     const h = parseInt($('aH').value || '0', 10), m = parseInt($('aM').value || '0', 10), bm = parseInt($('aB').value || '0', 10);
-    if (name.length < 2) { $('addErr').textContent = 'Enter the person’s full name.'; return; }
+    if (!name) { $('addErr').textContent = 'Pick the agent.'; return; }
     if (!$('aDate').value) { $('addErr').textContent = 'Pick the shift date.'; return; }
     if ([h, m, bm].some(n => isNaN(n) || n < 0) || m > 59 || h > 24) { $('addErr').textContent = 'Check the hours and minutes.'; return; }
     const secs = h * 3600 + m * 60;
