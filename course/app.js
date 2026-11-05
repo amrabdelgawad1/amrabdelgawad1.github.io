@@ -605,7 +605,7 @@
 
   // ---------- Lesson video ----------
   // A lesson has a video when content/<module>/videos/<lesson id>.mp4 is in the private bucket.
-  // Learners get a 15-minute link, no download or picture-in-picture menu, and a fixed brand badge (name and site email).
+  // Learners get a 15-minute link, our own player (no download or picture-in-picture menu; speed control; full screen that keeps the badge), and a fixed brand badge.
   // Admins can upload or replace the video from the lesson page.
   const videoPath = (mod, it) => contentPath(mod, 'videos/' + it.id + '.mp4');
   async function videoUrl(path){
@@ -619,20 +619,119 @@
     if (!document.contains(box)) return; // the learner moved to another page while the link was loading
     const up = S.isAdmin ? '<label class="link-btn vup"><input type="file" class="vh" id="vidFile" accept="video/mp4">' + (url ? 'Replace video' : 'Upload a video for this lesson (MP4)') + '</label><span class="note" id="vidState" role="status"></span>' : '';
     if (!url) { box.innerHTML = up ? '<div class="vbox">' + up + '</div>' : ''; return bindVideoUpload(mod, it, path, box); }
-    box.innerHTML = '<section class="vbox" aria-label="Lesson video"><div class="vwrap" id="vwrap">' +
-      '<video id="lv" controls controlslist="nodownload nofullscreen noremoteplayback noplaybackrate" disablepictureinpicture disableremoteplayback playsinline preload="metadata"></video>' +
+    const svg = d => '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="' + d + '"/></svg>';
+    const P = {
+      play:'M8 5v14l11-7z', pause:'M6 5h4v14H6zM14 5h4v14h-4z',
+      back:'M11.5 7V3L6 8.5l5.5 5.5V10a5 5 0 1 1-5 5H4.5a7 7 0 1 0 7-8z', fwd:'M12.5 7V3L18 8.5 12.5 14V10a5 5 0 1 0 5 5h2a7 7 0 1 1-7-8z',
+      vol:'M4 9v6h4l5 4V5L8 9zm11.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z', mute:'M4 9v6h4l5 4V5L8 9zm16.6 0L19.2 7.6 17 9.8l-2.2-2.2L13.4 9l2.2 2.2-2.2 2.2 1.4 1.4 2.2-2.2 2.2 2.2 1.4-1.4-2.2-2.2z',
+      fs:'M4 4h6v2H6v4H4zM14 4h6v6h-2V6h-4zM4 14h2v4h4v2H4zM18 14h2v6h-6v-2h4z', fsx:'M8 4h2v6H4V8h4zM14 4h2v4h4v2h-6zM4 14h6v6H8v-4H4zM14 14h6v2h-4v4h-2z'
+    };
+    const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2];
+    box.innerHTML = '<section class="vbox" aria-label="Lesson video"><div class="vwrap" id="vwrap" tabindex="-1">' +
+      '<video id="lv" playsinline webkit-playsinline disablepictureinpicture disableremoteplayback preload="metadata"></video>' +
       '<div class="wm" aria-hidden="true"><span class="wm-logo">A</span><span class="wm-txt"><b>Amr Abdelgawad</b><small>amr@amrabdelgawad.site</small></span></div>' +
-      '<button class="vfs" type="button" id="vfs" aria-label="Full screen"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h6v2H6v4H4zM14 4h6v6h-2V6h-4zM4 14h2v4h4v2H4zM18 14h2v6h-6v-2h4z"/></svg></button>' +
+      '<button class="vbig" type="button" id="vbig" aria-label="Play">' + svg(P.play) + '</button>' +
+      '<div class="vbar" id="vbar">' +
+        '<input class="vseek" id="vseek" type="range" min="0" max="1000" value="0" step="1" aria-label="Seek">' +
+        '<div class="vrow">' +
+          '<button class="vb" type="button" id="vplay" aria-label="Play">' + svg(P.play) + '</button>' +
+          '<button class="vb" type="button" id="vback" aria-label="Back 10 seconds">' + svg(P.back) + '</button>' +
+          '<button class="vb" type="button" id="vfwd" aria-label="Forward 10 seconds">' + svg(P.fwd) + '</button>' +
+          '<button class="vb" type="button" id="vmute" aria-label="Mute">' + svg(P.vol) + '</button>' +
+          '<span class="vtime" id="vtime">0:00 / 0:00</span>' +
+          '<span class="vsp"></span>' +
+          '<div class="vspeedw"><button class="vb vspeed" type="button" id="vspeed" aria-label="Playback speed" aria-haspopup="true" aria-expanded="false">1x</button>' +
+            '<div class="vmenu" id="vmenu" role="menu" hidden>' + SPEEDS.map(s => '<button type="button" role="menuitemradio" data-s="' + s + '" aria-checked="' + (s === 1) + '">' + s + 'x</button>').join('') + '</div></div>' +
+          '<button class="vb" type="button" id="vfs" aria-label="Full screen">' + svg(P.fs) + '</button>' +
+        '</div>' +
+      '</div>' +
       '</div>' + up + '</section>';
-    const wrap = $('vwrap'), v = $('lv');
+    const wrap = $('vwrap'), v = $('lv'), bar = $('vbar'), seek = $('vseek'), big = $('vbig'),
+          playB = $('vplay'), muteB = $('vmute'), timeEl = $('vtime'), spB = $('vspeed'), menu = $('vmenu'), fsBtn = $('vfs');
     v.src = url;
     wrap.addEventListener('contextmenu', ev => ev.preventDefault());
-    v.addEventListener('dblclick', ev => ev.preventDefault()); // keep full screen on the wrapper so the watermark stays
-    const fsBtn = $('vfs');
-    document.addEventListener('fullscreenchange', function fsLabel(){
-      if (!document.contains(fsBtn)) return document.removeEventListener('fullscreenchange', fsLabel);
-      fsBtn.setAttribute('aria-label', document.fullscreenElement === wrap ? 'Exit full screen' : 'Full screen');
+    const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+    const alive = () => document.contains(wrap);
+    // Controls fade out while playing and come back on any touch, click or mouse move.
+    let hideT = 0;
+    const showBar = () => { wrap.classList.remove('idle'); clearTimeout(hideT); if (!v.paused && menu.hidden) hideT = setTimeout(() => wrap.classList.add('idle'), 2600); };
+    const toggle = () => { if (v.paused || v.ended) v.play().catch(() => {}); else v.pause(); };
+    const syncPlay = () => {
+      const p = v.paused || v.ended;
+      playB.innerHTML = svg(p ? P.play : P.pause); playB.setAttribute('aria-label', p ? 'Play' : 'Pause');
+      big.hidden = !p; wrap.classList.toggle('paused', p); showBar();
+    };
+    const syncTime = () => {
+      timeEl.textContent = fmt(v.currentTime) + ' / ' + fmt(v.duration);
+      if (!seeking && v.duration) seek.value = Math.round(v.currentTime / v.duration * 1000);
+      seek.style.setProperty('--p', (seek.value / 10) + '%');
+    };
+    let seeking = false;
+    seek.addEventListener('input', () => { seeking = true; if (v.duration) { v.currentTime = seek.value / 1000 * v.duration; } seek.style.setProperty('--p', (seek.value / 10) + '%'); timeEl.textContent = fmt(v.currentTime) + ' / ' + fmt(v.duration); showBar(); });
+    seek.addEventListener('change', () => { seeking = false; });
+    ['play', 'pause', 'ended'].forEach(e => v.addEventListener(e, syncPlay));
+    ['timeupdate', 'loadedmetadata', 'durationchange'].forEach(e => v.addEventListener(e, syncTime));
+    big.addEventListener('click', toggle);
+    playB.addEventListener('click', toggle);
+    v.addEventListener('click', () => { if (wrap.classList.contains('idle')) return showBar(); toggle(); });
+    v.addEventListener('dblclick', ev => { ev.preventDefault(); goFs(); });
+    $('vback').addEventListener('click', () => { v.currentTime = Math.max(0, v.currentTime - 10); showBar(); });
+    $('vfwd').addEventListener('click', () => { v.currentTime = Math.min(v.duration || 0, v.currentTime + 10); showBar(); });
+    muteB.addEventListener('click', () => { v.muted = !v.muted; muteB.innerHTML = svg(v.muted ? P.mute : P.vol); muteB.setAttribute('aria-label', v.muted ? 'Unmute' : 'Mute'); showBar(); });
+    // Speed: remembered for the learner on this device.
+    const setSpeed = s => {
+      v.playbackRate = s; spB.textContent = s + 'x';
+      menu.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.s === s)));
+      try { localStorage.setItem('lessonSpeed', String(s)); } catch(e){}
+    };
+    let saved = 1; try { saved = +localStorage.getItem('lessonSpeed') || 1; } catch(e){}
+    if (SPEEDS.includes(saved)) { setSpeed(saved); v.addEventListener('loadedmetadata', () => { v.playbackRate = saved; }, { once:true }); }
+    const closeMenu = () => { menu.hidden = true; spB.setAttribute('aria-expanded', 'false'); showBar(); };
+    spB.addEventListener('click', ev => { ev.stopPropagation(); menu.hidden = !menu.hidden; spB.setAttribute('aria-expanded', String(!menu.hidden)); showBar(); });
+    menu.addEventListener('click', ev => { const b = ev.target.closest('button[data-s]'); if (!b) return; ev.stopPropagation(); setSpeed(+b.dataset.s); closeMenu(); });
+    document.addEventListener('click', function outside(ev){ if (!alive()) return document.removeEventListener('click', outside); if (!menu.hidden && !menu.contains(ev.target) && ev.target !== spB) closeMenu(); });
+    // Full screen on the whole player (so the badge and our controls stay). Phones without element
+    // full screen (iPhone) get a full-window view instead, turned sideways where the phone allows it.
+    const isFs = () => document.fullscreenElement === wrap || document.webkitFullscreenElement === wrap || wrap.classList.contains('vfill');
+    const syncFs = () => {
+      const on = isFs();
+      fsBtn.innerHTML = svg(on ? P.fsx : P.fs); fsBtn.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
+      wrap.classList.toggle('isfs', on); document.documentElement.classList.toggle('vfill-lock', wrap.classList.contains('vfill'));
+    };
+    const goFs = async () => {
+      if (isFs()) {
+        if (wrap.classList.contains('vfill')) { wrap.classList.remove('vfill'); try { screen.orientation.unlock(); } catch(e){} return syncFs(); }
+        try { await (document.exitFullscreen ? document.exitFullscreen() : document.webkitExitFullscreen()); } catch(e){}
+        return;
+      }
+      try {
+        if (wrap.requestFullscreen) await wrap.requestFullscreen({ navigationUI:'hide' });
+        else if (wrap.webkitRequestFullscreen) wrap.webkitRequestFullscreen();
+        else throw 0;
+      } catch(e) { wrap.classList.add('vfill'); syncFs(); }
+      try { await screen.orientation.lock('landscape'); } catch(e){}
+      showBar();
+    };
+    fsBtn.addEventListener('click', goFs);
+    ['fullscreenchange', 'webkitfullscreenchange'].forEach(e => document.addEventListener(e, function f(){
+      if (!alive()) return document.removeEventListener(e, f);
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) { try { screen.orientation.unlock(); } catch(x){} }
+      syncFs();
+    }));
+    ['mousemove', 'touchstart', 'focusin'].forEach(e => wrap.addEventListener(e, showBar, { passive:true }));
+    wrap.addEventListener('keydown', ev => {
+      const k = ev.key;
+      if (ev.target === seek && (k === 'ArrowLeft' || k === 'ArrowRight')) return;
+      if (k === ' ' || k === 'k') { if (ev.target.tagName === 'BUTTON') return; ev.preventDefault(); toggle(); }
+      else if (k === 'ArrowLeft') { v.currentTime = Math.max(0, v.currentTime - 5); }
+      else if (k === 'ArrowRight') { v.currentTime = Math.min(v.duration || 0, v.currentTime + 5); }
+      else if (k === 'f') goFs();
+      else if (k === 'm') muteB.click();
+      else if (k === 'Escape' && wrap.classList.contains('vfill')) goFs();
+      else return;
+      showBar();
     });
+    syncPlay(); syncTime();
     // The link lasts 15 minutes; if it runs out mid-lesson, get a fresh one and carry on from the same spot.
     let lastFix = 0;
     v.addEventListener('error', async () => {
@@ -640,13 +739,6 @@
       const t = v.currentTime, playing = !v.paused, u = await videoUrl(path);
       if (!u || !document.contains(v)) return;
       v.src = u; v.addEventListener('loadedmetadata', () => { v.currentTime = t; if (playing) v.play().catch(() => {}); }, { once:true });
-    });
-    fsBtn.addEventListener('click', () => {
-      try {
-        if (document.fullscreenElement) return void document.exitFullscreen();
-        if (wrap.requestFullscreen) return void wrap.requestFullscreen().catch(() => {});
-        if (v.webkitEnterFullscreen) v.webkitEnterFullscreen();
-      } catch(e){}
     });
     bindVideoUpload(mod, it, path, box);
   }
