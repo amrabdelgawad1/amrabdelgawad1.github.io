@@ -952,3 +952,12 @@ button.chip[data-tool-desc]:focus-visible{ outline:none; color:var(--accent2); b
 @media (max-width: 420px){
   .newsletter-row{ flex-direction:column; }
 }
+
+/* Homepage: short "Need more than one person?" band that links to /team/ */
+.team-band--short{ display:grid; grid-template-columns:1.4fr 1fr; grid-template-areas:"head roles" "foot roles"; column-gap:40px; row-gap:20px; align-items:center; }
+.team-band--short .team-head{ grid-area:head; }
+.team-band--short .team-foot{ grid-area:foot; }
+.team-roles{ grid-area:roles; list-style:none; margin:0; padding:0; display:grid; gap:12px; }
+.team-roles li{ display:flex; align-items:center; gap:12px; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:14px 18px; font-weight:600; color:var(--text); }
+.team-roles i{ font-size:22px; color:var(--accent2); }
+@media (max-width:860px){ .team-band--short{ grid-template-columns:minmax(0,1fr); grid-template-areas:"head" "roles" "foot"; } }
