@@ -214,6 +214,15 @@
   .check{ display:inline-flex; align-items:center; gap:10px; font-size:14px; color:var(--light); cursor:pointer; }
   .check input{ width:18px; height:18px; accent-color:var(--green); }
   .add-err{ color:#ff7a7a; font-size:13.5px; }
+  .ag-pick{ position:relative; }
+  .ag-pick .label{ display:block; }
+  .ag-list{ position:absolute; z-index:20; left:0; right:0; top:calc(100% + 6px); margin:0; padding:6px; list-style:none; max-height:260px; overflow-y:auto;
+    background:var(--bg); border:1px solid var(--border2); border-radius:var(--radius-sm); box-shadow:0 18px 40px -12px rgba(0,0,0,.55); }
+  .ag-list li{ display:flex; gap:10px; align-items:center; padding:9px 10px; border-radius:6px; cursor:pointer; font-size:14.5px; }
+  .ag-list li.on, .ag-list li:hover{ background:var(--accent-dim); }
+  .ag-list li .agent-no{ font-family:"JetBrains Mono", monospace; font-size:12.5px; color:var(--muted); min-width:22px; }
+  .ag-list li mark{ background:none; color:var(--accent); font-weight:600; }
+  .ag-list .ag-none{ color:var(--muted); cursor:default; background:none !important; }
 
   /* History */
   .history{ padding:28px 32px; }
@@ -942,7 +951,7 @@
       <div class="card-title"><h2>Add a shift by hand</h2><span>For hours logged outside the tracker</span></div>
       <form id="tm-addForm" novalidate>
         <div class="add-grid">
-          <label class="wide"><span class="label">Agent</span><select class="field" id="tm-aName"><option value="">Loading agents…</option></select></label>
+          <div class="wide ag-pick"><label class="label" for="tm-aName">Agent</label><input class="field" id="tm-aName" placeholder="Type a name or number" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="tm-agList" /><ul class="ag-list" id="tm-agList" role="listbox" hidden></ul></div>
           <label class="wide"><span class="label">Shift date</span><input class="field" id="tm-aDate" type="date" /></label>
           <label><span class="label">Hours</span><input class="field" id="tm-aH" type="number" min="0" max="24" step="1" placeholder="4" /></label>
           <label><span class="label">Minutes</span><input class="field" id="tm-aM" type="number" min="0" max="59" step="5" placeholder="30" /></label>

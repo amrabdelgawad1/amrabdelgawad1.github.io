@@ -335,7 +335,7 @@ window.CashTeam = function(db){
       db.from('agents').select('id,name,active').order('id'),
       db.from('agent_companies').select('agent_id,company_id')
     ]);
-    if (a.error || ac.error) { $('agentErr').textContent = "Couldn't load agents. Refresh the page to try again."; $('aName').innerHTML = '<option value="">Couldn’t load agents, refresh the page</option>'; return; }
+    if (a.error || ac.error) { $('agentErr').textContent = "Couldn't load agents. Refresh the page to try again."; $('aName').placeholder = 'Couldn’t load agents, refresh the page'; return; }
     $('agentErr').textContent = '';
     agents = a.data.map(x => ({ ...x, cos: new Set(ac.data.filter(r => r.agent_id === x.id).map(r => r.company_id)) }));
     renderAgents();
@@ -347,13 +347,43 @@ window.CashTeam = function(db){
     b.addEventListener('click', () => onClick(b));
     return b;
   }
-  // Agent dropdown on "Add a shift by hand": active agents only, by name
+  // Agent picker on "Add a shift by hand": type part of a name or a number to filter the active agents, then pick one
+  let agPicked = null, agHi = 0, agShown = [];
+  const agLabel = a => agentNo(a.id) + ' ' + a.name;
   function fillAgentSelect(){
-    const sel = $('aName'), cur = sel.value;
-    const list = agents.filter(a => a.active).sort((x, y) => x.name.localeCompare(y.name));
-    sel.innerHTML = '<option value="">' + (list.length ? 'Pick an agent' : 'No active agents yet') + '</option>';
-    list.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; o.dataset.id = a.id; sel.appendChild(o); });
-    sel.value = list.some(a => a.name === cur) ? cur : '';
+    // If the picked agent was hidden or removed, clear the pick
+    if (agPicked && !agents.some(a => a.id === agPicked.id && a.active)) { agPicked = null; $('aName').value = ''; }
+    if (!$('agList').hidden) showAgentList();
+  }
+  function showAgentList(){
+    const q = $('aName').value.trim().toLowerCase(), list = $('agList');
+    const qName = q.replace(/^\d+\s*/, ''), qNo = (q.match(/^\d+/) || [''])[0];
+    agShown = agents.filter(a => a.active).filter(a => {
+      if (agPicked && $('aName').value === agLabel(agPicked)) return true; // show everyone again after a pick
+      return (!qNo || agentNo(a.id).startsWith(qNo) || String(a.id).startsWith(qNo)) && a.name.toLowerCase().includes(qName);
+    }).sort((x, y) => x.id - y.id);
+    agHi = Math.min(agHi, Math.max(agShown.length - 1, 0));
+    list.innerHTML = '';
+    if (!agShown.length) list.innerHTML = '<li class="ag-none">' + (agents.some(a => a.active) ? 'No agent matches that' : 'No active agents yet. Add them in the Agents tab.') + '</li>';
+    agShown.forEach((a, i) => {
+      const li = document.createElement('li'); li.setAttribute('role', 'option'); li.id = 'tm-ag-' + a.id;
+      if (i === agHi) { li.className = 'on'; li.setAttribute('aria-selected', 'true'); }
+      const no = document.createElement('span'); no.className = 'agent-no'; no.textContent = agentNo(a.id);
+      const nm = document.createElement('span');
+      const at = qName && !(agPicked && $('aName').value === agLabel(agPicked)) ? a.name.toLowerCase().indexOf(qName) : -1;
+      if (at >= 0) { nm.append(a.name.slice(0, at)); const m = document.createElement('mark'); m.textContent = a.name.slice(at, at + qName.length); nm.append(m, a.name.slice(at + qName.length)); }
+      else nm.textContent = a.name;
+      li.append(no, nm);
+      li.addEventListener('mousedown', e => { e.preventDefault(); pickAgent(a); }); // before the box loses focus
+      list.appendChild(li);
+    });
+    list.hidden = false; $('aName').setAttribute('aria-expanded', 'true');
+    const on = list.querySelector('.on'); if (on) { on.scrollIntoView({ block:'nearest' }); $('aName').setAttribute('aria-activedescendant', on.id); }
+  }
+  function hideAgentList(){ $('agList').hidden = true; $('aName').setAttribute('aria-expanded', 'false'); $('aName').removeAttribute('aria-activedescendant'); }
+  function pickAgent(a){
+    agPicked = a; $('aName').value = agLabel(a); $('addErr').textContent = ''; hideAgentList();
+    if (a.cos.size === 1) $('aCo').value = String([...a.cos][0]); // works for one company: fill it in
   }
   function renderAgents(){
     fillAgentSelect();
@@ -1081,10 +1111,16 @@ window.CashTeam = function(db){
     if (!agents.length) await loadAgents(); else fillAgentSelect();
     $('aName').focus();
   });
-  // Picking an agent who works for one company fills in that company
-  $('aName').addEventListener('change', () => {
-    const a = agents.find(x => String(x.id) === $('aName').selectedOptions[0]?.dataset.id);
-    if (a && a.cos.size === 1) $('aCo').value = String([...a.cos][0]);
+  $('aName').addEventListener('focus', () => { agHi = 0; showAgentList(); });
+  $('aName').addEventListener('input', () => { agPicked = null; agHi = 0; showAgentList(); });
+  $('aName').addEventListener('blur', () => setTimeout(hideAgentList, 120));
+  $('aName').addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault(); if ($('agList').hidden) return showAgentList();
+      if (agShown.length) { agHi = (agHi + (e.key === 'ArrowDown' ? 1 : -1) + agShown.length) % agShown.length; showAgentList(); }
+    } else if (e.key === 'Enter' && !$('agList').hidden) {
+      e.preventDefault(); if (agShown[agHi]) pickAgent(agShown[agHi]);
+    } else if (e.key === 'Escape' && !$('agList').hidden) { e.preventDefault(); hideAgentList(); }
   });
   $('addCancel').addEventListener('click', () => { $('addBox').hidden = true; $('addErr').textContent = ''; });
   $('aCo').addEventListener('change', async () => {
@@ -1095,9 +1131,11 @@ window.CashTeam = function(db){
   ['aName','aDate','aH','aM','aB'].forEach(id => $(id).addEventListener('input', () => $('addErr').textContent = ''));
   $('addForm').addEventListener('submit', async e => {
     e.preventDefault();
-    let name = $('aName').value.trim().replace(/\s+/g, ' ');
+    // A typed name that exactly matches one agent counts as picking them
+    if (!agPicked) { const t = $('aName').value.trim().toLowerCase().replace(/\s+/g, ' '); agPicked = agents.find(a => a.active && (a.name.toLowerCase() === t || agLabel(a).toLowerCase() === t)) || null; }
+    let name = agPicked ? agPicked.name : '';
     const h = parseInt($('aH').value || '0', 10), m = parseInt($('aM').value || '0', 10), bm = parseInt($('aB').value || '0', 10);
-    if (!name) { $('addErr').textContent = 'Pick the agent.'; return; }
+    if (!name) { $('addErr').textContent = 'Pick an agent from the list.'; $('aName').focus(); return; }
     if (!$('aDate').value) { $('addErr').textContent = 'Pick the shift date.'; return; }
     if ([h, m, bm].some(n => isNaN(n) || n < 0) || m > 59 || h > 24) { $('addErr').textContent = 'Check the hours and minutes.'; return; }
     const secs = h * 3600 + m * 60;
