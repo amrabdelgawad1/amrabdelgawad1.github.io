@@ -575,6 +575,7 @@
         '<div class="between"><span class="label o">Lesson ' + n + ' of ' + ls.length + (it.subtitle ? ' · ' + esc(it.subtitle) : '') + '</span>' +
           '<button class="link-btn print-btn" type="button" data-act="print">Print</button></div>' +
         '<h1>' + esc(heading(it)) + '</h1>' +
+        '<div id="videoBox"></div>' +
         '<div class="prose">' + MD.render(it.bodyMarkdown) + '</div>' +
         '<div id="renewBox"></div>' +
         '<div id="practiceBox"></div>' +
@@ -599,6 +600,75 @@
       } });
     if (window.CoursePractice && user) CoursePractice.mount($('practiceBox'), { db, user, mod, it, title:it.shortTitle || heading(it), toast }).then(f => { leaving = f; }).catch(() => {});
     if (mod.number === S.totalModules && /staying certified/i.test(it.title || '')) renewCard(it);
+    lessonVideo(mod, it);
+  }
+
+  // ---------- Lesson video ----------
+  // A lesson has a video when content/<module>/videos/<lesson id>.mp4 is in the private bucket.
+  // Learners get a 15-minute link, no download or picture-in-picture menu, and a moving name watermark.
+  // Admins can upload or replace the video from the lesson page.
+  const videoPath = (mod, it) => contentPath(mod, 'videos/' + it.id + '.mp4');
+  async function videoUrl(path){
+    try { const { data, error } = await db.storage.from('course').createSignedUrl(path, 15 * 60); return error ? null : data.signedUrl; }
+    catch(e){ return null; }
+  }
+  async function lessonVideo(mod, it){
+    const box = $('videoBox'), path = videoPath(mod, it);
+    if (!box) return;
+    const url = await videoUrl(path);
+    if (!document.contains(box)) return; // the learner moved to another page while the link was loading
+    const up = S.isAdmin ? '<label class="link-btn vup"><input type="file" class="vh" id="vidFile" accept="video/mp4">' + (url ? 'Replace video' : 'Upload a video for this lesson (MP4)') + '</label><span class="note" id="vidState" role="status"></span>' : '';
+    if (!url) { box.innerHTML = up ? '<div class="vbox">' + up + '</div>' : ''; return bindVideoUpload(mod, it, path, box); }
+    const who = [(S.me && S.me.name) || '', (user && user.email) || ''].filter(Boolean).join(' · ');
+    box.innerHTML = '<section class="vbox" aria-label="Lesson video"><div class="vwrap" id="vwrap">' +
+      '<video id="lv" controls controlslist="nodownload nofullscreen noremoteplayback noplaybackrate" disablepictureinpicture disableremoteplayback playsinline preload="metadata"></video>' +
+      '<span class="wm" id="wm" aria-hidden="true">' + esc(who) + '</span>' +
+      '<button class="vfs" type="button" id="vfs" aria-label="Full screen"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h6v2H6v4H4zM14 4h6v6h-2V6h-4zM4 14h2v4h4v2H4zM18 14h2v6h-6v-2h4z"/></svg></button>' +
+      '</div>' + up + '</section>';
+    const wrap = $('vwrap'), v = $('lv'), wm = $('wm');
+    v.src = url;
+    wrap.addEventListener('contextmenu', ev => ev.preventDefault());
+    v.addEventListener('dblclick', ev => ev.preventDefault()); // keep full screen on the wrapper so the watermark stays
+    const fsBtn = $('vfs');
+    document.addEventListener('fullscreenchange', function fsLabel(){
+      if (!document.contains(fsBtn)) return document.removeEventListener('fullscreenchange', fsLabel);
+      fsBtn.setAttribute('aria-label', document.fullscreenElement === wrap ? 'Exit full screen' : 'Full screen');
+    });
+    // The link lasts 15 minutes; if it runs out mid-lesson, get a fresh one and carry on from the same spot.
+    let lastFix = 0;
+    v.addEventListener('error', async () => {
+      if (Date.now() - lastFix < 30e3) return; lastFix = Date.now();
+      const t = v.currentTime, playing = !v.paused, u = await videoUrl(path);
+      if (!u || !document.contains(v)) return;
+      v.src = u; v.addEventListener('loadedmetadata', () => { v.currentTime = t; if (playing) v.play().catch(() => {}); }, { once:true });
+    });
+    fsBtn.addEventListener('click', () => {
+      try {
+        if (document.fullscreenElement) return void document.exitFullscreen();
+        if (wrap.requestFullscreen) return void wrap.requestFullscreen().catch(() => {});
+        if (v.webkitEnterFullscreen) v.webkitEnterFullscreen();
+      } catch(e){}
+    });
+    const move = () => { wm.style.top = (8 + Math.random() * 76) + '%'; wm.style.left = (4 + Math.random() * 60) + '%'; };
+    move();
+    const timer = setInterval(() => { if (!document.contains(wm)) return clearInterval(timer); move(); }, 7000);
+    bindVideoUpload(mod, it, path, box);
+  }
+  function bindVideoUpload(mod, it, path, box){
+    const inp = $('vidFile'); if (!inp) return;
+    inp.addEventListener('change', async () => {
+      const f = inp.files[0]; if (!f) return;
+      const st = $('vidState');
+      inp.value = '';
+      if (!/\.mp4$/i.test(f.name) || (f.type && f.type !== 'video/mp4')) { st.textContent = 'Use an MP4 video.'; return; }
+      if (f.size > 50 * 1024 * 1024) { st.textContent = 'That video is over 50 MB.'; return; }
+      inp.disabled = true; st.textContent = 'Uploading…';
+      const { error } = await db.storage.from('course').upload(path, f, { upsert:true, contentType:'video/mp4' });
+      inp.disabled = false;
+      if (error) { if (document.contains(st)) st.textContent = 'The upload didn’t work. Check your connection and try again.'; return; }
+      toast('Video uploaded');
+      if (document.contains(box)) lessonVideo(mod, it);
+    });
   }
   // Lesson 20.5: where the learner stands on renewing their certificate
   async function renewCard(it){
