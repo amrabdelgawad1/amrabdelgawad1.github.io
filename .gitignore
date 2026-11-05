@@ -12,3 +12,8 @@ app/psychology/_test-content.json
 
 # course tools test screenshots
 tools/course-tools/shots/
+
+# Database migrations and dev tools live in the private talents-database repo (site-repo/), never here:
+# this repo is public, so anything committed is readable on GitHub.
+supabase/
+tools/

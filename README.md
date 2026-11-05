@@ -3,4 +3,4 @@
 The public website and the signed-in portal.
 
 Planning notes, handoffs and the roadmap live in the private `portal-backups` repo, folder `docs/`.
-Only the site itself is published: the deploy leaves out `tools/`, `supabase/`, `.github/` and Markdown files.
+Database migrations and dev tools live in the private `talents-database` repo, folder `site-repo/`. This repo is public, so nothing secret goes here.
