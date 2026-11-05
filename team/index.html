@@ -27,14 +27,24 @@
 <style>
 /* Hire a Team page: its own hero and the pieces the homepage doesn't have */
 .tm-hero{ padding:150px 0 70px; position:relative; overflow:hidden; }
-.tm-hero h1{ font-family:var(--font-display); font-weight:400; font-size:clamp(40px, 6vw, 72px); line-height:1.02; color:var(--text); max-width:16ch; margin:14px 0 18px; }
+.tm-hero h1{ font-family:var(--font-display); font-weight:400; font-size:clamp(40px, 5.2vw, 66px); line-height:1.04; color:var(--text); max-width:15ch; margin:14px 0 18px; }
 .tm-hero h1 em{ color:var(--accent2); font-style:italic; }
 .tm-hero .lede{ font-size:clamp(17px, 1.6vw, 20px); color:var(--light); max-width:58ch; line-height:1.6; }
 .tm-hero .hero-actions{ margin-top:28px; }
+.tm-hero-grid{ display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:48px; align-items:center; }
+.tm-glance{ background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-lg); padding:26px; box-shadow:0 18px 40px -24px rgba(20,33,61,.25); }
+.tm-glance-k{ font-size:12px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--accent2); margin:0 0 10px; }
+.tm-glance a{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:14px 0; border-bottom:1px solid var(--border); text-decoration:none; color:var(--text); font-weight:600; }
+.tm-glance a:hover span{ color:var(--accent2); }
+.tm-glance b{ font-family:var(--font-display); font-weight:400; font-size:24px; color:var(--text); white-space:nowrap; }
+.tm-glance b small{ font-family:Inter, sans-serif; font-size:13px; color:var(--light); margin-left:2px; }
+.tm-glance-note{ margin:14px 0 0; font-size:13.5px; color:var(--light); line-height:1.55; }
 .tm-facts{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:14px; margin-top:44px; }
 .tm-fact{ background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px; }
 .tm-fact b{ display:block; font-size:16px; color:var(--text); margin-bottom:4px; }
 .tm-fact span{ color:var(--light); font-size:14px; line-height:1.5; }
+.tm-proof{ margin-top:22px; color:var(--light); font-size:14.5px; line-height:1.7; }
+.tm-proof span{ display:inline-block; font-weight:700; color:var(--text); margin-right:8px; }
 .tm-roles{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:20px; }
 .tm-role{ background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:28px; }
 .tm-role .service-tag{ margin-bottom:6px; }
@@ -71,7 +81,7 @@
 .tm-pnote{ margin-top:18px; color:var(--light); }
 .tm-photo{ display:block; width:96px; height:96px; border-radius:50%; object-fit:cover; margin-bottom:16px; border:2px solid var(--accent); }
 .main-nav a[aria-current="page"]{ color:var(--accent2); }
-@media (max-width:980px){ .tm-va, .tm-prices{ grid-template-columns:repeat(2, minmax(0,1fr)); } .tm-facts, .tm-steps{ grid-template-columns:repeat(2, minmax(0,1fr)); } .team-grid{ grid-template-columns:repeat(2, minmax(0,1fr)); } }
+@media (max-width:980px){ .tm-hero-grid{ grid-template-columns:minmax(0,1fr); gap:32px; } .tm-va, .tm-prices{ grid-template-columns:repeat(2, minmax(0,1fr)); } .tm-facts, .tm-steps{ grid-template-columns:repeat(2, minmax(0,1fr)); } .team-grid{ grid-template-columns:repeat(2, minmax(0,1fr)); } }
 @media (max-width:720px){ .tm-role--cols .service-list{ columns:1; } .tm-roles, .tm-you{ grid-template-columns:minmax(0,1fr); } }
 @media (max-width:520px){ .tm-va, .tm-prices, .tm-facts, .tm-steps, .team-grid{ grid-template-columns:minmax(0,1fr); } .tm-hero{ padding-top:120px; } }
 </style>
@@ -101,6 +111,8 @@
 
   <section class="tm-hero">
     <div class="container">
+      <div class="tm-hero-grid">
+      <div>
       <p class="eyebrow">For investors and wholesalers</p>
       <h1>A calling team that works like <em>your own</em></h1>
       <p class="lede">Cold callers, acquisition reps and virtual assistants for US real estate teams. I hire them, train them on your market, coach them every day and check their calls, so you get qualified leads without managing people.</p>
@@ -108,12 +120,23 @@
         <a href="#talk" class="btn btn-primary">Talk About a Team <span class="btn-arrow">&#8594;</span></a>
         <a href="#roles" class="btn btn-ghost">See Roles and Prices <span class="btn-arrow">&#8594;</span></a>
       </div>
+      </div>
+      <aside class="tm-glance" aria-label="Roles and starting rates">
+        <p class="tm-glance-k">Roles and starting rates</p>
+        <a href="#roles"><span>Cold Caller</span><b>from $8<small>/hr</small></b></a>
+        <a href="#roles"><span>Acquisition Rep</span><b>from $12<small>/hr</small></b></a>
+        <a href="#roles"><span>Lead Manager</span><b>from $10<small>/hr</small></b></a>
+        <a href="#roles"><span>Virtual Assistant</span><b>from $7<small>/hr</small></b></a>
+        <p class="tm-glance-note">Hiring, training, coaching and reporting included. Paid trial week available.</p>
+      </aside>
+      </div>
       <div class="tm-facts">
         <div class="tm-fact"><b>One point of contact</b><span>You talk to me, not to each caller.</span></div>
         <div class="tm-fact"><b>US hours</b><span>Shifts between 8 AM and 9 PM Eastern.</span></div>
         <div class="tm-fact"><b>Daily reports</b><span>Numbers and lead notes after every shift.</span></div>
         <div class="tm-fact"><b>Free replacement</b><span>Not the right fit? I replace them at no cost.</span></div>
       </div>
+      <p class="tm-proof"><span>Run by Amr Abdelgawad</span> 2 to 4 deals closed a month as an acquisition manager &middot; 5.0 on every Upwork contract &middot; recommended in writing by the CEO of Galaxy Call Centers &middot; <a href="/#verified">See the proof</a></p>
     </div>
   </section>
 
@@ -232,7 +255,7 @@
         <p class="eyebrow">Who runs it</p>
         <h2 class="section-heading">Managed by Someone Who Still Makes the Calls</h2>
         <p class="section-lede">I've cold called and run acquisitions for US investors for years, closing 2 to 4 deals a month as an acquisition manager. Your team learns from what works on real calls this week, not from a training manual.</p>
-        <p><a href="/" class="link-download">More about me</a></p>
+        <p><a href="/#samples" class="link-download">Hear my real calls</a> &nbsp; <a href="/" class="link-download">More about me</a></p>
       </div>
       <div class="note">
         <img class="tm-photo" src="/assets/headshot-portrait.jpg" alt="Amr Abdelgawad" width="640" height="640" loading="lazy" decoding="async">
@@ -258,6 +281,8 @@
         <details><summary>What do the rates include?</summary><p>The person's time plus everything around it: hiring, training on your business, daily coaching, call reviews, cover for absences and reporting. Your dialer, CRM, lists and phone numbers stay on your accounts.</p></details>
         <details><summary>Can we start small?</summary><p>Yes. You can start with one or two callers on a paid trial week and grow once you've seen the results.</p></details>
         <details><summary>Do they work in our CRM and dialer?</summary><p>Yes. The team works inside your systems and follows your workflow. GoHighLevel, Podio, Follow Up Boss, Mojo, BatchDialer and ReadyMode are all familiar.</p></details>
+        <details><summary>How soon can a team start?</summary><p>Once we agree on the roles, hours and access to your systems, I give you a start date on our call. One or two people can usually start sooner than a full team.</p></details>
+        <details><summary>Do your callers follow calling rules?</summary><p>Yes. They call only within allowed hours in the seller's time zone, mark do-not-call requests and wrong numbers on the spot, and dial only the lists and numbers you provide.</p></details>
         <details><summary>What if a caller isn't working out?</summary><p>Tell me and I'll replace them at no extra cost, and keep your calling going while I do.</p></details>
         <details><summary>Is our data safe?</summary><p>Your lists and leads are used only for your work and never shared with other clients. Happy to sign a confidentiality agreement before we start.</p></details>
       </div>
@@ -270,7 +295,7 @@
         <h2>Let's Talk About Your Team</h2>
         <p>Pick a time for a 30-minute call. Bring your markets, your tools and how many hours you want covered.</p>
         <div class="hero-actions">
-          <a href="/#lets-talk" class="btn btn-primary">Book a Call <span class="btn-arrow">&#8594;</span></a>
+          <a href="/?plan=A+managed+team#lets-talk" class="btn btn-primary">Book a Call <span class="btn-arrow">&#8594;</span></a>
           <a href="https://wa.me/201032613433?text=Hi%20Amr%2C%20I%27d%20like%20to%20talk%20about%20a%20calling%20team" class="btn btn-ghost" target="_blank" rel="noopener">Message on WhatsApp</a>
         </div>
       </div>

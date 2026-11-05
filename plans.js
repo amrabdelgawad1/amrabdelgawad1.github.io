@@ -7,6 +7,14 @@
   });
 })();
 
+// Arriving from another page with ?plan=… (the Hire a Team page): note it in the topic box the same way
+(function(){
+  var m = location.search.match(/[?&]plan=([^&#]+)/); if (!m) return;
+  var plan = decodeURIComponent(m[1].replace(/\+/g, ' ')).slice(0, 60);
+  var fill = function(){ var t = document.querySelector('[data-booking-form] textarea[name="topic"]'); if (t && !t.value.trim()) t.value = 'Interested in: ' + plan; };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fill); else fill();
+})();
+
 // Back from "Pick another time" in a booking email: the old call is already freed
 (function(){
   if (!/[?&]rebook=1/.test(location.search)) return;
