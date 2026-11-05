@@ -63,6 +63,11 @@
 .tm-price .amt small{ font-family:Inter, sans-serif; font-size:14px; color:var(--light); margin-right:2px; }
 .tm-price .amt span{ font-family:Inter, sans-serif; font-size:15px; color:var(--light); margin-left:4px; }
 .tm-price .mo{ color:var(--light); font-size:14px; line-height:1.5; margin:0; }
+.tm-rate{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 6px; margin:4px 0 12px; }
+.tm-rate small{ font-size:13px; color:var(--light); }
+.tm-rate b{ font-family:var(--font-display); font-weight:400; font-size:30px; line-height:1; color:var(--accent2); }
+.tm-rate span{ font-size:14px; color:var(--light); }
+.tm-rate em{ flex-basis:100%; font-style:normal; font-size:13.5px; color:var(--light); }
 .tm-pnote{ margin-top:18px; color:var(--light); }
 .tm-photo{ display:block; width:96px; height:96px; border-radius:50%; object-fit:cover; margin-bottom:16px; border:2px solid var(--accent); }
 .main-nav a[aria-current="page"]{ color:var(--accent2); }
@@ -101,7 +106,7 @@
       <p class="lede">Cold callers, acquisition reps and virtual assistants for US real estate teams. I hire them, train them on your market, coach them every day and check their calls, so you get qualified leads without managing people.</p>
       <div class="hero-actions">
         <a href="#talk" class="btn btn-primary">Talk About a Team <span class="btn-arrow">&#8594;</span></a>
-        <a href="/sample-report/" class="btn btn-ghost" target="_blank" rel="noopener">See a Sample Report <span class="btn-arrow">&#8594;</span></a>
+        <a href="#roles" class="btn btn-ghost">See Roles and Prices <span class="btn-arrow">&#8594;</span></a>
       </div>
       <div class="tm-facts">
         <div class="tm-fact"><b>One point of contact</b><span>You talk to me, not to each caller.</span></div>
@@ -121,6 +126,7 @@
         <article class="tm-role tm-role--wide tm-role--cols">
           <p class="service-tag">Most asked for</p>
           <h3>Cold Callers</h3>
+          <p class="tm-rate"><small>from</small> <b>$8</b><span>/hour</span><em>about $1,390 a month full-time</em></p>
           <p class="service-for">To fill your pipeline with motivated sellers, every shift.</p>
           <ul class="service-list">
             <li>High-volume calls on your skip-traced lists, on your dialer (Mojo, BatchDialer, ReadyMode, multi-line)</li>
@@ -138,6 +144,7 @@
         <article class="tm-role tm-role--wide tm-role--cols">
           <p class="service-tag">Closer to the deal</p>
           <h3>Acquisition Reps</h3>
+          <p class="tm-rate"><small>from</small> <b>$12</b><span>/hour</span><em>about $2,080 a month full-time, plus an optional bonus per closed deal</em></p>
           <p class="service-for">To turn qualified leads into signed contracts.</p>
           <ul class="service-list">
             <li>Speed-to-lead calls on new inbound and transferred leads</li>
@@ -155,6 +162,7 @@
         <article class="tm-role tm-role--wide tm-role--cols">
           <p class="service-tag">Keeps every lead moving</p>
           <h3>Lead Managers</h3>
+          <p class="tm-rate"><small>from</small> <b>$10</b><span>/hour</span><em>about $1,730 a month full-time</em></p>
           <p class="service-for">To make sure no lead goes cold between the first call and the offer.</p>
           <ul class="service-list">
             <li>First call on new inbound leads within minutes, by phone, text and email</li>
@@ -170,6 +178,7 @@
         <article class="tm-role tm-role--wide">
           <p class="service-tag">Operations</p>
           <h3>Virtual Assistants</h3>
+          <p class="tm-rate"><small>from</small> <b>$7</b><span>/hour</span><em>about $1,210 a month full-time</em></p>
           <p class="service-for">To take the work behind the deals off your plate.</p>
           <div class="tm-va">
             <div><b>Lists and research</b><ul class="service-list"><li>Pull and clean lists, remove duplicates</li><li>Skip tracing</li><li>Scrub against Do Not Call and opt-outs</li><li>Comps and property research</li></ul></div>
@@ -235,14 +244,8 @@
   <section class="section" id="pricing">
     <div class="container">
       <p class="eyebrow">Pricing</p>
-      <h2 class="section-heading">Simple Hourly Pricing</h2>
-      <p class="section-lede">Hiring, training, daily coaching, call reviews and reporting are included in every rate. No setup fee. Full-time is about 173 hours a month. Final rates depend on the hours and the work, and you get them in writing before anything starts.</p>
-      <div class="tm-prices">
-        <div class="tm-price"><p class="service-tag">Cold Caller</p><p class="amt"><small>from</small> $8<span>/hour</span></p><p class="mo">From about $1,390 a month full-time</p></div>
-        <div class="tm-price"><p class="service-tag">Virtual Assistant</p><p class="amt"><small>from</small> $7<span>/hour</span></p><p class="mo">From about $1,210 a month full-time</p></div>
-        <div class="tm-price"><p class="service-tag">Lead Manager</p><p class="amt"><small>from</small> $10<span>/hour</span></p><p class="mo">From about $1,730 a month full-time</p></div>
-        <div class="tm-price tm-price--top"><p class="service-tag">Acquisition Rep</p><p class="amt"><small>from</small> $12<span>/hour</span></p><p class="mo">From about $2,080 a month full-time, plus an optional bonus per closed deal</p></div>
-      </div>
+      <h2 class="section-heading">What Every Rate Includes</h2>
+      <p class="section-lede">The hourly rate on each role covers the person and everything around them: hiring, training on your business, daily coaching, call reviews, cover for absences and reporting. No setup fee. Full-time is about 173 hours a month. Final rates depend on the hours and the work, and you get them in writing before anything starts.</p>
       <p class="tm-pnote">Part-time shifts are welcome. Start with a paid trial week at a reduced rate, so you see the work on your own lists before committing.</p>
     </div>
   </section>
