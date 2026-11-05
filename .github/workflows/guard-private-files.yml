@@ -1,0 +1,20 @@
+# This repo is public. Course answers, reviewer keys, database migrations
+# and dev tools belong in the private talents-database repo, never here.
+# This check fails the run (and the pull request) if any of them get committed.
+name: Guard private files
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for files that must stay private
+        run: bash .github/guard-private-files.sh
