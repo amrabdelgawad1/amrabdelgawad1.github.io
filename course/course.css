@@ -449,6 +449,18 @@ a.person:hover{ border-color:var(--ink); color:var(--ink); }
 .vseek::-moz-range-thumb{ width:14px; height:14px; border-radius:50%; background:#fff; border:0; }
 .vseek:focus-visible{ outline:2px solid #fff; outline-offset:2px; border-radius:4px; }
 /* Speed menu */
+.vvol{ display:flex; align-items:center; }
+.vvolr{ --p:100%; -webkit-appearance:none; appearance:none; width:0; height:18px; margin:0; opacity:0; background:transparent; cursor:pointer; transition:width .2s ease, opacity .2s ease, margin .2s ease; }
+.vvol:hover .vvolr, .vvol:focus-within .vvolr, .vvol.open .vvolr{ width:80px; opacity:1; margin:0 6px 0 2px; }
+.vvol.novol .vvolr{ display:none; }
+.vvolr::-webkit-slider-runnable-track{ height:4px; border-radius:2px; background:linear-gradient(to right, #fff var(--p), rgba(255,255,255,.3) var(--p)); }
+.vvolr::-moz-range-track{ height:4px; border-radius:2px; background:linear-gradient(to right, #fff var(--p), rgba(255,255,255,.3) var(--p)); }
+.vvolr::-webkit-slider-thumb{ -webkit-appearance:none; width:12px; height:12px; margin-top:-4px; border-radius:50%; background:#fff; border:0; }
+.vvolr::-moz-range-thumb{ width:12px; height:12px; border-radius:50%; background:#fff; border:0; }
+.vvolr:focus-visible{ outline:2px solid #fff; outline-offset:2px; border-radius:4px; }
+.vwrap.isfs.idle .wm{ opacity:.55; transition:opacity .4s ease; }
+.vwrap.idle .vbig{ opacity:0; pointer-events:none; }
+.vbig{ transition:opacity .25s ease; }
 .vspeedw{ position:relative; }
 .vspeed{ min-width:48px; }
 .vmenu{ position:absolute; right:0; bottom:44px; z-index:4; display:flex; flex-direction:column; padding:6px; border-radius:10px; background:rgba(20,24,22,.96); box-shadow:0 8px 24px rgba(0,0,0,.5); min-width:92px; }

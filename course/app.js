@@ -637,7 +637,8 @@
           '<button class="vb" type="button" id="vplay" aria-label="Play">' + svg(P.play) + '</button>' +
           '<button class="vb" type="button" id="vback" aria-label="Back 10 seconds">' + svg(P.back) + '</button>' +
           '<button class="vb" type="button" id="vfwd" aria-label="Forward 10 seconds">' + svg(P.fwd) + '</button>' +
-          '<button class="vb" type="button" id="vmute" aria-label="Mute">' + svg(P.vol) + '</button>' +
+          '<div class="vvol" id="vvol"><button class="vb" type="button" id="vmute" aria-label="Mute">' + svg(P.vol) + '</button>' +
+            '<input class="vvolr" id="vvolr" type="range" min="0" max="100" step="1" value="100" aria-label="Volume"></div>' +
           '<span class="vtime" id="vtime">0:00 / 0:00</span>' +
           '<span class="vsp"></span>' +
           '<div class="vspeedw"><button class="vb vspeed" type="button" id="vspeed" aria-label="Playback speed" aria-haspopup="true" aria-expanded="false">1x</button>' +
@@ -653,8 +654,12 @@
     const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
     const alive = () => document.contains(wrap);
     // Controls fade out while playing and come back on any touch, click or mouse move.
+    // In full screen they also hide while paused, so the video shows on its own.
     let hideT = 0;
-    const showBar = () => { wrap.classList.remove('idle'); clearTimeout(hideT); if (!v.paused && menu.hidden) hideT = setTimeout(() => wrap.classList.add('idle'), 2600); };
+    let dragging = false;
+    const canHide = () => menu.hidden && !dragging && (!v.paused || wrap.classList.contains('isfs'));
+    const hideBar = () => { if (canHide()) { wrap.classList.add('idle'); volW.classList.remove('open'); } };
+    const showBar = () => { wrap.classList.remove('idle'); clearTimeout(hideT); hideT = setTimeout(hideBar, 2600); };
     const toggle = () => { if (v.paused || v.ended) v.play().catch(() => {}); else v.pause(); };
     const syncPlay = () => {
       const p = v.paused || v.ended;
@@ -673,11 +678,41 @@
     ['timeupdate', 'loadedmetadata', 'durationchange'].forEach(e => v.addEventListener(e, syncTime));
     big.addEventListener('click', toggle);
     playB.addEventListener('click', toggle);
-    v.addEventListener('click', () => { if (wrap.classList.contains('idle')) return showBar(); toggle(); });
-    v.addEventListener('dblclick', ev => { ev.preventDefault(); goFs(); });
+    // Mouse: clicking the picture plays or pauses. Touch: a tap shows the controls, a second tap hides them.
+    let ptr = 'mouse', wasIdle = false;
+    wrap.addEventListener('pointerdown', ev => { ptr = ev.pointerType || 'mouse'; wasIdle = wrap.classList.contains('idle'); }, true);
+    v.addEventListener('click', () => {
+      if (ptr !== 'mouse') { if (wasIdle) return showBar(); clearTimeout(hideT); return void wrap.classList.add('idle'); }
+      if (wasIdle) return showBar();
+      toggle();
+    });
+    v.addEventListener('dblclick', ev => { ev.preventDefault(); if (ptr === 'mouse') goFs(); });
     $('vback').addEventListener('click', () => { v.currentTime = Math.max(0, v.currentTime - 10); showBar(); });
     $('vfwd').addEventListener('click', () => { v.currentTime = Math.min(v.duration || 0, v.currentTime + 10); showBar(); });
-    muteB.addEventListener('click', () => { v.muted = !v.muted; muteB.innerHTML = svg(v.muted ? P.mute : P.vol); muteB.setAttribute('aria-label', v.muted ? 'Unmute' : 'Mute'); showBar(); });
+    // Volume: a slider slides out from the speaker (hover or tap). iPhones only allow the phone's own buttons,
+    // so there the speaker just mutes and the slider stays hidden.
+    const volW = $('vvol'), volR = $('vvolr');
+    const canVol = (() => { try { const o = v.volume; v.volume = 0.5; const ok = Math.abs(v.volume - 0.5) < 0.01; v.volume = o; return ok; } catch(e){ return false; } })();
+    if (!canVol) volW.classList.add('novol');
+    const syncVol = () => {
+      const lv = v.muted ? 0 : Math.round(v.volume * 100);
+      muteB.innerHTML = svg(lv === 0 ? P.mute : P.vol); muteB.setAttribute('aria-label', lv === 0 ? 'Unmute' : 'Mute');
+      volR.value = lv; volR.style.setProperty('--p', lv + '%');
+    };
+    let lastVol = 1; try { lastVol = Math.min(1, Math.max(0.05, +(localStorage.getItem('lessonVolume') || 1))); } catch(e){}
+    if (canVol) v.volume = lastVol;
+    volR.addEventListener('input', () => {
+      const x = volR.value / 100; v.volume = x; v.muted = x === 0;
+      if (x > 0) { lastVol = x; try { localStorage.setItem('lessonVolume', String(x)); } catch(e){} }
+      showBar();
+    });
+    v.addEventListener('volumechange', syncVol);
+    muteB.addEventListener('click', () => {
+      if (canVol && ptr !== 'mouse' && !volW.classList.contains('open')) { volW.classList.add('open'); return showBar(); }
+      if (v.muted || v.volume === 0) { v.muted = false; if (canVol && v.volume === 0) v.volume = lastVol; } else v.muted = true;
+      showBar();
+    });
+    syncVol();
     // Speed: remembered for the learner on this device.
     const setSpeed = s => {
       v.playbackRate = s; spB.textContent = s + 'x';
@@ -697,6 +732,7 @@
       const on = isFs();
       fsBtn.innerHTML = svg(on ? P.fsx : P.fs); fsBtn.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
       wrap.classList.toggle('isfs', on); document.documentElement.classList.toggle('vfill-lock', wrap.classList.contains('vfill'));
+      showBar();
     };
     const goFs = async () => {
       if (isFs()) {
@@ -718,7 +754,13 @@
       if (!document.fullscreenElement && !document.webkitFullscreenElement) { try { screen.orientation.unlock(); } catch(x){} }
       syncFs();
     }));
-    ['mousemove', 'touchstart', 'focusin'].forEach(e => wrap.addEventListener(e, showBar, { passive:true }));
+    wrap.querySelectorAll('input[type=range]').forEach(r => {
+      r.addEventListener('pointerdown', () => { dragging = true; });
+      ['pointerup', 'pointercancel', 'change'].forEach(e => r.addEventListener(e, () => { dragging = false; showBar(); }));
+    });
+    wrap.addEventListener('mousemove', showBar, { passive:true });
+    wrap.addEventListener('focusin', showBar);
+    bar.addEventListener('pointerdown', showBar);
     wrap.addEventListener('keydown', ev => {
       const k = ev.key;
       if (ev.target === seek && (k === 'ArrowLeft' || k === 'ArrowRight')) return;
