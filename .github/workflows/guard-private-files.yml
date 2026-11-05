@@ -1,0 +1,35 @@
+# This repo is public. Course answers, reviewer keys, database migrations
+# and dev tools belong in the private talents-database repo, never here.
+# This check fails the run (and the pull request) if any of them get committed.
+name: Guard private files
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for files that must stay private
+        run: |
+          fail=0
+          paths=$(git ls-files | grep -E '^(supabase|tools|course-kit)/|(^|/)module-[0-9]+\.json$' || true)
+          if [ -n "$paths" ]; then
+            echo "::error::These files belong in the private repo, not here:"
+            echo "$paths"
+            fail=1
+          fi
+          answers=$(git grep -lE '"correct"[[:space:]]*:[[:space:]]*true|reviewerAnswerKey' -- . ':!.github' || true)
+          if [ -n "$answers" ]; then
+            echo "::error::These files contain quiz answers or a reviewer key:"
+            echo "$answers"
+            fail=1
+          fi
+          if [ "$fail" = 0 ]; then echo "No private course files found."; fi
+          exit $fail
