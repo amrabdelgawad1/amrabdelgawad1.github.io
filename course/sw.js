@@ -3,7 +3,7 @@
 // Course content, progress and images come from Supabase and are never stored here.
 // Change VERSION on every release.
 const VERSION = 'course-v27';
-const SHELL = ['./', 'index.html', 'course.css?v=6', 'hub.css?v=6', '/portal.css?v=7', '/portal-shell.js?v=8', 'md.js?v=4', 'app.js?v=14', 'practice.js?v=3', 'admin.js?v=4', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-180.png', '/guard.js?v=1', '/tracker/config.js'];
+const SHELL = ['./', 'index.html', 'course.css?v=6', 'hub.css?v=6', '/portal.css?v=8', '/portal-shell.js?v=9', 'md.js?v=4', 'app.js?v=14', 'practice.js?v=3', 'admin.js?v=4', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-180.png', '/guard.js?v=1', '/tracker/config.js'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('course-') && k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim()));

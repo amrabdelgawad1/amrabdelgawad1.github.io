@@ -429,5 +429,6 @@ a.person:hover{ border-color:var(--ink); color:var(--ink); }
 .vfs svg{ width:18px; height:18px; }
 .vfs:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
 .vup{ align-self:flex-start; cursor:pointer; }
+.vup:focus-within{ outline:2px solid var(--orange-text); outline-offset:3px; border-radius:4px; }
 @media (prefers-reduced-motion:reduce){ .vwrap .wm{ transition:none; } }
 @media print{ .vbox{ display:none; } }

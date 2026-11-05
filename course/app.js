@@ -613,11 +613,12 @@
     catch(e){ return null; }
   }
   async function lessonVideo(mod, it){
-    const at = location.hash, path = videoPath(mod, it);
+    const box = $('videoBox'), path = videoPath(mod, it);
+    if (!box) return;
     const url = await videoUrl(path);
-    const box = $('videoBox'); if (!box || location.hash !== at) return;
+    if (!document.contains(box)) return; // the learner moved to another page while the link was loading
     const up = S.isAdmin ? '<label class="link-btn vup"><input type="file" class="vh" id="vidFile" accept="video/mp4">' + (url ? 'Replace video' : 'Upload a video for this lesson (MP4)') + '</label><span class="note" id="vidState" role="status"></span>' : '';
-    if (!url) { box.innerHTML = up ? '<div class="vbox">' + up + '</div>' : ''; return bindVideoUpload(mod, it, path); }
+    if (!url) { box.innerHTML = up ? '<div class="vbox">' + up + '</div>' : ''; return bindVideoUpload(mod, it, path, box); }
     const who = [(S.me && S.me.name) || '', (user && user.email) || ''].filter(Boolean).join(' · ');
     box.innerHTML = '<section class="vbox" aria-label="Lesson video"><div class="vwrap" id="vwrap">' +
       '<video id="lv" controls controlslist="nodownload nofullscreen noremoteplayback noplaybackrate" disablepictureinpicture disableremoteplayback playsinline preload="metadata"></video>' +
@@ -627,6 +628,12 @@
     const wrap = $('vwrap'), v = $('lv'), wm = $('wm');
     v.src = url;
     wrap.addEventListener('contextmenu', ev => ev.preventDefault());
+    v.addEventListener('dblclick', ev => ev.preventDefault()); // keep full screen on the wrapper so the watermark stays
+    const fsBtn = $('vfs');
+    document.addEventListener('fullscreenchange', function fsLabel(){
+      if (!document.contains(fsBtn)) return document.removeEventListener('fullscreenchange', fsLabel);
+      fsBtn.setAttribute('aria-label', document.fullscreenElement === wrap ? 'Exit full screen' : 'Full screen');
+    });
     // The link lasts 15 minutes; if it runs out mid-lesson, get a fresh one and carry on from the same spot.
     let lastFix = 0;
     v.addEventListener('error', async () => {
@@ -635,7 +642,7 @@
       if (!u || !document.contains(v)) return;
       v.src = u; v.addEventListener('loadedmetadata', () => { v.currentTime = t; if (playing) v.play().catch(() => {}); }, { once:true });
     });
-    $('vfs').addEventListener('click', () => {
+    fsBtn.addEventListener('click', () => {
       try {
         if (document.fullscreenElement) return void document.exitFullscreen();
         if (wrap.requestFullscreen) return void wrap.requestFullscreen().catch(() => {});
@@ -645,20 +652,22 @@
     const move = () => { wm.style.top = (8 + Math.random() * 76) + '%'; wm.style.left = (4 + Math.random() * 60) + '%'; };
     move();
     const timer = setInterval(() => { if (!document.contains(wm)) return clearInterval(timer); move(); }, 7000);
-    bindVideoUpload(mod, it, path);
+    bindVideoUpload(mod, it, path, box);
   }
-  function bindVideoUpload(mod, it, path){
+  function bindVideoUpload(mod, it, path, box){
     const inp = $('vidFile'); if (!inp) return;
     inp.addEventListener('change', async () => {
       const f = inp.files[0]; if (!f) return;
       const st = $('vidState');
-      if (!/\.mp4$/i.test(f.name)) { st.textContent = 'Use an MP4 video.'; return; }
+      inp.value = '';
+      if (!/\.mp4$/i.test(f.name) || (f.type && f.type !== 'video/mp4')) { st.textContent = 'Use an MP4 video.'; return; }
       if (f.size > 50 * 1024 * 1024) { st.textContent = 'That video is over 50 MB.'; return; }
-      st.textContent = 'Uploading…';
+      inp.disabled = true; st.textContent = 'Uploading…';
       const { error } = await db.storage.from('course').upload(path, f, { upsert:true, contentType:'video/mp4' });
-      if (error) { st.textContent = 'The upload didn’t work. Check your connection and try again.'; return; }
+      inp.disabled = false;
+      if (error) { if (document.contains(st)) st.textContent = 'The upload didn’t work. Check your connection and try again.'; return; }
       toast('Video uploaded');
-      lessonVideo(mod, it);
+      if (document.contains(box)) lessonVideo(mod, it);
     });
   }
   // Lesson 20.5: where the learner stands on renewing their certificate
