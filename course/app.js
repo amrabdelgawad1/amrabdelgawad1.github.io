@@ -605,7 +605,7 @@
 
   // ---------- Lesson video ----------
   // A lesson has a video when content/<module>/videos/<lesson id>.mp4 is in the private bucket.
-  // Learners get a 15-minute link, no download or picture-in-picture menu, and a moving name watermark.
+  // Learners get a 15-minute link, no download or picture-in-picture menu, and a fixed brand badge with the viewer's email.
   // Admins can upload or replace the video from the lesson page.
   const videoPath = (mod, it) => contentPath(mod, 'videos/' + it.id + '.mp4');
   async function videoUrl(path){
@@ -622,10 +622,10 @@
     const who = [(S.me && S.me.name) || '', (user && user.email) || ''].filter(Boolean).join(' · ');
     box.innerHTML = '<section class="vbox" aria-label="Lesson video"><div class="vwrap" id="vwrap">' +
       '<video id="lv" controls controlslist="nodownload nofullscreen noremoteplayback noplaybackrate" disablepictureinpicture disableremoteplayback playsinline preload="metadata"></video>' +
-      '<span class="wm" id="wm" aria-hidden="true">' + esc(who) + '</span>' +
+      '<div class="wm" aria-hidden="true"><span class="wm-logo">A</span><span class="wm-txt"><b>Amr Abdelgawad</b>' + (who ? '<small>' + esc(who) + '</small>' : '') + '</span></div>' +
       '<button class="vfs" type="button" id="vfs" aria-label="Full screen"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h6v2H6v4H4zM14 4h6v6h-2V6h-4zM4 14h2v4h4v2H4zM18 14h2v6h-6v-2h4z"/></svg></button>' +
       '</div>' + up + '</section>';
-    const wrap = $('vwrap'), v = $('lv'), wm = $('wm');
+    const wrap = $('vwrap'), v = $('lv');
     v.src = url;
     wrap.addEventListener('contextmenu', ev => ev.preventDefault());
     v.addEventListener('dblclick', ev => ev.preventDefault()); // keep full screen on the wrapper so the watermark stays
@@ -649,9 +649,6 @@
         if (v.webkitEnterFullscreen) v.webkitEnterFullscreen();
       } catch(e){}
     });
-    const move = () => { wm.style.top = (8 + Math.random() * 76) + '%'; wm.style.left = (4 + Math.random() * 60) + '%'; };
-    move();
-    const timer = setInterval(() => { if (!document.contains(wm)) return clearInterval(timer); move(); }, 7000);
     bindVideoUpload(mod, it, path, box);
   }
   function bindVideoUpload(mod, it, path, box){
