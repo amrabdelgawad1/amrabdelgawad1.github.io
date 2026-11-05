@@ -31,6 +31,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      # Stop the deploy if quiz answers or private files were committed
+      - name: Guard private files
+        run: bash .github/guard-private-files.sh
       - name: Setup Pages
         uses: actions/configure-pages@v5
       # Publish the site only: test tools, database files, workflows and notes stay in the repo, off the website

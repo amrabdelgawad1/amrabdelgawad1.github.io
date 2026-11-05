@@ -17,19 +17,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check for files that must stay private
-        run: |
-          fail=0
-          paths=$(git ls-files | grep -E '^(supabase|tools|course-kit)/|(^|/)module-[0-9]+\.json$' || true)
-          if [ -n "$paths" ]; then
-            echo "::error::These files belong in the private repo, not here:"
-            echo "$paths"
-            fail=1
-          fi
-          answers=$(git grep -lE '"correct"[[:space:]]*:[[:space:]]*true|reviewerAnswerKey' -- . ':!.github' || true)
-          if [ -n "$answers" ]; then
-            echo "::error::These files contain quiz answers or a reviewer key:"
-            echo "$answers"
-            fail=1
-          fi
-          if [ "$fail" = 0 ]; then echo "No private course files found."; fi
-          exit $fail
+        run: bash .github/guard-private-files.sh
