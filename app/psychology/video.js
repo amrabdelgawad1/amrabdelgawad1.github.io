@@ -11,17 +11,21 @@
   const listCache = {};
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
   const $ = id => document.getElementById(id);
+  const AR = {"Play": "تشغيل", "Pause": "إيقاف مؤقت", "Back 10 seconds": "رجوع 10 ثوانٍ", "Forward 10 seconds": "تقديم 10 ثوانٍ", "Mute": "كتم الصوت", "Unmute": "تشغيل الصوت", "Volume": "مستوى الصوت", "Seek": "الانتقال في الفيديو", "Chapters": "الفصول", "Captions": "الترجمة", "Captions on": "الترجمة مفعّلة", "Captions off": "الترجمة متوقفة", "Off": "إيقاف", "Playback speed": "سرعة التشغيل", "Full screen": "ملء الشاشة", "Exit full screen": "الخروج من ملء الشاشة", "Lesson video": "فيديو الدرس", "Picking up at ": "نكمل من ", "Start over": "من البداية"};
 
   // One listing per module tells us which sections have a video, so sections without one cost a single request.
   function listModule(db, folder){
+    // A failed listing is not remembered, so one network blip doesn't hide a module's videos until reload.
     if (!listCache[folder]) listCache[folder] = db.storage.from(BUCKET).list(folder, { limit:1000 })
-      .then(r => new Set((r.data || []).map(f => f.name))).catch(() => new Set());
+      .then(r => { if (r.error) throw r.error; return new Set((r.data || []).map(f => f.name)); })
+      .catch(() => { delete listCache[folder]; return new Set(); });
     return listCache[folder];
   }
 
   async function mount(box, O){
     // O: { db, uid, course, moduleId, itemId, isAdmin, lang, toast }
     const db = O.db; if (!box || !db) return;
+    const W = k => (O.lang === 'ar' && AR[k]) || k; // player labels follow the course language
     const mod = { id:O.moduleId }, it = { id:O.itemId };
     const folder = O.course + '/videos/' + mod.id, path = folder + '/' + it.id + '.mp4', base = folder + '/' + it.id;
     const rpc = async (n, a) => { const { data, error } = await db.rpc(n, a); if (error) throw error; return data; };
@@ -77,30 +81,30 @@
     const capLangs = [['en', 'English'], ['ar', 'العربية']].filter(([k]) => Array.isArray(CAP[k]) && CAP[k].length);
     const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2];
     const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
-    box.innerHTML = '<section class="vbox" aria-label="Lesson video"><div class="vwrap" id="vwrap" tabindex="-1">' +
+    box.innerHTML = '<section class="vbox" aria-label="' + W('Lesson video') + '"><div class="vwrap" id="vwrap" tabindex="-1">' +
       '<video id="lv" playsinline webkit-playsinline disablepictureinpicture disableremoteplayback preload="metadata"' + (posterUrl ? ' poster="' + esc(posterUrl) + '"' : '') + '></video>' +
       '<div class="vcap" id="vcap" aria-hidden="true"><span></span></div>' +
-      '<div class="vresume" id="vresume" hidden><span id="vresumeT"></span><button type="button" id="vrestart">Start over</button></div>' +
+      '<div class="vresume" id="vresume" hidden><span id="vresumeT"></span><button type="button" id="vrestart">' + W('Start over') + '</button></div>' +
       '<div class="wm" aria-hidden="true"><span class="wm-logo">A</span><span class="wm-txt"><b>Amr Abdelgawad</b><small>amr@amrabdelgawad.site</small></span></div>' +
-      '<button class="vbig" type="button" id="vbig" aria-label="Play">' + svg(P.play) + '</button>' +
+      '<button class="vbig" type="button" id="vbig" aria-label="' + W('Play') + '">' + svg(P.play) + '</button>' +
       '<div class="vbar" id="vbar">' +
         '<div class="vseekw"><div class="vticks" aria-hidden="true">' + CH.filter(c => c[0] > 0).map(c => '<i data-t="' + c[0] + '"></i>').join('') + '</div>' +
-        '<input class="vseek" id="vseek" type="range" min="0" max="1000" value="0" step="1" aria-label="Seek"></div>' +
+        '<input class="vseek" id="vseek" type="range" min="0" max="1000" value="0" step="1" aria-label="' + W('Seek') + '"></div>' +
         '<div class="vrow">' +
-          '<button class="vb" type="button" id="vplay" aria-label="Play">' + svg(P.play) + '</button>' +
-          '<button class="vb" type="button" id="vback" aria-label="Back 10 seconds">' + svg(P.back) + '</button>' +
-          '<button class="vb" type="button" id="vfwd" aria-label="Forward 10 seconds">' + svg(P.fwd) + '</button>' +
-          '<div class="vvol" id="vvol"><button class="vb" type="button" id="vmute" aria-label="Mute">' + svg(P.vol) + '</button>' +
-            '<input class="vvolr" id="vvolr" type="range" min="0" max="100" step="1" value="100" aria-label="Volume"></div>' +
+          '<button class="vb" type="button" id="vplay" aria-label="' + W('Play') + '">' + svg(P.play) + '</button>' +
+          '<button class="vb" type="button" id="vback" aria-label="' + W('Back 10 seconds') + '">' + svg(P.back) + '</button>' +
+          '<button class="vb" type="button" id="vfwd" aria-label="' + W('Forward 10 seconds') + '">' + svg(P.fwd) + '</button>' +
+          '<div class="vvol" id="vvol"><button class="vb" type="button" id="vmute" aria-label="' + W('Mute') + '">' + svg(P.vol) + '</button>' +
+            '<input class="vvolr" id="vvolr" type="range" min="0" max="100" step="1" value="100" aria-label="' + W('Volume') + '"></div>' +
           '<span class="vtime" id="vtime">0:00 / 0:00</span>' +
           '<span class="vchap" id="vchap"></span><span class="vsp"></span>' +
-          (CH.length > 1 ? '<div class="vspeedw"><button class="vb" type="button" id="vchapB" aria-label="Chapters" aria-haspopup="true" aria-expanded="false">' + svg(P.list) + '</button>' +
+          (CH.length > 1 ? '<div class="vspeedw"><button class="vb" type="button" id="vchapB" aria-label="' + W('Chapters') + '" aria-haspopup="true" aria-expanded="false">' + svg(P.list) + '</button>' +
             '<div class="vmenu vchapm" id="vchapM" role="menu" hidden>' + CH.map(c => '<button type="button" role="menuitem" data-t="' + c[0] + '"><span class="ct">' + fmt(c[0] / 1000) + '</span>' + esc(c[1]) + '</button>').join('') + '</div></div>' : '') +
-          (capLangs.length ? '<div class="vspeedw"><button class="vb" type="button" id="vccB" aria-label="Captions" aria-haspopup="true" aria-expanded="false">' + svg(P.cc) + '</button>' +
-            '<div class="vmenu" id="vccM" role="menu" hidden><button type="button" role="menuitemradio" data-l="off">Off</button>' + capLangs.map(([k, n]) => '<button type="button" role="menuitemradio" data-l="' + k + '"' + (k === 'ar' ? ' lang="ar"' : '') + '>' + n + '</button>').join('') + '</div></div>' : '') +
-          '<div class="vspeedw"><button class="vb vspeed" type="button" id="vspeed" aria-label="Playback speed" aria-haspopup="true" aria-expanded="false">1x</button>' +
+          (capLangs.length ? '<div class="vspeedw"><button class="vb" type="button" id="vccB" aria-label="' + W('Captions') + '" aria-haspopup="true" aria-expanded="false">' + svg(P.cc) + '</button>' +
+            '<div class="vmenu" id="vccM" role="menu" hidden><button type="button" role="menuitemradio" data-l="off">' + W('Off') + '</button>' + capLangs.map(([k, n]) => '<button type="button" role="menuitemradio" data-l="' + k + '"' + (k === 'ar' ? ' lang="ar"' : '') + '>' + n + '</button>').join('') + '</div></div>' : '') +
+          '<div class="vspeedw"><button class="vb vspeed" type="button" id="vspeed" aria-label="' + W('Playback speed') + '" aria-haspopup="true" aria-expanded="false">1x</button>' +
             '<div class="vmenu" id="vmenu" role="menu" hidden>' + SPEEDS.map(s => '<button type="button" role="menuitemradio" data-s="' + s + '" aria-checked="' + (s === 1) + '">' + s + 'x</button>').join('') + '</div></div>' +
-          '<button class="vb" type="button" id="vfs" aria-label="Full screen">' + svg(P.fs) + '</button>' +
+          '<button class="vb" type="button" id="vfs" aria-label="' + W('Full screen') + '">' + svg(P.fs) + '</button>' +
         '</div>' +
       '</div>' +
       '</div>' + up + '</section>';
@@ -120,7 +124,7 @@
     const toggle = () => { if (v.paused || v.ended) v.play().catch(() => {}); else v.pause(); };
     const syncPlay = () => {
       const p = v.paused || v.ended;
-      playB.innerHTML = svg(p ? P.play : P.pause); playB.setAttribute('aria-label', p ? 'Play' : 'Pause');
+      playB.innerHTML = svg(p ? P.play : P.pause); playB.setAttribute('aria-label', p ? W('Play') : W('Pause'));
       big.hidden = !p; wrap.classList.toggle('paused', p); showBar();
     };
     const syncTime = () => {
@@ -153,7 +157,7 @@
     if (!canVol) volW.classList.add('novol');
     const syncVol = () => {
       const lv = v.muted ? 0 : Math.round(v.volume * 100);
-      muteB.innerHTML = svg(lv === 0 ? P.mute : P.vol); muteB.setAttribute('aria-label', lv === 0 ? 'Unmute' : 'Mute');
+      muteB.innerHTML = svg(lv === 0 ? P.mute : P.vol); muteB.setAttribute('aria-label', lv === 0 ? W('Unmute') : W('Mute'));
       volR.value = lv; volR.style.setProperty('--p', lv + '%');
     };
     let lastVol = 1; try { lastVol = Math.min(1, Math.max(0.05, +(localStorage.getItem('lessonVolume') || 1))); } catch(e){}
@@ -195,7 +199,7 @@
     const isFs = () => document.fullscreenElement === wrap || document.webkitFullscreenElement === wrap || wrap.classList.contains('vfill');
     const syncFs = () => {
       const on = isFs();
-      fsBtn.innerHTML = svg(on ? P.fsx : P.fs); fsBtn.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
+      fsBtn.innerHTML = svg(on ? P.fsx : P.fs); fsBtn.setAttribute('aria-label', on ? W('Exit full screen') : W('Full screen'));
       wrap.classList.toggle('isfs', on); document.documentElement.classList.toggle('vfill-lock', wrap.classList.contains('vfill'));
       showBar();
     };
@@ -254,7 +258,7 @@
     };
     const setCap = l => {
       capLang = l; capShown = null; syncCap();
-      if (ccB) { ccB.classList.toggle('on', l !== 'off'); ccB.setAttribute('aria-label', l === 'off' ? 'Captions off' : 'Captions on'); }
+      if (ccB) { ccB.classList.toggle('on', l !== 'off'); ccB.setAttribute('aria-label', l === 'off' ? W('Captions off') : W('Captions on')); }
       if (ccM) ccM.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.l === l)));
       try { localStorage.setItem('lessonCaptions', l); } catch(e){}
     };
@@ -287,13 +291,14 @@
     }
     // Resume where they stopped (saved on the account, so it follows them to another device).
     const rKey = 'lessonPos:' + mod.id + ':' + it.id;
+    // The account copy follows the learner to other devices; this device's copy can be a few seconds newer.
     let startAt = prog && prog.position || 0;
-    if (!startAt) { try { startAt = +localStorage.getItem(rKey) || 0; } catch(e){} }
+    try { startAt = Math.max(startAt, +localStorage.getItem(rKey) || 0); } catch(e){}
     const resumeEl = $('vresume');
     v.addEventListener('loadedmetadata', () => {
       if (startAt > 10 && v.duration && startAt < v.duration - 15) {
         v.currentTime = startAt;
-        $('vresumeT').textContent = 'Picking up at ' + fmt(startAt);
+        $('vresumeT').textContent = W('Picking up at ') + fmt(startAt);
         resumeEl.hidden = false;
         setTimeout(() => { resumeEl.hidden = true; }, 9000);
       }

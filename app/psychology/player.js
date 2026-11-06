@@ -276,7 +276,12 @@ function renderItem(m, it) {
     '<button class="fab' + (Pad.hasInk(m, it) ? ' has' : '') + '" id="fab" type="button" aria-label="' + esc(t('scratch')) + '">' + I.pen + '<span class="lbl">' + esc(t('scratch')) + '</span><span class="dot"></span></button></div>';
   app.innerHTML = h;
   bindGo(); enhance(m, it);
-  var db = document.getElementById('doneBtn'); if (db) db.onclick = function () { setDone(m, it, !isDone(m, it)); render(); };
+  // Update the button, sidebar and progress in place (a full re-render would stop a playing lesson video).
+  var db = document.getElementById('doneBtn'); if (db) db.onclick = function () {
+    var v = !isDone(m, it); setDone(m, it, v);
+    db.className = 'btn ' + (v ? 'ok' : 'ghost'); db.textContent = t(v ? 'completed' : 'markComplete');
+    side(m, it); topProg();
+  };
   document.getElementById('nextBtn').addEventListener('click', function () { if (!isQ && !isDone(m, it)) setDone(m, it, true); }, true);
   if (isQ) bindExam(m, it);
   // Lesson video (only when one has been uploaded for this section; see video.js)
