@@ -290,10 +290,10 @@
       });
     }
     // Resume where they stopped (saved on the account, so it follows them to another device).
-    const rKey = 'lessonPos:' + mod.id + ':' + it.id;
+    const rKey = 'lessonPos:' + O.course + ':' + mod.id + ':' + it.id; // course in the key: Acquisitions uses the same storage
     // The account copy follows the learner to other devices; this device's copy can be a few seconds newer.
     let startAt = prog && prog.position || 0;
-    try { startAt = Math.max(startAt, +localStorage.getItem(rKey) || 0); } catch(e){}
+    if (!(prog && prog.completed_at)) { try { startAt = Math.max(startAt, +localStorage.getItem(rKey) || 0); } catch(e){} } // finished: trust the account
     const resumeEl = $('vresume');
     v.addEventListener('loadedmetadata', () => {
       if (startAt > 10 && v.duration && startAt < v.duration - 15) {
