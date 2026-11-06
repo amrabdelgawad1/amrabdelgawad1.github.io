@@ -615,7 +615,16 @@
   async function lessonVideo(mod, it){
     const box = $('videoBox'), path = videoPath(mod, it);
     if (!box) return;
-    const url = await videoUrl(path);
+    // Next to each video: <id>.json (captions in English and Arabic, chapters) and <id>.jpg (cover). Both optional.
+    const base = path.replace(/\.mp4$/, '');
+    const [url, extraUrl, posterUrl] = await Promise.all([videoUrl(path), videoUrl(base + '.json'), videoUrl(base + '.jpg')]);
+    let X = null, prog = null;
+    if (url) {
+      [X, prog] = await Promise.all([
+        extraUrl ? fetch(extraUrl).then(r => r.ok ? r.json() : null).catch(() => null) : null,
+        db.from('course_video_progress').select('position,duration,completed_at').eq('module_id', mod.id).eq('item_id', it.id).maybeSingle().then(r => r.data).catch(() => null)
+      ]);
+    }
     if (!document.contains(box)) return; // the learner moved to another page while the link was loading
     const up = S.isAdmin ? '<label class="link-btn vup"><input type="file" class="vh" id="vidFile" accept="video/mp4">' + (url ? 'Replace video' : 'Upload a video for this lesson (MP4)') + '</label><span class="note" id="vidState" role="status"></span>' : '';
     if (!url) { box.innerHTML = up ? '<div class="vbox">' + up + '</div>' : ''; return bindVideoUpload(mod, it, path, box); }
@@ -624,15 +633,23 @@
       play:'M8 5v14l11-7z', pause:'M6 5h4v14H6zM14 5h4v14h-4z',
       back:'M11.5 7V3L6 8.5l5.5 5.5V10a5 5 0 1 1-5 5H4.5a7 7 0 1 0 7-8z', fwd:'M12.5 7V3L18 8.5 12.5 14V10a5 5 0 1 0 5 5h2a7 7 0 1 1-7-8z',
       vol:'M4 9v6h4l5 4V5L8 9zm11.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z', mute:'M4 9v6h4l5 4V5L8 9zm16.6 0L19.2 7.6 17 9.8l-2.2-2.2L13.4 9l2.2 2.2-2.2 2.2 1.4 1.4 2.2-2.2 2.2 2.2 1.4-1.4-2.2-2.2z',
-      fs:'M4 4h6v2H6v4H4zM14 4h6v6h-2V6h-4zM4 14h2v4h4v2H4zM18 14h2v6h-6v-2h4z', fsx:'M8 4h2v6H4V8h4zM14 4h2v4h4v2h-6zM4 14h6v6H8v-4H4zM14 14h6v2h-4v4h-2z'
+      fs:'M4 4h6v2H6v4H4zM14 4h6v6h-2V6h-4zM4 14h2v4h4v2H4zM18 14h2v6h-6v-2h4z', fsx:'M8 4h2v6H4V8h4zM14 4h2v4h4v2h-6zM4 14h6v6H8v-4H4zM14 14h6v2h-4v4h-2z',
+      cc:'M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v10h16V7zm2 3h5v1.5H7.5v1H11V14H6zm7 0h5v1.5h-3.5v1H18V14h-5z',
+      list:'M4 6h2v2H4zm4 0h12v2H8zM4 11h2v2H4zm4 0h12v2H8zM4 16h2v2H4zm4 0h12v2H8z'
     };
+    const CAP = X && X.captions || {}, CH = X && Array.isArray(X.chapters) ? X.chapters : [];
+    const capLangs = [['en', 'English'], ['ar', 'العربية']].filter(([k]) => Array.isArray(CAP[k]) && CAP[k].length);
     const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2];
+    const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
     box.innerHTML = '<section class="vbox" aria-label="Lesson video"><div class="vwrap" id="vwrap" tabindex="-1">' +
-      '<video id="lv" playsinline webkit-playsinline disablepictureinpicture disableremoteplayback preload="metadata"></video>' +
+      '<video id="lv" playsinline webkit-playsinline disablepictureinpicture disableremoteplayback preload="metadata"' + (posterUrl ? ' poster="' + esc(posterUrl) + '"' : '') + '></video>' +
+      '<div class="vcap" id="vcap" aria-hidden="true"><span></span></div>' +
+      '<div class="vresume" id="vresume" hidden><span id="vresumeT"></span><button type="button" id="vrestart">Start over</button></div>' +
       '<div class="wm" aria-hidden="true"><span class="wm-logo">A</span><span class="wm-txt"><b>Amr Abdelgawad</b><small>amr@amrabdelgawad.site</small></span></div>' +
       '<button class="vbig" type="button" id="vbig" aria-label="Play">' + svg(P.play) + '</button>' +
       '<div class="vbar" id="vbar">' +
-        '<input class="vseek" id="vseek" type="range" min="0" max="1000" value="0" step="1" aria-label="Seek">' +
+        '<div class="vseekw"><div class="vticks" aria-hidden="true">' + CH.filter(c => c[0] > 0).map(c => '<i data-t="' + c[0] + '"></i>').join('') + '</div>' +
+        '<input class="vseek" id="vseek" type="range" min="0" max="1000" value="0" step="1" aria-label="Seek"></div>' +
         '<div class="vrow">' +
           '<button class="vb" type="button" id="vplay" aria-label="Play">' + svg(P.play) + '</button>' +
           '<button class="vb" type="button" id="vback" aria-label="Back 10 seconds">' + svg(P.back) + '</button>' +
@@ -640,7 +657,11 @@
           '<div class="vvol" id="vvol"><button class="vb" type="button" id="vmute" aria-label="Mute">' + svg(P.vol) + '</button>' +
             '<input class="vvolr" id="vvolr" type="range" min="0" max="100" step="1" value="100" aria-label="Volume"></div>' +
           '<span class="vtime" id="vtime">0:00 / 0:00</span>' +
-          '<span class="vsp"></span>' +
+          '<span class="vchap" id="vchap"></span><span class="vsp"></span>' +
+          (CH.length > 1 ? '<div class="vspeedw"><button class="vb" type="button" id="vchapB" aria-label="Chapters" aria-haspopup="true" aria-expanded="false">' + svg(P.list) + '</button>' +
+            '<div class="vmenu vchapm" id="vchapM" role="menu" hidden>' + CH.map(c => '<button type="button" role="menuitem" data-t="' + c[0] + '"><span class="ct">' + fmt(c[0] / 1000) + '</span>' + esc(c[1]) + '</button>').join('') + '</div></div>' : '') +
+          (capLangs.length ? '<div class="vspeedw"><button class="vb" type="button" id="vccB" aria-label="Captions" aria-haspopup="true" aria-expanded="false">' + svg(P.cc) + '</button>' +
+            '<div class="vmenu" id="vccM" role="menu" hidden><button type="button" role="menuitemradio" data-l="off">Off</button>' + capLangs.map(([k, n]) => '<button type="button" role="menuitemradio" data-l="' + k + '"' + (k === 'ar' ? ' lang="ar"' : '') + '>' + n + '</button>').join('') + '</div></div>' : '') +
           '<div class="vspeedw"><button class="vb vspeed" type="button" id="vspeed" aria-label="Playback speed" aria-haspopup="true" aria-expanded="false">1x</button>' +
             '<div class="vmenu" id="vmenu" role="menu" hidden>' + SPEEDS.map(s => '<button type="button" role="menuitemradio" data-s="' + s + '" aria-checked="' + (s === 1) + '">' + s + 'x</button>').join('') + '</div></div>' +
           '<button class="vb" type="button" id="vfs" aria-label="Full screen">' + svg(P.fs) + '</button>' +
@@ -651,13 +672,13 @@
           playB = $('vplay'), muteB = $('vmute'), timeEl = $('vtime'), spB = $('vspeed'), menu = $('vmenu'), fsBtn = $('vfs');
     v.src = url;
     wrap.addEventListener('contextmenu', ev => ev.preventDefault());
-    const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
     const alive = () => document.contains(wrap);
     // Controls fade out while playing and come back on any touch, click or mouse move.
     // In full screen they also hide while paused, so the video shows on its own.
     let hideT = 0;
     let dragging = false;
-    const canHide = () => menu.hidden && !dragging && (!v.paused || wrap.classList.contains('isfs'));
+    const anyMenu = () => !!wrap.querySelector('.vmenu:not([hidden])');
+    const canHide = () => !anyMenu() && !dragging && (!v.paused || wrap.classList.contains('isfs'));
     const hideBar = () => { if (canHide()) { wrap.classList.add('idle'); volW.classList.remove('open'); } };
     const showBar = () => { wrap.classList.remove('idle'); clearTimeout(hideT); hideT = setTimeout(hideBar, 2600); };
     const toggle = () => { if (v.paused || v.ended) v.play().catch(() => {}); else v.pause(); };
@@ -721,10 +742,12 @@
     };
     let saved = 1; try { saved = +localStorage.getItem('lessonSpeed') || 1; } catch(e){}
     if (SPEEDS.includes(saved)) { setSpeed(saved); v.addEventListener('loadedmetadata', () => { v.playbackRate = saved; }, { once:true }); }
-    const closeMenu = () => { menu.hidden = true; spB.setAttribute('aria-expanded', 'false'); showBar(); };
-    spB.addEventListener('click', ev => { ev.stopPropagation(); menu.hidden = !menu.hidden; spB.setAttribute('aria-expanded', String(!menu.hidden)); showBar(); });
+    // One menu open at a time (speed, chapters, captions).
+    const closeMenu = () => { wrap.querySelectorAll('.vmenu').forEach(m => { m.hidden = true; }); wrap.querySelectorAll('[aria-haspopup]').forEach(b => b.setAttribute('aria-expanded', 'false')); showBar(); };
+    const openMenu = (btn, m) => { const was = !m.hidden; closeMenu(); if (!was) { m.hidden = false; btn.setAttribute('aria-expanded', 'true'); const f = m.querySelector('[aria-checked="true"]') || m.querySelector('button'); if (f && ptr !== 'touch') f.focus(); } showBar(); };
+    spB.addEventListener('click', ev => { ev.stopPropagation(); openMenu(spB, menu); });
     menu.addEventListener('click', ev => { const b = ev.target.closest('button[data-s]'); if (!b) return; ev.stopPropagation(); setSpeed(+b.dataset.s); closeMenu(); });
-    document.addEventListener('click', function outside(ev){ if (!alive()) return document.removeEventListener('click', outside); if (!menu.hidden && !menu.contains(ev.target) && ev.target !== spB) closeMenu(); });
+    document.addEventListener('click', function outside(ev){ if (!alive()) return document.removeEventListener('click', outside); if (anyMenu() && !ev.target.closest('.vspeedw')) closeMenu(); });
     // Full screen on the whole player (so the badge and our controls stay). Phones without element
     // full screen (iPhone) get a full-window view instead, turned sideways where the phone allows it.
     const isFs = () => document.fullscreenElement === wrap || document.webkitFullscreenElement === wrap || wrap.classList.contains('vfill');
@@ -769,10 +792,95 @@
       else if (k === 'ArrowRight') { v.currentTime = Math.min(v.duration || 0, v.currentTime + 5); }
       else if (k === 'f') goFs();
       else if (k === 'm') muteB.click();
+      else if (k === 'Escape' && anyMenu()) closeMenu();
       else if (k === 'Escape' && wrap.classList.contains('vfill')) goFs();
       else return;
       showBar();
     });
+    // Captions: drawn by the player (not burned into the video), English or Arabic, remembered per device.
+    const capEl = $('vcap'), capSpan = capEl.firstChild, ccB = $('vccB'), ccM = $('vccM');
+    let capLang = 'en'; try { capLang = localStorage.getItem('lessonCaptions') || 'en'; } catch(e){}
+    if (capLang !== 'off' && !capLangs.some(([k]) => k === capLang)) capLang = capLangs.length ? capLangs[0][0] : 'off';
+    let capShown = null;
+    const syncCap = () => {
+      const list = capLang === 'off' ? null : CAP[capLang], ms = v.currentTime * 1000;
+      let txt = '';
+      if (list && !(X.end && ms > X.end)) for (const c of list) { if (c[0] <= ms) txt = c[1]; else break; }
+      if (txt === capShown) return;
+      capShown = txt; capSpan.textContent = txt; capEl.hidden = !txt;
+      capEl.dir = capLang === 'ar' ? 'rtl' : 'ltr'; capEl.lang = capLang === 'ar' ? 'ar' : 'en';
+    };
+    const setCap = l => {
+      capLang = l; capShown = null; syncCap();
+      if (ccB) { ccB.classList.toggle('on', l !== 'off'); ccB.setAttribute('aria-label', l === 'off' ? 'Captions off' : 'Captions on'); }
+      if (ccM) ccM.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.l === l)));
+      try { localStorage.setItem('lessonCaptions', l); } catch(e){}
+    };
+    if (ccB) {
+      ccB.addEventListener('click', ev => { ev.stopPropagation(); openMenu(ccB, ccM); });
+      ccM.addEventListener('click', ev => { const b = ev.target.closest('button[data-l]'); if (!b) return; ev.stopPropagation(); setCap(b.dataset.l); closeMenu(); });
+    }
+    setCap(capLang);
+    ['timeupdate', 'seeked'].forEach(e => v.addEventListener(e, syncCap));
+    // Chapters: ticks on the seek bar, the current chapter's name next to the time, and a list to jump to.
+    const chapEl = $('vchap'), chB = $('vchapB'), chM = $('vchapM');
+    const placeTicks = () => { if (!v.duration) return; wrap.querySelectorAll('.vticks i').forEach(i => { i.style.left = Math.min(100, i.dataset.t / 10 / v.duration) + '%'; }); };
+    let chapShown = null;
+    const syncChap = () => {
+      if (!CH.length) return;
+      const ms = v.currentTime * 1000; let c = CH[0];
+      for (const x of CH) if (x[0] <= ms + 250) c = x;
+      if (c === chapShown) return; chapShown = c;
+      chapEl.textContent = c[1];
+      if (chM) chM.querySelectorAll('button').forEach(b => b.classList.toggle('cur', +b.dataset.t === c[0]));
+    };
+    v.addEventListener('loadedmetadata', placeTicks);
+    ['timeupdate', 'seeked'].forEach(e => v.addEventListener(e, syncChap));
+    if (chB) {
+      chB.addEventListener('click', ev => { ev.stopPropagation(); openMenu(chB, chM); });
+      chM.addEventListener('click', ev => {
+        const b = ev.target.closest('button[data-t]'); if (!b) return; ev.stopPropagation();
+        v.currentTime = b.dataset.t / 1000; closeMenu(); if (v.paused) v.play().catch(() => {});
+      });
+    }
+    // Resume where they stopped (saved on the account, so it follows them to another device).
+    const rKey = 'lessonPos:' + mod.id + ':' + it.id;
+    let startAt = prog && prog.position || 0;
+    if (!startAt) { try { startAt = +localStorage.getItem(rKey) || 0; } catch(e){} }
+    const resumeEl = $('vresume');
+    v.addEventListener('loadedmetadata', () => {
+      if (startAt > 10 && v.duration && startAt < v.duration - 15) {
+        v.currentTime = startAt;
+        $('vresumeT').textContent = 'Picking up at ' + fmt(startAt);
+        resumeEl.hidden = false;
+        setTimeout(() => { resumeEl.hidden = true; }, 9000);
+      }
+    }, { once:true });
+    $('vrestart').addEventListener('click', ev => { ev.stopPropagation(); v.currentTime = 0; resumeEl.hidden = true; v.play().catch(() => {}); });
+    // Watch tracking: only seconds actually played count (jumps are ignored), saved every 15 seconds,
+    // on pause and when the page is left. The admin page shows it per learner.
+    let lastT = null, acc = 0, lastSave = Date.now(), saving = false;
+    const save = async force => {
+      if (saving || !v.duration) return;
+      if (!force && acc < 15 && Date.now() - lastSave < 15000) return;
+      const add = Math.round(acc * 10) / 10; acc = 0; lastSave = Date.now(); saving = true;
+      try { localStorage.setItem(rKey, String(v.ended ? 0 : Math.floor(v.currentTime))); } catch(e){}
+      try { await rpc('course_video_save', { p_module:mod.id, p_item:it.id, p_position:v.ended ? 0 : v.currentTime, p_duration:v.duration, p_add:add }); }
+      catch(e){ acc += add; }
+      finally { saving = false; }
+    };
+    v.addEventListener('timeupdate', () => {
+      const t = v.currentTime;
+      if (!v.paused && lastT !== null) { const d = t - lastT; if (d > 0 && d < 3) acc += d; }
+      lastT = t;
+      save(false);
+    });
+    v.addEventListener('seeking', () => { lastT = null; });
+    ['pause', 'ended'].forEach(e => v.addEventListener(e, () => save(true)));
+    const onHide = ev => { if (!alive()) { document.removeEventListener('visibilitychange', onHide); window.removeEventListener('pagehide', onHide); return; } if (document.visibilityState === 'hidden' || ev.type === 'pagehide') save(true); };
+    document.addEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', onHide);
+    window.addEventListener('hashchange', function leave(){ window.removeEventListener('hashchange', leave); if (acc > 0.5) save(true); });
     syncPlay(); syncTime();
     // The link lasts 15 minutes; if it runs out mid-lesson, get a fresh one and carry on from the same spot.
     let lastFix = 0;

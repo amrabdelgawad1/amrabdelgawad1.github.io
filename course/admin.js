@@ -26,15 +26,18 @@
   async function homeView(){
     const at = location.hash;
     msgView('Loading learners…', { header:header(Object.assign(back('#/', 'Back to course home'), { ctx:'Admin', title:'Learners' })) });
-    let people, wait;
-    try { [people, wait] = await Promise.all([rpc('course_admin_learners'), rpc('course_admin_waiting')]); }
+    let people, wait, vids;
+    try { [people, wait, vids] = await Promise.all([rpc('course_admin_learners'), rpc('course_admin_waiting'), rpc('course_admin_videos', { p_user:null }).catch(() => [])]); }
     catch(e){ return msgView(errText(e), { retry:true, at }); }
+    const vSum = {};
+    (vids || []).forEach(v => { const o = vSum[v.userId] || (vSum[v.userId] = { started:0, done:0 }); o.started++; if (v.completedAt) o.done++; });
     const rows = people.map(p => {
+      const vs = vSum[p.userId];
       const cp = p.checkpoint ? 'Checkpoint ' + p.checkpoint.score + '%' : 'No checkpoint yet';
       return '<li><a class="person" href="#/admin/u/' + esc(p.userId) + '"><span class="av" aria-hidden="true">' + esc(initials(p.name)) + '</span><span class="txt">' +
         '<span class="n">' + esc(p.name) + '</span>' +
         '<span class="m">' + (p.module ? 'Module ' + p.module + ' · ' + pct(p.done, p.total) + '% done' : 'Not started') + ' · ' + (p.lastActive ? 'active ' + when(p.lastActive) : 'never active') + '</span>' +
-        '<span class="m">' + esc(cp) + (p.hasAccess ? '' : ' · access switched off') + '</span>' +
+        '<span class="m">' + esc(cp) + (p.hasAccess ? '' : ' · access switched off') + ' · ' + (vs ? plural(vs.done, 'video') + ' finished, ' + vs.started + ' started' : 'no videos watched') + '</span>' +
         (p.module ? '<span class="mini" aria-hidden="true"><i data-w="' + pct(p.done, p.total) + '"></i></span>' : '') + '</span>' +
         (p.checkpoint ? chip(p.checkpoint.passed ? 'Passed' : 'Not passed', p.checkpoint.passed ? 'ok' : 'warm') : '') + '</a></li>';
     }).join('');
@@ -56,8 +59,13 @@
   async function learnerView(uid){
     const at = location.hash;
     msgView('Loading…', { header:header(Object.assign(back('#/admin', 'Back to learners'), { ctx:'Admin', title:'Learner' })) });
-    let L;
-    try { L = await rpc('course_admin_learner', { p_user:uid }); } catch(e){ return msgView(errText(e), { retry:true, at }); }
+    let L, V;
+    try { [L, V] = await Promise.all([rpc('course_admin_learner', { p_user:uid }), rpc('course_admin_videos', { p_user:uid }).catch(() => [])]); } catch(e){ return msgView(errText(e), { retry:true, at }); }
+    const mmss = s => { s = Math.round(s || 0); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+    const vids = (V || []).map(v => '<li><div class="item"><span class="txt"><span class="n">' + esc(v.title || ('Lesson ' + v.itemId)) + '</span>' +
+      '<span class="m">' + v.pct + '% watched (' + mmss(v.watched) + ' of ' + mmss(v.duration) + ')' + (v.completedAt ? '' : ' · stopped at ' + mmss(v.position)) + ' · last watched ' + when(v.updatedAt) + '</span>' +
+      '<span class="mini" aria-hidden="true"><i data-w="' + v.pct + '"></i></span></span>' +
+      (v.completedAt ? chip('Finished', 'ok') : chip('In progress', 'warm')) + '</div></li>').join('');
     const mods = L.modules.filter(m => m.open || m.done).map(m => '<div class="stack" data-s="g6"><div class="between"><b class="small">Module ' + m.number + ': ' + esc(m.title) + '</b><span class="small muted">' + m.done + ' of ' + m.total + '</span></div>' + bar(pct(m.done, m.total)) + '</div>').join('');
     const subs = L.submissions.map(s => '<li><a class="item" href="#/admin/u/' + esc(uid) + '/s/' + esc(s.moduleId) + '/' + esc(s.itemId) + '"><span class="txt"><span class="n">' + esc(s.title || 'Written drill') + '</span>' +
       '<span class="m">' + (s.submittedAt ? 'Sent ' + dateTime(s.submittedAt) : 'Not sent yet') + (s.fileName ? ' · file attached' : '') + '</span></span>' + statusChip(s.status) + '</a></li>').join('');
@@ -68,6 +76,7 @@
       '<main id="main" class="col"><div class="page">' +
         '<div class="stack" data-s="g4"><h1 data-s="h22">' + esc(L.name) + '</h1><span class="small muted">' + esc(L.email || '') + '</span></div>' +
         '<section class="card stack" aria-label="Progress">' + (mods || '<p class="note">No progress yet.</p>') + '</section>' +
+        '<section class="stack" aria-labelledby="vH"><h2 class="sub" id="vH">Lesson videos (' + (V || []).length + ')</h2>' + (vids ? '<ul class="items">' + vids + '</ul><p class="note">Only time actually played counts, so skipping ahead does not add to the percentage. Finished means 90% or more.</p>' : '<p class="note">No lesson videos watched yet.</p>') + '</section>' +
         '<section class="stack" aria-labelledby="sH"><h2 class="sub" id="sH">Written drills</h2>' + (subs ? '<ul class="items">' + subs + '</ul>' : '<p class="note">Nothing started yet.</p>') + '</section>' +
         '<section class="stack" aria-labelledby="aH"><h2 class="sub" id="aH">Quiz attempts (' + L.attempts.length + ')</h2>' + (atts ? '<ul class="items">' + atts + '</ul>' : '<p class="note">No finished quizzes yet.</p>') + '</section>' +
         '<section class="stack" aria-labelledby="cH" id="certBox"><h2 class="sub" id="cH">Certification</h2><p class="note">Loading…</p></section>' +

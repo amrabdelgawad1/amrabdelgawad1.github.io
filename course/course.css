@@ -461,6 +461,30 @@ a.person:hover{ border-color:var(--ink); color:var(--ink); }
 .vwrap.isfs.idle .wm{ opacity:.55; transition:opacity .4s ease; }
 .vwrap.idle .vbig{ opacity:0; pointer-events:none; }
 .vbig{ transition:opacity .25s ease; }
+.vwrap{ container-type:inline-size; }
+/* Captions drawn by the player */
+.vcap{ position:absolute; left:6%; right:6%; bottom:7%; z-index:2; display:flex; justify-content:center; pointer-events:none; transition:bottom .25s ease; }
+.vcap[hidden]{ display:none; }
+.vcap span{ max-width:100%; padding:.25em .6em; border-radius:6px; background:rgba(0,0,0,.62); color:#fff; text-align:center; font:500 clamp(12px, 2.3cqw, 30px)/1.4 var(--sans); }
+.vcap[lang="ar"] span{ font-family:'Noto Kufi Arabic', 'Segoe UI', Tahoma, var(--sans); font-size:clamp(13px, 2.4cqw, 31px); line-height:1.6; }
+.vwrap:not(.idle) .vcap{ bottom:calc(7% + 64px); }
+.vwrap.isfs:not(.idle) .vcap{ bottom:calc(5% + 84px); }
+/* Resume note */
+.vresume{ position:absolute; right:12px; top:12px; z-index:4; display:flex; align-items:center; gap:10px; padding:6px 6px 6px 12px; border-radius:10px; background:rgba(20,24,22,.92); color:#fff; font:600 13px var(--sans); }
+.vresume[hidden]{ display:none; }
+.vresume button{ border:0; border-radius:7px; padding:6px 10px; background:#E2602A; color:#fff; font:700 12px var(--sans); cursor:pointer; }
+/* Chapters */
+.vseekw{ position:relative; }
+.vticks{ position:absolute; left:7px; right:7px; top:7px; height:4px; pointer-events:none; z-index:1; }
+.vticks i{ position:absolute; top:0; width:3px; height:4px; margin-left:-1px; background:rgba(0,0,0,.85); }
+.vchap{ color:rgba(255,255,255,.75); font:600 12px var(--sans); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; max-width:34%; padding-left:4px; }
+.vmenu.vchapm{ min-width:250px; max-height:min(60vh, 320px); overflow:auto; }
+.vmenu.vchapm button{ white-space:nowrap; }
+.vchapm button{ display:flex; gap:10px; align-items:baseline; }
+.vchapm .ct{ color:rgba(255,255,255,.55); font-variant-numeric:tabular-nums; font-size:12px; min-width:34px; }
+.vchapm button.cur{ color:#F2733A; }
+#vccB.on{ color:#F2733A; }
+.vmenu button[lang="ar"]{ font-family:'Noto Kufi Arabic', 'Segoe UI', Tahoma, var(--sans); }
 .vspeedw{ position:relative; }
 .vspeed{ min-width:48px; }
 .vmenu{ position:absolute; right:0; bottom:44px; z-index:4; display:flex; flex-direction:column; padding:6px; border-radius:10px; background:rgba(20,24,22,.96); box-shadow:0 8px 24px rgba(0,0,0,.5); min-width:92px; }
@@ -490,10 +514,19 @@ html.vfill-lock, html.vfill-lock body{ overflow:hidden; }
   .vwrap:not(.isfs) .vtime{ font-size:11px; }
   .vwrap:not(.isfs) .vbig{ width:52px; height:52px; }
   .vwrap:not(.isfs) .vbig svg{ width:24px; height:24px; }
-  .vwrap:not(.isfs) .vmenu{ bottom:34px; flex-direction:row; flex-wrap:wrap; width:170px; }
+  .vwrap:not(.isfs) .vmenu{ bottom:34px; }
+  .vwrap:not(.isfs) #vmenu{ flex-direction:row; flex-wrap:wrap; width:170px; }
+  .vwrap:not(.isfs) .vmenu.vchapm{ min-width:215px; max-height:150px; }
+  .vwrap:not(.isfs) .vchap{ display:none; }
+  .vwrap:not(.isfs):not(.idle) .vcap{ bottom:calc(4% + 48px); }
+  .vwrap:not(.isfs) .vresume{ top:6px; right:6px; font-size:11px; padding:4px 4px 4px 9px; }
+  .vwrap:not(.isfs) .vticks{ top:4px; }
   .vwrap:not(.isfs) .vmenu button{ padding:7px 9px; font-size:13px; }
 }
 @media (prefers-reduced-motion:reduce){ .vbar{ transition:none; } }
 .vup{ align-self:flex-start; cursor:pointer; }
 .vup:focus-within{ outline:2px solid var(--orange-text); outline-offset:3px; border-radius:4px; }
 @media print{ .vbox{ display:none; } }
+
+.item .mini{ display:block; height:6px; border-radius:3px; background:var(--track); overflow:hidden; margin-top:4px; }
+.item .mini i{ display:block; height:100%; background:var(--orange); }
