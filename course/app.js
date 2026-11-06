@@ -622,7 +622,7 @@
     if (url) {
       [X, prog] = await Promise.all([
         extraUrl ? fetch(extraUrl).then(r => r.ok ? r.json() : null).catch(() => null) : null,
-        db.from('course_video_progress').select('position,duration,completed_at').eq('module_id', mod.id).eq('item_id', it.id).maybeSingle().then(r => r.data).catch(() => null)
+        db.from('course_video_progress').select('position,duration,completed_at').eq('user_id', user && user.id).eq('module_id', mod.id).eq('item_id', it.id).maybeSingle().then(r => r.data).catch(() => null)
       ]);
     }
     if (!document.contains(box)) return; // the learner moved to another page while the link was loading
@@ -637,7 +637,11 @@
       cc:'M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v10h16V7zm2 3h5v1.5H7.5v1H11V14H6zm7 0h5v1.5h-3.5v1H18V14h-5z',
       list:'M4 6h2v2H4zm4 0h12v2H8zM4 11h2v2H4zm4 0h12v2H8zM4 16h2v2H4zm4 0h12v2H8z'
     };
-    const CAP = X && X.captions || {}, CH = X && Array.isArray(X.chapters) ? X.chapters : [];
+    // Sidecar data is uploaded by the admin; keep only well-formed rows so one bad line can't break the player.
+    const okRow = r => Array.isArray(r) && Number.isFinite(+r[0]) && r[1] != null;
+    const CAP = {};
+    if (X && X.captions) ['en', 'ar'].forEach(k => { if (Array.isArray(X.captions[k])) CAP[k] = X.captions[k].filter(okRow).map(r => [+r[0], String(r[1])]); });
+    const CH = X && Array.isArray(X.chapters) ? X.chapters.filter(okRow).map(r => [Math.max(0, Math.round(+r[0])), String(r[1]), String(r[2] || r[1])]) : [];
     const capLangs = [['en', 'English'], ['ar', 'العربية']].filter(([k]) => Array.isArray(CAP[k]) && CAP[k].length);
     const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2];
     const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -743,7 +747,13 @@
     let saved = 1; try { saved = +localStorage.getItem('lessonSpeed') || 1; } catch(e){}
     if (SPEEDS.includes(saved)) { setSpeed(saved); v.addEventListener('loadedmetadata', () => { v.playbackRate = saved; }, { once:true }); }
     // One menu open at a time (speed, chapters, captions).
-    const closeMenu = () => { wrap.querySelectorAll('.vmenu').forEach(m => { m.hidden = true; }); wrap.querySelectorAll('[aria-haspopup]').forEach(b => b.setAttribute('aria-expanded', 'false')); showBar(); };
+    const closeMenu = () => {
+      const opener = wrap.querySelector('[aria-haspopup][aria-expanded="true"]');
+      const had = opener && wrap.querySelector('.vmenu:not([hidden])') && wrap.querySelector('.vmenu:not([hidden])').contains(document.activeElement);
+      wrap.querySelectorAll('.vmenu').forEach(m => { m.hidden = true; }); wrap.querySelectorAll('[aria-haspopup]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+      if (had) opener.focus();
+      showBar();
+    };
     const openMenu = (btn, m) => { const was = !m.hidden; closeMenu(); if (!was) { m.hidden = false; btn.setAttribute('aria-expanded', 'true'); const f = m.querySelector('[aria-checked="true"]') || m.querySelector('button'); if (f && ptr !== 'touch') f.focus(); } showBar(); };
     spB.addEventListener('click', ev => { ev.stopPropagation(); openMenu(spB, menu); });
     menu.addEventListener('click', ev => { const b = ev.target.closest('button[data-s]'); if (!b) return; ev.stopPropagation(); setSpeed(+b.dataset.s); closeMenu(); });
@@ -805,7 +815,7 @@
     const syncCap = () => {
       const list = capLang === 'off' ? null : CAP[capLang], ms = v.currentTime * 1000;
       let txt = '';
-      if (list && !(X.end && ms > X.end)) for (const c of list) { if (c[0] <= ms) txt = c[1]; else break; }
+      if (list && !(X && X.end && ms > X.end)) for (const c of list) { if (c[0] <= ms) txt = c[1]; else break; }
       if (txt === capShown) return;
       capShown = txt; capSpan.textContent = txt; capEl.hidden = !txt;
       capEl.dir = capLang === 'ar' ? 'rtl' : 'ltr'; capEl.lang = capLang === 'ar' ? 'ar' : 'en';
