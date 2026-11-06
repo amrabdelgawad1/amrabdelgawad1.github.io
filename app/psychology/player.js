@@ -266,6 +266,7 @@ function renderItem(m, it) {
     (isFirst ? '<span class="cp-thumb">' + partThumb(m, p) + '</span>' : '') +
     '<span class="cp-kick">' + esc(itemLabel(m, it)) + '</span><h1 class="cp-h1">' + esc(L(it.title)) + '</h1>' +
     (has(it.html) || isQ || lang === 'en' ? '' : '<div class="note-ar">' + esc(t('arPending')) + '</div>') +
+    (it.type === 'section' ? '<div class="lvideo" id="lvideo"></div>' : '') +
     '<div class="content' + (lang === 'ar' && !isQ && !has(it.html) ? ' fallback-en" lang="en' : '') + '" id="content">' + body + '</div>' +
     '<div class="cp-foot"><a class="btn ghost" href="' + href(prev) + '">' + esc(t('prev')) + '</a>' +
     (isQ ? '' : '<button class="btn ' + (done ? 'ok' : 'ghost') + '" id="doneBtn" type="button">' + esc(done ? t('completed') : t('markComplete')) + '</button>') +
@@ -275,9 +276,17 @@ function renderItem(m, it) {
     '<button class="fab' + (Pad.hasInk(m, it) ? ' has' : '') + '" id="fab" type="button" aria-label="' + esc(t('scratch')) + '">' + I.pen + '<span class="lbl">' + esc(t('scratch')) + '</span><span class="dot"></span></button></div>';
   app.innerHTML = h;
   bindGo(); enhance(m, it);
-  var db = document.getElementById('doneBtn'); if (db) db.onclick = function () { setDone(m, it, !isDone(m, it)); render(); };
+  // Update the button, sidebar and progress in place (a full re-render would stop a playing lesson video).
+  var db = document.getElementById('doneBtn'); if (db) db.onclick = function () {
+    var v = !isDone(m, it); setDone(m, it, v);
+    db.className = 'btn ' + (v ? 'ok' : 'ghost'); db.textContent = t(v ? 'completed' : 'markComplete');
+    side(m, it); topProg();
+  };
   document.getElementById('nextBtn').addEventListener('click', function () { if (!isQ && !isDone(m, it)) setDone(m, it, true); }, true);
   if (isQ) bindExam(m, it);
+  // Lesson video (only when one has been uploaded for this section; see video.js)
+  var V = window.LH_DB;
+  if (it.type === 'section' && window.PsyVideo && V && V.db) window.PsyVideo.mount(document.getElementById('lvideo'), { db: V.db, uid: V.uid, course: (window.PSY_COURSE && window.PSY_COURSE.access) || 'psy', moduleId: m.id, itemId: it.id, isAdmin: OWNER && !asLearner, lang: lang });
   Find.highlight();
   if (tools) {
     document.getElementById('fab').onclick = function () { Ink.stop(); Pad.open(m, it); };
