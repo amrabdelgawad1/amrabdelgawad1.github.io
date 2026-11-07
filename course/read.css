@@ -68,4 +68,9 @@
 .has-fabs .inkbar{ bottom:calc(160px + var(--safe-b, 0px)); }
 @media (max-width:640px){ .has-fabs .fabs{ bottom:calc(92px + var(--safe-b, 0px)); } .has-fabs .inkbar{ bottom:calc(152px + var(--safe-b, 0px)); } }
 body:has(.pr-live) .has-fabs .fabs, .has-fabs:has(.pr-live) .fabs{ bottom:calc(170px + var(--safe-b, 0px)); }
+/* Acquisitions keeps its sidebar down to 861px (Psychology folds it at 1024px), so keep the buttons and pen bar beside it */
+@media (min-width:861px) and (max-width:1024px){
+  .has-fabs .fabs{ left:calc(var(--side) + 20px); }
+  .has-fabs .inkbar{ left:calc(50% + var(--side) / 2); max-width:calc(100vw - var(--side) - 32px); }
+}
 @media print{ .titleblock{ break-inside:avoid; } .prose .box{ break-inside:avoid; } }
