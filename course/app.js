@@ -88,12 +88,43 @@
   let S = null;            // course_state(): { title, totalModules, isAdmin, me, modules, done, quizzes, submissions }
   let user = null;
   // Pen on the page and scratch pad (/app/course/ink.js, shared with the Psychology course).
-  // What a learner draws stays private: it is kept on this device under their account id, never sent to Amr.
-  const inkStore = {
-    key: k => 'ap-ink:' + (user ? user.id : 'me') + ':' + k,
-    get(k){ try { return localStorage.getItem(this.key(k)); } catch(e){ return null; } },
-    set(k, v){ try { if (v) localStorage.setItem(this.key(k), v); else localStorage.removeItem(this.key(k)); } catch(e){} }
-  };
+  // Saved on this device at once and to the learner's own row in learn_progress (course 'acq-ink') a moment later,
+  // so marks follow the learner to their other devices. Row rules let each person read and write only their own row.
+  const inkStore = (() => {
+    const COURSE = 'acq-ink';
+    let kv = {}, at = 0, timer = null, uid = null, off = false;
+    const lkey = () => 'ap-ink:' + (uid || 'me');
+    const keep = () => { try { localStorage.setItem(lkey(), JSON.stringify({ kv, at })); } catch(e){} };
+    async function push(){
+      timer = null;
+      if (!uid || off) return;
+      const { error } = await db.from('learn_progress').upsert({ user_id:uid, course:COURSE, data:{ kv, at }, updated_at:new Date().toISOString() });
+      if (error && /learn_progress/.test(error.message || '')) off = true;
+    }
+    const flush = () => { if (timer) { clearTimeout(timer); push(); } };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
+    return {
+      // after sign-in: this device first, then the account if it has newer marks
+      async start(id){
+        uid = id; kv = {}; at = 0;
+        try { const l = JSON.parse(localStorage.getItem(lkey()) || 'null'); if (l && l.kv) { kv = l.kv; at = l.at || 0; } } catch(e){}
+        try {
+          const { data:row, error } = await db.from('learn_progress').select('data').eq('user_id', uid).eq('course', COURSE).maybeSingle();
+          if (error) { if (/learn_progress/.test(error.message || '')) off = true; return; }
+          const d = row && row.data;
+          if (d && d.kv && (d.at || 0) > at) { kv = d.kv; at = d.at || 0; keep(); }
+          else if (at && (!d || (d.at || 0) < at)) push();
+        } catch(e){}
+      },
+      get(k){ return Object.prototype.hasOwnProperty.call(kv, k) ? kv[k] : null; },
+      set(k, v){
+        if (v) kv[k] = v; else delete kv[k];
+        at = Date.now(); keep();
+        if (timer) clearTimeout(timer); timer = setTimeout(push, 1500);
+      }
+    };
+  })();
   const PEN = window.CourseInk ? window.CourseInk({ store:inkStore, rtl:() => false }) : null;
   const signed = new Map(); // storage path -> { url, exp }
 
@@ -1440,7 +1471,7 @@
         if (apps.length) return mfaView(apps);
       }
     } catch(e){}
-    try { await loadState(); }
+    try { await Promise.all([loadState(), inkStore.start(user.id)]); }
     catch(e){
       if (/no access/.test(e.message || '')) return noAccessView();
       if (/JWT|expired|401/.test(e.message || '')) { await db.auth.signOut(); return signInView('Please sign in again.'); }
