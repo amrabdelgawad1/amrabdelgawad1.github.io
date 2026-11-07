@@ -1,0 +1,97 @@
+/* Pen on the page + scratch pad (ink.js), shared by the Psychology and Acquisitions courses.
+   Colors come from the page when it has them (Psychology: --text, --border...), otherwise from /portal.css. */
+.fabs, .inkbar, .pad, .inkhost{
+  --ik-text:var(--text, var(--p-ink, #14161B)); --ik-bg:var(--p-paper, #F7F5F0); --ik-panel:var(--panel, var(--p-card, #FFFFFF));
+  --ik-sunk:var(--sunk, var(--p-soft, #F1EEE7)); --ik-line:var(--border, var(--p-line, #E4E1D9)); --ik-line2:var(--border2, var(--p-line2, #D3CFC4));
+  --ik-muted:var(--muted, var(--p-muted, #6B7079)); --ik-accent:var(--mag, var(--p-accent, #C2410C));
+  --ik-head:var(--serif, var(--p-display, system-ui)); --ik-dark:#14161B; --ik-on-dark:#F4F2EC;
+}
+
+/* the two round buttons, bottom left of the lesson area (the Marketing and Psychology look) */
+.fabs{ position:fixed; z-index:46; left:calc(var(--side, 316px) + 20px); right:auto; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); display:flex; gap:10px; }
+[dir="rtl"] .fabs{ left:20px; right:auto; }
+.fab{ position:relative; width:54px; height:54px; border-radius:50%; border:1px solid var(--p-ink, #14161B); background:var(--p-ink, #14161B); color:var(--p-accent-hi, #FF5A1F);
+  display:grid; place-items:center; padding:0; cursor:pointer; box-shadow:0 8px 24px rgba(20,22,27,.28); }
+.fab svg{ width:24px; height:24px; }
+.fab .lbl{ display:none; }
+.fab .dot{ position:absolute; top:6px; right:6px; width:9px; height:9px; border-radius:50%; background:var(--p-accent-hi, #FF5A1F); border:2px solid var(--p-ink, #14161B); display:none; }
+.fab.has .dot{ display:block; }
+.fab.ink.active, .fab[aria-pressed="true"]{ background:var(--p-accent-hi, #FF5A1F); border-color:var(--p-accent-hi, #FF5A1F); color:#fff; }
+.fab.ink.active .dot{ border-color:var(--p-accent-hi, #FF5A1F); background:#fff; }
+@media (max-width:1024px){ .fabs, [dir="rtl"] .fabs{ left:16px; } }
+
+/* pen on the page */
+.inkhost{ position:relative; }
+.inklayer{ position:absolute; top:0; left:0; pointer-events:none; z-index:5; }
+.inkhost.inking .inklayer{ pointer-events:auto; touch-action:none; cursor:crosshair; }
+.inkhost.inking{ outline:1px dashed var(--ik-accent); outline-offset:8px; }
+
+/* toolbars: shared bits */
+:is(.inkbar, .pad) .g{ display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
+:is(.inkbar, .pad) .tb{ width:36px; height:36px; display:grid; place-items:center; background:var(--ik-panel); border:1px solid var(--ik-line); border-radius:8px; color:var(--ik-text); cursor:pointer; padding:0; }
+:is(.inkbar, .pad) .tb svg{ width:18px; height:18px; }
+:is(.inkbar, .pad) .tb.on{ border-color:var(--ik-text); background:var(--ik-sunk); box-shadow:inset 0 -2px 0 var(--ik-accent); }
+:is(.inkbar, .pad) .tb[disabled]{ opacity:.35; cursor:default; }
+:is(.inkbar, .pad) .sws{ display:grid; grid-template-columns:repeat(13, 24px); gap:5px; }
+:is(.inkbar, .pad) .sw{ position:relative; width:24px; height:24px; border-radius:50%; border:2px solid rgba(255,255,255,.9); box-shadow:0 0 0 1px var(--ik-line2); cursor:pointer; padding:0; display:block; }
+:is(.inkbar, .pad) .sw.on{ outline:2px solid var(--ik-text); outline-offset:2px; }
+:is(.inkbar, .pad) .sw.any{ background:conic-gradient(#DC2626, #EAB308, #16A34A, #0D9488, #2563EB, #7C3AED, #C2187A, #DC2626); overflow:hidden; }
+:is(.inkbar, .pad) .sw.any::after{ content:"+"; position:absolute; inset:0; display:grid; place-items:center; color:#fff; font:700 15px/1 system-ui; text-shadow:0 1px 2px rgba(0,0,0,.5); pointer-events:none; }
+:is(.inkbar, .pad) .sw.any.set::after{ content:""; }
+:is(.inkbar, .pad) .sw.any input{ position:absolute; inset:-4px; width:calc(100% + 8px); height:calc(100% + 8px); opacity:0; cursor:pointer; border:0; padding:0; }
+:is(.inkbar, .pad) .sz{ width:30px; height:30px; display:grid; place-items:center; background:transparent; border:1px solid transparent; border-radius:8px; cursor:pointer; padding:0; }
+:is(.inkbar, .pad) .sz i{ display:block; border-radius:50%; background:var(--ik-text); }
+.inkbar .sz[data-s="0"] i{ width:4px; height:4px; } .inkbar .sz[data-s="1"] i{ width:7px; height:7px; } .inkbar .sz[data-s="2"] i{ width:11px; height:11px; }
+.pad .sz[data-s="0"] i{ width:5px; height:5px; } .pad .sz[data-s="1"] i{ width:9px; height:9px; } .pad .sz[data-s="2"] i{ width:14px; height:14px; }
+:is(.inkbar, .pad) .sz.on{ border-color:var(--ik-text); }
+:is(.inkbar, .pad) .confirm{ display:none; align-items:center; gap:6px; font-size:13px; }
+:is(.inkbar, .pad) .confirm.show{ display:flex; }
+:is(.inkbar, .pad) .btn.sm{ display:inline-flex; align-items:center; min-height:34px; padding:6px 12px; font:600 13px/1 var(--p-body, system-ui); border-radius:8px; border:1px solid var(--ik-text); background:var(--ik-text); color:var(--ik-panel); cursor:pointer; }
+:is(.inkbar, .pad) .btn.sm.ghost{ background:var(--ik-panel); color:var(--ik-text); border-color:var(--ik-line2); }
+
+/* the bar that floats over the lesson while the pen is on */
+.inkbar{ position:fixed; left:50%; transform:translateX(-50%); width:max-content; bottom:84px; z-index:40; display:none; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px 10px; padding:8px 10px;
+  background:var(--ik-panel); border:1px solid var(--ik-line2); border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.18); max-width:calc(100vw - 24px); font-family:var(--p-body, system-ui); color:var(--ik-text); }
+.inkbar.show{ display:flex; }
+@media (min-width:1025px){ .inkbar{ left:calc(50% + var(--side, 0px) / 2); max-width:calc(100vw - var(--side, 0px) - 32px); } [dir="rtl"] .inkbar{ left:calc(50% - var(--side, 0px) / 2); } }
+.inkbar .g + .g{ padding-inline-start:10px; border-inline-start:1px solid var(--ik-line); }
+
+/* the scratch pad sheet */
+.pad{ position:fixed; inset:0; z-index:60; background:rgba(20,22,27,.55); display:none; font-family:var(--p-body, system-ui); color:var(--ik-text); }
+.pad.open{ display:flex; justify-content:flex-end; }
+html[dir="rtl"] .pad.open{ justify-content:flex-start; }
+.pad .sheet{ margin:0; max-width:none; border-radius:0; width:min(760px, 100vw); height:100%; background:var(--ik-bg); border-inline-start:1px solid var(--ik-line2); display:flex; flex-direction:column; }
+.pad .ph{ display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--ik-dark); color:var(--ik-on-dark); }
+.pad .ph .pt{ font-family:var(--ik-head); font-weight:700; font-size:17px; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+html[dir="rtl"] .pad .ph .pt{ font-family:var(--ar-head, var(--ik-head)); }
+.pad .ph .saved{ color:#7FC8A0; font-size:12px; }
+.pad .ph button{ background:transparent; border:1px solid #3A3D45; border-radius:8px; color:var(--ik-on-dark); height:34px; min-width:34px; cursor:pointer; display:grid; place-items:center; padding:0 8px; }
+.pad .tools{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:8px 10px; border-bottom:1px solid var(--ik-line); background:var(--ik-panel); }
+.pad .tools .g{ padding-inline-end:8px; border-inline-end:1px solid var(--ik-line); }
+.pad .tools .g:last-child{ border:0; }
+.pad .stage{ flex:1; min-height:0; display:grid; place-items:center; padding:12px; overflow:hidden; }
+.pad .paper{ position:relative; background:var(--ik-panel); border:1px solid var(--ik-line2); box-shadow:0 2px 14px rgba(0,0,0,.08); touch-action:none; }
+.pad .paper canvas{ position:absolute; inset:0; width:100%; height:100%; touch-action:none; cursor:crosshair; }
+.pad .paper.erasing canvas{ cursor:cell; }
+.pad .foot{ display:flex; align-items:center; gap:8px; padding:8px 12px; border-top:1px solid var(--ik-line); background:var(--ik-panel); font-size:13px; }
+.pad .foot .pg{ font-variant-numeric:tabular-nums; min-width:70px; text-align:center; }
+.pad .foot .sp{ flex:1; }
+.pad .hint{ margin:0; font-size:12px; color:var(--ik-muted); }
+body.side-open .fabs, body.side-open .inkbar{ display:none !important; }
+
+@media (max-width:640px){
+  /* phones: tools, sizes and Done on one line, the colors in one row you can swipe */
+  :is(.inkbar, .pad) .sws{ order:9; flex:1 0 100%; display:flex; gap:8px; overflow-x:auto; padding:3px 2px; scrollbar-width:none; }
+  :is(.inkbar, .pad) .sws::-webkit-scrollbar{ display:none; }
+  :is(.inkbar, .pad) .sw{ flex:none; width:30px; height:30px; }
+  .inkbar{ left:8px; right:8px; width:auto; transform:none; max-width:none; bottom:78px; justify-content:space-between; gap:6px; padding:8px; }
+  .inkbar .g + .g{ padding-inline-start:0; border:0; }
+  .inkbar .g{ flex-wrap:nowrap; }
+  .inkbar .tb{ width:34px; height:34px; } .inkbar .sz{ width:26px; height:26px; }
+  .pad .tools .sws{ border:0; padding-inline-end:0; }
+  .pad .tools .g{ padding-inline-end:4px; }
+  .pad .tb{ width:34px; height:34px; }
+  .fabs{ bottom:calc(78px + env(safe-area-inset-bottom, 0px)); } .fab{ width:48px; height:48px; }
+  .pad .foot .hint{ display:none; } .pad .foot .sp{ display:block; }
+}
+@media print{ .fabs, .inkbar, .pad{ display:none !important; } .inklayer{ display:none; } }

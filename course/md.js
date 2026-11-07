@@ -116,6 +116,19 @@
     return '<li class="check"' + dirAttr(body) + '><input type="checkbox" disabled' + (done ? ' checked' : '') + ' aria-hidden="true"><span>' + inline(body) + '</span></li>';
   }
 
+  // Call-out boxes (read.css), matched to the labels the lessons already use. Two kinds:
+  // 1. A section whose heading is one of these becomes a box holding everything up to the next heading.
+  const SECTIONS = [
+    [/^بالعربي/, 'ar'], [/^what to remember$/i, 'sum'], [/^(your work for this lesson|the (four )?drills( for this week)?)$/i, 'work'],
+    [/^(common mistakes|when to stop and ask|legal flag|compliance)\.?$/i, 'warn'],
+    [/^(linda'?s|on linda'?s|example\b|what it looks like)/i, 'case']
+  ];
+  const sectionKind = t => { const k = SECTIONS.find(s => s[0].test(t.trim())); return k ? k[1] : null; };
+  // 2. A paragraph that opens with a bold label ("**Legal flag.** text", "**Tip:** text") becomes a small box.
+  const BOXES = { 'your work for this lesson':'work', 'tip':'tip', 'pro tip':'tip', 'watch out':'warn', 'warning':'warn', 'legal flag':'warn', 'compliance':'warn', 'never':'warn',
+    'common mistake':'warn', 'the rule':'key', 'rule':'key', 'key point':'key', 'remember':'key', 'example':'case', 'on linda\'s call':'case', 'on linda\'s deal':'case', 'in short':'sum' };
+  const BOX = new RegExp('^\\*\\*(' + Object.keys(BOXES).join('|') + ')([.:])\\*\\*\\s+([\\s\\S]+)$', 'i');
+  const LINDA_NOTE = /^\*\*(Linda's [^*]{1,40}?)([.:])\*\*\s+([\s\S]+)$/;
   function render(md){
     const lines = String(md || '').replace(/\r/g, '').split('\n');
     const out = [];
@@ -143,16 +156,29 @@
         out.push('<ol' + (start !== 1 ? ' start="' + start + '"' : '') + dirAttr(items.join(' ')) + '>' + items.map(t => '<li>' + inline(t) + '</li>').join('') + '</ol>');
         continue;
       }
-      if (/^#{1,6} /.test(l)) { const t = l.replace(/^#+ /, ''); out.push('<h2' + dirAttr(t) + '>' + inline(t) + '</h2>'); i++; continue; }
+      if (/^#{1,6} /.test(l)) { out.push({ h:l.replace(/^#+ /, '') }); i++; continue; }
       const para = [];
       while (i < lines.length && lines[i].trim() && !/^\s*([-*] |\d+[.)] |\||#{1,6} )/.test(lines[i])) para.push(lines[i++].trim());
       const text = para.join(' ');
       if (FIG.test(text)) { out.push(figure(text)); continue; }
       const pair = text.match(PAIR);
       if (pair) { out.push('<div class="md-pair">' + figure(pair[1]) + figure(pair[2]) + '</div>'); continue; }
-      out.push(/^\*\*[^*]+\*\*$/.test(text) ? '<h2' + dirAttr(text) + '>' + inline(text.slice(2, -2)) + '</h2>' : '<p' + dirAttr(text) + '>' + inline(text) + '</p>');
+      const bx = text.match(BOX) || text.match(LINDA_NOTE);
+      if (bx) { const kind = BOXES[bx[1].toLowerCase().replace(/\s+/g, ' ')] || 'case'; out.push('<div class="box ' + kind + (isArabic(text) ? ' rtl" dir="rtl"' : '"') + '><span class="bl">' + esc(bx[1]) + '</span><p>' + inline(bx[3].charAt(0).toUpperCase() + bx[3].slice(1)) + '</p></div>'); continue; }
+      if (/^\*\*[^*]+\*\*$/.test(text)) { out.push({ h:text.slice(2, -2) }); continue; }
+      out.push('<p' + dirAttr(text) + '>' + inline(text) + '</p>');
     }
-    return out.join('\n');
+    // headings: plain ones stay headings, labelled ones open a box that runs to the next heading
+    const html = []; let open = false;
+    out.forEach(b => {
+      if (typeof b === 'string') { html.push(b); return; }
+      if (open) { html.push('</section>'); open = false; }
+      const kind = sectionKind(b.h.replace(/[.:]$/, ''));
+      if (kind) { html.push('<section class="box ' + kind + '"' + (isArabic(b.h) ? ' dir="rtl"' : '') + '><h3 class="bl">' + inline(b.h.replace(/[.:]$/, '')) + '</h3>'); open = true; }
+      else html.push('<h2' + dirAttr(b.h) + '>' + inline(b.h) + '</h2>');
+    });
+    if (open) html.push('</section>');
+    return html.join('\n');
   }
 
   window.CourseMarkdown = { render, inline, esc, isArabic };

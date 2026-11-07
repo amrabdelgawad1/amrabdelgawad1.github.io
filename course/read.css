@@ -1,0 +1,71 @@
+/* Acquisitions lessons in the Psychology course's reading style: numbered eyebrow, big heading over a rule,
+   a title block, section numbers, panels with the orange top line, call-out boxes, a dark "In short" card.
+   Loaded after hub.css. Only the lesson page changes; quizzes, the module page and the home stay as they are. */
+.lesson.page{ max-width:780px; margin:0 auto; gap:18px; padding-top:26px; }
+.lesson .between .label.o{ font:600 11.5px/1.4 var(--sans); letter-spacing:.16em; text-transform:uppercase; color:var(--orange-btn); }
+.lesson > h1{ font:800 clamp(28px, 4.2vw, 36px)/1.15 var(--display); letter-spacing:-.015em; color:var(--ink); padding-bottom:14px; border-bottom:1px solid #D3CFC4; text-wrap:balance; }
+
+/* title block: module, lesson, time, quiz */
+.titleblock{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); border:1px solid var(--line); background:var(--card); }
+.titleblock div{ padding:10px 14px; border-inline-end:1px solid var(--line); min-width:0; }
+.titleblock div:last-child{ border-inline-end:0; }
+.titleblock .k{ display:block; font:600 10.5px/1.4 var(--sans); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+.titleblock .v{ display:block; font-size:14px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+@media (max-width:620px){
+  .titleblock{ grid-template-columns:1fr 1fr; }
+  .titleblock div:nth-child(2){ border-inline-end:0; }
+  .titleblock div:nth-child(-n+2){ border-bottom:1px solid var(--line); }
+}
+
+/* the reading text */
+.lesson .prose{ counter-reset:sec; gap:16px; font-size:16.5px; line-height:1.7; color:var(--ink-2); }
+.lesson .prose > p{ max-width:68ch; }
+.lesson .prose strong{ color:var(--ink); font-weight:650; }
+.lesson .prose > h2{ counter-increment:sec; font:700 22px/1.25 var(--display); color:var(--ink); margin:22px 0 0; letter-spacing:-.005em; }
+.lesson .prose > h2::before{ content:counter(sec); display:inline-block; min-width:1.6em; margin-inline-end:8px; font:600 13px/1 var(--sans); letter-spacing:.04em; color:var(--orange-btn); vertical-align:.2em; }
+.lesson .prose ul, .lesson .prose ol{ gap:8px; }
+.lesson .prose li::marker{ color:var(--orange-btn); font-weight:600; }
+
+/* term cards become one panel with the orange line on top */
+.lesson .terms{ position:relative; gap:0; border:1px solid var(--line); background:var(--card); }
+.lesson .terms::before{ content:""; position:absolute; inset:-1px -1px auto -1px; height:2px; background:linear-gradient(90deg, var(--orange-btn), transparent 70%); }
+.lesson .term{ border:0; border-radius:0; border-top:1px solid var(--line); padding:14px 18px; gap:4px; }
+.lesson .term:first-child{ border-top:0; }
+.lesson .term-name{ font:700 17px/1.3 var(--display); color:var(--ink); }
+.lesson .term-mean{ font-size:15px; }
+.lesson .term-line{ font-size:13.5px; color:var(--muted); }
+
+/* tables: square, quiet header */
+.lesson .table-wrap{ border-radius:0; background:var(--card); }
+.lesson .table-wrap th{ background:var(--p-soft); font:600 11px/1.4 var(--sans); letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+.lesson .table-wrap table{ font-size:14.5px; }
+
+/* call-out boxes (md.js): sections the lessons already label, like "What to remember", "Your work for this lesson",
+   "Common mistakes", "Linda's ...", the Arabic summary, and paragraphs opening with "**Legal flag.**" or "**Tip:**" */
+.prose .box{ border:1px solid var(--line); border-inline-start:3px solid var(--ink); background:var(--card); padding:14px 18px 16px; display:flex; flex-direction:column; gap:10px; }
+.prose .box .bl{ margin:0; font:600 11.5px/1.4 var(--sans); letter-spacing:.14em; text-transform:uppercase; color:var(--ink); }
+.prose .box p, .prose .box ul, .prose .box ol{ margin:0; }
+.prose .box > .table-wrap{ margin:0; }
+.prose .box.tip{ border-inline-start-color:var(--p-ok); background:rgba(21,115,71,.06); } .prose .box.tip .bl{ color:var(--p-ok); }
+.prose .box.warn{ border-inline-start-color:#B45309; background:rgba(180,83,9,.07); } .prose .box.warn .bl{ color:#B45309; }
+.prose .box.key, .box.work{ border-inline-start-color:var(--orange-btn); background:var(--orange-softer); } .prose .box.key .bl, .box.work .bl{ color:var(--orange-btn); }
+.prose .box.case{ border-inline-start:3px solid var(--ink); background:var(--p-soft); }
+.prose .box.case .bl{ font:700 19px/1.25 var(--display); letter-spacing:-.005em; text-transform:none; color:var(--ink); }
+.prose .box.sum{ position:relative; border:1px solid #2E323A; background:var(--p-dark); color:#E9E6DF; }
+.prose .box.sum::before{ content:""; position:absolute; inset:-1px -1px auto -1px; height:2px; background:linear-gradient(90deg, var(--orange), transparent 70%); }
+.prose .box.sum .bl{ color:var(--orange); } .prose .box.sum strong{ color:#fff; } .prose .box.sum li::marker{ color:var(--orange); }
+.prose .box.ar{ border-inline-start:3px solid var(--orange); background:var(--card); font-family:"IBM Plex Sans Arabic", var(--sans); font-size:17px; line-height:1.9; }
+.prose .box.ar .bl{ letter-spacing:0; font:600 14px/1.5 "IBM Plex Sans Arabic", var(--sans); color:var(--orange-btn); text-transform:none; }
+
+/* the end of the lesson */
+.lesson .endmark{ display:flex; align-items:center; gap:12px; color:var(--muted); font:600 11px/1 var(--sans); letter-spacing:.16em; text-transform:uppercase; margin-top:8px; }
+.lesson .endmark::before, .lesson .endmark::after{ content:""; flex:1; height:1px; background:var(--line); }
+
+/* the lesson content is what the pen draws on */
+.lesson .prose.inkhost.inking{ outline-color:var(--orange-btn); }
+/* keep the round buttons and the pen bar above the Mark complete bar */
+.has-fabs .fabs{ bottom:calc(92px + var(--safe-b, 0px)); }
+.has-fabs .inkbar{ bottom:calc(160px + var(--safe-b, 0px)); }
+@media (max-width:640px){ .has-fabs .fabs{ bottom:calc(92px + var(--safe-b, 0px)); } .has-fabs .inkbar{ bottom:calc(152px + var(--safe-b, 0px)); } }
+body:has(.pr-live) .has-fabs .fabs, .has-fabs:has(.pr-live) .fabs{ bottom:calc(170px + var(--safe-b, 0px)); }
+@media print{ .titleblock{ break-inside:avoid; } .prose .box{ break-inside:avoid; } }

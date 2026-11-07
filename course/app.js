@@ -87,6 +87,45 @@
   // ---------- state ----------
   let S = null;            // course_state(): { title, totalModules, isAdmin, me, modules, done, quizzes, submissions }
   let user = null;
+  // Pen on the page and scratch pad (/app/course/ink.js, shared with the Psychology course).
+  // Saved on this device at once and to the learner's own row in learn_progress (course 'acq-ink') a moment later,
+  // so marks follow the learner to their other devices. Row rules let each person read and write only their own row.
+  const inkStore = (() => {
+    const COURSE = 'acq-ink';
+    let kv = {}, at = 0, timer = null, uid = null, off = false;
+    const lkey = () => 'ap-ink:' + (uid || 'me');
+    const keep = () => { try { localStorage.setItem(lkey(), JSON.stringify({ kv, at })); } catch(e){} };
+    async function push(){
+      timer = null;
+      if (!uid || off) return;
+      const { error } = await db.from('learn_progress').upsert({ user_id:uid, course:COURSE, data:{ kv, at }, updated_at:new Date().toISOString() });
+      if (error && /learn_progress/.test(error.message || '')) off = true;
+    }
+    const flush = () => { if (timer) { clearTimeout(timer); push(); } };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
+    return {
+      // after sign-in: this device first, then the account if it has newer marks
+      async start(id){
+        uid = id; kv = {}; at = 0;
+        try { const l = JSON.parse(localStorage.getItem(lkey()) || 'null'); if (l && l.kv) { kv = l.kv; at = l.at || 0; } } catch(e){}
+        try {
+          const { data:row, error } = await db.from('learn_progress').select('data').eq('user_id', uid).eq('course', COURSE).maybeSingle();
+          if (error) { if (/learn_progress/.test(error.message || '')) off = true; return; }
+          const d = row && row.data;
+          if (d && d.kv && (d.at || 0) > at) { kv = d.kv; at = d.at || 0; keep(); }
+          else if (at && (!d || (d.at || 0) < at)) push();
+        } catch(e){}
+      },
+      get(k){ return Object.prototype.hasOwnProperty.call(kv, k) ? kv[k] : null; },
+      set(k, v){
+        if (v) kv[k] = v; else delete kv[k];
+        at = Date.now(); keep();
+        if (timer) clearTimeout(timer); timer = setTimeout(push, 1500);
+      }
+    };
+  })();
+  const PEN = window.CourseInk ? window.CourseInk({ store:inkStore, rtl:() => false }) : null;
   const signed = new Map(); // storage path -> { url, exp }
 
   async function loadState(){ S = await rpc('course_state', { p_content:true }); }
@@ -228,6 +267,8 @@
     acts = o.acts || {};
     onInput = null;
     if (leaving) { try { leaving(); } catch(e){} leaving = null; }
+    if (PEN) { PEN.Ink.detach(); PEN.Pad.close(); }
+    document.body.classList.remove('has-fabs');
     document.body.classList.toggle('white', !!o.white);
     // Signed in with the course loaded: the Learning Hub frame (top bar, course content sidebar, page). Sign-in pages stand alone.
     const framed = !!S && !o.bare;
@@ -562,6 +603,24 @@
   // ==================================================================
   // Lesson
   // ==================================================================
+  function titleBlock(mod, e, n, total){
+    const it = e.it, q = it.quiz ? qCount(it) : 0, mins = it.minutes || Math.max(3, Math.round(String(it.bodyMarkdown || '').split(/\s+/).length / 200));
+    const cell = (k, v) => '<div><span class="k">' + k + '</span><span class="v">' + esc(v) + '</span></div>';
+    return '<div class="titleblock">' + cell('Module', mod.number + ' · ' + mod.title) + cell('Lesson', n + ' of ' + total) +
+      cell('Reading', 'About ' + mins + ' min') + cell('Quiz', q ? plural(q, 'question') : 'None') + '</div>';
+  }
+  function inkTools(mod, it){
+    const text = $('lessonText');
+    if (!PEN || !text) return;
+    const box = document.createElement('div'); box.className = 'fabs';
+    box.innerHTML = '<button class="fab ink' + (PEN.Ink.has(mod, it) ? ' has' : '') + '" id="inkBtn" type="button" aria-label="Pen">' + PEN.icons.marker + '<span class="lbl">Pen</span><span class="dot"></span></button>' +
+      '<button class="fab' + (PEN.Pad.hasInk(mod, it) ? ' has' : '') + '" id="fab" type="button" aria-label="Scratch pad">' + PEN.icons.pad + '<span class="lbl">Scratch pad</span><span class="dot"></span></button>';
+    $('cpMain').appendChild(box);
+    document.body.classList.add('has-fabs');
+    PEN.Ink.attach(mod, it, text);
+    $('inkBtn').onclick = () => PEN.Ink.toggle();
+    $('fab').onclick = () => { PEN.Ink.stop(); PEN.Pad.open(mod, it, heading(it)); };
+  }
   function lessonView(mod, e){
     const it = e.it, ls = lessonsOf(mod), n = ls.findIndex(x => x.it.id === it.id) + 1;
     const done = isDone(mod, it);
@@ -575,8 +634,10 @@
         '<div class="between"><span class="label o">Lesson ' + n + ' of ' + ls.length + (it.subtitle ? ' · ' + esc(it.subtitle) : '') + '</span>' +
           '<button class="link-btn print-btn" type="button" data-act="print">Print</button></div>' +
         '<h1>' + esc(heading(it)) + '</h1>' +
+        titleBlock(mod, e, n, ls.length) +
         '<div id="videoBox"></div>' +
-        '<div class="prose">' + MD.render(it.bodyMarkdown) + '</div>' +
+        '<div class="prose" id="lessonText">' + MD.render(it.bodyMarkdown) + '</div>' +
+        '<p class="endmark" aria-hidden="true">End of lesson</p>' +
         '<div id="renewBox"></div>' +
         '<div id="practiceBox"></div>' +
         (files.length ? '<section class="stack" aria-labelledby="filesH"><h2 class="sub" id="filesH" data-s="fs16">Files</h2><p class="note">Original guide page. Where it differs from the lesson, the lesson is correct.</p><div class="files">' + files.join('') + '</div></section>' : '') +
@@ -598,6 +659,7 @@
         view: b => openViewer(contentPath(mod, b.dataset.file), b.dataset.name),
         print: () => window.print()
       } });
+    inkTools(mod, it);
     if (window.CoursePractice && user) CoursePractice.mount($('practiceBox'), { db, user, mod, it, title:it.shortTitle || heading(it), toast }).then(f => { leaving = f; }).catch(() => {});
     if (mod.number === S.totalModules && /staying certified/i.test(it.title || '')) renewCard(it);
     lessonVideo(mod, it);
@@ -628,6 +690,8 @@
     if (!document.contains(box)) return; // the learner moved to another page while the link was loading
     const up = S.isAdmin ? '<label class="link-btn vup"><input type="file" class="vh" id="vidFile" accept="video/mp4">' + (url ? 'Replace video' : 'Upload a video for this lesson (MP4)') + '</label><span class="note" id="vidState" role="status"></span>' : '';
     if (!url) { box.innerHTML = up ? '<div class="vbox">' + up + '</div>' : ''; return bindVideoUpload(mod, it, path, box); }
+    // The video stands in for the drawn banner, so the lesson text starts higher on a phone
+    const ban = document.querySelector('#main > .tcard.banner'); if (ban) ban.remove();
     const svg = d => '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="' + d + '"/></svg>';
     const P = {
       play:'M8 5v14l11-7z', pause:'M6 5h4v14H6zM14 5h4v14h-4z',
@@ -1407,7 +1471,7 @@
         if (apps.length) return mfaView(apps);
       }
     } catch(e){}
-    try { await loadState(); }
+    try { await Promise.all([loadState(), inkStore.start(user.id)]); }
     catch(e){
       if (/no access/.test(e.message || '')) return noAccessView();
       if (/JWT|expired|401/.test(e.message || '')) { await db.auth.signOut(); return signInView('Please sign in again.'); }
