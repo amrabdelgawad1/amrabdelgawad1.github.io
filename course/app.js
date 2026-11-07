@@ -583,7 +583,7 @@
     if (!PEN || !text) return;
     const box = document.createElement('div'); box.className = 'fabs';
     box.innerHTML = '<button class="fab ink' + (PEN.Ink.has(mod, it) ? ' has' : '') + '" id="inkBtn" type="button" aria-label="Pen">' + PEN.icons.marker + '<span class="lbl">Pen</span><span class="dot"></span></button>' +
-      '<button class="fab' + (PEN.Pad.hasInk(mod, it) ? ' has' : '') + '" id="fab" type="button" aria-label="Scratch pad">' + PEN.icons.pen + '<span class="lbl">Scratch pad</span><span class="dot"></span></button>';
+      '<button class="fab' + (PEN.Pad.hasInk(mod, it) ? ' has' : '') + '" id="fab" type="button" aria-label="Scratch pad">' + PEN.icons.pad + '<span class="lbl">Scratch pad</span><span class="dot"></span></button>';
     $('cpMain').appendChild(box);
     document.body.classList.add('has-fabs');
     PEN.Ink.attach(mod, it, text);
@@ -659,6 +659,8 @@
     if (!document.contains(box)) return; // the learner moved to another page while the link was loading
     const up = S.isAdmin ? '<label class="link-btn vup"><input type="file" class="vh" id="vidFile" accept="video/mp4">' + (url ? 'Replace video' : 'Upload a video for this lesson (MP4)') + '</label><span class="note" id="vidState" role="status"></span>' : '';
     if (!url) { box.innerHTML = up ? '<div class="vbox">' + up + '</div>' : ''; return bindVideoUpload(mod, it, path, box); }
+    // The video stands in for the drawn banner, so the lesson text starts higher on a phone
+    const ban = document.querySelector('#main > .tcard.banner'); if (ban) ban.remove();
     const svg = d => '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="' + d + '"/></svg>';
     const P = {
       play:'M8 5v14l11-7z', pause:'M6 5h4v14H6zM14 5h4v14h-4z',

@@ -40,18 +40,22 @@
 .lesson .table-wrap th{ background:var(--p-soft); font:600 11px/1.4 var(--sans); letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
 .lesson .table-wrap table{ font-size:14.5px; }
 
-/* call-out boxes (md.js: a paragraph that opens with **Tip:**, **Watch out:**, **Key point:**, **Example:**, **Linda:**, **In short:**) */
-.box{ border:1px solid var(--line); border-inline-start:3px solid var(--ink); background:var(--card); padding:14px 16px; display:flex; flex-direction:column; gap:6px; }
-.box .bl{ font:600 11px/1.4 var(--sans); letter-spacing:.14em; text-transform:uppercase; color:var(--ink); }
-.box p{ margin:0; }
+/* call-out boxes (md.js): sections the lessons already label, like "What to remember", "Your work for this lesson",
+   "Common mistakes", "Linda's ...", the Arabic summary, and paragraphs opening with "**Legal flag.**" or "**Tip:**" */
+.box{ border:1px solid var(--line); border-inline-start:3px solid var(--ink); background:var(--card); padding:14px 18px 16px; display:flex; flex-direction:column; gap:10px; }
+.box .bl{ margin:0; font:600 11.5px/1.4 var(--sans); letter-spacing:.14em; text-transform:uppercase; color:var(--ink); }
+.box p, .box ul, .box ol{ margin:0; }
+.box > .table-wrap{ margin:0; }
 .box.tip{ border-inline-start-color:var(--p-ok); background:rgba(21,115,71,.06); } .box.tip .bl{ color:var(--p-ok); }
 .box.warn{ border-inline-start-color:#B45309; background:rgba(180,83,9,.07); } .box.warn .bl{ color:#B45309; }
-.box.key{ border-inline-start-color:var(--orange-btn); background:var(--orange-softer); } .box.key .bl{ color:var(--orange-btn); }
-.box.case{ border:1px solid var(--line); background:var(--p-soft); }
-.box.case .bl{ color:var(--orange-btn); }
+.box.key, .box.work{ border-inline-start-color:var(--orange-btn); background:var(--orange-softer); } .box.key .bl, .box.work .bl{ color:var(--orange-btn); }
+.box.case{ border-inline-start:3px solid var(--ink); background:var(--p-soft); }
+.box.case .bl{ font:700 19px/1.25 var(--display); letter-spacing:-.005em; text-transform:none; color:var(--ink); }
 .box.sum{ position:relative; border:1px solid #2E323A; background:var(--p-dark); color:#E9E6DF; }
 .box.sum::before{ content:""; position:absolute; inset:-1px -1px auto -1px; height:2px; background:linear-gradient(90deg, var(--orange), transparent 70%); }
-.box.sum .bl{ color:var(--orange); } .box.sum strong{ color:#fff; }
+.box.sum .bl{ color:var(--orange); } .box.sum strong{ color:#fff; } .box.sum li::marker{ color:var(--orange); }
+.box.ar{ border-inline-start:3px solid var(--orange); background:var(--card); font-family:"IBM Plex Sans Arabic", var(--sans); font-size:17px; line-height:1.9; }
+.box.ar .bl{ letter-spacing:0; font:600 14px/1.5 "IBM Plex Sans Arabic", var(--sans); color:var(--orange-btn); text-transform:none; }
 
 /* the end of the lesson */
 .lesson .endmark{ display:flex; align-items:center; gap:12px; color:var(--muted); font:600 11px/1 var(--sans); letter-spacing:.16em; text-transform:uppercase; margin-top:8px; }

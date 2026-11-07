@@ -273,7 +273,7 @@ function renderItem(m, it) {
     '<a class="btn" id="nextBtn" href="' + (nextLocked ? '#/' + m.id : href(next)) + '">' + esc(nextLabel) + '</a></div></div>';
   var tools = it.type === 'section' || it.type === 'playbook';
   if (tools) h += '<div class="fabs"><button class="fab ink' + (Ink.has(m, it) ? ' has' : '') + '" id="inkBtn" type="button" aria-label="' + esc(t('pen')) + '">' + I.marker + '<span class="lbl">' + esc(t('pen')) + '</span><span class="dot"></span></button>' +
-    '<button class="fab' + (Pad.hasInk(m, it) ? ' has' : '') + '" id="fab" type="button" aria-label="' + esc(t('scratch')) + '">' + I.pen + '<span class="lbl">' + esc(t('scratch')) + '</span><span class="dot"></span></button></div>';
+    '<button class="fab' + (Pad.hasInk(m, it) ? ' has' : '') + '" id="fab" type="button" aria-label="' + esc(t('scratch')) + '">' + PEN.icons.pad + '<span class="lbl">' + esc(t('scratch')) + '</span><span class="dot"></span></button></div>';
   app.innerHTML = h;
   bindGo(); enhance(m, it);
   // Update the button, sidebar and progress in place (a full re-render would stop a playing lesson video).
