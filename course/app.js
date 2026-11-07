@@ -87,6 +87,14 @@
   // ---------- state ----------
   let S = null;            // course_state(): { title, totalModules, isAdmin, me, modules, done, quizzes, submissions }
   let user = null;
+  // Pen on the page and scratch pad (/app/course/ink.js, shared with the Psychology course).
+  // What a learner draws stays private: it is kept on this device under their account id, never sent to Amr.
+  const inkStore = {
+    key: k => 'ap-ink:' + (user ? user.id : 'me') + ':' + k,
+    get(k){ try { return localStorage.getItem(this.key(k)); } catch(e){ return null; } },
+    set(k, v){ try { if (v) localStorage.setItem(this.key(k), v); else localStorage.removeItem(this.key(k)); } catch(e){} }
+  };
+  const PEN = window.CourseInk ? window.CourseInk({ store:inkStore, rtl:() => false }) : null;
   const signed = new Map(); // storage path -> { url, exp }
 
   async function loadState(){ S = await rpc('course_state', { p_content:true }); }
@@ -228,6 +236,8 @@
     acts = o.acts || {};
     onInput = null;
     if (leaving) { try { leaving(); } catch(e){} leaving = null; }
+    if (PEN) { PEN.Ink.detach(); PEN.Pad.close(); }
+    document.body.classList.remove('has-fabs');
     document.body.classList.toggle('white', !!o.white);
     // Signed in with the course loaded: the Learning Hub frame (top bar, course content sidebar, page). Sign-in pages stand alone.
     const framed = !!S && !o.bare;
@@ -562,6 +572,24 @@
   // ==================================================================
   // Lesson
   // ==================================================================
+  function titleBlock(mod, e, n, total){
+    const it = e.it, q = it.quiz ? qCount(it) : 0, mins = it.minutes || Math.max(3, Math.round(String(it.bodyMarkdown || '').split(/\s+/).length / 200));
+    const cell = (k, v) => '<div><span class="k">' + k + '</span><span class="v">' + esc(v) + '</span></div>';
+    return '<div class="titleblock">' + cell('Module', mod.number + ' · ' + mod.title) + cell('Lesson', n + ' of ' + total) +
+      cell('Reading', 'About ' + mins + ' min') + cell('Quiz', q ? plural(q, 'question') : 'None') + '</div>';
+  }
+  function inkTools(mod, it){
+    const text = $('lessonText');
+    if (!PEN || !text) return;
+    const box = document.createElement('div'); box.className = 'fabs';
+    box.innerHTML = '<button class="fab ink' + (PEN.Ink.has(mod, it) ? ' has' : '') + '" id="inkBtn" type="button" aria-label="Pen">' + PEN.icons.marker + '<span class="lbl">Pen</span><span class="dot"></span></button>' +
+      '<button class="fab' + (PEN.Pad.hasInk(mod, it) ? ' has' : '') + '" id="fab" type="button" aria-label="Scratch pad">' + PEN.icons.pen + '<span class="lbl">Scratch pad</span><span class="dot"></span></button>';
+    $('cpMain').appendChild(box);
+    document.body.classList.add('has-fabs');
+    PEN.Ink.attach(mod, it, text);
+    $('inkBtn').onclick = () => PEN.Ink.toggle();
+    $('fab').onclick = () => { PEN.Ink.stop(); PEN.Pad.open(mod, it, heading(it)); };
+  }
   function lessonView(mod, e){
     const it = e.it, ls = lessonsOf(mod), n = ls.findIndex(x => x.it.id === it.id) + 1;
     const done = isDone(mod, it);
@@ -575,8 +603,10 @@
         '<div class="between"><span class="label o">Lesson ' + n + ' of ' + ls.length + (it.subtitle ? ' · ' + esc(it.subtitle) : '') + '</span>' +
           '<button class="link-btn print-btn" type="button" data-act="print">Print</button></div>' +
         '<h1>' + esc(heading(it)) + '</h1>' +
+        titleBlock(mod, e, n, ls.length) +
         '<div id="videoBox"></div>' +
-        '<div class="prose">' + MD.render(it.bodyMarkdown) + '</div>' +
+        '<div class="prose" id="lessonText">' + MD.render(it.bodyMarkdown) + '</div>' +
+        '<p class="endmark" aria-hidden="true">End of lesson</p>' +
         '<div id="renewBox"></div>' +
         '<div id="practiceBox"></div>' +
         (files.length ? '<section class="stack" aria-labelledby="filesH"><h2 class="sub" id="filesH" data-s="fs16">Files</h2><p class="note">Original guide page. Where it differs from the lesson, the lesson is correct.</p><div class="files">' + files.join('') + '</div></section>' : '') +
@@ -598,6 +628,7 @@
         view: b => openViewer(contentPath(mod, b.dataset.file), b.dataset.name),
         print: () => window.print()
       } });
+    inkTools(mod, it);
     if (window.CoursePractice && user) CoursePractice.mount($('practiceBox'), { db, user, mod, it, title:it.shortTitle || heading(it), toast }).then(f => { leaving = f; }).catch(() => {});
     if (mod.number === S.totalModules && /staying certified/i.test(it.title || '')) renewCard(it);
     lessonVideo(mod, it);

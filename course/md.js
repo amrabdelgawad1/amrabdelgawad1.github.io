@@ -116,6 +116,10 @@
     return '<li class="check"' + dirAttr(body) + '><input type="checkbox" disabled' + (done ? ' checked' : '') + ' aria-hidden="true"><span>' + inline(body) + '</span></li>';
   }
 
+  // A paragraph that opens with one of these bold labels becomes a call-out box (read.css): **Tip:** text
+  const BOXES = { 'tip':'tip', 'pro tip':'tip', 'watch out':'warn', 'warning':'warn', 'careful':'warn', 'common mistake':'warn',
+    'key point':'key', 'remember':'key', 'rule':'key', 'example':'case', 'linda':'case', 'case':'case', 'in short':'sum', 'summary':'sum' };
+  const BOX = new RegExp('^\\*\\*(' + Object.keys(BOXES).join('|') + ')(?::\\*\\*|\\*\\*:)\\s+([\\s\\S]+)$', 'i');
   function render(md){
     const lines = String(md || '').replace(/\r/g, '').split('\n');
     const out = [];
@@ -150,6 +154,8 @@
       if (FIG.test(text)) { out.push(figure(text)); continue; }
       const pair = text.match(PAIR);
       if (pair) { out.push('<div class="md-pair">' + figure(pair[1]) + figure(pair[2]) + '</div>'); continue; }
+      const bx = text.match(BOX);
+      if (bx) { const kind = BOXES[bx[1].toLowerCase().replace(/\s+/g, ' ')]; out.push('<div class="box ' + kind + '"' + dirAttr(text) + '><span class="bl">' + esc(bx[1]) + '</span><p>' + inline(bx[2]) + '</p></div>'); continue; }
       out.push(/^\*\*[^*]+\*\*$/.test(text) ? '<h2' + dirAttr(text) + '>' + inline(text.slice(2, -2)) + '</h2>' : '<p' + dirAttr(text) + '>' + inline(text) + '</p>');
     }
     return out.join('\n');
