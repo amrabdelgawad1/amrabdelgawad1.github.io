@@ -164,7 +164,7 @@
       const pair = text.match(PAIR);
       if (pair) { out.push('<div class="md-pair">' + figure(pair[1]) + figure(pair[2]) + '</div>'); continue; }
       const bx = text.match(BOX) || text.match(LINDA_NOTE);
-      if (bx) { const kind = BOXES[bx[1].toLowerCase().replace(/\s+/g, ' ')] || 'case'; out.push('<div class="box ' + kind + '"' + dirAttr(text) + '><span class="bl">' + esc(bx[1]) + '</span><p>' + inline(bx[3].charAt(0).toUpperCase() + bx[3].slice(1)) + '</p></div>'); continue; }
+      if (bx) { const kind = BOXES[bx[1].toLowerCase().replace(/\s+/g, ' ')] || 'case'; out.push('<div class="box ' + kind + (isArabic(text) ? ' rtl" dir="rtl"' : '"') + '><span class="bl">' + esc(bx[1]) + '</span><p>' + inline(bx[3].charAt(0).toUpperCase() + bx[3].slice(1)) + '</p></div>'); continue; }
       if (/^\*\*[^*]+\*\*$/.test(text)) { out.push({ h:text.slice(2, -2) }); continue; }
       out.push('<p' + dirAttr(text) + '>' + inline(text) + '</p>');
     }

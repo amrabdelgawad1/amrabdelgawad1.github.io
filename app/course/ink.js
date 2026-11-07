@@ -45,7 +45,7 @@
   var root = document.documentElement;
   function cssVar(names, fb) { var cs = getComputedStyle(root); for (var i = 0; i < names.length; i++) { var v = cs.getPropertyValue(names[i]).trim(); if (v) return v; } return fb; }
   function inkColor() { return cssVar(['--text', '--ink', '--p-ink'], '#14161B'); }
-  function isDark() { var a = root.getAttribute('data-theme'); return a === 'dark' || (!a && matchMedia('(prefers-color-scheme: dark)').matches); }
+  function isDark() { return root.getAttribute('data-theme') === 'dark'; }  // both courses are light only, so the OS setting is not used
   var okHex = function (c) { return /^#[0-9a-f]{6}$/i.test(c || ''); };
 
   window.CourseInk = function (opts) {
@@ -193,7 +193,7 @@
       function start() { if (!cv) return; on = true; host.classList.add('inking'); if (!bar) buildBar(); bar.classList.add('show'); var b = document.getElementById('inkBtn'); if (b) b.classList.add('active'); ui(); }
       function stop() { on = false; if (host) host.classList.remove('inking'); if (bar) bar.classList.remove('show'); var b = document.getElementById('inkBtn'); if (b) b.classList.remove('active'); }
       function toggle() { if (on) stop(); else start(); }
-      function detach() { stop(); if (ro) { ro.disconnect(); ro = null; } window.removeEventListener('resize', fit); if (bar) { bar.remove(); bar = null; } if (cv) cv.remove(); cv = null; host = null; }
+      function detach() { if (saveT && data && mod && item) { clearTimeout(saveT); saveT = null; store.set(key(mod, item), data.s.length ? JSON.stringify(data) : ''); } stop(); if (ro) { ro.disconnect(); ro = null; } window.removeEventListener('resize', fit); if (bar) { bar.remove(); bar = null; } if (cv) cv.remove(); cv = null; host = null; }
       return { attach: attach, detach: detach, toggle: toggle, stop: stop, has: has, isOn: function () { return on; }, redraw: function () { if (cv) redraw(); } };
     })();
 

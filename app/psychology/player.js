@@ -273,7 +273,7 @@ function renderItem(m, it) {
     '<a class="btn" id="nextBtn" href="' + (nextLocked ? '#/' + m.id : href(next)) + '">' + esc(nextLabel) + '</a></div></div>';
   var tools = it.type === 'section' || it.type === 'playbook';
   if (tools) h += '<div class="fabs"><button class="fab ink' + (Ink.has(m, it) ? ' has' : '') + '" id="inkBtn" type="button" aria-label="' + esc(t('pen')) + '">' + I.marker + '<span class="lbl">' + esc(t('pen')) + '</span><span class="dot"></span></button>' +
-    '<button class="fab' + (Pad.hasInk(m, it) ? ' has' : '') + '" id="fab" type="button" aria-label="' + esc(t('scratch')) + '">' + PEN.icons.pad + '<span class="lbl">' + esc(t('scratch')) + '</span><span class="dot"></span></button></div>';
+    '<button class="fab' + (Pad.hasInk(m, it) ? ' has' : '') + '" id="fab" type="button" aria-label="' + esc(t('scratch')) + '">' + (PEN ? PEN.icons.pad : I.pen) + '<span class="lbl">' + esc(t('scratch')) + '</span><span class="dot"></span></button></div>';
   app.innerHTML = h;
   bindGo(); enhance(m, it);
   // Update the button, sidebar and progress in place (a full re-render would stop a playing lesson video).
@@ -311,8 +311,9 @@ function enhance(m, it) {
 
 /* ---------- pen on the page ---------- */
 /* Pen and scratch pad live in /app/course/ink.js, shared with the Acquisitions course (12 colors + pick any color). */
-var PEN = window.CourseInk({ store: Store, t: t, rtl: function () { return lang === 'ar'; } });
-var Ink = PEN.Ink;
+var PEN = window.CourseInk ? window.CourseInk({ store: Store, t: t, rtl: function () { return lang === 'ar'; } }) : null;
+var NOOP = function () {}, NOPE = function () { return false; };
+var Ink = PEN ? PEN.Ink : { attach: NOOP, detach: NOOP, toggle: NOOP, stop: NOOP, has: NOPE, redraw: NOOP };
 
 /* ---------- exam ---------- */
 var LET = { en: ['a', 'b', 'c', 'd'], ar: ['أ', 'ب', 'ج', 'د'] };
@@ -581,7 +582,7 @@ var Rev = (function () {
 })();
 
 /* ---------- scratch pad (shared, /app/course/ink.js) ---------- */
-var Pad = { open: function (m, it) { PEN.Pad.open(m, it, itemLabel(m, it)); }, close: PEN.Pad.close, hasInk: PEN.Pad.hasInk, isOpen: PEN.Pad.isOpen };
+var Pad = PEN ? { open: function (m, it) { PEN.Pad.open(m, it, itemLabel(m, it)); }, close: PEN.Pad.close, hasInk: PEN.Pad.hasInk, isOpen: PEN.Pad.isOpen } : { open: NOOP, close: NOOP, hasInk: NOPE, isOpen: NOPE };
 
 /* ---------- top bar ---------- */
 function applyTheme() {
