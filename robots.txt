@@ -2,6 +2,7 @@ User-agent: *
 Allow: /
 # Private team pages: sign-in only, nothing for search engines there
 Disallow: /app/
+Disallow: /crm/
 Disallow: /cash/
 Disallow: /tracker/
 Disallow: /land-calculator/

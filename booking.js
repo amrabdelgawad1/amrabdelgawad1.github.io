@@ -130,6 +130,38 @@
     });
   }
 
+  // The calendar day the visitor clicked is a day in THEIR time zone, but the booking API
+  // answers per day of the host's (New York) calendar. A visitor's day can overlap the host's
+  // day before and after, so ask for all three and keep only the slots that fall on the
+  // clicked day where the visitor is. Past times are dropped too.
+  function dayInZone(iso, tz) {
+    const p = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(iso));
+    const g = (t) => (p.find((x) => x.type === t) || {}).value;
+    return `${g("year")}-${g("month")}-${g("day")}`;
+  }
+
+  function shiftDay(dateStr, n) {
+    const d = new Date(dateStr + "T12:00:00Z");
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  }
+
+  async function fetchSlotsAround(dateStr) {
+    const days = [shiftDay(dateStr, -1), dateStr, shiftDay(dateStr, 1)];
+    const results = await Promise.allSettled(days.map(fetchSlots));
+    if (results[1].status === "rejected") throw new Error("availability_failed");
+    const seen = new Set();
+    return results
+      .flatMap((r) => (r.status === "fulfilled" && Array.isArray(r.value.slots) ? r.value.slots : []))
+      .filter((s) => s && s.iso && !seen.has(s.iso) && seen.add(s.iso))
+      .sort((a, b) => new Date(a.iso) - new Date(b.iso));
+  }
+
+  function slotsForDay(all, dateStr) {
+    const now = Date.now();
+    return (all || []).filter((s) => new Date(s.iso).getTime() > now && dayInZone(s.iso, state.tz) === dateStr);
+  }
+
   async function fetchSlots(dateStr) {
     const res = await fetch(`${API_BASE_URL}/api/availability?date=${dateStr}`);
     if (!res.ok) throw new Error("availability_failed");
@@ -204,9 +236,10 @@
     els.timesList.innerHTML = '<p class="times-empty">Checking availability…</p>';
 
     try {
-      const { slots } = await fetchSlots(dateStr);
-      state.lastSlots = slots;
-      renderTimes(slots);
+      const all = await fetchSlotsAround(dateStr);
+      if (state.selectedDate !== dateStr) return; // the visitor clicked another day meanwhile
+      state.lastSlots = all;
+      renderTimes(slotsForDay(all, dateStr));
     } catch {
       els.timesList.innerHTML =
         '<p class="times-empty">We\'re having trouble checking availability right now. Please try again in a moment.</p>';
@@ -268,7 +301,7 @@
       /* localStorage unavailable — selection just won't persist */
     }
     if (els.tzLabel) els.tzLabel.textContent = friendlyZoneLabel(tz);
-    if (state.lastSlots) renderTimes(state.lastSlots);
+    if (state.lastSlots && state.selectedDate) renderTimes(slotsForDay(state.lastSlots, state.selectedDate));
   }
 
   function renderTzList(filter) {
