@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://ztlpgyomjuzmjmuifbbd.supabase.co https://api.country.is; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://amrabdelgawad.site/privacy/">
+<title>Privacy Policy · Amr Abdelgawad</title>
+<meta name="description" content="How amrabdelgawad.site collects, uses and protects information from visitors, cash buyers, job applicants, clients and the team.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Amr Abdelgawad">
+<meta property="og:url" content="https://amrabdelgawad.site/privacy/">
+<meta property="og:title" content="Privacy Policy">
+<meta property="og:description" content="How amrabdelgawad.site collects, uses and protects information from visitors, cash buyers, job applicants, clients and the team.">
+<meta property="og:image" content="https://amrabdelgawad.site/assets/share-card.png?v=1">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF7F1; --card:#FFFFFF; --ink:#14213D; --text:#1F2733; --light:#5B6472; --border:#E4DCCB;
+  --accent:#E3AA35; --accent2:#94650C; --on-accent:#14213D; --ok:#2F7D4F; --err:#B4372A; --field:#FFFFFF;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0E1626; --card:#16213A; --ink:#F5EFE3; --text:#E7E2D8; --light:#A8B0BE; --border:#2A3756; --accent2:#E3AA35; --field:#101A2E; --ok:#5FBF86; --err:#E57A6C; }
+}
+*{ box-sizing:border-box; } [hidden]{ display:none !important; }
+html,body{ margin:0; background:var(--bg); color:var(--text); font:16px/1.55 Inter, system-ui, sans-serif; }
+a{ color:var(--accent2); }
+.wrap{ max-width:760px; margin:0 auto; padding:40px 16px 64px; }
+.top{ display:flex; align-items:center; gap:10px; font-weight:700; color:var(--ink); text-decoration:none; font-size:15px; }
+.top svg{ width:26px; height:26px; color:var(--ink); }
+.eyebrow{ margin:36px 0 8px; font-size:12px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--accent2); }
+h1{ font-family:"DM Serif Display", Georgia, serif; font-weight:400; color:var(--ink); font-size:clamp(34px, 6vw, 48px); line-height:1.05; margin:0; }
+.lede{ font-size:17px; color:var(--light); margin:14px 0 0; max-width:60ch; }
+.points{ display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin:26px 0 30px; padding:0; list-style:none; }
+.points li{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px; font-size:14.5px; }
+.points b{ display:block; color:var(--ink); margin-bottom:2px; }
+form{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px 20px; }
+fieldset{ border:0; margin:0 0 22px; padding:0; }
+legend{ font-family:"DM Serif Display", Georgia, serif; color:var(--ink); font-size:22px; margin-bottom:12px; padding:0; }
+.grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.grid .full{ grid-column:1 / -1; }
+@media (max-width:560px){ .grid{ grid-template-columns:1fr; } }
+label{ display:block; font-size:14px; font-weight:600; color:var(--ink); }
+label small{ font-weight:400; color:var(--light); }
+input[type=text], input[type=email], input[type=tel], input[type=number], select, textarea{
+  display:block; width:100%; margin-top:6px; padding:11px 12px; font:inherit; color:var(--text);
+  background:var(--field); border:1px solid var(--border); border-radius:10px;
+}
+textarea{ min-height:84px; resize:vertical; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, .chip input:focus-visible + span{ outline:2px solid var(--accent); outline-offset:2px; }
+.chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.chip{ position:relative; font-weight:500; }
+.chip input{ position:absolute; opacity:0; inset:0; cursor:pointer; }
+.chip span{ display:inline-block; padding:8px 14px; border:1px solid var(--border); border-radius:999px; background:var(--field); font-size:14px; }
+.chip input:checked + span{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:600; }
+.check{ display:flex; gap:10px; align-items:flex-start; font-weight:400; font-size:13.5px; color:var(--light); }
+.check input{ margin-top:4px; width:18px; height:18px; flex:none; accent-color:var(--accent2); }
+.hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+.btn{ display:inline-block; border:0; cursor:pointer; font:700 15px Inter, sans-serif; background:var(--accent); color:var(--on-accent); padding:14px 24px; border-radius:999px; }
+.btn[disabled]{ opacity:.6; cursor:wait; }
+.msg{ margin:14px 0 0; font-size:14.5px; }
+.msg.err{ color:var(--err); }
+.done{ text-align:center; padding:36px 20px; }
+.done h2{ font-family:"DM Serif Display", Georgia, serif; font-weight:400; color:var(--ink); font-size:30px; margin:0 0 8px; }
+.done svg{ width:48px; height:48px; color:var(--ok); }
+.steps{ margin:26px 0 30px; padding:0; list-style:none; display:grid; gap:10px; counter-reset:s; }
+.steps li{ display:grid; grid-template-columns:34px 1fr; gap:12px; align-items:start; font-size:15px; }
+.steps li::before{ counter-increment:s; content:counter(s); display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--accent); color:var(--on-accent); font-weight:700; }
+.steps b{ color:var(--ink); }
+h2.sub{ font-family:"DM Serif Display", Georgia, serif; font-weight:400; color:var(--ink); font-size:26px; margin:34px 0 10px; }
+.legal ul{ padding-left:20px; } .legal li{ margin:8px 0; } .legal p, .legal li{ max-width:68ch; }
+.foot{ margin-top:28px; font-size:13px; color:var(--light); }
+</style>
+</head>
+<body>
+<div class="wrap legal">
+  <a class="top" href="/"><svg viewBox="-4 6 96 96" aria-hidden="true"><g transform="translate(13 0) skewX(-12)"><rect x="6" y="68" width="82" height="18" rx="4" fill="currentColor"/><rect x="20" y="45" width="56" height="18" rx="4" fill="currentColor"/><rect x="34" y="22" width="28" height="18" rx="4" fill="#E3AA35"/></g></svg>Amr Abdelgawad</a>
+  <p class="eyebrow">Privacy policy</p>
+  <h1>Privacy policy</h1>
+  <p class="lede">Last updated November 9, 2026. This page explains what information this website collects, why, and what you can ask me to do with it. Plain words, no tricks.</p>
+
+  <h2 class="sub">Who I am</h2>
+  <p>This website, amrabdelgawad.site, is run by Amr Abdelgawad, a real estate acquisitions and lead management specialist based in Egypt who works with US real estate investors. For anything about your information, email <a href="mailto:amr@amrabdelgawad.site">amr@amrabdelgawad.site</a>.</p>
+
+  <h2 class="sub">What I collect</h2>
+  <ul>
+    <li><b>Visits.</b> When you open a page, I count the visit: the page, the site that sent you, your country, time zone and whether you use a phone or a computer. I use a random ID that changes every day. No cookies, no advertising trackers, and no IP addresses are stored.</li>
+    <li><b>Cash buyers list.</b> If you join it: your name, company, phone, email, what you buy, where and your price range, and whether you agreed to texts.</li>
+    <li><b>Job applications.</b> If you apply to join the team: your name, contact details, country, experience, availability, your answers and any voice note link you share.</li>
+    <li><b>Booked calls.</b> If you book a call: the details you type into the booking form.</li>
+    <li><b>Clients and the team.</b> People who sign in to the private portal: account details, work hours, call counts, training progress and anything they upload for review. This is covered by their work agreement as well.</li>
+  </ul>
+
+  <h2 class="sub">How I use it</h2>
+  <ul>
+    <li>To reply to you, and to send cash buyers only the deals that match what they asked for.</li>
+    <li>To review job applications and contact applicants.</li>
+    <li>To run the team: pay, training, quality reviews and reports to clients about the work done.</li>
+    <li>To see which pages are useful, in totals only.</li>
+  </ul>
+  <p>I do not sell your information, and I do not share it with anyone for their own marketing.</p>
+
+  <h2 class="sub">Text messages</h2>
+  <p>Cash buyers who tick the box get deal alerts by text. Message and data rates may apply and frequency varies. Reply STOP to any message to stop, or HELP for help. Phone numbers and text consent are never shared with or sold to third parties for marketing.</p>
+
+  <h2 class="sub">Calls to property owners</h2>
+  <p>The team calls property owners on behalf of real estate investors. Numbers on the internal do-not-call list, and people who ask not to be called again, are not called again. If you received a call and want to be removed, email the number to <a href="mailto:amr@amrabdelgawad.site">amr@amrabdelgawad.site</a> and it will be added the same day.</p>
+
+  <h2 class="sub">Where it is kept</h2>
+  <p>Information is stored with Supabase (database and files, hosted in the European Union) and the website is served by GitHub Pages. Booking and email go through the services named on those pages. Access is limited to me and, for team data, to the people who need it for their work. Sign-ins use passwords and, for sensitive areas, an authenticator code.</p>
+
+  <h2 class="sub">How long I keep it</h2>
+  <p>Visit counts: as totals. Buyers list: until you ask to leave. Job applications: up to 12 months, then deleted unless you join the team. Team and client records: as long as needed for pay, tax and the work agreement.</p>
+
+  <h2 class="sub">Your choices</h2>
+  <p>You can ask to see, correct or delete your information, or to leave the buyers list, at any time by emailing <a href="mailto:amr@amrabdelgawad.site">amr@amrabdelgawad.site</a>. I reply within 30 days.</p>
+
+  <h2 class="sub">Changes</h2>
+  <p>If this policy changes, the date at the top changes too.</p>
+
+  <p class="foot"><a href="/">Home</a> · <a href="/team/">Hire a calling team</a> · <a href="/join/">Join the team</a> · <a href="/buyers/">Cash buyers list</a></p>
+</div>
+<script src="/tracker/config.js?v=3"></script>
+<script src="/stats.js?v=2"></script>
+</body>
+</html>
