@@ -107,13 +107,17 @@
     $('pPeople').querySelector('.pp-filters').innerHTML = [['all', 'All'], ['agent', 'Agents'], ['manager', 'Managers'], ['off', 'Off']]
       .map(([f, t]) => '<button type="button" data-f="' + f + '" aria-pressed="' + (filter === f) + '">' + t + ' ' + c[f] + '</button>').join('');
     const list = shown();
-    $('ppRows').innerHTML = list.length ? '<ul class="pp-rows">' + list.map(p =>
+    // Who hasn't switched to the username sign-in yet (they're asked the next time they sign in)
+    const notYet = people.filter(p => p.active && !unames[p.user_id]);
+    const switchNote = notYet.length
+      ? '<p class="pp-switch">' + (notYet.length === 1 ? esc(first(notYet[0].name)) + ' hasn’t' : notYet.length + ' people haven’t') + ' set a username yet. They’re asked the next time they sign in.</p>' : '';
+    $('ppRows').innerHTML = switchNote + (list.length ? '<ul class="pp-rows">' + list.map(p =>
       '<li><button type="button" class="pp-row" data-id="' + esc(p.user_id) + '"' + (p.user_id === current ? ' aria-current="true"' : '') + '>' +
         '<span class="pp-av' + (p.active ? '' : ' is-off') + '" aria-hidden="true">' + esc(initials(p.name)) + '</span>' +
-        '<span class="pp-who"><b>' + esc(p.name) + '</b><small>' + (p.active ? 'Since ' + esc(since(p.created_at)) : 'Turned off' + (offAt(p) ? ' ' + esc(when(offAt(p))) : '')) + '</small></span>' +
+        '<span class="pp-who"><b>' + esc(p.name) + '</b><small>' + (p.active ? (unames[p.user_id] ? '@' + esc(unames[p.user_id]) : 'No username yet') + ' · ' + esc(lastIn[p.user_id] ? 'last in ' + when(lastIn[p.user_id].at) : 'since ' + since(p.created_at)) : 'Turned off' + (offAt(p) ? ' ' + esc(when(offAt(p))) : '')) + '</small></span>' +
         (p.active ? '<span class="p-pill' + (p.role === 'manager' ? ' is-dark' : '') + '">' + ROLE_NAME[p.role === 'manager' ? 'manager' : 'agent'] + '</span>' : '<span class="p-pill is-no">Off</span>') +
       '</button></li>').join('') + '</ul>'
-      : '<p class="p-empty">' + (people.length ? 'No one matches.' : 'No one yet. Invite your first team member.') + '</p>';
+      : '<p class="p-empty">' + (people.length ? 'No one matches.' : 'No one yet. Invite your first team member.') + '</p>');
   }
   const offAt = p => { const x = log.find(l => l.target === p.user_id && l.change && l.change.active && l.change.active.to === false); return x && x.at; };
 
@@ -184,6 +188,7 @@
       '<fieldset class="pp-sec pp-small"><legend>Sign-in</legend>' +
         '<div class="pp-un"><label class="pp-inline-l" style="flex:1 1 260px">Username <input class="pp-field" data-un maxlength="30" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Not set yet" value="' + esc(unames[p.user_id] || '') + '"' + (off ? ' disabled' : '') + '></label>' +
         (off ? '' : '<button type="button" class="p-btn is-ghost" data-act="username">Save username</button>') + '</div>' +
+        (off ? '' : '<div class="pp-un"><button type="button" class="p-btn is-ghost" data-act="signout-all">Sign ' + esc(fn) + ' out everywhere</button><span class="pp-note">For a lost phone or a sign-in that wasn’t them.</span></div>') +
         '<p class="pp-last">' + esc(lastLine(p)) + '</p>' +
         '<p class="pp-note">' + esc(fn) + ' signs in with this username or ' + esc(p.email || 'their email') + '. Letters, numbers, dots or underscores.</p></fieldset>' +
       '<section class="pp-log" aria-label="Access log"><h3>Access log</h3>' + logHtml(p) + '</section>' +
@@ -196,7 +201,7 @@
   function lastLine(p){
     const x = lastIn[p.user_id];
     if (!x) return 'No sign-in recorded since the new sign-in started.';
-    return 'Last signed in ' + when(x.at) + (x.method === 'password' ? ' with a password' : ' with a link');
+    return 'Last signed in ' + when(x.at) + (x.method === 'password' ? ' with a password' : ' with a link') + (x.device_label ? ', ' + x.device_label : '');
   }
   function logHtml(p){
     const rows = log.filter(l => l.target === p.user_id).slice(0, 12);
@@ -212,6 +217,7 @@
       if (c.not_given) { const x = diff(c.not_given.from, c.not_given.to); x.drop.forEach(k => out.push((KEY_NAME[k] || k) + ' turned on')); x.add.forEach(k => out.push((KEY_NAME[k] || k) + ' held back')); }
       if (c.active) out.push(c.active.to ? 'Access turned back on' : 'Access turned off');
       if (c.deals_until) out.push(c.deals_until.to ? 'Deal tools end on ' + when(c.deals_until.to + 'T12:00') : 'Deal tools end date removed');
+      if (c.signed_out_everywhere !== undefined) out.push('Signed out on every device');
       if (c.username) out.push(c.username.from ? 'Username changed to ' + c.username.to : 'Username set to ' + c.username.to);
       if (c.deals_mfa) out.push(c.deals_mfa.to ? 'Authenticator code asked for Deal tools' : 'No authenticator code for Deal tools');
       return out.length ? out : ['Changed'];
@@ -243,6 +249,7 @@
       const act = b.dataset.act;
       if (act === 'save') return save(p, b);
       if (act === 'username') return saveUsername(p, b);
+      if (act === 'signout-all') return signOutAll(p, b);
       if (act === 'remove') {
         const yes = await window.ask({ title:'Turn off ' + p.name + '’s access?', msg:'They won’t be able to sign in or open anything, all at once. Their shifts and history stay in your records. You can turn it back on later.', ok:'Turn off access', cancel:'Keep access', danger:true });
         if (!yes) return;
@@ -255,6 +262,16 @@
       T().toast(act === 'remove' ? first(p.name) + '’s access is off.' : first(p.name) + '’s access is back on.');
       draft = null; await refresh();
     });
+  }
+  async function signOutAll(p, btn){
+    const yes = await window.ask({ title:'Sign ' + first(p.name) + ' out everywhere?', msg:'Every phone and computer ' + first(p.name) + ' is signed in on stops working within the hour. They can sign back in with their username or email and password.', ok:'Sign out everywhere', cancel:'Cancel', danger:true });
+    if (!yes) return;
+    busy = true; btn.setAttribute('aria-busy', 'true');
+    const { error } = await T().db.rpc('admin_sign_out_everywhere', { p_user:p.user_id });
+    busy = false; btn.removeAttribute('aria-busy');
+    if (error) { T().toast('Couldn’t do that: ' + error.message); return; }
+    T().toast(first(p.name) + ' is signed out everywhere.');
+    await refresh();
   }
   async function saveUsername(p, btn){
     const f = $('ppDetail').querySelector('[data-un]'), u = (f.value || '').trim().toLowerCase();
