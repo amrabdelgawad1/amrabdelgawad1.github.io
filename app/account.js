@@ -207,7 +207,15 @@
         '<p class="err" id="unErr"></p><button class="btn" type="submit">Save username</button></form>' +
         head('Password', 'At least 8 characters. You stay signed in on this device.') +
         '<form class="form narrow" id="pwChange" novalidate><label class="label">New password<input class="field" type="password" id="npw1" autocomplete="new-password" /></label>' +
-        '<label class="label">Type it again<input class="field" type="password" id="npw2" autocomplete="new-password" /></label><p class="err" id="npwErr"></p><button class="btn" type="submit">Change password</button></form>';
+        '<label class="label">Type it again<input class="field" type="password" id="npw2" autocomplete="new-password" /></label><p class="err" id="npwErr"></p><button class="btn" type="submit">Change password</button></form>' +
+        head('Other devices', 'Lost a phone, or signed in on someone else’s computer? This signs you out everywhere except here.') +
+        '<div class="form narrow"><button class="btn ghost" type="button" id="signOutOthers">Sign out of all other devices</button></div>';
+      $('signOutOthers').addEventListener('click', async e => {
+        const b = e.currentTarget; b.setAttribute('aria-busy', 'true');
+        const { error } = await db.auth.signOut({ scope: 'others' });
+        b.removeAttribute('aria-busy');
+        toast(error ? 'Couldn’t do that. Check your connection and try again.' : 'Signed out everywhere else. Other devices stop working within the hour.');
+      });
       const uid = T.user && T.user.id;
       if (uid) db.from('usernames').select('username').eq('user_id', uid).maybeSingle().then(({ data }) => {
         const f = $('unNew'); if (!f) return;
