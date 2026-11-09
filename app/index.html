@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/portal.css?v=8">
-<link rel="stylesheet" href="app.css?v=38" />
+<link rel="stylesheet" href="app.css?v=39" />
 <link rel="stylesheet" href="../ask.css?v=3">
 <link rel="stylesheet" href="../hub.css?v=7">
 <link rel="stylesheet" href="learn.css?v=4">
@@ -38,12 +38,32 @@
       <img class="logo" src="icon-180.png?v=2" alt="" />
       <h1>Amr Abdelgawad Talents</h1>
       <p class="sub">Sign in to clock in and see your hours</p>
-      <p class="moved" id="movedNote" hidden>The clock-in page moved here. Sign in with the email and password from Amr's invite. No login yet? Ask Amr to send you one.</p>
-      <label class="label">Email<input class="field" id="em" type="email" autocomplete="username" placeholder="you@email.com" /></label>
-      <label class="label">Password<input class="field" id="pw" type="password" autocomplete="current-password" placeholder="••••••••" /></label>
+      <p class="moved" id="movedNote" hidden>The clock-in page moved here. Sign in with your username or email and the password from Amr's invite. No login yet? Ask Amr to send you one.</p>
+      <p class="moved" id="newLoginNote" hidden>New: sign in with your username or email and your password. Don't know your password? Tap <b>Forgot password?</b> and we'll email you a link.</p>
+      <label class="label">Username or email<input class="field" id="em" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="yourname or you@email.com" /></label>
+      <div class="label"><span class="label-row"><label for="pw">Password</label><button type="button" class="linkish" id="forgotBtn">Forgot password?</button></span><span class="pw-wrap"><input class="field" id="pw" type="password" autocomplete="current-password" placeholder="••••••••" /><button type="button" class="pw-eye" data-eye="pw" aria-label="Show password">Show</button></span></div>
       <p class="err" id="loginErr"></p>
       <button class="btn" id="loginBtn" type="submit">Sign in</button>
-      <p class="note center-text">Forgot your password, or no account yet? Ask Amr for a link.</p>
+      <p class="note center-text">No account yet? Ask Amr for an invite.</p>
+    </form>
+  </section>
+
+  <!-- forgot password: emails a reset link -->
+  <section class="center" id="vForgot" hidden>
+    <form class="card auth" id="forgotForm" novalidate>
+      <img class="logo" src="icon-180.png?v=2" alt="" />
+      <h1 id="fgTitle">Reset your password</h1>
+      <div id="fgAsk">
+        <p class="sub">Enter your email and we'll send you a link to choose a new password.</p>
+        <label class="label">Email<input class="field" id="fgEm" type="email" autocomplete="email" autocapitalize="none" placeholder="you@email.com" /></label>
+        <p class="err" id="fgErr"></p>
+        <button class="btn" id="fgBtn" type="submit">Send reset link</button>
+      </div>
+      <div id="fgSent" hidden>
+        <p class="moved">If that email belongs to a team account, a reset link is on its way. It works once and expires in an hour.</p>
+        <p class="sub">Don't see it? Check spam, or ask Amr for a WhatsApp link.</p>
+      </div>
+      <p class="note center-text"><button type="button" class="linkish" id="fgBack">← Back to sign in</button></p>
     </form>
   </section>
 
@@ -52,8 +72,12 @@
     <form class="card auth" id="pwForm" novalidate>
       <img class="logo" src="icon-180.png?v=2" alt="" />
       <h1 id="pwTitle">Welcome</h1>
-      <p class="sub">Choose a password for your account. You'll use it with your email to sign in.</p>
-      <label class="label">New password<input class="field" id="pw1" type="password" autocomplete="new-password" placeholder="At least 8 characters" /></label>
+      <p class="sub" id="pwSub">Choose a password for your account. You'll use it with your username or email to sign in.</p>
+      <div id="unWrap" hidden>
+        <label class="label">Username<input class="field" id="un" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="30" placeholder="e.g. kyle" /></label>
+        <p class="note un-hint">Letters, numbers, dots or underscores. You can sign in with this or your email.</p>
+      </div>
+      <label class="label"><span id="pw1Lbl">New password</span><span class="pw-wrap"><input class="field" id="pw1" type="password" autocomplete="new-password" placeholder="At least 8 characters" /><button type="button" class="pw-eye" data-eye="pw1" aria-label="Show password">Show</button></span></label>
       <label class="label">Type it again<input class="field" id="pw2" type="password" autocomplete="new-password" /></label>
       <p class="err" id="pwErr"></p>
       <button class="btn" id="pwBtn" type="submit">Save password</button>
@@ -322,13 +346,13 @@
 <script src="../tracker/config.js"></script>
 <script src="../ask.js?v=5"></script>
 <script src="/portal-shell.js?v=9"></script>
-<script src="app.js?v=64"></script>
+<script src="app.js?v=65"></script>
 <script src="portal-home.js?v=21"></script>
-<script src="people.js?v=1"></script>
+<script src="people.js?v=2"></script>
 <script src="tool-files.js?v=1"></script>
 <script src="logs.js?v=6"></script>
 <script src="calls.js?v=2"></script>
-<script src="account.js?v=13"></script>
+<script src="account.js?v=14"></script>
 <script src="course/marketing/course.js?v=20"></script>
 <script src="psychology/course.js?v=2"></script>
 <script src="learn.js?v=14"></script>
