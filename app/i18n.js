@@ -50,7 +50,7 @@
     'How well did the training prepare you for live calls?':'إلى أي مدى أعدّك التدريب للمكالمات الحقيقية؟', 'How supported did you feel by Amr?':'إلى أي مدى شعرت بدعم عمرو؟',
     'How fair did the pay feel for the work?':'إلى أي مدى كان الأجر عادلًا مقابل العمل؟', 'Which tool or part of the portal got in your way the most?':'أي أداة أو جزء من البوابة عطّلك أكثر؟',
     'Would you recommend working here to a friend?':'هل تنصح صديقًا بالعمل هنا؟', 'Would you come back one day?':'هل ستعود يومًا ما؟', 'Anything else you want Amr to know?':'هل هناك شيء آخر تريد أن يعرفه عمرو؟',
-    'Report a problem or idea':'أبلغ عن مشكلة أو فكرة', 'Profile':'الملف الشخصي', 'Notifications':'الإشعارات'
+    'From Amr':'من عمرو', 'Announcement':'إعلان', 'Pay extra':'إضافة على الراتب', 'Announcements':'الإعلانات', 'Pay extras total':'إجمالي الإضافات', 'Report a problem or idea':'أبلغ عن مشكلة أو فكرة', 'Profile':'الملف الشخصي', 'Notifications':'الإشعارات'
   };
   // Phrases with numbers in them
   const RULES = [
@@ -59,6 +59,7 @@
     [/^(\d+) due soon$/, (m, n) => n + ' مستحقة قريبًا'],
     [/^(\d+) open$/, (m, n) => n + ' مفتوحة'],
     [/^(\d+) new tips?$/, (m, n) => n + ' نصائح جديدة'],
+    [/^(\d+) new ones?$/, (m, n) => n + ' جديدة'],
     [/^In (\d+) min$/, (m, n) => 'بعد ' + n + ' دقيقة'],
     [/^Late (\d+) min$/, (m, n) => 'متأخر ' + n + ' دقيقة']
   ];

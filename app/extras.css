@@ -107,3 +107,18 @@
 html[dir=rtl] #pView .px-frow b, html[dir=rtl] #pView .px-frow small{ text-align:start; }
 html[dir=rtl] #pView .px-x{ right:auto; left:2px; }
 html[dir=rtl] #pView .px-slot{ padding:6px 8px 6px 22px; }
+/* Announcements (My hours and Team home) */
+.px-anncard{ display:grid; gap:10px; }
+.px-ann-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+.px-ann-head h2{ margin:0; }
+.px-ann-head span{ color:var(--p-accent, #C2410C); font-weight:600; font-size:13px; }
+#tNews .px-post, #pView .px-ann{ position:relative; padding:12px 14px; border:1px solid var(--p-line, #E4E1D9); border-radius:10px; background:var(--p-card, #fff); }
+#tNews .px-post.is-new, #pView .px-ann.is-new{ border-color:var(--p-accent, #C2410C); box-shadow:inset 3px 0 0 var(--p-accent, #C2410C); }
+#tNews .px-post-head{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; color:var(--p-muted, #6B7079); font-size:13px; }
+#tNews .px-post-head time{ margin-inline-start:auto; }
+#tNews .px-post h3{ margin:6px 0 2px; font-size:16px; }
+#tNews .px-post p{ margin:4px 0 0; }
+#tNews .px-pre{ white-space:pre-wrap; }
+.px-amt{ color:var(--p-ok, #157347); font-weight:800; white-space:nowrap; }
+.px-ann.is-pay, #tNews .px-ann.is-pay{ background:var(--p-ok-soft, #EAF6EF); }
+#tNews{ margin-bottom:14px; }

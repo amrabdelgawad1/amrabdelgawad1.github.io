@@ -72,7 +72,7 @@
   // ======================================================================
   V.mymonth = { title:'My month', sec:'member', async open(el, ok){
     const body = page(el, 'You', 'My month', 'Your hours, calls and pay this month. Numbers update when a shift is saved.');
-    const r = await safe(T().db.rpc('portal_my_month'));
+    const [r, an] = await Promise.all([safe(T().db.rpc('portal_my_month')), safe(T().db.rpc('portal_announcements', { p_limit:100 }))]);
     if (!ok()) return;
     if (r.error || !r.data) { body.innerHTML = failed(r.error); return; }
     const m = r.data, today = new Date(m.today + 'T12:00'), start = new Date(m.month + 'T12:00');
@@ -80,6 +80,8 @@
     const pace = dayNo ? m.earned / dayNo * daysIn : 0;
     const projected = m.scheduled_hours_left > 0 ? m.earned + m.scheduled_hours_left * m.rate : pace;
     const lm = m.last_month || {};
+    const ym = String(m.month).slice(0, 7), extras = (an.data || []).filter(a => a.kind === 'pay' && a.amount != null && String(a.at).slice(0, 7) === ym);
+    const exUsd = extras.filter(a => a.currency !== 'EGP').reduce((t, a) => t + +a.amount, 0), exEgp = extras.filter(a => a.currency === 'EGP').reduce((t, a) => t + +a.amount, 0);
     const tile = (v, label, sub) => '<div class="px-tile"><b>' + v + '</b><span>' + esc(label) + '</span>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>';
     body.innerHTML =
       '<div class="px-tiles">' +
@@ -91,7 +93,9 @@
       card('Your calls this month', fmtDay(m.month, { month:'long', year:'numeric' }),
         '<div class="px-funnel">' + [['Dials', m.dials], ['Conversations', m.conversations], ['Offers', m.offers], ['Appointments', m.appointments]].map(([k, v], i, a) =>
           '<div class="px-frow"><span>' + esc(k) + '</span>' + bar(v, a[0][1] || 1) + '<b>' + num(v) + '</b><small>' + (i ? pct(v, a[i - 1][1]) + ' of ' + a[i - 1][0].toLowerCase() : '') + '</small></div>').join('') + '</div>') +
-      ((+m.commissions || +m.referrals) ? card('Extra this month', '', '<div class="p-row"><span>Commissions</span><b>' + usd(m.commissions) + '</b></div><div class="p-row"><span>Referral bonuses</span><b>' + usd(m.referrals) + '</b></div>') : '') +
+      ((+m.commissions || +m.referrals || extras.length) ? card('Extra this month', '', (+m.commissions ? '<div class="p-row"><span>Commissions</span><b>' + usd(m.commissions) + '</b></div>' : '') + (+m.referrals ? '<div class="p-row"><span>Referral bonuses</span><b>' + usd(m.referrals) + '</b></div>' : '') +
+        extras.map(a => '<div class="p-row"><span>' + esc(a.title) + '<br><small>' + esc(fmtDay(a.at)) + '</small></span><b>+' + esc(money(a.amount, a.currency)) + '</b></div>').join('') +
+        (extras.length ? '<div class="p-row"><span><b>Pay extras total</b></span><b>' + [exUsd ? usd(exUsd) : '', exEgp ? money(exEgp, 'EGP') : ''].filter(Boolean).join(' + ') + '</b></div>' : '')) : '') +
       '<p class="p-empty">Pay is your hours times your rate (' + usd(m.rate) + '/h). Amr checks every shift before it is paid, so the final payslip can differ a little.</p>';
     widths(body);
   }};
@@ -315,6 +319,45 @@
     body.innerHTML = '<div id="cbBox"></div>'; callbacks(T().db, $('cbBox'), ok, true);
   }};
 
+
+  // ======================================================================
+  // Announcements: news and pay extras from Amr, on My hours (#pTrack) and the Team home
+  // ======================================================================
+  const money = (n, cur) => cur === 'EGP' ? Math.round(+n).toLocaleString('en-US') + ' EGP' : usd(n);
+  PX.money = money;
+  const annHtml = (a, mine) => '<article class="px-post px-ann' + (a.kind === 'pay' ? ' is-pay' : '') + (mine && !a.is_read ? ' is-new' : '') + '"><div class="px-post-head">' +
+    pill(a.kind === 'pay' ? 'Pay extra' : 'Announcement', a.kind === 'pay' ? 'ok' : 'plain') +
+    '<span class="px-for">' + (a.user_id ? (mine ? 'Just for you' : 'For ' + esc(a.for_name || 'one person')) : 'Whole team') + '</span>' + (a.pinned ? '<span class="px-for">Pinned</span>' : '') +
+    '<time>' + esc(fmtDay(a.at, { month:'short', day:'numeric' })) + '</time></div>' +
+    '<h3>' + esc(a.title) + (a.kind === 'pay' && a.amount != null ? ' <b class="px-amt">+' + esc(money(a.amount, a.currency)) + '</b>' : '') + '</h3>' +
+    (a.body ? '<p class="px-pre">' + esc(a.body) + '</p>' : '') +
+    (!mine && a.audience != null ? '<small class="px-reads">Seen by ' + (a.reads || 0) + ' of ' + a.audience + (a.expires_on ? ' · shows until ' + esc(fmtDay(a.expires_on)) : '') + '</small>' : '') + '</article>';
+  PX.annHtml = annHtml;
+  async function announcements(db, box, ok, limit){
+    if (!box) return;
+    const r = await safe(db.rpc('portal_announcements', { p_limit:limit || 6 }));
+    if (!ok() || r.error) { if (r.error && !/does not exist|schema cache/i.test(r.error.message || '')) box.innerHTML = ''; return; }
+    const list = r.data || [];
+    if (!list.length) { box.innerHTML = ''; box.hidden = true; return; }
+    const unread = list.filter(a => !a.is_read).length;
+    box.innerHTML = '<section class="card px-anncard"><div class="px-ann-head"><h2>From Amr</h2><span>' + (unread ? plural(unread, 'new one', 'new ones') : '') + '</span></div>' +
+      list.map(a => annHtml(a, true)).join('') + '</section>';
+    box.hidden = false;
+    const fresh = list.filter(a => !a.is_read).map(a => ({ announcement_id:a.id }));
+    if (fresh.length) safe(db.from('announcement_reads').upsert(fresh, { onConflict:'announcement_id,user_id', ignoreDuplicates:true }));
+  }
+  // My hours: draw when the page is opened (and again every 5 minutes while it is open)
+  let annAt = 0;
+  function trackNews(force){
+    const t = $('pTrack'), box = $('tNews'), db = T().db;
+    if (!t || t.hidden || !box || !db || T().role !== 'member') return;
+    if (!force && Date.now() - annAt < 5 * 60e3) return;
+    annAt = Date.now(); announcements(db, box, () => !t.hidden, 6);
+  }
+  window.addEventListener('hashchange', () => setTimeout(() => trackNews(true), 50));
+  document.addEventListener('talents-signed-in', () => setTimeout(() => trackNews(true), 300));
+  setInterval(() => trackNews(false), 20e3);
+
   // ======================================================================
   // Team home: extra cards (called from portal-home.js after the home is drawn)
   // ======================================================================
@@ -323,7 +366,8 @@
   window.PortalExtras = {
     async home(db, el, ok){
       if (!el) return;
-      el.innerHTML = '<div class="p-grid px-home"><div id="pxCoach"></div><div id="pxCotw"></div></div><div id="pxCb"></div><div id="pxNews"></div>';
+      el.innerHTML = '<div id="pxAnn" hidden></div><div class="p-grid px-home"><div id="pxCoach"></div><div id="pxCotw"></div></div><div id="pxCb"></div><div id="pxNews"></div>';
+      announcements(db, $('pxAnn'), ok, 4);
       callbacks(db, $('pxCb'), ok, false);
       const [c, w, n] = await Promise.all([safe(db.rpc('portal_coaching', { p_limit:10 })), safe(db.rpc('portal_call_of_week', { p_limit:1 })), safe(db.rpc('portal_whats_new', { p_limit:3 }))]);
       if (!ok()) return;

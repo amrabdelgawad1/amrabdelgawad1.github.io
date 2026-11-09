@@ -393,5 +393,45 @@
     });
   }
 
+  // ======================================================================
+  // Announcements (Amr): news for the team, or a pay extra for one person; shows on their My hours and home page
+  // ======================================================================
+  V.announcements = { title:'Announcements', sec:'owner', async open(el, ok){
+    const body = page(el, 'People', 'Announcements', 'Post news for the whole team, or a pay extra (bonus, overtime, a referral) for one person. It shows at the top of their My hours and home page and rings their bell. Pay extras also show in their My month.');
+    const [r, ppl] = await Promise.all([safe(db().rpc('portal_announcements', { p_limit:100 })), people()]);
+    if (!ok()) return;
+    if (r.error) { body.innerHTML = failed(r.error); return; }
+    body.innerHTML = card('New announcement', '', '<form class="px-form" id="anForm" novalidate>' +
+        f('Kind', '<select id="anKind">' + opt('news', 'Announcement') + opt('pay', 'Pay extra (bonus, overtime…)') + '</select>') +
+        f('For', '<select id="anWho">' + opt('', 'The whole team') + ppl.map(p => opt(p.user_id, p.name)).join('') + '</select>') +
+        f('Title', '<input type="text" id="anTitle" maxlength="120" placeholder="e.g. Saturday bonus">', 'px-wide') +
+        f('Message (optional)', '<textarea id="anBody" rows="4" maxlength="2000"></textarea>', 'px-wide') +
+        '<label class="sc-f px-pay" hidden>Amount<input type="number" id="anAmt" min="0" step="0.01"></label>' +
+        '<label class="sc-f px-pay" hidden>Currency<select id="anCur">' + opt('USD', '$ USD') + opt('EGP', 'EGP') + '</select></label>' +
+        f('Show until (optional)', '<input type="date" id="anUntil" min="' + today() + '">') +
+        '<label class="px-check"><input type="checkbox" id="anPin"> Pin it to the top</label>' +
+        '<button class="p-btn" type="submit">Post</button><p class="p-empty" id="anMsg" role="status"></p></form>') +
+      card('Posted', plural((r.data || []).length, 'announcement'), (r.data || []).length ? '<div class="px-posts">' + r.data.map(a => PX.annHtml(a, false).replace('</article>', '<button type="button" class="p-btn is-ghost px-del" data-andel="' + a.id + '">Delete</button></article>')).join('') + '</div>' : empty('Nothing posted yet.'));
+    const kind = () => { const pay = $('anKind').value === 'pay'; body.querySelectorAll('.px-pay').forEach(x => x.hidden = !pay); };
+    $('anKind').addEventListener('change', kind);
+    $('anForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const title = $('anTitle').value.trim(); if (!title) return say('anMsg', 'Give it a title.');
+      const pay = $('anKind').value === 'pay', amt = $('anAmt').value;
+      if (pay && !$('anWho').value) return say('anMsg', 'A pay extra is for one person. Pick who it is for.');
+      if (pay && (amt === '' || +amt <= 0)) return say('anMsg', 'Type the amount of the extra.');
+      say('anMsg', 'Posting…');
+      const x = await safe(db().rpc('announcement_post', { p_title:title, p_body:$('anBody').value.trim() || null, p_user:$('anWho').value || null, p_kind:$('anKind').value,
+        p_amount:pay ? +amt : null, p_currency:$('anCur').value, p_pinned:$('anPin').checked, p_expires:$('anUntil').value || null }));
+      if (x.error) return say('anMsg', errText(x, 'Couldn’t post it. Try again.'));
+      reopen('announcements', el, ok);
+    });
+    body.addEventListener('click', async e => {
+      const d = e.target.closest('[data-andel]'); if (!d) return;
+      if (d.dataset.sure !== '1') { d.dataset.sure = '1'; d.textContent = 'Sure? Delete'; return; }
+      d.disabled = true; const x = await safe(db().from('announcements').delete().eq('id', +d.dataset.andel)); if (!x.error) reopen('announcements', el, ok);
+    });
+  }};
+
   window.PortalAdmin = { schedule, coaching, referrals, whatsnew };
 })();
