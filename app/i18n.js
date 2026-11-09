@@ -20,7 +20,7 @@
     'Applications':'طلبات التوظيف', 'Offboarding':'إنهاء الخدمة', 'Numbers':'الأرقام', 'Calls to deals':'من المكالمات إلى الصفقات', 'Profit per client':'الربح لكل عميل',
     'Client report':'تقرير العميل', 'Cash forecast':'توقّع النقدية', 'Lead lists':'قوائم العملاء المحتملين', 'Call of the week':'مكالمة الأسبوع',
     // sign in
-    'Sign in':'تسجيل الدخول', 'Username or email':'اسم المستخدم أو البريد', 'Password':'كلمة المرور', 'Forgot password?':'نسيت كلمة المرور؟', 'Show':'إظهار', 'Hide':'إخفاء',
+    'Sign in':'تسجيل الدخول', 'Welcome back':'أهلاً بعودتك', 'One portal for the whole':'بوابة واحدة لكل', 'team':'الفريق', 'Shifts, courses, calls and deals, built for a remote team working US hours.':'الورديات والكورسات والمكالمات والصفقات، مصممة لفريق يعمل عن بُعد بتوقيت أمريكا.', 'Cairo':'القاهرة', 'New York':'نيويورك', 'Username or email':'اسم المستخدم أو البريد', 'Password':'كلمة المرور', 'Forgot password?':'نسيت كلمة المرور؟', 'Show':'إظهار', 'Hide':'إخفاء',
     'Keep me signed in':'تذكّرني', 'Untick on a shared computer':'ألغِ التحديد على جهاز مشترك', 'Sign in to clock in and see your hours':'سجّل الدخول لبدء ورديتك ورؤية ساعاتك',
     // My hours
     'Run':'تشغيل', 'Pause':'إيقاف مؤقت', 'Break':'استراحة', 'Off':'إنهاء', 'Resume':'استئناف', 'Press Run to start your shift':'اضغط تشغيل لبدء ورديتك',

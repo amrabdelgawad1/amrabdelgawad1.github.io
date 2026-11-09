@@ -1,0 +1,94 @@
+/* Sign-in page (#vLogin) only: a dark brand panel beside the form.
+   Every rule starts with "html body #vLogin.si" so nothing else in the app changes.
+   Small screens: the form comes first and the brand panel drops below it. */
+
+html body #vLogin.si{
+  --si-bg:#F5F4F0; --si-card:#FFFFFF; --si-soft:#F2F0EB; --si-line:#E4E1D9;
+  --si-ink:#16140F; --si-muted:#625D53; --si-accent:#C2410C; --si-accent-soft:#FCEDE4; --si-on-accent:#FFFFFF;
+  --si-panel:#15130F; --si-panel-line:#2E2B24; --si-panel-ink:#F7F5EF; --si-panel-muted:#A9A397; --si-hot:#F2753D;
+  --si-btn:#15130F; --si-btn-ink:#F7F5EF;
+  --si-display:"Bricolage Grotesque", "Inter", system-ui, sans-serif;
+  --si-body:"Inter", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --si-serif:"Instrument Serif", Georgia, serif;
+  display:flex; flex-wrap:wrap-reverse; align-content:stretch; align-items:stretch; place-items:initial;
+  gap:16px; min-height:100vh; min-height:100dvh; box-sizing:border-box;
+  padding:clamp(10px, 1.6vw, 16px); background:var(--si-bg); color:var(--si-ink); font-family:var(--si-body);
+}
+html[data-theme="dark"] body #vLogin.si{
+  --si-bg:#0A0A09; --si-card:#131311; --si-soft:#1E1E1A; --si-line:#2A2924;
+  --si-ink:#F2F0EA; --si-muted:#A29D92; --si-accent:#F2753D; --si-accent-soft:rgba(242,117,61,.14); --si-on-accent:#1A0A03;
+  --si-panel:#131210; --si-panel-line:#24221E; --si-panel-ink:#F2F0EA; --si-panel-muted:#A29D92;
+  --si-btn:#F2753D; --si-btn-ink:#1A0A03;
+}
+html body #vLogin.si[hidden]{ display:none !important; }
+
+/* brand panel */
+html body #vLogin.si .si-brand{
+  flex:1 1 520px; min-width:0; box-sizing:border-box; position:relative; overflow:hidden;
+  display:flex; flex-direction:column; justify-content:space-between; gap:clamp(28px, 4vw, 48px);
+  padding:clamp(24px, 4vw, 56px); border-radius:28px; background:var(--si-panel); color:var(--si-panel-ink);
+}
+html body #vLogin.si .si-mark{ display:flex; align-items:center; gap:12px; }
+html body #vLogin.si .si-logo{ width:42px; height:42px; flex:none; border-radius:12px; background:var(--si-hot); color:#1A0A03; display:grid; place-items:center; font:800 21px/1 var(--si-display); }
+html body #vLogin.si .si-name{ display:flex; flex-direction:column; line-height:1.25; }
+html body #vLogin.si .si-name b{ font:600 17px/1.25 var(--si-body); }
+html body #vLogin.si .si-name small{ font-size:13px; color:var(--si-panel-muted); }
+html body #vLogin.si .si-hero{ display:flex; flex-direction:column; gap:24px; }
+html body #vLogin.si .si-arc{ display:block; width:100%; max-width:560px; height:auto; color:var(--si-panel-ink); }
+html body #vLogin.si .si-arc-live{ stroke:var(--si-hot); }
+html body #vLogin.si .si-arc-dot{ fill:var(--si-hot); }
+html body #vLogin.si .si-arc-glow{ fill:var(--si-hot); fill-opacity:.18; }
+html body #vLogin.si .si-cities{ display:flex; justify-content:space-between; gap:12px; max-width:560px; margin-top:-16px; font:500 12px/1.4 var(--si-body); letter-spacing:.08em; text-transform:uppercase; color:var(--si-panel-muted); }
+html body #vLogin.si .si-cities time{ color:var(--si-panel-ink); }
+html body #vLogin.si .si-h{ margin:0; max-width:14ch; font:600 clamp(36px, 4.6vw, 64px)/1.02 var(--si-display); letter-spacing:-.035em; text-wrap:balance; color:var(--si-panel-ink); }
+html body #vLogin.si .si-h em{ font:italic 400 1.05em/1 var(--si-serif); letter-spacing:-.01em; color:var(--si-hot); }
+html body #vLogin.si .si-lede{ margin:0; max-width:44ch; font-size:17px; line-height:1.55; color:var(--si-panel-muted); }
+html body #vLogin.si .si-chips{ display:flex; flex-wrap:wrap; gap:8px; margin:0; padding:0; list-style:none; }
+html body #vLogin.si .si-chips li{ padding:8px 12px; border:1px solid var(--si-panel-line); border-radius:999px; font-size:12.5px; color:var(--si-panel-muted); }
+
+/* form */
+html body #vLogin.si .auth{
+  flex:1 1 440px; min-width:0; max-width:none; box-sizing:border-box; align-self:center;
+  display:grid; grid-template-columns:minmax(0, 400px); justify-content:center; align-content:center; gap:18px; margin:0;
+  padding:clamp(28px, 4vw, 56px) 8px;
+  background:transparent; border:0; box-shadow:none; border-radius:0; text-align:start;
+}
+html body #vLogin.si .auth > *{ margin:0; min-width:0; }
+html body #vLogin.si .si-eyebrow{ font:600 12px/1.2 var(--si-body); letter-spacing:.14em; text-transform:uppercase; color:var(--si-accent); margin-bottom:-8px; }
+html body #vLogin.si .auth h1{ font:700 36px/1.1 var(--si-display); letter-spacing:-.03em; text-align:start; text-transform:none; color:var(--si-ink); }
+html body #vLogin.si .auth .sub{ text-align:start; font-size:15px; color:var(--si-muted); margin:-8px 0 10px; }
+html body #vLogin.si .moved{ text-align:start; background:var(--si-accent-soft); color:var(--si-ink); border-radius:12px; }
+html body #vLogin.si .label{ display:flex; flex-direction:column; gap:8px; font:500 13px/1.3 var(--si-body); color:var(--si-ink); }
+html body #vLogin.si .label-row{ font:500 13px/1.3 var(--si-body); }
+html body #vLogin.si .linkish{ color:var(--si-accent); font-weight:500; }
+html body #vLogin.si .field{
+  height:50px; box-sizing:border-box; padding:0 16px; border-radius:13px; border:1px solid var(--si-line);
+  background:var(--si-card); color:var(--si-ink); font:500 15px var(--si-body);
+}
+html body #vLogin.si .field::placeholder{ color:var(--si-muted); opacity:.75; }
+html body #vLogin.si .field:focus{ outline:none; border-color:var(--si-accent); box-shadow:0 0 0 4px var(--si-accent-soft); }
+html body #vLogin.si .pw-wrap .field{ padding-right:72px; }
+html[dir="rtl"] body #vLogin.si .pw-wrap .field{ padding-right:16px; padding-left:72px; }
+html body #vLogin.si .pw-eye{ right:6px; height:38px; padding:0 12px; border-radius:9px; background:var(--si-soft); color:var(--si-muted); }
+html[dir="rtl"] body #vLogin.si .pw-eye{ right:auto; left:6px; }
+html body #vLogin.si .keep-row{ display:flex; flex-wrap:wrap; align-items:center; column-gap:12px; row-gap:2px; min-height:44px; font:500 14px/1.3 var(--si-body); color:var(--si-ink); cursor:pointer; }
+html body #vLogin.si .keep-row input{ width:20px; height:20px; margin:0; accent-color:var(--si-accent); }
+html body #vLogin.si .keep-row small{ flex-basis:100%; padding-inline-start:32px; font-size:13px; font-weight:400; color:var(--si-muted); }
+html body #vLogin.si .btn{ height:52px; border-radius:14px; background:var(--si-btn); color:var(--si-btn-ink); font:600 15px var(--si-body); border:0; }
+html body #vLogin.si .btn:hover{ filter:brightness(1.12); background:var(--si-btn); }
+html body #vLogin.si .note{ margin-top:4px; padding-top:22px; border-top:1px solid var(--si-line); text-align:start; font-size:14px; color:var(--si-muted); }
+html body #vLogin.si #langBtn2{ justify-self:start; height:44px; padding:0 14px; margin-top:-4px; border:1px solid var(--si-line); border-radius:10px; background:var(--si-card); color:var(--si-ink); font:500 14px var(--si-body); text-decoration:none; }
+html body #vLogin.si #langBtn2 svg{ display:none; }
+
+/* phones: tighter brand panel below the form */
+@media (max-width: 700px){
+  html body #vLogin.si .si-brand{ border-radius:22px; gap:24px; }
+  html body #vLogin.si .si-chips{ display:none; }
+  html body #vLogin.si .si-h{ font-size:34px; }
+  html body #vLogin.si .si-lede{ font-size:15px; }
+  html body #vLogin.si .auth{ padding:28px 8px 16px; }
+}
+@media (prefers-reduced-motion: no-preference){
+  html body #vLogin.si .si-arc-live{ stroke-dasharray:260; stroke-dashoffset:260; animation:si-draw 1.4s .2s cubic-bezier(.2,.7,.2,1) forwards; }
+  @keyframes si-draw{ to{ stroke-dashoffset:0; } }
+}
