@@ -157,8 +157,8 @@
   document.body.appendChild(sheet);
   let tab = 'profile', agentOpen = new Set(), agentView = null, lastFocus = null;
   const TABS = () => isOwner()
-    ? [['profile','My profile'], ['agents','Agents'], ['rates','Dollar rates'], ['password','Password'], ['backup','Backup']]
-    : [['profile','My profile'], ['password','Password']];   // round 6: light only, so no Appearance tab
+    ? [['profile','My profile'], ['agents','Agents'], ['rates','Dollar rates'], ['password','Sign-in'], ['backup','Backup']]
+    : [['profile','My profile'], ['password','Sign-in']];   // round 6: light only, so no Appearance tab
   function openSettings(t){
     lastFocus = document.activeElement;
     tab = t; agentView = null;
@@ -201,9 +201,19 @@
     if (tab === 'agents') return agentView ? drawAgentProfile() : drawAgents();
     if (tab === 'rates') return drawRates();
     if (tab === 'password') {
-      B.innerHTML = head('Password', 'At least 8 characters. You stay signed in on this device.') +
+      // Username (sign in with it or the email), then the password
+      B.innerHTML = head('Username', 'Sign in with this or your email. Letters, numbers, dots or underscores.') +
+        '<form class="form narrow" id="unChange" novalidate><label class="label">Username<input class="field" type="text" id="unNew" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="30" placeholder="Loading…" /></label>' +
+        '<p class="err" id="unErr"></p><button class="btn" type="submit">Save username</button></form>' +
+        head('Password', 'At least 8 characters. You stay signed in on this device.') +
         '<form class="form narrow" id="pwChange" novalidate><label class="label">New password<input class="field" type="password" id="npw1" autocomplete="new-password" /></label>' +
         '<label class="label">Type it again<input class="field" type="password" id="npw2" autocomplete="new-password" /></label><p class="err" id="npwErr"></p><button class="btn" type="submit">Change password</button></form>';
+      const uid = T.user && T.user.id;
+      if (uid) db.from('usernames').select('username').eq('user_id', uid).maybeSingle().then(({ data }) => {
+        const f = $('unNew'); if (!f) return;
+        f.placeholder = 'e.g. ' + (myName() || 'kyle').split(/\s+/)[0].toLowerCase().replace(/[^a-z0-9._]/g, '');
+        if (data && data.username) f.value = data.username;
+      });
       return;
     }
     if (tab === 'look') {
@@ -494,6 +504,16 @@
       if (r.sent) { delete linkOut[a.id]; toast('Invite emailed to ' + email + '.' + joined); }
       else if (r.link) { showLinkOut(a, r.link, 'Send this to ' + a.name.split(' ')[0] + '. It works once and expires in 24 hours.' + joined); toast('Invite link ready.' + joined); }
       T.agentsChanged(); return drawAgents();
+    }
+    if (f.id === 'unChange') {
+      const u = $('unNew').value.trim().toLowerCase(), err = m => { $('unErr').textContent = m; };
+      if (!/^[a-z0-9][a-z0-9._]{2,29}$/.test(u)) return err('Use 3 to 30 letters, numbers, dots or underscores, starting with a letter or number.');
+      const btn = f.querySelector('[type=submit]'); btn.setAttribute('aria-busy', 'true');
+      const r = await db.rpc('set_my_username', { p_username: u });
+      btn.removeAttribute('aria-busy');
+      if (r.error || r.data !== 'ok') return err(r.data === 'taken' ? 'That username is taken. Try another.' : r.data === 'reserved' ? 'That username is kept for Amr. Try another.' : 'Couldn’t save it. Try again.');
+      $('unNew').value = u; err(''); toast('Username saved. Sign in with ' + u + ' or your email.');
+      return;
     }
     if (f.id === 'pwChange') {
       const a = $('npw1').value, b = $('npw2').value, err = m => { $('npwErr').textContent = m; };
