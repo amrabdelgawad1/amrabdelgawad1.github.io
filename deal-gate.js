@@ -4,7 +4,7 @@
 // "Deal tools" switched on in /app > Invite and access (with an optional end date and two-step).
 window.DealGateStart = async function (opt) {
   const $ = id => document.getElementById(id), cfg = window.TRACKER_CONFIG || {};
-  const say = (msg, showApp) => { $('dgMsg').textContent = msg; $('dgActs').hidden = !showApp; };
+  const say = (msg, showApp) => { const m = $('dgMsg'), a = $('dgActs'); if (m) m.textContent = msg; if (a) a.hidden = !showApp; };  // the page can be replaced by the tool before a late message
   if (!window.supabase || !/^https:\/\//.test(cfg.supabaseUrl || '')) { say('This page couldn’t connect. Check your internet and refresh.'); return; }
   const db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
   const { data: { session } } = await db.auth.getSession();

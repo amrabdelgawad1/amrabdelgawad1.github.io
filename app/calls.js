@@ -7,6 +7,21 @@
   const $ = id => document.getElementById(id);
   const KINDS = [['dial', 'Dials'], ['conversation', 'Conversations'], ['offer', 'Offers'], ['appointment', 'Appointments']];
   let shift = null, counts = null, mine = [], busy = false, loadedFor = null;
+  // Nov 9: which lead list the rep is dialing (lead_lists, set up by Amr). Remembered on this device; sent with each tap.
+  let lists = null;
+  const store = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch(e) { return null; } };
+  async function loadLists(){
+    if (lists) return; lists = [];
+    const db = T().db; if (!db) { lists = null; return; }
+    const { data, error } = await db.from('lead_lists').select('id,name').eq('active', true).order('created_at', { ascending:false });
+    if (error || !data || !data.length) return;
+    lists = data;
+    const sel = $('tCallsList'), cur = store('leadList');
+    sel.innerHTML = '<option value="">No list / not sure</option>' + data.map(l => '<option value="' + l.id + '"' + (String(l.id) === cur ? ' selected' : '') + '>' + l.name.replace(/[&<>"']/g, '') + '</option>').join('');
+    $('tCallsListWrap').hidden = false;
+    sel.addEventListener('change', () => store('leadList', sel.value));
+  }
+  const listId = () => { const v = $('tCallsList') && $('tCallsList').value; return v ? +v : null; };
   const T = () => window.TalentsApp || {};
 
   function draw(){
@@ -22,6 +37,7 @@
     const db = T().db, st = T().clockState ? T().clockState() : null;
     shift = st && st.live ? st.live.started_at : null;
     if (!shift || !db) { counts = null; mine = []; loadedFor = null; draw(); return; }
+    loadLists();
     if (loadedFor === shift) { draw(); return; }
     loadedFor = shift; counts = null; draw();
     const { data, error } = await db.from('call_events').select('id,kind,at').eq('shift_started_at', shift).order('id');
@@ -35,7 +51,7 @@
   async function tap(kind){
     const db = T().db; if (!db || !shift || !counts) return;
     counts[kind] = (counts[kind] || 0) + 1; draw();     // at once; put back if the save fails
-    const { data, error } = await db.from('call_events').insert({ kind, shift_started_at:shift }).select('id').single();
+    const { data, error } = await db.from('call_events').insert(Object.assign({ kind, shift_started_at:shift }, listId() ? { lead_list_id:listId() } : {})).select('id').single();
     if (error) { counts[kind]--; draw(); $('tCallsMsg').textContent = 'That tap didn’t save. Check your connection and tap again.'; return; }
     $('tCallsMsg').textContent = '';
     mine.push(data.id); draw();

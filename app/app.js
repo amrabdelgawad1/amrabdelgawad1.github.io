@@ -62,12 +62,13 @@
   // The shared top bar (/portal-shell.js): logo, page name, Apps menu, the person's name; ADMIN label for Amr.
   // The menu button, the theme switch and the account circle (account.js) stay as they are.
   const APP_OF = { track:'hours', live:'team', requests:'team', team:'team', people:'people', review:'review', overview:'cash', income:'cash', expense:'cash', mytime:'cash', learn:'learn', progress:'learn', teamview:'team', scoring:'review', onboarding:'people', library:'review' };
+  const XV = () => window.PortalViews || {};   // pages added by extras-core.js / extras-admin.js (Nov 9 batch)
   const pageNow = () => location.hash.slice(1).split('/')[0] || (role === 'owner' ? 'admin' : 'home');
   // Amr's two sides of /app: the Portal view (#portal) and everything else (the Admin side)
   const modeOf = p => p === 'portal' ? 'portal' : 'admin';
   function shell(){
     if (!window.PortalShell) return;
-    window.PortalShell.start({ db, header:document.querySelector('header.app-bar'), page:APP_OF[pageNow()] || '', name:$('title'), lead:$('burger'), me:$('me'), admin:role === 'owner',
+    window.PortalShell.start({ db, header:document.querySelector('header.app-bar'), page:APP_OF[pageNow()] || (XV()[pageNow()] || {}).app || '', name:$('title'), lead:$('burger'), me:$('me'), admin:role === 'owner',
       modes:role === 'owner' ? { portal:'#portal', admin:'#admin', current:modeOf(pageNow()) } : null });
   }
 
@@ -623,6 +624,8 @@
     : sec === 'progress' ? role === 'owner' || (role === 'member' && !!me && me.role === 'manager')
     : sec === 'scoring' ? role === 'owner' || (role === 'member' && access.includes('deals'))
     : sec === 'teamview' ? role === 'owner' || (role === 'member' && !!me && me.role === 'manager' && access.includes('team'))
+    : sec === 'everyone' ? role === 'owner' || role === 'member'
+    : sec === 'member' ? role === 'member'
     : role === 'owner' ? sec !== 'track' : role === 'member' && (sec === 'track' || access.includes(sec));
   const hasMenu = () => role === 'owner' || role === 'member';
   let companies = [];
@@ -692,10 +695,12 @@
     if (!hasMenu()) return;
     let [page, person] = location.hash.slice(1).split('/');
     if (page === 'learn' && !person) { location.replace('/app/learn/'); return; }   // the Learning Hub home is its own page now
+    const xv = XV()[page];
+    if (xv) { OWNER_PAGES[page] = OWNER_PAGES[page] || xv.title; SECTION[page] = SECTION[page] || xv.sec; }
     if (!OWNER_PAGES[page] || !canSee(SECTION[page])) { page = role === 'owner' ? 'admin' : 'home'; history.replaceState(null, '', '#' + page); }
     const here = page + (page === 'team' && person ? '/' + person : '');
-    if (window.PortalShell) { window.PortalShell.setPage(APP_OF[page] || ''); window.PortalShell.setMode(modeOf(page)); }
-    const view = ['home', 'portal', 'admin', 'progress', 'teamview', 'scoring', 'onboarding', 'library'].includes(page);
+    if (window.PortalShell) { window.PortalShell.setPage(APP_OF[page] || (XV()[page] || {}).app || ''); window.PortalShell.setMode(modeOf(page)); }
+    const view = ['home', 'portal', 'admin', 'progress', 'teamview', 'scoring', 'onboarding', 'library'].includes(page) || !!XV()[page];
     $('pView').hidden = !view; document.body.classList.toggle('p-viewing', view || page === 'people' || page === 'logs');
     if (view && window.PortalHome) window.PortalHome.open(page); else if (window.PortalHome) window.PortalHome.close();
     $('title').textContent = OWNER_PAGES[page];
@@ -704,7 +709,7 @@
     $('pLive').hidden = page !== 'live'; $('pPeople').hidden = page !== 'people'; $('pRequests').hidden = page !== 'requests';
     $('pVisits').hidden = page !== 'visits'; $('pEmails').hidden = page !== 'emails'; $('pLearn').hidden = page !== 'learn';
     $('pReview').hidden = page !== 'review'; $('pLogs').hidden = page !== 'logs';
-    const cashPage = !['live', 'people', 'requests', 'track', 'visits', 'emails', 'logs', 'learn', 'review', 'home', 'portal', 'admin', 'progress', 'teamview', 'scoring', 'onboarding', 'library'].includes(page);
+    const cashPage = !['live', 'people', 'requests', 'track', 'visits', 'emails', 'logs', 'learn', 'review', 'home', 'portal', 'admin', 'progress', 'teamview', 'scoring', 'onboarding', 'library'].includes(page) && !XV()[page];
     $('pCash').hidden = !cashPage;
     // A person's Team page gets a bar for their payslips (Amr only; uploading is his)
     let who = ''; try { who = page === 'team' && person ? decodeURIComponent(person) : ''; } catch(e) {}

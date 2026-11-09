@@ -921,11 +921,13 @@
     const rKey = 'lessonPos:' + mod.id + ':' + it.id;
     let startAt = prog && prog.position || 0;
     if (!startAt) { try { startAt = +localStorage.getItem(rKey) || 0; } catch(e){} }
-    const resumeEl = $('vresume');
+    const resumeEl = $('vresume'), resumeT = $('vresumeT');
     v.addEventListener('loadedmetadata', () => {
+      // the lesson may have been left before the video loaded: its resume note is gone then
+      if (!resumeEl || !resumeT || !resumeEl.isConnected) return;
       if (startAt > 10 && v.duration && startAt < v.duration - 15) {
         v.currentTime = startAt;
-        $('vresumeT').textContent = 'Picking up at ' + fmt(startAt);
+        resumeT.textContent = 'Picking up at ' + fmt(startAt);
         resumeEl.hidden = false;
         setTimeout(() => { resumeEl.hidden = true; }, 9000);
       }

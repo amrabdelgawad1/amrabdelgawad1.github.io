@@ -139,7 +139,7 @@
   const toEntry = x => ({
     id: x.id, kind: x.kind, date: x.entry_date, title: x.title, party: x.party || '', category: x.category || 'Other',
     hours: x.hours != null ? Number(x.hours) : null, rate: x.rate != null ? Number(x.rate) : null,
-    amount: Number(x.amount), settled: x.settled, settledAt: x.settled_at, recurring: x.recurring, note: x.note || '', createdAt: x.created_at,
+    amount: Number(x.amount), settled: x.settled, settledAt: x.settled_at, recurring: x.recurring, personal: !!x.personal, note: x.note || '', createdAt: x.created_at,
     periodStart: x.period_start || null, periodEnd: x.period_end || null,
     currency: x.currency || 'USD', fxRate: x.fx_rate != null ? Number(x.fx_rate) : null, spread: !!x.spread,
     fxSource: x.fx_source || null, fxIncomeId: x.fx_income_id || null
@@ -992,6 +992,7 @@
       const sub = [e.party, e.note, partNote(e)].filter(Boolean).join(' · ');
       tr.querySelector('.party').textContent = sub;
       if (e.recurring) { const r = document.createElement('span'); r.className = 'rep'; r.textContent = (sub ? ' · ' : '') + 'Monthly'; tr.querySelector('.party').appendChild(r); }
+      if (e.personal) { const r = document.createElement('span'); r.className = 'rep'; r.textContent = ' · Personal'; tr.querySelector('.party').appendChild(r); }
       tr.querySelector('.c-date').textContent = fmtDate(e.date);
       tr.querySelector('.c-cat').textContent = e.category;
       tr.querySelector('.c-hrs').textContent = detailText(e);
@@ -1181,6 +1182,7 @@
     // Own work is usually logged once it's paid, so it starts as received
     $('fSettled').checked = e ? e.settled : kind === 'expense' || preset === 'Own work';
     $('fRecurring').checked = e ? e.recurring : false;
+    if ($('fPersonal')) $('fPersonal').checked = e ? !!e.personal : false;
     $('fSpread').checked = e ? !!e.spread : false;
     setMode(e && e.periodStart ? 'project' : e && e.hours != null && e.rate != null ? 'hourly' : 'fixed');
     $('addErr').textContent = '';
@@ -1236,7 +1238,7 @@
     const settled = $('fSettled').checked;
     const row = {
       kind: fKind, entry_date: date, title, party: party ? (match ? match.party : party) : null, category,
-      hours, rate, amount: cents(amount), currency, fx_rate: fxRate, fx_source: fxc.src, fx_income_id: fxc.incId || null, settled, recurring: $('fRecurring').checked, note: $('fNote').value.trim() || null
+      hours, rate, amount: cents(amount), currency, fx_rate: fxRate, fx_source: fxc.src, fx_income_id: fxc.incId || null, settled, recurring: $('fRecurring').checked, personal: $('fPersonal') ? $('fPersonal').checked : false, note: $('fNote').value.trim() || null
     };
     if (!editing || settled !== editing.settled) row.settled_at = settled ? new Date().toISOString() : null;
     if (from || (editing && editing.periodStart)) { row.period_start = from; row.period_end = to; }
@@ -1289,7 +1291,7 @@
       const e = d.entry;
       const { data, error } = await db.from('cash_entries').insert({
         kind: e.kind, entry_date: e.date, title: e.title, party: e.party || null, category: e.category, hours: e.hours, rate: e.rate,
-        amount: e.amount, currency: e.currency, fx_rate: e.fxRate, settled: e.settled, settled_at: e.settledAt, recurring: e.recurring, note: e.note || null, created_at: e.createdAt,
+        amount: e.amount, currency: e.currency, fx_rate: e.fxRate, settled: e.settled, settled_at: e.settledAt, recurring: e.recurring, personal: !!e.personal, note: e.note || null, created_at: e.createdAt,
         ...(e.periodStart ? { period_start: e.periodStart, period_end: e.periodEnd, spread: e.spread } : {})
       }).select().single();
       if (error) return showNotice("Couldn't restore that entry.");
