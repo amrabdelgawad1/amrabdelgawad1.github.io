@@ -121,6 +121,7 @@
           (simple ? '' : actCard) + '</div>' : '') +
       '</section>' +
       '<div id="pvOnb" hidden></div>' +
+      '<div id="pvExtra"></div>' +
       '<section aria-labelledby="pvCommH" id="pvCommWrap" hidden><div class="p-card"><div class="p-card-head"><h2 id="pvCommH">Your commissions</h2><span id="pvCommN"></span></div><div id="pvComm"></div></div></section>' +
       moreStart + (simple ? '<div class="p-grid p-today-lists">' + actCard + '</div>' : '') +
       '<section aria-labelledby="pvCont" id="pvContWrap" hidden><h2 class="p-h2" id="pvCont">Next lesson</h2><div id="pvContBox"></div></section>' +
@@ -143,6 +144,7 @@
     today(T.db, my, has('deals'));
     myCommissions(T.db, my);
     if (window.Onboarding) window.Onboarding.card(T.db, $('pvOnb'), () => my === run);
+    if (window.PortalExtras) window.PortalExtras.home(T.db, $('pvExtra'), () => my === run);   // Nov 9: coaching, call of the week, callbacks, what's new
     if (me.role === 'manager' || has('requests')) {
       const n = (await pendingRequests(T.db) || []).length;
       if (my !== run) return;
@@ -508,9 +510,10 @@
   }
 
   window.PortalHome = {
-    open(page){ view = page; const my = ++run; ({ home, portal, admin, progress, teamview, scoring:m => window.CallScoring ? window.CallScoring.open(box(), () => m === run) : Promise.resolve(),
+    open(page){ view = page; const my = ++run; (({ home, portal, admin, progress, teamview, scoring:m => window.CallScoring ? window.CallScoring.open(box(), () => m === run) : Promise.resolve(),
       onboarding:m => window.Onboarding ? window.Onboarding.open(box(), () => m === run) : Promise.resolve(),
-      library:m => window.ScriptLibrary ? window.ScriptLibrary.open(box(), () => m === run) : Promise.resolve() })[page](my).catch(() => { if (my === run) box().insertAdjacentHTML('beforeend', '<p class="p-card p-empty">Couldn’t load everything. Check your connection and try again.</p>'); }); },
+      library:m => window.ScriptLibrary ? window.ScriptLibrary.open(box(), () => m === run) : Promise.resolve() })[page] ||
+      (m => (window.PortalViews && window.PortalViews[page]) ? Promise.resolve(window.PortalViews[page].open(box(), () => m === run)) : Promise.resolve()))(my).catch(() => { if (my === run) box().insertAdjacentHTML('beforeend', '<p class="p-card p-empty">Couldn’t load everything. Check your connection and try again.</p>'); }); },
     // every second from app.js: keep the Team home's clock line and button current
     tick(){
       if (view !== 'home' || !$('pvSub') || $('pView').hidden) return;
