@@ -75,10 +75,21 @@
   // Username or email + password. The sign-in function (supabase/functions/sign-in) looks the username up on the
   // server, counts wrong passwords (5 in 15 minutes and that login waits) and records the sign-in.
   const SIGN_IN_URL = cfg.supabaseUrl + '/functions/v1/sign-in';
+  // A random id this browser keeps, so Amr hears when someone signs in from a device they haven't used before
+  const deviceId = () => { try { let d = localStorage.getItem('talents-device'); if (!d) { d = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now()); localStorage.setItem('talents-device', d); } return d; } catch(e) { return null; } };
+  // "Keep me signed in": when it's off, /tracker/config.js forgets the sign-in once the browser has been closed.
+  // talents-alive is a cookie with no end date, so the browser drops it when it closes.
+  const KEEP = 'talents-keep';
+  const keepPref = () => { try { return localStorage.getItem(KEEP) !== '0'; } catch(e) { return true; } };
+  function markSignedIn(keep){
+    try { localStorage.setItem(KEEP, keep ? '1' : '0'); } catch(e) {}
+    document.cookie = 'talents-alive=1; path=/; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : '');
+  }
+  $('keepIn').checked = keepPref();
   const signInErr = m => /banned/i.test(m) ? 'Your access was switched off. Ask Amr if that’s a mistake.' : /invalid/i.test(m) ? "That username/email and password don't match." : "Couldn't sign in. Check your connection and try again.";
   async function passwordSignIn(login, pw){
     let res = null;
-    try { res = await fetch(SIGN_IN_URL, { method:'POST', headers:{ 'Content-Type':'application/json', apikey:cfg.supabaseKey }, body:JSON.stringify({ login, password:pw }) }); } catch(e) { res = null; }
+    try { res = await fetch(SIGN_IN_URL, { method:'POST', headers:{ 'Content-Type':'application/json', apikey:cfg.supabaseKey }, body:JSON.stringify({ login, password:pw, device:deviceId() }) }); } catch(e) { res = null; }
     if (res && res.status !== 404) {
       let j = {}; try { j = await res.json(); } catch(e) {}
       if (j.session) { const { error } = await db.auth.setSession(j.session); return error ? "Couldn't sign in. Check your connection and try again." : ''; }
@@ -99,6 +110,7 @@
     $('loginBtn').removeAttribute('aria-busy');
     $('pw').value = '';
     if (msg) { $('loginErr').textContent = msg; return; }
+    markSignedIn($('keepIn').checked);
     route();
   });
   // Show / Hide on password fields
@@ -152,7 +164,7 @@
     $('pwSub').textContent = type === 'first' ? 'Pick a username and confirm your password. You’ll only be asked this once.' : 'Choose a password for your account. You’ll use it with your username or email to sign in.';
     $('pwBtn').textContent = type === 'first' ? 'Save and continue' : 'Save password';
     $('pw1Lbl').textContent = type === 'first' ? 'Your password (same one, or a new one)' : 'New password';
-    if (type !== 'first') db.rpc('log_link_sign_in').then(() => {}, () => {});
+    if (type !== 'first') { markSignedIn(keepPref()); db.rpc('log_link_sign_in', { p_device: deviceId() }).then(() => {}, () => {}); }
     $('unWrap').hidden = true;
     const { data: mine, error } = await db.from('usernames').select('username').eq('user_id', session.user.id).maybeSingle();
     if (!error && !mine) { $('unWrap').hidden = false; $('un').value = ((nm || '').split(/\s+/)[0] || '').toLowerCase().replace(/[^a-z0-9._]/g, ''); }
