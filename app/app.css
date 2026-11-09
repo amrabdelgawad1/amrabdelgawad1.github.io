@@ -773,3 +773,7 @@ html body #pLogs{ min-height:calc(100vh - var(--p-top)); }
 .pp-un{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
 .pp-un .pp-field{ width:auto; min-width:200px; flex:1 1 200px; }
 .pp-last{ margin:0; color:var(--p-muted); font-size:14px; }
+.keep-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:14px; color:var(--text); cursor:pointer; }
+.keep-row input{ width:18px; height:18px; accent-color:var(--accent); margin:0; }
+.keep-row small{ color:var(--muted); font-size:12.5px; }
+.pp-switch{ margin:0 0 10px; padding:10px 12px; border-radius:var(--p-r-sm); background:var(--p-sunk, rgba(0,0,0,.04)); color:var(--p-ink); font-size:14px; }
