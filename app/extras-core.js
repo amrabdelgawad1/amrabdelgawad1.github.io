@@ -340,8 +340,19 @@
     const list = r.data || [];
     if (!list.length) { box.innerHTML = ''; box.hidden = true; return; }
     const unread = list.filter(a => !a.is_read).length;
-    box.innerHTML = '<section class="card px-anncard"><div class="px-ann-head"><h2>From Amr</h2><span>' + (unread ? plural(unread, 'new one', 'new ones') : '') + '</span></div>' +
-      list.map(a => annHtml(a, true)).join('') + '</section>';
+    if (box.id === 'tNews') {
+      // The tracker box: calm amber, short lines; tap one to read it all
+      const show = list.slice(0, 3);
+      box.innerHTML = '<div class="ann-top"><b>From Amr</b>' + (unread ? '<span class="ann-new">' + unread + ' new</span>' : '') + '</div>' +
+        show.map(a => '<details class="ann-item' + (a.is_read ? '' : ' is-new') + (a.kind === 'pay' ? ' is-pay' : '') + '"><summary><span class="ann-t">' + esc(a.title) + '</span>' +
+          (a.kind === 'pay' && a.amount != null ? '<span class="ann-amt">+' + esc(money(a.amount, a.currency)) + '</span>' : '') +
+          '<time>' + esc(fmtDay(a.at, { month:'short', day:'numeric' })) + '</time></summary>' +
+          (a.body ? '<p class="px-pre">' + esc(a.body) + '</p>' : '') + (a.user_id ? '<small>Just for you</small>' : '') + '</details>').join('') +
+        (list.length > 3 ? '<small class="ann-more">' + plural(list.length - 3, 'older one') + ' on your home page</small>' : '');
+    } else {
+      box.innerHTML = '<section class="card px-anncard"><div class="px-ann-head"><h2>From Amr</h2><span>' + (unread ? plural(unread, 'new one', 'new ones') : '') + '</span></div>' +
+        list.map(a => annHtml(a, true)).join('') + '</section>';
+    }
     box.hidden = false;
     const fresh = list.filter(a => !a.is_read).map(a => ({ announcement_id:a.id }));
     if (fresh.length) safe(db.from('announcement_reads').upsert(fresh, { onConflict:'announcement_id,user_id', ignoreDuplicates:true }));
@@ -352,7 +363,7 @@
     const t = $('pTrack'), box = $('tNews'), db = T().db;
     if (!t || t.hidden || !box || !db || T().role !== 'member') return;
     if (!force && Date.now() - annAt < 5 * 60e3) return;
-    annAt = Date.now(); announcements(db, box, () => !t.hidden, 6);
+    annAt = Date.now(); announcements(db, box, () => !t.hidden, 10);
   }
   window.addEventListener('hashchange', () => setTimeout(() => trackNews(true), 50));
   document.addEventListener('talents-signed-in', () => setTimeout(() => trackNews(true), 300));
