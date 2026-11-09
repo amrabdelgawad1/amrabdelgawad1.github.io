@@ -14,6 +14,8 @@
   const linkError = new URLSearchParams(location.hash.slice(1)).get('error_description');
   // Came from the old /tracker page: say where the clock went
   if (qs.get('from') === 'tracker') { $('movedNote').hidden = false; history.replaceState(null, '', location.pathname + location.hash); }
+  // Launch note for the username-or-email sign-in, shown on the sign-in screen until the end of 2026
+  else if (Date.now() < Date.parse('2027-01-01T00:00:00+02:00')) $('newLoginNote').hidden = false;
 
   const iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   const hm = s => Math.floor(s/3600)+'h '+String(Math.floor(s%3600/60)).padStart(2,'0')+'m';
@@ -28,7 +30,7 @@
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
   const setMoney = (el, n) => { const t = usd(n), m = t.match(/^(.*[0-9])([.][0-9][0-9])$/); el.textContent = m ? m[1] : t; if (m) { const c = document.createElement('span'); c.className = 'c'; c.textContent = m[2]; el.appendChild(c); } };
 
-  const VIEWS = ['vLoad', 'vLogin', 'vSetPw', 'vMfa', 'vNoAccess', 'vApp'];
+  const VIEWS = ['vLoad', 'vLogin', 'vForgot', 'vSetPw', 'vMfa', 'vNoAccess', 'vApp'];
   function show(v){ VIEWS.forEach(x => $(x).hidden = x !== v); }
   let toastTimer = null;
   function toast(msg){ $('toastMsg').textContent = msg; $('toast').classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').classList.remove('show'), 3500); }
@@ -70,18 +72,62 @@
   }
 
   // ---------- sign in ----------
+  // Username or email + password. The sign-in function (supabase/functions/sign-in) looks the username up on the
+  // server, counts wrong passwords (5 in 15 minutes and that login waits) and records the sign-in.
+  const SIGN_IN_URL = cfg.supabaseUrl + '/functions/v1/sign-in';
+  const signInErr = m => /banned/i.test(m) ? 'Your access was switched off. Ask Amr if that’s a mistake.' : /invalid/i.test(m) ? "That username/email and password don't match." : "Couldn't sign in. Check your connection and try again.";
+  async function passwordSignIn(login, pw){
+    let res = null;
+    try { res = await fetch(SIGN_IN_URL, { method:'POST', headers:{ 'Content-Type':'application/json', apikey:cfg.supabaseKey }, body:JSON.stringify({ login, password:pw }) }); } catch(e) { res = null; }
+    if (res && res.status !== 404) {
+      let j = {}; try { j = await res.json(); } catch(e) {}
+      if (j.session) { const { error } = await db.auth.setSession(j.session); return error ? "Couldn't sign in. Check your connection and try again." : ''; }
+      return j.error || "Couldn't sign in. Check your connection and try again.";
+    }
+    // The sign-in function isn't reachable: emails still work the old way
+    if (!login.includes('@')) return "Couldn't sign in with your username right now. Try your email instead.";
+    const { error } = await db.auth.signInWithPassword({ email: login, password: pw });
+    return error ? signInErr(error.message) : '';
+  }
   $('loginForm').addEventListener('submit', async e => {
     e.preventDefault();
-    const em = $('em').value.trim(), pw = $('pw').value;
-    if (!em.includes('@')) { $('loginErr').textContent = 'Enter your email address.'; return; }
+    const login = $('em').value.trim(), pw = $('pw').value;
+    if (!login) { $('loginErr').textContent = 'Enter your username or email.'; return; }
     if (!pw) { $('loginErr').textContent = 'Enter your password.'; return; }
     $('loginBtn').setAttribute('aria-busy', 'true');
-    const { error } = await db.auth.signInWithPassword({ email: em, password: pw });
+    const msg = await passwordSignIn(login, pw);
     $('loginBtn').removeAttribute('aria-busy');
     $('pw').value = '';
-    if (error) { $('loginErr').textContent = /invalid/i.test(error.message) ? "That email and password don't match." : /banned/i.test(error.message) ? 'Your access was switched off. Ask Amr if that’s a mistake.' : "Couldn't sign in. Check your connection and try again."; return; }
+    if (msg) { $('loginErr').textContent = msg; return; }
     route();
   });
+  // Show / Hide on password fields
+  document.querySelectorAll('[data-eye]').forEach(b => b.addEventListener('click', () => {
+    const f = $(b.dataset.eye), on = f.type === 'password';
+    f.type = on ? 'text' : 'password'; b.textContent = on ? 'Hide' : 'Show'; b.setAttribute('aria-label', on ? 'Hide password' : 'Show password'); f.focus();
+  }));
+
+  // ---------- forgot password: email a reset link (it lands on the "Choose a new password" screen) ----------
+  $('forgotBtn').addEventListener('click', () => {
+    const v = $('em').value.trim();
+    $('fgEm').value = v.includes('@') ? v : '';
+    $('fgAsk').hidden = false; $('fgSent').hidden = true; $('fgErr').textContent = ''; $('fgTitle').textContent = 'Reset your password';
+    show('vForgot'); $('fgEm').focus();
+  });
+  $('fgBack').addEventListener('click', () => { show('vLogin'); $('em').focus(); });
+  $('forgotForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const em = $('fgEm').value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { $('fgErr').textContent = 'Enter the email your account uses.'; return; }
+    $('fgBtn').setAttribute('aria-busy', 'true');
+    const { error } = await db.auth.resetPasswordForEmail(em, { redirectTo: location.origin + location.pathname });
+    $('fgBtn').removeAttribute('aria-busy');
+    if (error && /rate|seconds|too many/i.test(error.message)) { $('fgErr').textContent = 'A link was sent a moment ago. Wait a minute, then try again.'; return; }
+    if (error && !/not found|no user/i.test(error.message)) { $('fgErr').textContent = "Couldn't send it. Check your connection and try again."; return; }
+    // Same answer whether or not the email has an account
+    $('fgAsk').hidden = true; $('fgSent').hidden = false; $('fgTitle').textContent = 'Check your email';
+  });
+  $('fgEm').addEventListener('input', () => $('fgErr').textContent = '');
   ['em', 'pw'].forEach(id => $(id).addEventListener('input', () => $('loginErr').textContent = ''));
   document.querySelectorAll('[data-signout]').forEach(b => b.addEventListener('click', signOut));
   async function signOut(){
@@ -95,19 +141,48 @@
   }
 
   // ---------- set a password from an invite or new sign-in link ----------
+  // People without a username pick one here too (usernames table, set_my_username in the database)
+  const UN_OK = /^[a-z0-9][a-z0-9._]{2,29}$/;
+  // type: 'invite' | 'recovery' (came from a link) or 'first' (first sign-in since usernames: pick one and confirm the password, once)
+  let setPwType = '';
+  async function showSetPw(session, type){
+    const nm = session.user.user_metadata && session.user.user_metadata.name;
+    setPwType = type;
+    $('pwTitle').textContent = type === 'invite' ? 'Welcome' + (nm ? ', ' + nm.split(' ')[0] : '') : type === 'first' ? 'Finish setting up' : 'Choose a new password';
+    $('pwSub').textContent = type === 'first' ? 'Pick a username and confirm your password. You’ll only be asked this once.' : 'Choose a password for your account. You’ll use it with your username or email to sign in.';
+    $('pwBtn').textContent = type === 'first' ? 'Save and continue' : 'Save password';
+    $('pw1Lbl').textContent = type === 'first' ? 'Your password (same one, or a new one)' : 'New password';
+    if (type !== 'first') db.rpc('log_link_sign_in').then(() => {}, () => {});
+    $('unWrap').hidden = true;
+    const { data: mine, error } = await db.from('usernames').select('username').eq('user_id', session.user.id).maybeSingle();
+    if (!error && !mine) { $('unWrap').hidden = false; $('un').value = ((nm || '').split(/\s+/)[0] || '').toLowerCase().replace(/[^a-z0-9._]/g, ''); }
+    show('vSetPw'); (!$('unWrap').hidden && !$('un').value ? $('un') : $('pw1')).focus();
+  }
   $('pwForm').addEventListener('submit', async e => {
     e.preventDefault();
-    const a = $('pw1').value, b = $('pw2').value;
+    const a = $('pw1').value, b = $('pw2').value, wantUn = !$('unWrap').hidden, un = $('un').value.trim().toLowerCase();
+    if (wantUn && !UN_OK.test(un)) { $('pwErr').textContent = 'Pick a username of 3 to 30 letters, numbers, dots or underscores, starting with a letter or number.'; return; }
     if (a.length < 8) { $('pwErr').textContent = 'Use at least 8 characters.'; return; }
     if (a !== b) { $('pwErr').textContent = 'The two passwords don’t match.'; return; }
     $('pwBtn').setAttribute('aria-busy', 'true');
+    if (wantUn) {
+      const r = await db.rpc('set_my_username', { p_username: un });
+      if (r.error || r.data !== 'ok') {
+        $('pwBtn').removeAttribute('aria-busy');
+        $('pwErr').textContent = r.data === 'taken' ? 'That username is taken. Try another.' : r.data === 'reserved' ? 'That username is kept for Amr. Try another.' : r.data === 'invalid' ? 'Pick a username of 3 to 30 letters, numbers, dots or underscores.' : "Couldn't save your username. The link may have expired; ask Amr for a new one.";
+        $('un').focus(); return;
+      }
+      $('unWrap').hidden = true;
+    }
     const { error } = await db.auth.updateUser({ password: a });
     $('pwBtn').removeAttribute('aria-busy');
-    if (error) { $('pwErr').textContent = /same/i.test(error.message) ? 'That’s your current password. Pick a new one.' : "Couldn't save it. The link may have expired; ask Amr for a new one."; return; }
+    if (error && !(setPwType === 'first' && /same/i.test(error.message))) { $('pwErr').textContent = /same/i.test(error.message) ? 'That’s your current password. Pick a new one.' : /weak|pwned|leaked|breach/i.test(error.message) ? 'That password has shown up in a data breach. Pick a different one.' : "Couldn't save it. The link may have expired; ask Amr for a new one."; return; }
     $('pw1').value = ''; $('pw2').value = '';
-    toast('Password saved');
+    toast(wantUn ? 'Saved. Sign in next time with ' + un + ' or your email.' : 'Password saved');
+    setPwType = '';
     route();
   });
+  $('un').addEventListener('input', () => $('pwErr').textContent = '');
   ['pw1', 'pw2'].forEach(id => $(id).addEventListener('input', () => $('pwErr').textContent = ''));
 
   // ---------- owner: authenticator code ----------
@@ -158,6 +233,11 @@
     profile = Array.isArray(prof) ? prof[0] : prof;
     if (error || !profile) { $('noAccessMsg').textContent = 'This account isn’t set up for the tracker. Ask Amr to invite you.'; show('vNoAccess'); return; }
     if (!profile.active) { $('noAccessMsg').textContent = 'Your access was switched off. Ask Amr if that’s a mistake.'; show('vNoAccess'); return; }
+    // First sign-in since usernames arrived: pick a username and confirm the password (once; skipped if the check fails)
+    if (setPwType !== 'first') {
+      const un = await db.from('usernames').select('username').eq('user_id', user.id).maybeSingle();
+      if (!un.error && !un.data) return showSetPw(session, 'first');
+    }
     const pm = await db.rpc('portal_me');
     if (!pm.error && pm.data && Array.isArray(pm.data.keys)) { me = pm.data; access = pm.data.keys.filter(k => SECTION_NAMES[k]); }
     else {   // database not updated yet: the extras list, as before
@@ -974,22 +1054,17 @@
 
   // ---------- start ----------
   (async () => {
-    if (linkError) { show('vLogin'); $('loginErr').textContent = 'That link has expired or was already used. Ask Amr for a new one.'; history.replaceState(null, '', location.pathname); return; }
+    if (linkError) { show('vLogin'); $('loginErr').textContent = 'That link has expired or was already used. Tap Forgot password? to get a new one, or ask Amr.'; history.replaceState(null, '', location.pathname); return; }
     if (tokenHash && (tokenType === 'invite' || tokenType === 'recovery')) {
       history.replaceState(null, '', location.pathname);
       const { data, error } = await db.auth.verifyOtp({ token_hash: tokenHash, type: tokenType });
-      if (error || !data.session) { show('vLogin'); $('loginErr').textContent = 'That link has expired or was already used. Ask Amr for a new one.'; return; }
-      const nm = data.session.user.user_metadata && data.session.user.user_metadata.name;
-      $('pwTitle').textContent = tokenType === 'invite' ? 'Welcome' + (nm ? ', ' + nm.split(' ')[0] : '') : 'Choose a new password';
-      show('vSetPw'); $('pw1').focus();
-      return;
+      if (error || !data.session) { show('vLogin'); $('loginErr').textContent = 'That link has expired or was already used. Tap Forgot password? to get a new one, or ask Amr.'; return; }
+      return showSetPw(data.session, tokenType);
     }
     const { data: { session } } = await db.auth.getSession();
     if (session && (linkType === 'invite' || linkType === 'recovery')) {
       history.replaceState(null, '', location.pathname);
-      $('pwTitle').textContent = linkType === 'invite' ? 'Welcome' + (session.user.user_metadata && session.user.user_metadata.name ? ', ' + session.user.user_metadata.name.split(' ')[0] : '') : 'Choose a new password';
-      show('vSetPw'); $('pw1').focus();
-      return;
+      return showSetPw(session, linkType);
     }
     route();
   })();
