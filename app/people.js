@@ -31,6 +31,7 @@
   const CONTROLLED = ['course', 'deals', 'learn', 'mkt', 'psy', 'money'];
 
   let people = [], log = [], filter = 'all', q = '', current = '', draft = null, busy = false;
+  let unames = {}, lastIn = {};   // user_id -> username, user_id -> { at, method }
   const keysOf = (role, access, notGiven) => {
     const out = new Set((ROLE_KEYS[role] || []).filter(k => !(notGiven || []).includes(k)));
     (access || []).forEach(k => out.add(k)); out.delete('money');
@@ -79,13 +80,18 @@
   // ---------- data ----------
   async function load(){
     const db = T().db;
-    const [m, l] = await Promise.all([
+    const [m, l, u, s] = await Promise.all([
       db.from('members').select('*').order('active', { ascending:false }).order('name'),
-      db.from('access_log').select('*').order('at', { ascending:false }).limit(500)
+      db.from('access_log').select('*').order('at', { ascending:false }).limit(500),
+      db.from('usernames').select('user_id, username'),
+      db.rpc('last_sign_ins')
     ]);
     if (m.error) throw m.error;
     people = (m.data || []).filter(p => p.user_id);
     log = l.error ? [] : (l.data || []);
+    // Usernames and last sign-ins (username-or-email sign-in); empty if the database isn't updated yet
+    unames = {}; (u.error ? [] : u.data || []).forEach(r => unames[r.user_id] = r.username);
+    lastIn = {}; (s.error ? [] : s.data || []).forEach(r => lastIn[r.user_id] = r);
   }
 
   // ---------- list ----------
@@ -94,7 +100,7 @@
   }
   function shown(){
     return people.filter(p => filter === 'all' || (filter === 'off' ? !p.active : p.active && (filter === 'manager' ? p.role === 'manager' : p.role !== 'manager')))
-      .filter(p => !q || (p.name || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q));
+      .filter(p => !q || (p.name || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q) || (unames[p.user_id] || '').includes(q));
   }
   function drawList(){
     const c = counts();
@@ -175,12 +181,22 @@
         '<p class="pp-note">Leave the date empty for no end.</p></fieldset>' : '') +
       '<fieldset class="pp-sec pp-small"><legend>Work</legend><label class="pp-inline-l">Works for <select class="pp-field" data-co' + (off ? ' disabled' : '') + '>' + cos + '</select></label></fieldset>' +
       '<section class="pp-see" aria-label="What ' + esc(fn) + ' will see"><h3>What ' + esc(fn) + ' will see</h3><div class="pp-chips">' + (off ? '<span>Nothing while turned off</span>' : seeList(p, plan).map(t => '<span>' + esc(t) + '</span>').join('')) + '</div></section>' +
+      '<fieldset class="pp-sec pp-small"><legend>Sign-in</legend>' +
+        '<div class="pp-un"><label class="pp-inline-l" style="flex:1 1 260px">Username <input class="pp-field" data-un maxlength="30" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Not set yet" value="' + esc(unames[p.user_id] || '') + '"' + (off ? ' disabled' : '') + '></label>' +
+        (off ? '' : '<button type="button" class="p-btn is-ghost" data-act="username">Save username</button>') + '</div>' +
+        '<p class="pp-last">' + esc(lastLine(p)) + '</p>' +
+        '<p class="pp-note">' + esc(fn) + ' signs in with this username or ' + esc(p.email || 'their email') + '. Letters, numbers, dots or underscores.</p></fieldset>' +
       '<section class="pp-log" aria-label="Access log"><h3>Access log</h3>' + logHtml(p) + '</section>' +
       '<div class="pp-foot">' + (off
         ? '<button type="button" class="p-btn" data-act="restore">Turn ' + esc(fn) + '’s access back on</button>'
         : '<button type="button" class="p-btn" data-act="save"' + (d.dirty ? '' : ' disabled') + '>Save changes</button><button type="button" class="p-btn is-danger" data-act="remove">Turn off ' + esc(fn) + '’s access</button>' +
           '<span class="pp-note">Turning off closes everything at once.</span>') + '</div>' +
       (off ? '' : '<div class="pp-signin"><span class="pp-note">New phone or forgotten password?</span><button type="button" class="p-btn is-ghost" data-act="link" data-via="email">Email a sign-in link</button><button type="button" class="p-btn is-ghost" data-act="link" data-via="whatsapp">WhatsApp a sign-in link</button></div>');
+  }
+  function lastLine(p){
+    const x = lastIn[p.user_id];
+    if (!x) return 'No sign-in recorded since the new sign-in started.';
+    return 'Last signed in ' + when(x.at) + (x.method === 'password' ? ' with a password' : ' with a link');
   }
   function logHtml(p){
     const rows = log.filter(l => l.target === p.user_id).slice(0, 12);
@@ -196,6 +212,7 @@
       if (c.not_given) { const x = diff(c.not_given.from, c.not_given.to); x.drop.forEach(k => out.push((KEY_NAME[k] || k) + ' turned on')); x.add.forEach(k => out.push((KEY_NAME[k] || k) + ' held back')); }
       if (c.active) out.push(c.active.to ? 'Access turned back on' : 'Access turned off');
       if (c.deals_until) out.push(c.deals_until.to ? 'Deal tools end on ' + when(c.deals_until.to + 'T12:00') : 'Deal tools end date removed');
+      if (c.username) out.push(c.username.from ? 'Username changed to ' + c.username.to : 'Username set to ' + c.username.to);
       if (c.deals_mfa) out.push(c.deals_mfa.to ? 'Authenticator code asked for Deal tools' : 'No authenticator code for Deal tools');
       return out.length ? out : ['Changed'];
     };
@@ -225,6 +242,7 @@
       const p = person(current); if (!p) return;
       const act = b.dataset.act;
       if (act === 'save') return save(p, b);
+      if (act === 'username') return saveUsername(p, b);
       if (act === 'remove') {
         const yes = await window.ask({ title:'Turn off ' + p.name + '’s access?', msg:'They won’t be able to sign in or open anything, all at once. Their shifts and history stay in your records. You can turn it back on later.', ok:'Turn off access', cancel:'Keep access', danger:true });
         if (!yes) return;
@@ -237,6 +255,17 @@
       T().toast(act === 'remove' ? first(p.name) + '’s access is off.' : first(p.name) + '’s access is back on.');
       draft = null; await refresh();
     });
+  }
+  async function saveUsername(p, btn){
+    const f = $('ppDetail').querySelector('[data-un]'), u = (f.value || '').trim().toLowerCase();
+    if (!/^[a-z0-9][a-z0-9._]{2,29}$/.test(u)) { T().toast('Use 3 to 30 letters, numbers, dots or underscores, starting with a letter or number.'); f.focus(); return; }
+    if (u === unames[p.user_id]) { T().toast('That’s already ' + first(p.name) + '’s username.'); return; }
+    busy = true; btn.setAttribute('aria-busy', 'true');
+    const { error } = await T().db.from('usernames').upsert({ user_id:p.user_id, username:u }, { onConflict:'user_id' });
+    busy = false; btn.removeAttribute('aria-busy');
+    if (error) { T().toast(error.code === '23505' ? 'That username is taken.' : /reserved/i.test(error.message) ? 'That username is kept for you.' : 'Couldn’t save it: ' + error.message); f.focus(); return; }
+    T().toast(first(p.name) + ' can now sign in with ' + u + '.');
+    await refresh();
   }
   async function save(p, btn){
     const d = draft, plan = planOf(p, d), db = T().db;
