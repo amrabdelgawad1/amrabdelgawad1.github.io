@@ -72,12 +72,12 @@
     <form class="card auth" id="pwForm" novalidate>
       <img class="logo" src="icon-180.png?v=2" alt="" />
       <h1 id="pwTitle">Welcome</h1>
-      <p class="sub">Choose a password for your account. You'll use it with your username or email to sign in.</p>
+      <p class="sub" id="pwSub">Choose a password for your account. You'll use it with your username or email to sign in.</p>
       <div id="unWrap" hidden>
         <label class="label">Username<input class="field" id="un" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="30" placeholder="e.g. kyle" /></label>
         <p class="note un-hint">Letters, numbers, dots or underscores. You can sign in with this or your email.</p>
       </div>
-      <label class="label">New password<span class="pw-wrap"><input class="field" id="pw1" type="password" autocomplete="new-password" placeholder="At least 8 characters" /><button type="button" class="pw-eye" data-eye="pw1" aria-label="Show password">Show</button></span></label>
+      <label class="label"><span id="pw1Lbl">New password</span><span class="pw-wrap"><input class="field" id="pw1" type="password" autocomplete="new-password" placeholder="At least 8 characters" /><button type="button" class="pw-eye" data-eye="pw1" aria-label="Show password">Show</button></span></label>
       <label class="label">Type it again<input class="field" id="pw2" type="password" autocomplete="new-password" /></label>
       <p class="err" id="pwErr"></p>
       <button class="btn" id="pwBtn" type="submit">Save password</button>
