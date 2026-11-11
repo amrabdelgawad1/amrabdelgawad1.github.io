@@ -97,7 +97,7 @@
   if (!drawer) return;
   const GROUPS = [
     { lead:'#team', label:'Team and shifts', tabs:[['#team','Team hours'], ['#mytime','My time'], ['#requests','Requests'], ['#schedule','Schedule and time off'], ['#funnel','Calls to deals'], ['#profit','Profit per client'], ['#clientreport','Client report'], ['#lists','Lead lists']] },
-    { lead:'#people', label:'People and access', tabs:[['#people','People and access'], ['#applications','Applicants'], ['#onboarding','Onboarding'], ['#offboarding','Offboarding'], ['#referrals','Refer a friend']] },
+    { lead:'#people', label:'People and access', tabs:[['#people','People and access'], ['#person','Person files'], ['#applications','Applicants'], ['#onboarding','Onboarding'], ['#offboarding','Offboarding'], ['#referrals','Refer a friend']] },
     { lead:'#tasks', label:'Work', owner:true, tabs:[['#tasks','Tasks'], ['#messages','Messages'], ['#handbook','Handbook']] },
     { lead:'#review', label:'Reviews and scoring', tabs:[['#review','To score'], ['#scoring','Call scoring'], ['#progress','Learner progress'], ['#cotw','Call of the week'], ['#builder','Course builder']] },
     { lead:'#announcements', label:'Team updates', tabs:[['#announcements','Announcements'], ['#coaching','Coaching']] },

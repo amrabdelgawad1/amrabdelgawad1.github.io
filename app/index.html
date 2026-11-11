@@ -342,11 +342,12 @@
     <a class="mi" href="#mymonth" data-sec="member"><svg class="i" viewBox="0 0 24 24"><path d="M5 19V11M12 19V5M19 19v-6"/><path d="M3 19.5h18"/></svg>My month</a>
     <a class="mi" href="#callbacks" data-sec="member"><svg class="i" viewBox="0 0 24 24"><path d="M6 4h3l1.5 4-2 1.5a10 10 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2 2A15 15 0 0 1 4 6a2 2 0 0 1 2-2z"/></svg>Callbacks</a>
     <a class="mi" href="#referrals" data-sec="everyone"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="11" rx="1.5"/><path d="M12 9v11M4 13h16"/><path d="M12 9c-2-4-6-3-5 0M12 9c2-4 6-3 5 0"/></svg>Referrals</a>
+    <a class="mi" href="#person" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><circle cx="12" cy="11" r="2.5"/><path d="M8.5 17c.6-1.8 2-2.8 3.5-2.8s2.9 1 3.5 2.8"/></svg>Person files</a>
     <a class="mi" href="#applications" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M4 13l2.5-8h11L20 13v6H4z"/><path d="M4 13h5l1 2h4l1-2h5"/></svg>Applications</a>
     <a class="mi" href="#offboarding" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M5 20V4h10v16"/><path d="M15 20h4M11 12h.01"/><path d="M15 6l4 1v13"/></svg>Offboarding</a>
     <a class="mi" href="#onboarding" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>Onboarding</a>
     <p class="sec" data-nav="work">Work</p>
-    <a class="mi" href="#tasks" data-sec="everyone"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>Tasks</a>
+    <a class="mi" href="#tasks" data-sec="everyone"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>Tasks<span class="cnt due" id="taskCnt" hidden></span></a>
     <a class="mi" href="#messages" data-sec="everyone"><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>Messages<span class="cnt due" id="msgCnt" hidden></span></a>
     <a class="mi" href="#handbook" data-sec="everyone"><svg class="i" viewBox="0 0 24 24"><path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h10"/></svg>Handbook</a>
     <p class="sec" data-nav="numbers">Numbers</p>
@@ -412,8 +413,10 @@
 <script src="extras-core.js?v=3"></script>
 <script src="extras-admin.js?v=2"></script>
 <script src="work.js?v=2"></script>
+<script src="team-plus.js?v=1"></script>
 <script src="nav.js?v=3"></script>
 <script src="i18n.js?v=4"></script>
+<script src="ar-more.js?v=1"></script>
 <script src="signin.js?v=1"></script>
 </body>
 </html>

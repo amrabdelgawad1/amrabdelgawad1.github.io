@@ -172,7 +172,7 @@
     const cos = (T().companies || []).map(c => '<option value="' + c.id + '"' + (String(c.id) === String(d.company) ? ' selected' : '') + '>' + esc(c.name) + '</option>').join('');
     box.innerHTML =
       '<button type="button" class="pp-back" data-back>← All people</button>' +
-      '<div class="pp-top"><span class="pp-av big' + (off ? ' is-off' : '') + '" aria-hidden="true">' + esc(initials(p.name)) + '</span><div><h2>' + esc(p.name) + '</h2><p>' + esc(p.email || '') + ' · ' + (off ? 'Off' : 'Active') + '</p></div></div>' +
+      '<div class="pp-top"><span class="pp-av big' + (off ? ' is-off' : '') + '" aria-hidden="true">' + esc(initials(p.name)) + '</span><div><h2>' + esc(p.name) + '</h2><p>' + esc(p.email || '') + ' · ' + (off ? 'Off' : 'Active') + '</p></div><a class="p-btn is-ghost pp-file" href="#person/' + encodeURIComponent(p.user_id) + '">Open person file</a></div>' +
       (off ? '<p class="pp-offnote">' + esc(fn) + '’s access is turned off. They can’t sign in or open anything. Their shifts and history are kept.</p>' : '') +
       '<fieldset class="pp-sec"><legend>Role</legend><div class="pp-roles">' +
         roleCard('owner', 'Owner', 'Only you', true) + roleCard('manager', 'Manager', 'Runs the team, no money or access', false) +
