@@ -90,7 +90,7 @@
     'A script needs at least 100 dials before it can be called the best. Results only count shifts where the rep picked a script.':'يحتاج السكربت إلى 100 اتصال على الأقل قبل أن يُعتبر الأفضل. تُحسب فقط الورديات التي اختار فيها المندوب سكربتاً.',
     // Course home and Daily review
     'Acquisitions Playbook':'دليل الاستحواذ', 'Acquisitions':'الاستحواذ', 'Marketing':'التسويق', 'Psychology':'علم النفس', 'Psychology and Therapy':'علم النفس والعلاج',
-    'Course':'الكورس', 'Outline':'المحتوى', 'Not started':'لم يبدأ', 'In progress':'قيد التقدّم', 'Done':'تم', 'Continue':'متابعة', 'Start':'ابدأ',
+    'Course':'الكورس', 'Outline':'المحتوى', 'Not started':'لم يبدأ', 'Locked':'مقفل', 'In progress':'قيد التقدّم', 'Done':'تم', 'Continue':'متابعة', 'Start':'ابدأ',
     'From the first call to a signed contract.':'من أول مكالمة إلى عقد موقّع.', 'From the first idea to running a full growth system.':'من أول فكرة إلى تشغيل نظام نمو كامل.',
     'Foundations, therapy models, crisis skills, ethics and coaching practice.':'الأساسيات، ونماذج العلاج، ومهارات الأزمات، والأخلاقيات، وممارسة الكوتشينج.',
     'Lessons open in the course’s own reader. The portal menu stays, so you can always come back here.':'تُفتح الدروس في قارئ الكورس. تبقى قائمة البوابة، فيمكنك دائماً العودة إلى هنا.',
@@ -134,3 +134,5 @@
     'Sent. It should show in a few seconds, even with the app closed.':'تم الإرسال. سيظهر خلال ثوانٍ، حتى والتطبيق مغلق.', 'Contracts':'العقود'
   });
 })();
+(function(){ const L = window.AppLang; if (!L || !L.RULES) return;
+  L.RULES.push([/^(\d+) of (\d+) lessons(?: · (\d+) quiz(?:zes)? passed)?$/, (m, a, b, q) => a + ' من ' + b + ' دروس' + (q ? ' · اجتاز ' + q + ' اختبار' : '')]); })();
