@@ -19,6 +19,8 @@
 .fab.ink.active, .fab[aria-pressed="true"]{ background:var(--p-accent-hi, #FF5A1F); border-color:var(--p-accent-hi, #FF5A1F); color:#fff; }
 .fab.ink.active .dot{ border-color:var(--p-accent-hi, #FF5A1F); background:#fff; }
 @media (max-width:1024px){ .fabs, [dir="rtl"] .fabs{ left:16px; } }
+/* round 9: on wide screens they sit in the empty gutter at the far edge, stacked, so they never cover lesson text */
+@media (min-width:1280px){ .fabs{ left:auto; right:24px; flex-direction:column; } [dir="rtl"] .fabs{ left:24px; right:auto; } }
 
 /* pen on the page */
 .inkhost{ position:relative; }

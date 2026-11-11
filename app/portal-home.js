@@ -39,7 +39,7 @@
   const box = () => $('pViewBody');
 
   // ---------- small builders ----------
-  const hero = (kick, title, sub, right) => '<section class="p-hero"><div><span class="p-hero-bar"></span><span class="p-hero-kick">' + esc(kick) + '</span><h1>' + esc(title) + '</h1>' +
+  const hero = (kick, title, sub, right) => '<section class="p-hero"><div><span class="p-hero-bar"></span><span class="p-hero-kick">' + esc(kick) + '</span><h1>' + esc(title).replace(/, ([^,]+)$/, ', <em>$1</em>') + '</h1>' +
     (sub ? '<p id="pvSub">' + sub + '</p>' : '') + '</div>' + (right || '') + '</section>';
   const stat = (n, label, href) => '<a class="p-stat" href="' + href + '"><b>' + n + '</b>' + esc(label) + '</a>';
   const area = (o) => '<a class="p-area" href="' + esc(o.href) + '"><span class="p-ic">' + IC[o.icon] + '</span><span class="p-area-txt"><h3>' + esc(o.name) + '</h3><p>' + esc(o.sub) + '</p></span>' +

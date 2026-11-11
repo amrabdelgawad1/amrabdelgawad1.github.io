@@ -15,7 +15,7 @@
     'Learning':'التعلّم', 'Learning Hub':'مركز التعلّم', 'Learner progress':'تقدّم المتعلّمين', 'Review center':'مركز المراجعة', 'Call scoring':'تقييم المكالمات',
     'Scripts and objections':'السكربتات والاعتراضات', 'Deals':'الصفقات', 'Deal CRM':'إدارة الصفقات', 'Land calculator':'حاسبة الأراضي', 'House calculator':'حاسبة المنازل',
     'Money':'المال', 'Cash':'النقدية', 'Income':'الدخل', 'Expenses':'المصروفات', 'My time':'وقتي', 'Site':'الموقع', 'Visits':'الزيارات', 'Emails':'الرسائل', 'Logs':'السجلات',
-    'Download a backup':'تنزيل نسخة احتياطية', 'Install the app':'تثبيت التطبيق', 'Sign out':'تسجيل الخروج', 'Settings':'الإعدادات',
+    'Download a backup':'تنزيل نسخة احتياطية', 'Install the app':'تثبيت التطبيق', 'Sign out':'تسجيل الخروج', 'Settings':'الإعدادات', 'Menu':'القائمة',
     'Schedule':'الجدول', 'My schedule':'جدولي', 'Coaching':'التوجيه', 'My month':'شهري', 'Callbacks':'معاودة الاتصال', 'Referrals':'الترشيحات', 'What’s new':'الجديد', 'Exit survey':'استبيان المغادرة',
     'Applications':'طلبات التوظيف', 'Offboarding':'إنهاء الخدمة', 'Numbers':'الأرقام', 'Calls to deals':'من المكالمات إلى الصفقات', 'Profit per client':'الربح لكل عميل',
     'Client report':'تقرير العميل', 'Cash forecast':'توقّع النقدية', 'Lead lists':'قوائم العملاء المحتملين', 'Call of the week':'مكالمة الأسبوع',

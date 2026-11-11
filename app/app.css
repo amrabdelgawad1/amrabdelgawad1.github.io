@@ -426,14 +426,20 @@ html body #drawer .mi.on{ background:var(--p-dark2); color:#fff; border-left:3px
 html body #drawer .mi.on .i{ color:var(--p-accent-hi); }
 html body #drawer .mi.is-off{ color:var(--p-on-dark3); cursor:default; }
 html body #drawer .mi.is-off:hover{ background:none; }
-html body #drawer .mi .cnt, html body #drawer .mi .cnt.due{ min-width:22px; height:22px; padding:0 7px; display:inline-flex; align-items:center; justify-content:center; border-radius:99px; background:var(--p-accent-hi); color:#fff; font:700 12px/1 var(--p-body) !important; letter-spacing:0; }
-html body #drawer .sec{ margin:18px 0 4px; padding:0 20px; color:var(--p-accent-hi); font:700 11px/1.4 var(--p-body); letter-spacing:.14em; text-transform:uppercase; }
+html body #drawer .mi .cnt, html body #drawer .mi .cnt.due{ min-width:22px; height:22px; padding:0 7px; display:inline-flex; align-items:center; justify-content:center; border-radius:99px; background:var(--p-accent-hi); color:#fff; font:700 12px/1 var(--p-body); margin-left:auto; }
+html body #drawer .sec{ display:flex; align-items:center; justify-content:space-between; min-height:36px; margin:12px 0 2px; padding:0 20px; color:var(--p-accent-hi); font:700 11px/1.4 var(--p-body); letter-spacing:.14em; text-transform:uppercase; cursor:pointer; user-select:none; }
+html body #drawer .sec::after{ content:""; width:7px; height:7px; border-right:1.5px solid currentColor; border-bottom:1.5px solid currentColor; transform:rotate(45deg); transition:transform .15s; }
+html body #drawer .sec.is-shut::after{ transform:rotate(-45deg); }
+html body #drawer .sec:hover{ background:var(--p-dark2); }
+html body #drawer .nav-shut{ display:none !important; }
 html body #drawer .mi-tog{ color:var(--p-on-dark3); width:var(--p-tap); height:var(--p-tap); }
 html body #drawer .mi-tog:hover{ background:var(--p-dark2); color:#fff; }
 html body #drawer .sub .mi{ padding-left:50px; font-size:14px !important; color:var(--p-on-dark2); }
 html body #drawer .bottom{ border-top:1px solid var(--p-dark-line); margin-top:auto; padding-top:8px; }
 html body #drawer .bottom .mi{ color:var(--p-on-dark2); }
 html body #drawer :focus-visible{ outline:2px solid var(--p-accent-hi); outline-offset:-2px; }
+/* round 9: phones get a bottom tab bar (nav.js); the burger and Apps move into its Menu tab */
+@media (max-width:640px){ body.has-tabs #vApp{ padding-bottom:calc(70px + env(safe-area-inset-bottom, 0px)); } body.has-tabs .app-bar #burger, body.has-tabs .app-bar .p-apps-wrap{ display:none !important; } body.has-tabs .toast, body.has-tabs .update{ bottom:calc(76px + env(safe-area-inset-bottom, 0px)); } body.has-tabs.menu-open .p-tabs{ display:none; } }
 @media (min-width:1100px){
   body:has(#vApp:not([hidden])):has(#drawer:not([hidden])) .drawer{ top:var(--p-top); width:260px; }
   body:has(#vApp:not([hidden])):has(#drawer:not([hidden])) #vApp{ padding-left:260px; }
