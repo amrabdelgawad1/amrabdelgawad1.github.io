@@ -21,20 +21,45 @@
   };
 
   // ---------- course content, kept on this device until it changes ----------
+  // The course home and Daily review only need module titles, section ids and quiz questions. Those are kept in a
+  // small outline.json next to content.json (Psychology content is about 10 MB). The Course builder writes it when
+  // a course is published; if it is missing, Amr's device writes it the first time he opens the course home.
   const mem = {};
+  function makeOutline(c){
+    if (!c || typeof c !== 'object') return null;
+    if (Array.isArray(c.modules)) return { outline:true, modules:c.modules.map(m => ({ id:m.id, num:m.num, code:m.code, title:m.title, desc:m.desc,
+      items:(m.items || []).map(i => { const o = { id:i.id, type:i.type }; if (i.exam && i.exam.q) o.exam = { q:{ en:i.exam.q.en || [] } }; return o; }) })) };
+    if (c.modules && typeof c.modules === 'object') { const out = {}; Object.keys(c.modules).forEach(k => { const m = c.modules[k] || {}; out[k] = { id:m.id, title:m.title || m.t, quiz:Array.isArray(m.quiz) ? m.quiz : undefined }; }); return { outline:true, modules:out }; }
+    return null;
+  }
+  window.LearnOutline = { make:makeOutline };
+  async function fileStamp(bucket, course, name){
+    try { const l = await bucket.list(course, { search:name }); const fl = (l.data || []).find(x => x.name === name); return fl ? (fl.updated_at || (fl.metadata || {}).lastModified || '') : ''; } catch(e) { return ''; }
+  }
+  async function cached(bucket, course, name){
+    const stamp = await fileStamp(bucket, course, name);
+    if (!stamp) return null;
+    const key = '/_course-cache/' + course + '/' + name + '/' + encodeURIComponent(stamp);
+    let cache = null; try { cache = await caches.open('course-content-v1'); } catch(e) {}
+    if (cache) { try { const hit = await cache.match(key); if (hit) return await hit.json(); } catch(e) {} }
+    const x = await bucket.download(course + '/' + name);
+    if (x.error || !x.data) return null;
+    const text = await x.data.text(), json = JSON.parse(text);
+    if (cache) { try { (await cache.keys()).filter(r => r.url.includes('/_course-cache/' + course + '/' + name + '/')).forEach(r => cache.delete(r)); await cache.put(key, new Response(text, { headers:{ 'Content-Type':'application/json' } })); } catch(e) {} }
+    return json;
+  }
   async function content(course){
     if (mem[course]) return mem[course];
     const bucket = db().storage.from('course-content');
-    let stamp = '';
-    try { const l = await bucket.list(course, { search:'content.json' }); const fl = (l.data || []).find(x => x.name === 'content.json'); stamp = fl ? (fl.updated_at || (fl.metadata || {}).lastModified || '') : ''; } catch(e) {}
-    const key = '/_course-cache/' + course + '/' + encodeURIComponent(stamp || 'x');
-    let cache = null; try { cache = await caches.open('course-content-v1'); } catch(e) {}
-    if (cache && stamp) { try { const hit = await cache.match(key); if (hit) return (mem[course] = await hit.json()); } catch(e) {} }
-    const x = await bucket.download(course + '/content.json');
-    if (x.error || !x.data) throw x.error || new Error('no content');
-    const text = await x.data.text(), json = JSON.parse(text);
-    if (cache && stamp) { try { (await cache.keys()).filter(r => r.url.includes('/_course-cache/' + course + '/')).forEach(r => cache.delete(r)); await cache.put(key, new Response(text, { headers:{ 'Content-Type':'application/json' } })); } catch(e) {} }
-    return (mem[course] = json);
+    // an outline older than the content (content published some other way) is ignored and written again
+    const [os, cs] = await Promise.all([fileStamp(bucket, course, 'outline.json'), fileStamp(bucket, course, 'content.json')]);
+    const small = os && (!cs || os >= cs) ? await cached(bucket, course, 'outline.json').catch(() => null) : null;
+    if (small) return (mem[course] = small);
+    const full = await cached(bucket, course, 'content.json');
+    if (!full) throw new Error('no content');
+    const o = makeOutline(full);
+    if (o && isOwner()) bucket.upload(course + '/outline.json', new Blob([JSON.stringify(o)], { type:'application/json' }), { upsert:true, contentType:'application/json' }).catch(() => {});
+    return (mem[course] = o || full);
   }
   async function canOpen(course){
     if (isOwner()) return true;
@@ -58,11 +83,15 @@
     let mods = [], groups = null;
     try {
       if (id === 'acq') {
-        const s = (await safe(db().rpc('course_state', { p_content:false }))).data || {};
-        const quiz = s.quizzes || {};
-        mods = (s.modules || []).map(m => { const done = (s.done || {})[m.id], n = Array.isArray(done) ? done.length : done && typeof done === 'object' ? Object.keys(done).length : 0;
-          const passed = Object.keys(quiz).filter(k => k.startsWith(m.id + '/') && quiz[k].passed).length;
-          return { id:m.id, n:m.number, title:m.title, desc:m.description, locked:!m.open, done:n || passed ? (passed ? passed + ' quiz' + (passed > 1 ? 'zes' : '') + ' passed' : n + ' done') : '', complete:false, href:'/course/#/m/' + m.id }; });
+        const [st, cn] = await Promise.all([safe(db().rpc('course_state', { p_content:false })), safe(db().rpc('portal_course_item_counts'))]);
+        const s = st.data || {}, quiz = s.quizzes || {}, counts = cn.data || {};
+        // done is one key per finished step, "m3/3.2" or "m3/3.2.s4" (a section inside lesson 3.2): count lessons touched
+        const doneKeys = Object.keys(s.done || {});
+        mods = (s.modules || []).map(m => {
+          const lessons = new Set(doneKeys.filter(k => k.startsWith(m.id + '/')).map(k => k.slice(m.id.length + 1).replace(/\.s\d+$/, ''))).size;
+          const total = +counts[m.id] || 0, passed = Object.keys(quiz).filter(k => k.startsWith(m.id + '/') && quiz[k].passed).length;
+          const done = lessons ? (total ? Math.min(lessons, total) + ' of ' + total + ' lessons' : plural(lessons, 'lesson')) + (passed ? ' · ' + passed + ' quiz' + (passed > 1 ? 'zes' : '') + ' passed' : '') : passed ? passed + ' quiz' + (passed > 1 ? 'zes' : '') + ' passed' : '';
+          return { id:m.id, n:m.number, title:m.title, desc:m.description, locked:!m.open, done, complete:!!total && lessons >= total, href:'/course/#/m/' + m.id }; });
       } else if (id === 'mkt') {
         await loadScript('/app/course/marketing/course.js?v=20');
         const C = window.COURSE || {}, p = (await progress('mkt')).m || {};

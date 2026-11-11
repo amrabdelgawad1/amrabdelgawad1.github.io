@@ -376,6 +376,7 @@
         const old = await readJson(c.id + '/content.json');
         if (old) await writeJson('_src/backups/' + c.id + '/content-' + stamp + '.json', old);
         const x = await writeJson(c.id + '/content.json', st.data);
+        if (!x.error && window.LearnOutline) { const o = window.LearnOutline.make(st.data); if (o) await writeJson(c.id + '/outline.json', o); }   // small file for the course home and Daily review
         if (x.error) return say('bdMsg', 'Not published: ' + (x.error.message || 'try again.'));
         await bucket().remove([draftPath(c)]);
       }
