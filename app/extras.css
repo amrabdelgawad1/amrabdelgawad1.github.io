@@ -216,3 +216,41 @@ html[dir=rtl] #pView .px-slot{ padding:6px 8px 6px 22px; }
 #pView .wk-bf.wk-bcheck input{ width:20px; height:20px; accent-color:var(--p-dark); }
 #pView .wk-bf textarea, #pView .wk-bf input{ width:100%; }
 #pView .wk-bsave{ position:sticky; bottom:0; padding:12px 0; background:var(--p-card); border-top:1px solid var(--p-line); margin-top:12px; }
+
+/* ===== Round 12: Today, Start here, search, scorecards, person file (team-plus.js) ===== */
+#pView .tp-home{ display:grid; gap:18px; margin-bottom:18px; }
+#pView .tp-row{ display:flex; align-items:center; gap:12px; }
+#pView .tp-row-t{ flex:1; min-width:0; display:grid; gap:2px; }
+#pView .tp-row-t b{ font-weight:600; color:var(--p-ink); overflow-wrap:break-word; }
+#pView .tp-row-t small{ color:var(--p-muted); font-size:13px; }
+#pView .tp-tour{ display:grid; gap:4px; border-color:var(--p-accent-soft, var(--p-line)); }
+#pView .tp-tour-bar{ height:6px; border-radius:99px; background:var(--p-soft); overflow:hidden; margin:2px 0 8px; }
+#pView .tp-tour-bar i{ display:block; height:100%; background:var(--p-accent); border-radius:99px; }
+#pView .tp-step{ display:flex; gap:12px; align-items:center; padding:10px 4px; border-top:1px solid var(--p-line); color:inherit; text-decoration:none; }
+#pView .tp-step:first-of-type{ border-top:0; }
+#pView .tp-num{ flex:none; display:grid; place-items:center; width:30px; height:30px; border-radius:50%; border:1.5px solid var(--p-line2); font:700 13px/1 var(--p-body); color:var(--p-ink2); }
+#pView .tp-step.is-done .tp-num{ background:var(--p-ok); border-color:var(--p-ok); color:#fff; }
+#pView .tp-step.is-done b{ color:var(--p-muted); text-decoration:line-through; }
+#pView .tp-hide{ justify-self:start; margin-top:8px; min-height:38px; }
+#pView .tp-q{ margin-bottom:16px; min-height:52px; font-size:17px; }
+#pView .tp-res{ padding:6px 18px; }
+#pView .tp-res .p-row{ border-top:1px solid var(--p-line); }
+#pView .tp-res .p-row:first-child{ border-top:0; }
+#pView .tp-score{ margin-top:14px; padding-top:14px; border-top:1px dashed var(--p-line2); display:grid; gap:10px; }
+#pView .tp-score-g{ display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; }
+#pView .tp-score textarea{ width:100%; }
+#pView .tp-note{ margin:0 0 12px; color:var(--p-ink2); font-size:14px; }
+#pView .tp-links{ margin-bottom:16px; }
+#pView .tp-bad{ color:var(--p-no); }
+#pView .tp-oo{ padding:10px 0; border-top:1px solid var(--p-line); }
+#pView .tp-oo summary{ cursor:pointer; font-weight:600; }
+#pView .tp-oo p{ margin:8px 0 0; white-space:pre-wrap; }
+#pView .tp-doc{ display:flex; gap:10px; align-items:center; padding:10px 0; border-top:1px solid var(--p-line); }
+#pView .tp-doc .p-btn{ min-height:36px; padding:0 12px; font-size:13px; }
+.drawer .tp-menu-q{ margin:6px 0 10px; }
+.drawer .tp-menu-q input{ width:100%; box-sizing:border-box; min-height:40px; padding:0 12px; border-radius:10px; border:1px solid var(--p-dark-line, rgba(255,255,255,.15)); background:rgba(255,255,255,.06); color:inherit; font:inherit; font-size:14px; }
+.drawer .tp-menu-q input::placeholder{ color:var(--p-on-dark3, rgba(255,255,255,.55)); }
+.pp-top .pp-file{ margin-left:auto; }
+/* wide tables scroll inside their card instead of stretching the page on phones */
+#pView .p-wrap.px > *, #pView .px-body > *, #pView .wk-two > div > *{ min-width:0; }
+#pView .px-body .p-card{ max-width:100%; box-sizing:border-box; }
