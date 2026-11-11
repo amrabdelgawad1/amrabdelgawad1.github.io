@@ -115,6 +115,11 @@
     return ok ? `<a class="lh-course" href="${c.href}">${inner}</a>` : `<div class="lh-course is-locked" aria-disabled="true">${inner}</div>`;
   }
 
+  let review = null;
+  function loadReview(){
+    if (!db || window.HUB_TEST) return;
+    db.rpc('portal_review_today').then(r => { if (r && !r.error && r.data) { review = (r.data.cards || []).length; draw(); } }, () => {});
+  }
   function draw(){
     const mine = COURSES.filter(canOpen).length;
     $('lhMain').innerHTML = `<div class="lh-wrap">
@@ -124,11 +129,17 @@
         <p>${COURSES.length} courses · ${owner && !asLearner ? 'you can open all of them' : mine ? (mine === COURSES.length ? 'all open for you' : mine + ' open for you') : 'none open for you yet'}</p>
       </section>
       <section class="lh-grid" aria-label="Courses">${COURSES.map(card).join('')}</section>
+      ${mine ? `<section aria-label="Daily review"><div class="lh-tools">
+          <a class="lh-tool" href="/app/#daily"><span class="lh-ic"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="14" rx="2"/><path d="M8 3h11a2 2 0 0 1 2 2v12"/></svg></span>
+            <span><b>Daily review</b><small>${review == null ? 'Questions you missed come back until they stick' : review ? review + ' card' + (review === 1 ? '' : 's') + ' today · about ' + Math.max(1, Math.round(review / 2)) + ' min' : 'Nothing due today'}</small></span>${review ? `<span class="lh-count">${review} today</span>` : ''}</a>
+        </div></section>` : ''}
       ${owner && !asLearner ? `
       <section aria-label="For Amr"><h2 class="lh-h2">For you</h2>
         <div class="lh-tools">
           <a class="lh-tool" href="/app/#review"><span class="lh-ic"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
             <span><b>Review center</b><small>Recordings, files and written drills from every course</small></span>${waiting ? `<span class="lh-count">${waiting} waiting</span>` : ''}</a>
+          <a class="lh-tool" href="/app/#builder"><span class="lh-ic"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span>
+            <span><b>Course builder</b><small>Edit any course without code, publish when ready</small></span></a>
           <a class="lh-tool" href="/app/#people"><span class="lh-ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5M17 11h6M20 8v6"/></svg></span>
             <span><b>Invite and access</b><small>Choose who opens which course</small></span></a>
         </div></section>` : ''}
@@ -166,6 +177,7 @@
       hide:[document.querySelector('.lh-back')],
       test:window.HUB_TEST ? { role:owner ? 'owner' : 'agent', keys:[].concat(open.acq ? ['course'] : [], open.mkt ? ['learn', 'mkt'] : [], open.psy ? ['learn', 'psy'] : []) } : null });
     draw();                                         // show the cards at once, then fill in progress
+    loadReview();
     await Promise.all([loadProgress(), owner ? loadOwner() : null]).catch(() => {});
     draw();
   }

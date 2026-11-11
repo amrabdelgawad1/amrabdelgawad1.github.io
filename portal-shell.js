@@ -35,6 +35,9 @@
     invite:svg('<circle cx="10" cy="8.5" r="3.5"/><path d="M3.5 20c1-3.6 3.6-5.5 6.5-5.5 1.6 0 3 .5 4.2 1.4M18 9v6M15 12h6"/>'),
     cash:svg('<rect x="3" y="6.5" width="18" height="11" rx="2"/><circle cx="12" cy="12" r="2.5"/>'),
     back:svg('<path d="M15 5l-7 7 7 7"/>'),
+    check:svg('<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 12l2.5 2.5 4.5-5"/>'),
+    chat:svg('<path d="M4 5h16v11H9l-5 4z"/>'),
+    cards:svg('<rect x="3" y="6" width="13" height="14" rx="2"/><path d="M8 3h11a2 2 0 0 1 2 2v12"/>'),
     bell:svg('<path d="M6 9.5a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4s2-1.5 2-6.5z"/><path d="M10 19.5a2 2 0 0 0 4 0"/>')
   };
   const COURSE_KEYS = ['course', 'mkt', 'psy'];
@@ -43,11 +46,17 @@
   const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
   const APPS = [
     { id:'hours', group:'Work', name:'My hours', sub:'Clock in, shifts and requests', href:'/app/#track', icon:'clock', can:me => me.role !== 'owner' },
+    { id:'tasks', group:'Work', name:'Tasks', sub:'What needs doing, with due dates', href:'/app/#tasks', icon:'check', can:() => true },
+    { id:'messages', group:'Work', name:'Messages', sub:me => me.role === 'owner' ? 'Talk to the team' : 'Talk to Amr and the team', href:'/app/#messages', icon:'chat', can:() => true },
+    { id:'handbook', group:'Work', name:'Handbook', sub:'How we work', href:'/app/#handbook', icon:'book', can:() => true },
     { id:'deals', group:'Work', name:'Deal CRM', sub:'Leads, deals and follow-ups', href:'/app/deals/', icon:'house', needs:['deals'] },
     { id:'calc', group:'Work', name:'Land calculator', sub:'Land deals, in its own look', href:'/land-calculator/', icon:'calc', needs:['deals'] },
     { id:'calc-house', group:'Work', name:'House calculator', sub:'House deals, in its own look', href:'/house-calculator/', icon:'calc', needs:['deals'] },
     { id:'learn', group:'Learning', name:'Learning Hub', sub:me => me.role === 'owner' ? 'All 3 courses' : 'Your courses and progress', href:'/app/learn/', icon:'book',
       can:me => me.role === 'owner' || me.keys.includes('learn') || COURSE_KEYS.some(k => me.keys.includes(k)) },
+    { id:'daily', group:'Learning', name:'Daily review', sub:'Questions you missed, a few a day', href:'/app/#daily', icon:'cards',
+      can:me => me.role === 'owner' || me.keys.includes('learn') || COURSE_KEYS.some(k => me.keys.includes(k)) },
+    { id:'builder', group:'Learning', name:'Course builder', sub:'Edit any course, publish when ready', href:'/app/#builder', icon:'book', can:me => me.role === 'owner' },
     { id:'review', group:'Learning', name:'Review center', sub:'Recordings and drills', href:'/app/#review', icon:'mic', can:me => me.role === 'owner',
       count:c => c.review ? { text:c.review + ' waiting' } : null },
     { id:'team', group:'Team', name:'Team and shifts', sub:'Live now, hours, requests', icon:'person', needs:['live', 'requests', 'team'], any:true,
@@ -122,10 +131,12 @@
 
   // ---------- drawing ----------
   function appsHtml(){
-    const groups = GROUPS.map(g => {
-      const items = APPS.filter(a => a.group === g && listed(a));
+    // the team's Apps menu is one plain list (round 11); Amr keeps the groups
+    const flat = me.role !== 'owner';
+    const groups = (flat ? [null] : GROUPS).map(g => {
+      const items = APPS.filter(a => (flat || a.group === g) && listed(a));
       if (!items.length) return '';
-      return '<section class="p-apps-group" aria-label="' + esc(g) + '"><p class="p-apps-h" role="heading" aria-level="3">' + esc(g) + '</p>' + items.map(a => {
+      return '<section class="p-apps-group' + (flat ? ' is-flat' : '') + '" aria-label="' + esc(g || 'Apps') + '">' + (g ? '<p class="p-apps-h" role="heading" aria-level="3">' + esc(g) + '</p>' : '') + items.map(a => {
         const c = a.count ? a.count(counts, me) : null, code = waitsForCode(a);
         const right = code ? '<span class="p-pill is-plain">Needs your code</span>' : c ? '<span class="p-pill">' + esc(c.text) + '</span>' : a.note ? '<span class="p-app-note">' + esc(a.note) + '</span>' : '';
         return '<a class="p-app" href="' + esc(val(a.href, me)) + '"' + (a.id === page ? ' aria-current="page"' : '') + '>' +

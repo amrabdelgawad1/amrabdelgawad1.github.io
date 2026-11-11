@@ -91,7 +91,7 @@
     fill(nums){
       if (!counts || !shift) return nums;
       const n = Object.assign({}, nums || {});
-      [['dials', 'dial'], ['conversations', 'conversation'], ['appointments', 'appointment']].forEach(([to, k]) => {
+      [['dials', 'dial'], ['conversations', 'conversation'], ['offers', 'offer'], ['appointments', 'appointment']].forEach(([to, k]) => {
         if ((n[to] == null || n[to] === '') && counts[k]) n[to] = counts[k];
       });
       return n;
@@ -105,5 +105,14 @@
 (function(){
   const d = document.getElementById('tCallsMore'); if (!d) return;
   try { d.open = localStorage.getItem('calls-open') === '1'; } catch(e) {}
+  // Round 11: Amr can set a person to count as they go (People > their page); for them it starts open
+  let tries = 0;
+  (function check(){
+    const T = window.TalentsApp;
+    if (!T || !T.db || !T.user || T.role !== 'member') { if (++tries < 40) setTimeout(check, 750); return; }
+    T.db.from('members').select('tap_counter').eq('user_id', T.user.id).maybeSingle().then(r => {
+      if (r && r.data && r.data.tap_counter) { let mine = null; try { mine = localStorage.getItem('calls-open'); } catch(e) {} if (mine !== '0') d.open = true; }
+    }, () => {});
+  })();
   d.addEventListener('toggle', () => { try { localStorage.setItem('calls-open', d.open ? '1' : '0'); } catch(e) {} });
 })();

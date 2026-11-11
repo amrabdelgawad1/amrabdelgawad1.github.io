@@ -805,3 +805,6 @@ body.has-ptabs .p-viewmain > .p-main > .p-wrap:first-child, body.has-ptabs main.
 #tCalls .calls-more > summary{ min-height:46px; display:flex; align-items:center; cursor:pointer; font:600 15px var(--p-body); color:var(--p-ink); }
 #tCalls .calls-more[open]{ padding-bottom:14px; }
 #tCalls .calls-more .calls-head{ display:flex; gap:10px; justify-content:space-between; align-items:center; margin-bottom:10px; }
+/* round 11: the team's menu is one flat list */
+html body #drawer.is-flat .sec{ display:none !important; }
+html body #drawer.is-flat .mi{ margin-top:0; }
