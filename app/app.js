@@ -416,12 +416,13 @@
   const BRIEF_KEY = 'talents-brief', NUMS_KEY = 'talents-brief-nums';
   const callsRequired = () => role === 'member' && access.includes('deals');
   const numBoxes = (draft, req) => [
-    { key:'dials', label:'Dials', value: draft.dials, required:req }, { key:'conversations', label:'Conversations', value: draft.conversations, required:req }, { key:'appointments', label:'Appointments', value: draft.appointments, required:req }
+    { key:'dials', label:'Dials', value: draft.dials, required:req }, { key:'conversations', label:'Conversations', value: draft.conversations, required:req }, { key:'offers', label:'Offers', value: draft.offers, required:req },
+    { key:'appointments', label:'Appointments', value: draft.appointments, required:req }
   ];
   const keepNums = n => { try { localStorage.setItem(NUMS_KEY, JSON.stringify(n || {})); } catch(e){} };
   const draftNums = () => { try { return JSON.parse(localStorage.getItem(NUMS_KEY) || '{}') || {}; } catch(e){ return {}; } };
   const forgetBrief = () => { try { localStorage.removeItem(BRIEF_KEY); localStorage.removeItem(NUMS_KEY); } catch(e){} };
-  const numArgs = n => ({ p_dials: n ? n.dials : null, p_conversations: n ? n.conversations : null, p_appointments: n ? n.appointments : null });
+  const numArgs = n => ({ p_dials: n ? n.dials : null, p_conversations: n ? n.conversations : null, p_appointments: n ? n.appointments : null, p_offers: n && n.offers != null && n.offers !== '' ? n.offers : null });
   async function askBrief(work, brk, end){
     let draft = ''; try { draft = localStorage.getItem(BRIEF_KEY) || ''; } catch(e){}
     const ans = await ask({
@@ -429,7 +430,7 @@
       msg:hm(work) + ' worked · ' + hm(brk) + ' break · ' + hhmm(new Date(live.started_at)) + '–' + hhmm(end),
       input:{ multiline:true, label:'How did today go?', value:draft, placeholder:'Anything Amr should know: good calls, problems, follow-ups',
         numbers: numBoxes(window.TalentsCalls ? window.TalentsCalls.fill(draftNums()) : draftNums(), callsRequired()),
-        numbersError:'Fill in your dials, conversations and appointments for today. Type 0 if there were none.',
+        numbersError:'Fill in your dials, conversations, offers and appointments for today. Type 0 if there were none.',
         minLength:10, error:'Write a sentence or two about your day first.',
         onCancel: (v, n) => { try { localStorage.setItem(BRIEF_KEY, v); } catch(e){} keepNums(n); } },
       ok:'Send and end shift', cancel:'Keep working'

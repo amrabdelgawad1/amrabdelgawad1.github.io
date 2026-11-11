@@ -98,8 +98,9 @@
   const GROUPS = [
     { lead:'#team', label:'Team and shifts', tabs:[['#team','Team hours'], ['#mytime','My time'], ['#requests','Requests'], ['#schedule','Schedule and time off'], ['#funnel','Calls to deals'], ['#profit','Profit per client'], ['#clientreport','Client report'], ['#lists','Lead lists']] },
     { lead:'#people', label:'People and access', tabs:[['#people','People and access'], ['#applications','Applicants'], ['#onboarding','Onboarding'], ['#offboarding','Offboarding'], ['#referrals','Refer a friend']] },
+    { lead:'#tasks', label:'Work', owner:true, tabs:[['#tasks','Tasks'], ['#messages','Messages'], ['#handbook','Handbook']] },
+    { lead:'#review', label:'Reviews and scoring', tabs:[['#review','To score'], ['#scoring','Call scoring'], ['#progress','Learner progress'], ['#cotw','Call of the week'], ['#builder','Course builder']] },
     { lead:'#announcements', label:'Team updates', tabs:[['#announcements','Announcements'], ['#coaching','Coaching']] },
-    { lead:'#review', label:'Reviews and scoring', tabs:[['#review','To score'], ['#scoring','Call scoring'], ['#progress','Learner progress'], ['#cotw','Call of the week']] },
     { lead:'#overview', label:'Cash', tabs:[['#overview','Overview'], ['#income','Income'], ['#expense','Expenses'], ['#forecast','Forecast']] },
     { lead:'#visits', label:'Site and logs', tabs:[['#visits','Visits'], ['#emails','Team emails'], ['#whatsnew','What’s new'], ['#logs','Logs']] }
   ];
@@ -108,8 +109,11 @@
   const can = h => { const a = link(h), r = row(a); return !!a && !a.hidden && !(r && r.hidden) && !(r && r.closest('[hidden]') && r.closest('[hidden]') !== drawer); };
   // a page can sit in two places only once: if the lead is hidden for this person, the first page they can see leads
   function tidy(){
+    const owner = (window.TalentsApp || {}).role === 'owner';
+    // the team's menu is one plain list: no headings, nothing folded into groups (round 11)
+    drawer.classList.toggle('is-flat', !owner && (window.TalentsApp || {}).role === 'member');
     GROUPS.forEach(g => {
-      const seen = g.tabs.filter(t => can(t[0]));
+      const seen = owner || !g.owner ? g.tabs.filter(t => can(t[0])) : [];
       const leadH = seen.length ? (can(g.lead) ? g.lead : seen[0][0]) : null;
       g.tabs.forEach(t => { const r = row(link(t[0])); if (r) r.classList.toggle('nav-grouped', !!leadH && t[0] !== leadH); });
       const la = leadH && link(leadH);
