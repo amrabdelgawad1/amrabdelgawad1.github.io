@@ -134,7 +134,7 @@
     const acq = (d.cards || []).map(c => ({ id:c.id, srv:true, src:'Acquisitions ' + String(c.module || '').replace(/^m/, 'module '), prompt:c.prompt, options:c.options || [], multi:c.type === 'multiple' || c.type === 'multi', missed:c.missed }));
     const cards = acq.concat(loc.cards);
     let i = 0, right = 0;
-    const tiles = () => '<div class="px-tiles"><div class="px-tile"><b>' + (d.streak || 0) + (d.streak === 1 ? ' day' : ' days') + '</b>streak</div><div class="px-tile"><b>' + cards.length + '</b>cards today</div><div class="px-tile"><b>' + ((+d.total || 0)) + '</b>cards in total</div></div>';
+    const tiles = () => '<div class="px-tiles"><div class="px-tile"><b>' + (d.streak || 0) + (d.streak === 1 ? ' day' : ' days') + '</b>streak</div><div class="px-tile"><b>' + cards.length + '</b>cards today</div><div class="px-tile"><b>' + ((+d.total || 0) + (loc.total || 0)) + '</b>cards in total</div></div>';
     function show(){
       if (!cards.length) { body.innerHTML = tiles() + card('All done', '', empty(((+d.total || 0) + loc.total ? 'Nothing due today. ' : 'No cards yet. ') + 'Questions you miss in any course quiz are added here on their own.') + '<a class="p-btn is-ghost" href="/app/learn/">Back to the Learning Hub</a>'); return; }
       if (i >= cards.length) { body.innerHTML = tiles() + card('Done for today', right + ' of ' + cards.length + ' right', '<p class="wk-big">Nice work. The ones you missed come back tomorrow.</p><a class="p-btn" href="/app/learn/">Back to the Learning Hub</a>'); return; }
