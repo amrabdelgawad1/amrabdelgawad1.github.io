@@ -327,6 +327,32 @@
     .pnums small{ white-space:nowrap; }
   }
 
+
+  /* Round 10: the shift history turns into cards whenever its box is narrow (small or half-screen window, the app's
+     sidebar open, a phone), not only below 640px, so name, date, worked, break, company, amount and status always show. */
+  .team .history{ container:hist / inline-size; }
+  @container hist (max-width:980px){
+    .team table.log thead{ display:none; }
+    .team table.log, .team table.log tbody{ display:block; }
+    .team table.log tbody tr{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:8px 10px; padding:14px 0; border-bottom:1px solid var(--border); align-items:center; }
+    .team table.log tbody tr:last-child{ border-bottom:none; }
+    .team table.log td{ padding:0; border:0; min-width:0; }
+    .team td.c-sel{ grid-column:1; grid-row:1; }
+    .team td.c-name{ grid-column:2; grid-row:1; }
+    .team td.c-del{ grid-column:3; grid-row:1; justify-self:end; }
+    .team td.c-note{ grid-column:2 / -1; grid-row:6; }
+    .team td.c-date{ grid-column:2 / -1; grid-row:2; font-size:13.5px; }
+    .team td.c-work{ grid-column:2; grid-row:3; font-size:14px; }
+    .team td.c-amt{ grid-column:3; grid-row:3; justify-self:end; font-size:14px; }
+    .team td.c-co{ grid-column:2; grid-row:5; }
+    .team td.c-co .co{ width:100%; max-width:none; }
+    .team td.c-status{ grid-column:3; grid-row:5; justify-self:end; }
+    .team td.c-work::before{ content:"Worked "; color:var(--muted); font-family:var(--font-body); font-size:12.5px; }
+    .team td.c-brk{ grid-column:2; grid-row:4; font-size:14px; }
+    .team td.c-brk::before{ content:"Break "; color:var(--muted); font-family:var(--font-body); font-size:12.5px; }
+    .team table.log td.empty{ grid-column:1 / -1; }
+  }
+
   /* ===== Finance tabs ===== */
   .btn[disabled]{ opacity:.45; pointer-events:none; }
   .notice.soft{ border-color:rgba(245,158,11,.35); background:rgba(245,158,11,.06); color:#f5d08a; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }

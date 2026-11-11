@@ -87,3 +87,67 @@
   addEventListener('hashchange', refresh);
   refresh();
 })();
+
+// Round 10: related pages are grouped. The menu shows one entry per group, and the pages of the group become tabs at
+// the top of each of them. Nothing is removed: every page keeps its address (#requests, #schedule...), app.js still
+// decides who can see what, and a tab only shows when its page's menu link is there for this person.
+(function(){
+  'use strict';
+  const drawer = document.getElementById('drawer');
+  if (!drawer) return;
+  const GROUPS = [
+    { lead:'#team', label:'Team and shifts', tabs:[['#team','Team hours'], ['#mytime','My time'], ['#requests','Requests'], ['#schedule','Schedule and time off'], ['#funnel','Calls to deals'], ['#profit','Profit per client'], ['#clientreport','Client report'], ['#lists','Lead lists']] },
+    { lead:'#people', label:'People and access', tabs:[['#people','People and access'], ['#applications','Applicants'], ['#onboarding','Onboarding'], ['#offboarding','Offboarding'], ['#referrals','Refer a friend']] },
+    { lead:'#announcements', label:'Team updates', tabs:[['#announcements','Announcements'], ['#coaching','Coaching']] },
+    { lead:'#review', label:'Reviews and scoring', tabs:[['#review','To score'], ['#scoring','Call scoring'], ['#progress','Learner progress'], ['#cotw','Call of the week']] },
+    { lead:'#overview', label:'Cash', tabs:[['#overview','Overview'], ['#income','Income'], ['#expense','Expenses'], ['#forecast','Forecast']] },
+    { lead:'#visits', label:'Site and logs', tabs:[['#visits','Visits'], ['#emails','Team emails'], ['#whatsnew','What’s new'], ['#logs','Logs']] }
+  ];
+  const link = h => drawer.querySelector('.mi[href="' + h + '"]');
+  const row = a => a && (a.closest('.mi-row') || a);
+  const can = h => { const a = link(h), r = row(a); return !!a && !a.hidden && !(r && r.hidden) && !(r && r.closest('[hidden]') && r.closest('[hidden]') !== drawer); };
+  // a page can sit in two places only once: if the lead is hidden for this person, the first page they can see leads
+  function tidy(){
+    GROUPS.forEach(g => {
+      const seen = g.tabs.filter(t => can(t[0]));
+      const leadH = seen.length ? (can(g.lead) ? g.lead : seen[0][0]) : null;
+      g.tabs.forEach(t => { const r = row(link(t[0])); if (r) r.classList.toggle('nav-grouped', !!leadH && t[0] !== leadH); });
+      const la = leadH && link(leadH);
+      if (la) {
+        // the link's own words are its last text node that isn't inside a count bubble
+        const tn = [...la.childNodes].reverse().find(n => n.nodeType === 3 && n.textContent.trim());
+        if (tn) { if (!la.dataset.orig) la.dataset.orig = tn.textContent; tn.textContent = seen.length > 1 ? g.label : la.dataset.orig; }
+      }
+      g.on = leadH; g.seen = seen;
+    });
+    // a menu heading with nothing left under it (Numbers, now inside Team and shifts) hides
+    drawer.querySelectorAll('.sec[data-nav]').forEach(h => {
+      let n = h.nextElementSibling, any = false;
+      while (n && !n.matches('.sec, .bottom')) { if (!n.hidden && !n.classList.contains('nav-grouped') && n.matches('.mi, .mi-row')) any = true; n = n.nextElementSibling; }
+      h.classList.toggle('nav-grouped', !any);
+    });
+  }
+  // the tab row, shared by every page; it sits above whichever page is open
+  const bar = document.createElement('nav');
+  bar.className = 'p-ptabs'; bar.setAttribute('aria-label', 'Pages in this section'); bar.hidden = true;
+  const anchor = document.getElementById('pView');
+  if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(bar, anchor);
+  function draw(){
+    tidy();
+    const here = (location.hash || '').split('/')[0];
+    const g = GROUPS.find(x => x.seen && x.seen.length > 1 && x.seen.some(t => t[0] === here));
+    document.body.classList.toggle('has-ptabs', !!g);
+    bar.hidden = !g;
+    if (!g) return;
+    bar.innerHTML = '<span class="p-ptabs-t">' + g.label + '</span><div class="p-ptabs-row">' + g.seen.map(t => '<a href="' + t[0] + '"' + (t[0] === here ? ' aria-current="page"' : '') + '>' + t[1] + '</a>').join('') + '</div>';
+    const cur = bar.querySelector('[aria-current]'), rowEl = bar.querySelector('.p-ptabs-row'); if (cur && rowEl) rowEl.scrollLeft = Math.max(0, cur.offsetLeft - 24);
+    // the group's menu entry stays lit on all of its pages
+    drawer.querySelectorAll('.mi.grp-on').forEach(a => a.classList.remove('grp-on'));
+    const la = g.on && link(g.on); if (la && g.on !== here) la.classList.add('grp-on');
+  }
+  let t = 0;
+  const later = () => { clearTimeout(t); t = setTimeout(draw, 40); };
+  new MutationObserver(later).observe(drawer, { attributes:true, attributeFilter:['hidden'], subtree:true });
+  addEventListener('hashchange', later);
+  later();
+})();

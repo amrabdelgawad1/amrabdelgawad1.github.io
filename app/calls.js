@@ -100,3 +100,10 @@
     reset(){ loadedFor = null; }
   };
 })();
+
+// Round 10: the counter sits folded under "Count as you go (optional)"; whoever opens it keeps it open on this device
+(function(){
+  const d = document.getElementById('tCallsMore'); if (!d) return;
+  try { d.open = localStorage.getItem('calls-open') === '1'; } catch(e) {}
+  d.addEventListener('toggle', () => { try { localStorage.setItem('calls-open', d.open ? '1' : '0'); } catch(e) {} });
+})();
