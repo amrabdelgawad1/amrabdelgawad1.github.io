@@ -96,12 +96,13 @@
   const drawer = document.getElementById('drawer');
   if (!drawer) return;
   const GROUPS = [
-    { lead:'#team', label:'Team and shifts', tabs:[['#team','Team hours'], ['#mytime','My time'], ['#requests','Requests'], ['#schedule','Schedule and time off'], ['#funnel','Calls to deals'], ['#profit','Profit per client'], ['#clientreport','Client report'], ['#lists','Lead lists']] },
+    { lead:'#team', label:'Team and shifts', tabs:[['#team','Team hours'], ['#mytime','My time'], ['#requests','Requests'], ['#schedule','Schedule and time off']] },
+    { lead:'#weekly', label:'Numbers', tabs:[['#weekly','Weekly summary'], ['#leaderboard','Leaderboard'], ['#funnel','Calls to deals'], ['#scripttest','Script testing'], ['#lists','Lead lists'], ['#profit','Profit per client'], ['#clientreport','Client report']] },
     { lead:'#people', label:'People and access', tabs:[['#people','People and access'], ['#person','Person files'], ['#applications','Applicants'], ['#onboarding','Onboarding'], ['#offboarding','Offboarding'], ['#referrals','Refer a friend']] },
     { lead:'#tasks', label:'Work', owner:true, tabs:[['#tasks','Tasks'], ['#messages','Messages'], ['#handbook','Handbook']] },
     { lead:'#review', label:'Reviews and scoring', tabs:[['#review','To score'], ['#scoring','Call scoring'], ['#progress','Learner progress'], ['#cotw','Call of the week'], ['#builder','Course builder']] },
     { lead:'#announcements', label:'Team updates', tabs:[['#announcements','Announcements'], ['#coaching','Coaching']] },
-    { lead:'#overview', label:'Cash', tabs:[['#overview','Overview'], ['#income','Income'], ['#expense','Expenses'], ['#forecast','Forecast']] },
+    { lead:'#overview', label:'Cash', tabs:[['#overview','Overview'], ['#income','Income'], ['#expense','Expenses'], ['#invoices','Invoices'], ['#receipts','Receipts'], ['#forecast','Forecast']] },
     { lead:'#visits', label:'Site and logs', tabs:[['#visits','Visits'], ['#emails','Team emails'], ['#whatsnew','What’s new'], ['#logs','Logs']] }
   ];
   const link = h => drawer.querySelector('.mi[href="' + h + '"]');

@@ -37,6 +37,7 @@
       '<label class="sc-f">Title (optional)<input type="text" id="scTitle" maxlength="120" autocomplete="off" placeholder="' + (S.kind === 'real' ? 'For example: Ross County seller, first call' : 'For example: Inherited land, take 2') + '"></label>' +
       '<div class="sc-rec"><button type="button" class="p-btn" id="scRec">Record here</button><button type="button" class="p-btn is-ghost" id="scPick">Choose a recording</button><input type="file" id="scFile" accept="audio/*" hidden><span id="scTake" aria-live="polite"></span></div>' +
       '<audio id="scPlay" controls hidden></audio>' +
+      '<label class="sc-f">Which deal is this call about? (optional)<select id="scDeal"><option value="">Not about a deal</option></select></label>' +
       '<label class="sc-f">Note for Amr (optional)<textarea id="scNote" maxlength="600" rows="2"></textarea></label>' +
       '<button type="button" class="p-btn" id="scSend">Send for scoring</button><p class="p-empty" id="scMsg" role="status"></p></section>';
   }
@@ -198,7 +199,7 @@
     if (!isCurrent()) return;
     if (up.error) { b.disabled = false; say('Couldn’t upload it. Check your connection and try again.', true); return; }
     const ins = await safe(db.from('hub_uploads').insert({ user_id:T.user.id, course:'calls', title:title.slice(0, 200), kind:'recording', path, file_name:(S.blob.name || 'call.' + extOf(mime)).slice(0, 200), mime,
-      size_bytes:S.blob.size, duration_s:S.secs ? Math.round(S.secs) : null, note:($('scNote').value || '').trim().slice(0, 2000) || null, real_call:S.kind === 'real', consent:S.kind === 'real', scenario_id:sc ? sc.id : null }));
+      size_bytes:S.blob.size, duration_s:S.secs ? Math.round(S.secs) : null, note:($('scNote').value || '').trim().slice(0, 2000) || null, real_call:S.kind === 'real', consent:S.kind === 'real', scenario_id:sc ? sc.id : null, deal_id:($('scDeal') && $('scDeal').value) || null }));
     if (!isCurrent()) return;
     if (ins.error) { await safe(db.storage.from('hub-uploads').remove([path])); b.disabled = false; say('Couldn’t send it. Try again.', true); return; }
     clearTake(); S.scenario = null;
@@ -219,4 +220,11 @@
   }
 
   window.CallScoring = { open, close(){ stopRec(); clearTake(); } };
+  // Round 13: link a recording to one of your deals (the deal list is your own open deals)
+  const fillDeals = () => { const sel = $('scDeal'); if (!sel || sel.dataset.filled || !window.TalentsApp || !window.TalentsApp.db || !window.TalentsApp.user) return; sel.dataset.filled = '1';
+    window.TalentsApp.db.from('deals').select('id,kind,county,state,acreage,stage').eq('owner', window.TalentsApp.user.id).is('closed_on', null).limit(200).then(r => {
+      (r.data || []).forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = [d.kind === 'house' ? 'House' : 'Land', d.acreage ? d.acreage + ' acres' : '', d.county, d.state, d.stage].filter(Boolean).join(', '); sel.appendChild(o); });
+      if (!(r.data || []).length) sel.closest('label').hidden = true;
+    }, () => { sel.closest('label').hidden = true; }); };
+  new MutationObserver(fillDeals).observe(document.body, { childList:true, subtree:true });
 })();

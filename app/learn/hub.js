@@ -112,7 +112,7 @@
         ${ok ? `<span class="btn lh-go">${p && p.done ? 'Continue' : 'Open course'} ${arrowIc}</span>` : lockedFoot(c)}
         ${owner && !asLearner ? `<span class="lh-own">${people[c.id] ? `<b>${people[c.id]}</b> ${people[c.id] === 1 ? 'person has' : 'people have'} access` : 'No one else has access yet'}</span>` : ''}
       </span>`;
-    return ok ? `<a class="lh-course" href="${c.href}">${inner}</a>` : `<div class="lh-course is-locked" aria-disabled="true">${inner}</div>`;
+    return ok ? `<a class="lh-course" href="/app/#coursehome/${c.id}">${inner}</a>` : `<div class="lh-course is-locked" aria-disabled="true">${inner}</div>`;
   }
 
   let review = null;
