@@ -1,8 +1,8 @@
 /* Psychology course: the lesson content styles (cases, tables, playbook, quizzes, scratch pad, pen),
    on top of the Marketing course look in /app/course/course.css. Colours and fonts follow Marketing. */
 :root{
-  --bg:#F7F5F0; --panel:#FFFFFF; --sunk:#F1EEE7; --border:#E4E1D9; --border2:#D3CFC4;
-  --text:#14161B; --light:#3B3F47; --muted:#6B7079; --accent2:#9A3412;
+  --bg:var(--p-paper, #F5F4F0); --panel:var(--p-card, #FFFFFF); --sunk:var(--p-soft, #F2F0EB); --border:var(--p-line, #E4E1D9); --border2:var(--p-line2, #D3CFC4);
+  --text:var(--p-ink, #16140F); --light:var(--p-ink2, #3D3A33); --muted:var(--p-muted, #625D53); --accent2:var(--p-accent-deep, #9A3412);
   --green:#157347; --gold:#B45309; --mag:#C2410C; --on-ink:#FFFFFF;
   --green-t:rgba(21,115,71,.07); --gold-t:rgba(180,83,9,.08); --mag-t:rgba(194,65,12,.06);
   --serif:"Bricolage Grotesque", "Arial Black", system-ui, sans-serif; --sans:"Inter", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
