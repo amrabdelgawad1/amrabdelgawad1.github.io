@@ -305,3 +305,48 @@ html[dir=rtl] #pView .px-slot{ padding:6px 8px 6px 22px; }
 #pView .lp-mod.is-done .lp-num{ background:var(--p-ok); }
 #pView .lp-mod.is-locked{ opacity:.55; pointer-events:none; }
 @media (max-width:560px){ #pView .np-goal{ grid-template-columns:1fr auto; } #pView .np-goal .np-bar{ grid-column:1 / -1; grid-row:2; } }
+
+/* ---------- Round 14: contracts, saved replies, checklists, shift swaps (round5.js) ---------- */
+#pView .r5-seg{ margin:0 0 16px; flex-wrap:wrap; }
+#pView .r5-chips{ display:flex; flex-wrap:wrap; gap:8px; }
+#pView .r5-chip{ display:inline-flex; gap:8px; align-items:center; padding:8px 12px; border:1px solid var(--p-line); border-radius:99px; color:var(--p-ink); text-decoration:none; font:500 14px/1.3 var(--p-body); }
+#pView .r5-chip b{ font:700 13px/1 var(--p-mono); color:var(--p-accent); }
+#pView .r5-chip.is-check{ border-style:dashed; }
+#pView .r5-chip:hover{ background:var(--p-soft); }
+#pView .r5-sheet h2 small{ font:600 13px/1 var(--p-mono); color:var(--p-muted); margin-left:6px; }
+#pView .r5-kv{ display:grid; grid-template-columns:160px minmax(0,1fr); gap:12px; padding:10px 0; border-top:1px solid var(--p-line); }
+#pView .r5-kv b{ font:600 14px/1.4 var(--p-body); color:var(--p-ink2); }
+#pView .r5-kv span, #pView .r5-kv ul{ margin:0; min-width:0; overflow-wrap:anywhere; }
+#pView .r5-kv ul{ padding-left:18px; }
+#pView .r5-kv li{ margin:0 0 4px; }
+#pView .r5-pre{ white-space:pre-wrap; overflow-wrap:anywhere; font:14px/1.6 var(--p-serif, Georgia), Georgia, serif; background:var(--p-soft); border-radius:var(--p-r-sm); padding:16px; margin:0; max-height:70vh; overflow:auto; }
+#pView .r5-body{ width:100%; box-sizing:border-box; font:13px/1.5 var(--p-mono); }
+#pView .r5-temp details summary, #pView .r5-list summary{ cursor:pointer; padding:6px 0; }
+#pView .r5-steps{ margin:0; padding-left:22px; }
+#pView .r5-steps li{ margin:0 0 12px; }
+#pView .r5-steps p{ margin:4px 0 0; color:var(--p-ink2); }
+#pView .r5-edit{ display:grid; gap:10px; margin-top:12px; }
+#pView .r5-edit textarea{ width:100%; box-sizing:border-box; font:13px/1.5 var(--p-mono); }
+#pView .r5-replies{ display:flex; flex-wrap:wrap; gap:8px; align-items:end; padding:8px 0; }
+#pView .r5-replies #r5RepBox{ flex:1 1 100%; min-width:0; }
+#pView .r5-replies input[type=text]{ min-width:0; flex:1 1 180px; }
+#pView .r5-list{ border-top:1px solid var(--p-line); padding:8px 0; }
+#pView .r5-list[open]{ padding-bottom:16px; }
+#pView .r5-list textarea{ width:100%; box-sizing:border-box; }
+#pView .r5-ppl{ display:flex; flex-wrap:wrap; gap:6px 16px; }
+#pView .r5-h3{ font:700 15px/1.3 var(--p-body); margin:18px 0 6px; }
+#pView #r5Swaps select{ max-width:100%; }
+@media (max-width:560px){ #pView .r5-kv{ grid-template-columns:1fr; gap:4px; } }
+#pView .r5-chip.on{ background:var(--p-dark); color:var(--p-on-dark); border-color:var(--p-dark); } #pView .r5-chip.on b{ color:var(--p-accent-hi); }
+/* Round 14: Status page and email (round6.js) */
+#pView .r6-top{ display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; border-left:6px solid var(--p-ok); }
+#pView .r6-top.is-warn{ border-left-color:var(--p-accent); }
+#pView .r6-top.is-bad{ border-left-color:var(--p-no); }
+#pView .r6-top b{ font:700 18px/1.3 var(--p-body); flex:1 1 220px; }
+#pView .r6-top span{ color:var(--p-muted); font-size:14px; }
+#pView .r6-check{ align-items:center; }
+#pView .r6-check > span:nth-child(2){ flex:1; min-width:0; overflow-wrap:anywhere; }
+#pView .r6-dot{ flex:none; width:12px; height:12px; border-radius:50%; background:var(--p-ok); margin-right:10px; }
+#pView .r6-dot.is-warn{ background:var(--p-accent); }
+#pView .r6-dot.is-bad{ background:var(--p-no); }
+#pView .r6-who[hidden]{ display:none; }

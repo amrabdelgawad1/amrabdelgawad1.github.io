@@ -287,7 +287,7 @@
 
   V.builder = { title:'Course builder', sec:'owner', async open(el, ok){
     const body = page(el, 'Learning', 'Course builder', 'Change any course without code: module titles, lessons, questions, answers and explanations. Save a draft as often as you like. Learners only see changes after you press Publish, and the old version is kept.');
-    const st = { course:COURSES[0], list:[], mod:null, modIdx:0, data:null, draft:false, filter:'' };
+    const st = { course:COURSES[0], list:[], mod:null, modIdx:0, data:null, draft:false, filter:'', part:'' };
     const bucket = () => db().storage.from('course-content');
     const draftPath = (c, m) => '_src/drafts/' + c.id + (m ? '/' + m : '') + '.json';
     async function readJson(path){ const x = await bucket().download(path); if (x.error || !x.data) return null; try { return JSON.parse(await x.data.text()); } catch(e) { return null; } }
@@ -327,19 +327,28 @@
         (st.list.length ? '<label class="sc-f px-inline">Module<select id="bdMod">' + st.list.map((m, i) => opt(i, m.label, i === st.modIdx)).join('') + '</select></label>' : '') +
         '<span class="wk-bt-r">' + pill(st.draft ? 'Draft · not live' : 'Same as live', st.draft ? '' : 'plain') + '</span></div>');
     }
+    // One part or lesson at a time: the path up to its first number ("Lesson 3", "Part 2"), named by its own title
+    const groupOf = p => { const i = p.findIndex(x => typeof x === 'number'); return i < 0 ? '' : JSON.stringify(p.slice(0, i + 1)); };
+    function groups(fl){
+      const out = [], seen = {};
+      fl.forEach(x => { const g = groupOf(x[0]); if (!g || seen[g]) return; seen[g] = 1; const p = JSON.parse(g), node = getIn(st.mod, p) || {};
+        const t = node.title || node.t || node.name || ''; out.push([g, label(p) + (typeof t === 'string' && t ? ' · ' + (t.length > 50 ? t.slice(0, 50) + '…' : t) : '')]); });
+      return out;
+    }
     function draw(){
       const fl = st.mod ? fields(st.mod, [], [], 0) : [];
-      const q = st.filter.toLowerCase();
-      const shown = fl.filter(x => !q || (x[1] + ' ' + x[2]).toLowerCase().includes(q));
+      const q = st.filter.toLowerCase(), gl = groups(fl);
+      if (st.part && !gl.some(g => g[0] === st.part)) st.part = '';
+      const shown = fl.filter(x => (!st.part || groupOf(x[0]) === st.part) && (!q || (x[1] + ' ' + x[2]).toLowerCase().includes(q)));
       const rtlOf = v => typeof v === 'string' && /[\u0600-\u06FF]/.test(v);
       body.innerHTML = card(st.list[st.modIdx] ? st.list[st.modIdx].label : 'Module', plural(fl.filter(x => typeof x[2] === 'string').length, 'text'),
-        '<div class="wk-row wk-bfind"><input class="wk-find" id="bdFind" type="search" placeholder="Find a lesson, question or word" value="' + esc(st.filter) + '" aria-label="Find in this module"></div>' +
+        '<div class="wk-row wk-bfind">' + (gl.length > 1 ? '<label class="sc-f px-inline">Part or lesson<select id="bdPart">' + opt('', 'Whole module (' + plural(gl.length, 'part') + ')', !st.part) + gl.map(g => opt(g[0], g[1], g[0] === st.part)).join('') + '</select></label>' : '') + '<input class="wk-find" id="bdFind" type="search" placeholder="Find a lesson, question or word" value="' + esc(st.filter) + '" aria-label="Find in this module"></div>' +
         '<form id="bdForm" class="wk-bform" novalidate>' + (shown.length ? shown.slice(0, 400).map(x => {
           const id = 'bf' + fl.indexOf(x), rtl = /[؀-ۿ]/.test(x[2]);
           if (typeof x[2] === 'boolean') return '<label class="px-check wk-bf wk-bcheck"><input type="checkbox" id="' + id + '" data-i="' + fl.indexOf(x) + '"' + (x[2] ? ' checked' : '') + '> Right answer</label>';
           return '<label class="sc-f wk-bf" for="' + id + '"><span>' + esc(x[1]) + '</span>' + (LONG(x[2]) ? '<textarea id="' + id + '" data-i="' + fl.indexOf(x) + '" rows="' + Math.min(10, Math.max(2, Math.ceil(x[2].length / 70))) + '"' + (rtl ? ' dir="rtl"' : '') + '>' + esc(x[2]) + '</textarea>'
             : '<input type="text" id="' + id + '" data-i="' + fl.indexOf(x) + '" value="' + esc(x[2]) + '"' + (rtl ? ' dir="rtl"' : '') + '>') + '</label>';
-        }).join('') + (shown.length > 400 ? '<p class="p-empty">Showing the first 400. Use Find to narrow it down.</p>' : '') : empty('Nothing matches.')) + '</form>' +
+        }).join('') + (shown.length > 400 ? '<p class="p-empty">Showing the first 400. Pick a part or lesson above, or use Find.</p>' : '') : empty('Nothing matches.')) + '</form>' +
         '<div class="wk-row wk-bsave"><button class="p-btn is-ghost" type="button" id="bdSave">Save draft</button><button class="p-btn" type="button" id="bdPub">Publish</button>' +
         (st.draft ? '<button class="p-btn is-ghost" type="button" id="bdDrop">Throw away the draft</button>' : '') + '<p class="p-empty" id="bdMsg" role="status"></p></div>');
       drawTop();
@@ -374,14 +383,15 @@
     }
     body.addEventListener('click', async e => {
       const t = e.target.closest('[data-bc]');
-      if (t) { st.course = COURSES.find(c => c.id === t.dataset.bc); st.filter = ''; loadCourse(); return; }
+      if (t) { st.course = COURSES.find(c => c.id === t.dataset.bc); st.filter = ''; st.part = ''; loadCourse(); return; }
       if (e.target.id === 'bdSave') { say('bdMsg', 'Saving…'); if (await saveDraft()) { draw(); say('bdMsg', 'Draft saved. Learners still see the live version.'); } }
       if (e.target.id === 'bdPub') { const b = e.target; if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Sure? Publish to learners'; return; } publish(); }
       if (e.target.id === 'bdDrop') { const b = e.target; if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Sure? Throw it away'; return; }
         const c = st.course; await bucket().remove([c.kind === 'db' ? draftPath(c, st.list[st.modIdx].id) : draftPath(c)]); loadCourse(); }
     });
     body.addEventListener('change', async e => {
-      if (e.target.id === 'bdMod') { collect(); if (st.course.kind === 'db' && st.draft) await saveDraft(); st.modIdx = +e.target.value; st.filter = ''; loadModule(); }
+      if (e.target.id === 'bdMod') { collect(); if (st.course.kind === 'db' && st.draft) await saveDraft(); st.modIdx = +e.target.value; st.filter = ''; st.part = ''; loadModule(); }
+      if (e.target.id === 'bdPart') { collect(); st.part = e.target.value; draw(); }
     });
     body.addEventListener('input', e => { if (e.target.id === 'bdFind') { collect(); st.filter = e.target.value; const pos = e.target.selectionStart; draw(); const nf = $('bdFind'); nf.focus(); nf.setSelectionRange(pos, pos); } });
     loadCourse();
