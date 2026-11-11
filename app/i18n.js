@@ -101,5 +101,5 @@
   }
   const start = () => { addSwitch(); if (lang === 'ar') on(); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
-  window.AppLang = { get lang(){ return lang; }, AR };
+  window.AppLang = { get lang(){ return lang; }, AR, RULES };  // RULES: pattern phrases (numbers inside); ar-more.js adds to both
 })();

@@ -1,0 +1,459 @@
+{
+"templates": [
+{
+"id": "cash",
+"title": "Cash purchase agreement",
+"about": "You buy the property for cash. Use for land or houses. Assignable, with an inspection period.",
+"body": "STARTING TEMPLATE, NOT LEGAL ADVICE. Have a real estate attorney licensed in {state} review this form once before you use it for the first time, and again if the law changes.\n\nPURCHASE AND SALE AGREEMENT\n\nDate: {today}\n\n1. PARTIES\nSeller: {seller_name}\nBuyer: {buyer_name}, and/or assigns\n\n2. PROPERTY\nAddress or location: {property_address}\nCounty and state: {county} County, {state}\nParcel number: {parcel_id}\nLegal description: {legal_description} (the title company will attach the full legal description)\nThe sale includes the land, everything built on it, and all rights that belong to it.\n\n3. PRICE\nPurchase price: {price}, paid in cash or certified funds at closing. No loan is needed and this agreement does not depend on Buyer getting one.\n\n4. EARNEST MONEY\nBuyer will deposit {earnest_money} with {title_company} within {em_days} business days after both parties sign. It counts toward the price at closing. If Buyer cancels within the inspection period, it is returned to Buyer in full.\n\n5. INSPECTION PERIOD\nBuyer has {inspection_days} days after both parties sign to inspect the property and review title, survey, zoning, access and utilities. Buyer may cancel for any reason during this time by written notice to Seller. Seller will give Buyer and Buyer's contractors reasonable access.\n\n6. TITLE\nSeller will deliver clear, marketable title by {deed_type}, free of liens and back taxes, except easements of record that Buyer accepts. If the title company finds a problem Seller cannot fix before closing, Buyer may cancel and get the earnest money back.\n\n7. CLOSING\nClosing will be on or before {closing_date} at {title_company}, or another title company Buyer picks. Buyer pays the title company's closing fee and recording. Seller pays for any liens, back taxes and anything needed to clear title. Property taxes are split as of the closing day.\n\n8. CONDITION\nBuyer accepts the property as it is on the day of signing. Seller will not remove anything, add debt to the property, or sign any other agreement on it before closing. Seller will give Buyer any disclosure the law of {state} requires.\n\n9. ASSIGNMENT\nBuyer may assign this agreement to another buyer without Seller's consent. Seller understands Buyer may do this and may be paid for it. Seller's price and terms do not change.\n\n10. DEFAULT\nIf Buyer does not close without a valid reason, Seller keeps the earnest money as the only remedy. If Seller does not close, Buyer may ask a court to make Seller sell (specific performance) or cancel and get the earnest money back.\n\n11. OTHER TERMS\n{other_terms}\n\n12. WHOLE AGREEMENT\nThis is the whole agreement. Changes must be in writing and signed by both parties. Copies and electronic signatures count as originals. The law of {state} applies.\n\nSeller: ______________________________  Date: __________\n{seller_name}\n\nBuyer: ______________________________  Date: __________\n{buyer_name}",
+"sort": 1
+},
+{
+"id": "assign",
+"title": "Assignment of contract",
+"about": "You hand your signed purchase agreement to an end buyer for a fee.",
+"body": "STARTING TEMPLATE, NOT LEGAL ADVICE. Have a real estate attorney licensed in {state} review this form once before you use it for the first time, and again if the law changes.\n\nASSIGNMENT OF PURCHASE AND SALE AGREEMENT\n\nDate: {today}\n\n1. PARTIES\nAssignor (you): {buyer_name}\nAssignee (end buyer): {assignee_name}\n\n2. THE AGREEMENT BEING ASSIGNED\nPurchase and sale agreement dated {contract_date} between {seller_name} (Seller) and Assignor (Buyer), for the property at {property_address}, {county} County, {state}, parcel {parcel_id}, at a price of {price}.\n\n3. WHAT THIS DOES\nAssignor gives Assignee all of Assignor's rights in that agreement. Assignee takes on all of Buyer's duties in it, including paying the price and closing on or before {closing_date}.\n\n4. ASSIGNMENT FEE\nAssignee pays Assignor {assignment_fee}. Assignee deposits {assignee_deposit} with {title_company} within 2 business days after signing this, which is not refundable unless Seller fails to close. The rest of the fee is paid at closing through the title company.\n\n5. EARNEST MONEY\nEarnest money Assignor already deposited: {earnest_money}. At closing, Assignor gets it back from the closing funds, or it is credited to Assignor.\n\n6. NO PROMISES ABOUT THE PROPERTY\nAssignee has inspected the property and title, or chose not to, and accepts the property as it is. Assignor makes no promises about its condition, value or rent.\n\n7. IF ASSIGNEE DOES NOT CLOSE\nIf Assignee does not close by {closing_date}, Assignor keeps Assignee's deposit and this assignment ends. Assignor may then close itself or assign to someone else.\n\n8. DISCLOSURE\nAssignee knows Assignor is not the owner, holds only a right to buy under the agreement, and is being paid a fee for this assignment.\n\nAssignor: ______________________________  Date: __________\n{buyer_name}\n\nAssignee: ______________________________  Date: __________\n{assignee_name}",
+"sort": 2
+},
+{
+"id": "landcontract",
+"title": "Seller finance (land contract)",
+"about": "The seller is paid over time and keeps the deed until the last payment. Common in Michigan. Some states use a note and mortgage instead.",
+"body": "STARTING TEMPLATE, NOT LEGAL ADVICE. Have a real estate attorney licensed in {state} review this form once before you use it for the first time, and again if the law changes.\n\nLAND CONTRACT (INSTALLMENT SALE)\n\nDate: {today}\n\n1. PARTIES\nSeller (Vendor): {seller_name}\nBuyer (Vendee): {buyer_name}\n\n2. PROPERTY\n{property_address}, {county} County, {state}. Parcel {parcel_id}. Legal description: {legal_description}\n\n3. PRICE AND PAYMENTS\nPrice: {price}\nDown payment at signing: {down_payment}\nAmount financed: {financed_amount}\nInterest: {interest_rate}% a year\nMonthly payment: {monthly_payment}, due on the {payment_day} of each month, starting {first_payment}\nTerm: {term_months} months. Any balance left is due in full on {balloon_date}.\nBuyer may pay off early at any time with no penalty.\n\n4. DEED\nSeller keeps legal title until Buyer pays in full. Then Seller signs a {deed_type} to Buyer within 30 days. A memorandum of this land contract will be recorded with the county so others know about Buyer's interest.\n\n5. POSSESSION, TAXES AND INSURANCE\nBuyer takes possession at signing. Buyer pays property taxes and keeps the property insured, with Seller named as an additional insured. Buyer keeps the property in good repair.\n\n6. SELLER'S MORTGAGE\nIf Seller has a mortgage on the property, Seller will keep paying it and will give Buyer proof on request. If Seller stops paying it, Buyer may pay the lender directly and take that off the next payments to Seller.\n\n7. LATE PAYMENT AND DEFAULT\nA payment more than 15 days late costs {late_fee}. If Buyer is more than 30 days late, Seller will send written notice and Buyer has the time the law of {state} gives to catch up. Seller's remedies, including forfeiture or foreclosure, follow the law of {state}.\n\n8. ASSIGNMENT\nBuyer may sell or assign its interest with written notice to Seller. Buyer stays responsible unless Seller releases Buyer in writing.\n\n9. OTHER TERMS\n{other_terms}\n\nSeller: ______________________________  Date: __________\nBuyer: ______________________________  Date: __________\n\nSignatures must be notarized so the memorandum can be recorded.",
+"sort": 3
+},
+{
+"id": "novation",
+"title": "Novation agreement",
+"about": "For houses with equity that need light work: you get the right to market and sell the house for the seller and close the gap at a set net to them.",
+"body": "STARTING TEMPLATE, NOT LEGAL ADVICE. Have a real estate attorney licensed in {state} review this form once before you use it for the first time, and again if the law changes.\n\nNOVATION AND PURCHASE AGREEMENT\n\nDate: {today}\n\n1. PARTIES\nOwner: {seller_name}\nCompany: {buyer_name}\n\n2. PROPERTY\n{property_address}, {county} County, {state}. Parcel {parcel_id}.\n\n3. WHAT THIS IS\nOwner agrees to sell the property, and Company agrees to manage the repairs, marketing and sale. Owner stays the owner until the sale closes. This is not a listing agreement and Company is not acting as Owner's real estate agent.\n\n4. OWNER'S NET\nAt closing Owner receives {seller_net}, paid by the title company out of the sale. Anything above that, after closing costs and repair costs, goes to Company.\n\n5. REPAIRS AND MARKETING\nCompany may make these repairs at its own cost: {repairs}. Company may list the property for sale at about {list_price} through a licensed agent and may show it to buyers. Owner will sign the listing paperwork and the final sale contract that Company brings, as long as Owner's net is at least the amount in section 4.\n\n6. TIME\nCompany has {marketing_days} days from signing to find a buyer. If no buyer signs in that time, either party may end this agreement by written notice. If it ends, Company may record a lien only for repair costs it paid, as allowed by the law of {state}.\n\n7. OWNER'S PROMISES\nOwner will keep paying the mortgage, taxes and insurance until closing, will not borrow against the property, and will not sign any other sale or listing agreement.\n\n8. RECORDING\nCompany may record a memorandum of this agreement with the county.\n\n9. ATTORNEY REVIEW\nOwner was told to have this agreement reviewed by an attorney and had the chance to do so before signing.\n\nOwner: ______________________________  Date: __________\nCompany: ______________________________  Date: __________",
+"sort": 4
+},
+{
+"id": "hardmoney",
+"title": "Hard money loan term sheet",
+"about": "A one-page summary to send a lender or private money partner. Not a loan document; the lender writes those.",
+"body": "STARTING TEMPLATE, NOT LEGAL ADVICE. Have a real estate attorney licensed in {state} review this form once before you use it for the first time, and again if the law changes.\n\nLOAN TERM SHEET (NOT A COMMITMENT TO LEND)\n\nDate: {today}\n\nBorrower: {buyer_name}\nLender: {lender_name}\nProperty: {property_address}, {county} County, {state}\n\nPurchase price: {price}\nRepair budget: {repair_budget}\nAfter-repair value (ARV): {arv}\nLoan amount: {loan_amount}\nLoan to cost / loan to value: {ltv}\n\nInterest: {interest_rate}% a year, interest-only, paid monthly\nPoints: {points} points at closing\nTerm: {term_months} months, extension of {extension} on request for {extension_fee}\nRepair money: paid in draws after inspection of finished work\nSecurity: first lien (mortgage or deed of trust) on the property and a personal guarantee\nPrepayment: none\nClosing: through {title_company} on or before {closing_date}\nExit plan: {exit_plan}\n\nThis term sheet is only for discussion. The loan is made only when both sides sign the lender's loan documents.\n\nBorrower: ______________________________\nLender: ______________________________",
+"sort": 5
+},
+{
+"id": "disclosure",
+"title": "Wholesaling disclosure addendum",
+"about": "Signed by the seller with the purchase agreement. Required in some states; good practice in all.",
+"body": "STARTING TEMPLATE, NOT LEGAL ADVICE. Have a real estate attorney licensed in {state} review this form once before you use it for the first time, and again if the law changes.\n\nWHOLESALER DISCLOSURE ADDENDUM\n\nAttached to the purchase and sale agreement dated {contract_date} between {seller_name} (Seller) and {buyer_name} (Buyer) for {property_address}, {county} County, {state}.\n\nPLEASE READ BEFORE YOU SIGN.\n\n1. Buyer is not a real estate agent and does not represent you. Buyer is acting only for itself.\n2. Buyer may not close on the property itself. Buyer may sell its right to buy your property (assign the contract) to another buyer, or buy and resell it quickly.\n3. Buyer may be paid a fee or make a profit for doing this. Your price and terms do not change.\n4. You may want to get an appraisal or talk to a real estate agent or attorney before you sign. You can take time to do that.\n5. {state_rule}\n\nSeller has read this addendum and received a copy.\n\nSeller: ______________________________  Date: __________\n{seller_name}\n\nBuyer: ______________________________  Date: __________\n{buyer_name}",
+"sort": 6
+}
+],
+"states": [
+{
+"state": "MI",
+"name": "Michigan",
+"fit": "good",
+"sort": 1,
+"sheet": {
+"closing": "Title company. No attorney is required at closing.",
+"disclosure": "Disclosure state. Sold prices are public, so comps are easy to get.",
+"wholesaling": "No wholesaling law yet. House Bill 5366 (introduced Dec 2025) would treat wholesaling as broker work and require a written disclosure before an assignment. As of the last check it is still in committee. Michigan licensing law (MCL 339.2501) applies today: do not publicly advertise the property itself; market your contract to your own buyers list.",
+"deed": "Warranty deed is usual. Quit claim deed for some land and family deals. Land contracts are very common.",
+"addenda": [
+"Seller Disclosure Statement (Seller Disclosure Act, MCL 565.951) for houses with 1 to 4 units. The seller fills it in, not you.",
+"Lead paint disclosure for houses built before 1978 (federal rule).",
+"Property Transfer Affidavit: the new owner files it with the local assessor within 45 days. The title company usually does it.",
+"Wholesaling disclosure addendum (our template), even though not required yet."
+],
+"notes": "Good fit: title closings, public sold prices, and no wholesaling statute. Watch HB 5366.",
+"sources": [
+{
+"label": "Michigan Legislature: HB 5366 (2025)",
+"url": "https://legislature.mi.gov/Bills/Bill?ObjectName=2025-HB-5366"
+},
+{
+"label": "Michigan Seller Disclosure Act (MCL 565.951 and on)",
+"url": "https://www.legislature.mi.gov/documents/mcl/archive/2026/September/mcl-Act-92-of-1993.pdf"
+},
+{
+"label": "Michigan LARA, real estate licensing",
+"url": "https://www.michigan.gov/lara/bureau-list/bpl/occ/prof/real-estate"
+}
+],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "FL",
+"name": "Florida",
+"fit": "good",
+"sort": 2,
+"sheet": {
+"closing": "Title company. An attorney is optional.",
+"disclosure": "Disclosure state.",
+"wholesaling": "No wholesaling law. Florida Chapter 475 (broker licensing) still applies, and unlicensed broker work is a crime there, so only market your contract interest, never the property as if you own it.",
+"deed": "Warranty deed is usual. Special warranty or quit claim deed in some investor deals.",
+"addenda": [
+"Seller must disclose known problems that affect value (Florida case law). Ask the seller to fill in a disclosure form.",
+"Lead paint disclosure for houses built before 1978.",
+"Wholesaling disclosure addendum (our template)."
+],
+"notes": "Biggest wholesaling market with no specific statute. Documentary stamp tax applies to deeds and notes.",
+"sources": [
+{
+"label": "Florida Statutes Chapter 475",
+"url": "http://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0400-0499/0475/0475.html"
+},
+{
+"label": "Florida DBPR, Division of Real Estate",
+"url": "https://www2.myfloridalicense.com/real-estate-commission/"
+}
+],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "CO",
+"name": "Colorado",
+"fit": "good",
+"sort": 3,
+"sheet": {
+"closing": "Title company.",
+"disclosure": "Disclosure state.",
+"wholesaling": "No wholesaling law. Colorado licensing law covers negotiating a sale for others for a fee, so stay a principal: buy the contract yourself and market only your contract interest. New real estate license rules took effect Aug 12, 2026 for licensed agents.",
+"deed": "General warranty deed or special warranty deed. Loans use a deed of trust to the county public trustee.",
+"addenda": [
+"Seller property disclosure (state law lists several required disclosures).",
+"Lead paint disclosure for houses built before 1978.",
+"Wholesaling disclosure addendum (our template)."
+],
+"notes": "Title state with no wholesaling statute.",
+"sources": [
+{
+"label": "Colorado Division of Real Estate",
+"url": "https://dre.colorado.gov/"
+}
+],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "NV",
+"name": "Nevada",
+"fit": "good",
+"sort": 4,
+"sheet": {
+"closing": "Title or escrow company.",
+"disclosure": "Disclosure state.",
+"wholesaling": "No wholesaling law found. Nevada broker licensing law (NRS Chapter 645) applies: market your contract interest, not the property.",
+"deed": "Grant deed or bargain and sale deed are common.",
+"addenda": [
+"Seller Real Property Disclosure form for houses.",
+"Lead paint disclosure for houses built before 1978.",
+"Wholesaling disclosure addendum (our template)."
+],
+"notes": "Escrow state with no wholesaling statute. Check again before first use.",
+"sources": [
+{
+"label": "Nevada Real Estate Division",
+"url": "https://red.nv.gov/"
+}
+],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "MN",
+"name": "Minnesota",
+"fit": "good",
+"sort": 5,
+"sheet": {
+"closing": "Title company (closer).",
+"disclosure": "Disclosure state.",
+"wholesaling": "No wholesaling law found. Normal broker licensing rules apply.",
+"deed": "Warranty deed is usual. Contract for deed is the local name for a land contract and has its own rules.",
+"addenda": [
+"Seller disclosure before signing for homes and residential land (Minn. Stat. 513.52 to 513.60).",
+"Radon disclosure for homes (Minn. Stat. 144.496).",
+"Well disclosure if there is a well.",
+"Lead paint disclosure for houses built before 1978.",
+"Wholesaling disclosure addendum (our template)."
+],
+"notes": "Title state. More required disclosures than most; plan for them.",
+"sources": [
+{
+"label": "Minnesota seller disclosure law (513.52 to 513.60)",
+"url": "https://www.revisor.mn.gov/statutes/cite/513.55"
+},
+{
+"label": "Minnesota radon disclosure (144.496)",
+"url": "https://www.revisor.mn.gov/statutes/cite/144.496"
+}
+],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "AR",
+"name": "Arkansas",
+"fit": "good",
+"sort": 6,
+"sheet": {
+"closing": "Title company.",
+"disclosure": "Disclosure state.",
+"wholesaling": "No wholesaling law found. Arkansas Real Estate License Law (17-42-101 and on) applies.",
+"deed": "Warranty deed is usual.",
+"addenda": [
+"No state seller disclosure form for owners selling themselves (buyer beware), but give one anyway to avoid disputes.",
+"Lead paint disclosure for houses built before 1978.",
+"Wholesaling disclosure addendum (our template)."
+],
+"notes": "Title state, low cost. Transfer tax applies.",
+"sources": [
+{
+"label": "Arkansas Real Estate Commission",
+"url": "https://arec.arkansas.gov/"
+}
+],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "IN",
+"name": "Indiana",
+"fit": "check",
+"sort": 7,
+"sheet": {
+"closing": "Title company.",
+"disclosure": "Disclosure state.",
+"wholesaling": "Has a wholesaling law: IC 32-21-16.5 (HEA 1068, in force since July 1, 2024). Every ad or message that markets your contract must say you hold a purchase contract and are not the owner, that you plan to assign it for a fee, the fee or a good-faith estimate, and your name and contact details.",
+"deed": "Warranty deed is usual.",
+"addenda": [
+"Seller residential disclosure form for 1 to 4 unit homes.",
+"Lead paint disclosure for houses built before 1978.",
+"Wholesaling disclosure addendum (our template)."
+],
+"notes": "Workable, but every buyer-list message needs the disclosure. Not a Michigan look-alike.",
+"sources": [
+{
+"label": "Indiana Code 32-21-16.5",
+"url": "https://iga.in.gov/laws/2024/ic/titles/32#32-21-16.5"
+}
+],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "WA",
+"name": "Washington",
+"fit": "check",
+"sort": 8,
+"sheet": {
+"closing": "Escrow company.",
+"disclosure": "Disclosure state.",
+"wholesaling": "No wholesaling law, but the Solicited Real Property Act (RCW 61.40.010) took effect Jan 1, 2026 for unsolicited offers on any property, land included, when the seller has no agent. The contract must say in 10-point bold that the seller can get an appraisal at your cost, with a place to initial. The seller can cancel within 10 business days (or 4 business days after getting the appraisal).",
+"deed": "Statutory warranty deed is usual.",
+"addenda": [
+"Unsolicited offer disclosure under RCW 61.40.010.",
+"Seller disclosure statement (Form 17) for houses.",
+"Lead paint disclosure for houses built before 1978."
+],
+"notes": "Cold-call offers here carry a cancellation window. Plan closing dates around it.",
+"sources": [
+{
+"label": "RCW 61.40.010",
+"url": "https://app.leg.wa.gov/RCW/default.aspx?cite=61.40.010"
+}
+],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "TX",
+"name": "Texas",
+"fit": "avoid",
+"sort": 50,
+"sheet": {
+"closing": "",
+"disclosure": "",
+"wholesaling": "Non-disclosure state and has a wholesaling law (written disclosure).",
+"deed": "",
+"addenda": [],
+"notes": "Avoid for now.",
+"sources": [],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "OH",
+"name": "Ohio",
+"fit": "avoid",
+"sort": 50,
+"sheet": {
+"closing": "",
+"disclosure": "",
+"wholesaling": "Wholesaling law since March 2026: separate signed disclosure before the contract; seller can cancel until closing if it is missing.",
+"deed": "",
+"addenda": [],
+"notes": "Avoid for now.",
+"sources": [],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "PA",
+"name": "Pennsylvania",
+"fit": "avoid",
+"sort": 50,
+"sheet": {
+"closing": "",
+"disclosure": "",
+"wholesaling": "Wholesaling is treated as broker work: license needed, contract must say it is a wholesale deal, 30-day cancel right.",
+"deed": "",
+"addenda": [],
+"notes": "Avoid for now.",
+"sources": [],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "CT",
+"name": "Connecticut",
+"fit": "avoid",
+"sort": 50,
+"sheet": {
+"closing": "",
+"disclosure": "",
+"wholesaling": "Attorney-closing state, and wholesalers must register (from July 1, 2026).",
+"deed": "",
+"addenda": [],
+"notes": "Avoid for now.",
+"sources": [],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "NC",
+"name": "North Carolina",
+"fit": "avoid",
+"sort": 50,
+"sheet": {
+"closing": "",
+"disclosure": "",
+"wholesaling": "Attorney-closing state.",
+"deed": "",
+"addenda": [],
+"notes": "Avoid for now.",
+"sources": [],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "GA",
+"name": "Georgia",
+"fit": "avoid",
+"sort": 50,
+"sheet": {
+"closing": "",
+"disclosure": "",
+"wholesaling": "Attorney-closing state.",
+"deed": "",
+"addenda": [],
+"notes": "Avoid for now.",
+"sources": [],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "SC",
+"name": "South Carolina",
+"fit": "avoid",
+"sort": 50,
+"sheet": {
+"closing": "",
+"disclosure": "",
+"wholesaling": "Attorney-closing state and wholesaling needs a license.",
+"deed": "",
+"addenda": [],
+"notes": "Avoid for now.",
+"sources": [],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "NY",
+"name": "New York",
+"fit": "avoid",
+"sort": 50,
+"sheet": {
+"closing": "",
+"disclosure": "",
+"wholesaling": "Attorney-closing state.",
+"deed": "",
+"addenda": [],
+"notes": "Avoid for now.",
+"sources": [],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "MO",
+"name": "Missouri",
+"fit": "avoid",
+"sort": 50,
+"sheet": {
+"closing": "",
+"disclosure": "",
+"wholesaling": "Non-disclosure state and has a wholesaling law (disclosure 14 days before the contract, from Aug 28, 2026).",
+"deed": "",
+"addenda": [],
+"notes": "Avoid for now.",
+"sources": [],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "OK",
+"name": "Oklahoma",
+"fit": "avoid",
+"sort": 50,
+"sheet": {
+"closing": "",
+"disclosure": "",
+"wholesaling": "Wholesaling law with disclosure and cancellation rights.",
+"deed": "",
+"addenda": [],
+"notes": "Avoid for now.",
+"sources": [],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "IL",
+"name": "Illinois",
+"fit": "avoid",
+"sort": 50,
+"sheet": {
+"closing": "",
+"disclosure": "",
+"wholesaling": "License needed after your first wholesale deal in a year.",
+"deed": "",
+"addenda": [],
+"notes": "Avoid for now.",
+"sources": [],
+"checked_on": "2026-11-12"
+}
+},
+{
+"state": "LA",
+"name": "Louisiana",
+"fit": "avoid",
+"sort": 50,
+"sheet": {
+"closing": "",
+"disclosure": "",
+"wholesaling": "Non-disclosure state, attorney involvement, and a wholesaling law from Aug 1, 2026.",
+"deed": "",
+"addenda": [],
+"notes": "Avoid for now.",
+"sources": [],
+"checked_on": "2026-11-12"
+}
+}
+]
+}

@@ -157,8 +157,8 @@
   document.body.appendChild(sheet);
   let tab = 'profile', agentOpen = new Set(), agentView = null, lastFocus = null;
   const TABS = () => isOwner()
-    ? [['profile','My profile'], ['agents','Agents'], ['rates','Dollar rates'], ['password','Sign-in'], ['backup','Backup']]
-    : [['profile','My profile'], ['password','Sign-in']];   // round 6: light only, so no Appearance tab
+    ? [['profile','My profile'], ['agents','Agents'], ['rates','Dollar rates'], ['password','Sign-in'], ['alerts','Phone alerts'], ['backup','Backup']]
+    : [['profile','My profile'], ['password','Sign-in'], ['alerts','Phone alerts']];   // Phone alerts: round6.js   // round 6: light only, so no Appearance tab
   function openSettings(t){
     lastFocus = document.activeElement;
     tab = t; agentView = null;
@@ -198,6 +198,7 @@
     const B = $('setBody');
     B.scrollTop = 0;
     if (tab === 'profile') return drawProfile();
+    if (tab === 'alerts') return window.PortalPush ? window.PortalPush.draw(B) : (B.innerHTML = '<p class="note">Refresh the app to set up phone alerts.</p>');
     if (tab === 'agents') return agentView ? drawAgentProfile() : drawAgents();
     if (tab === 'rates') return drawRates();
     if (tab === 'password') {
@@ -231,7 +232,7 @@
       return;
     }
     if (tab === 'backup') {
-      B.innerHTML = head('Backup', 'Saves every table to one file on this device. Keep it in Drive › Portfolio Work › Backups.') + '<div><button class="btn" type="button" data-backup>Download a backup</button></div>';
+      B.innerHTML = head('Backup', 'A backup of every table is now saved automatically each night at 3 AM Cairo time and kept for 30 days. See it on the Status page. You can still save a copy to this device: keep it in Drive › Portfolio Work › Backups.') + '<div><button class="btn" type="button" data-backup>Download a backup</button> <a class="btn ghost" href="#status" data-close>Open Status</a></div>';
     }
   }
 

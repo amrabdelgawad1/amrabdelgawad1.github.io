@@ -29,7 +29,7 @@
   const PERIODS = { week:['This week', () => [monday(), today()]], last:['Last week', () => [addDays(monday(), -7), addDays(monday(), -1)]], month:['This month', () => [today().slice(0, 8) + '01', today()]] };
   V.leaderboard = { title:'Leaderboard', sec:'everyone', async open(el, ok){
     const owner = isOwner(), per = (location.hash.split('/')[1] || 'week');
-    const body = page(el, 'Numbers', 'Leaderboard', 'Ranked by appointments, then conversations, then dials. Numbers update when each shift is clocked out.');
+    const body = page(el, 'Numbers', 'Leaderboard', 'Ranked by appointments, then conversations, then dials. Today’s taps count while people are on the clock.');
     const [from, to] = (PERIODS[per] || PERIODS.week)[1]();
     const [r, tg, ppl] = await Promise.all([safe(db().rpc('portal_leaderboard', { p_from:from, p_to:to })), owner ? safe(db().from('rep_targets').select('*')) : Promise.resolve({ data:[] }),
       owner ? safe(db().from('members').select('user_id,name,active').eq('active', true).order('name')) : Promise.resolve({ data:[] })]);
@@ -40,7 +40,7 @@
     body.innerHTML = '<div class="p-seg np-seg" role="tablist" aria-label="Period">' + Object.entries(PERIODS).map(([k, v]) => '<a role="tab" class="wk-seg' + (k === per ? ' on' : '') + '" aria-selected="' + (k === per) + '" href="#leaderboard/' + k + '">' + v[0] + '</a>').join('') + '</div>' +
       (top ? '<p class="np-lead">' + esc(top.name) + ' leads ' + esc((PERIODS[per] || PERIODS.week)[0].toLowerCase()) + ' with ' + (top.appointments ? plural(top.appointments, 'appointment') : top.conversations ? plural(top.conversations, 'conversation') : plural(top.dials, 'dial')) + '.</p>' : '') +
       card('Ranking', fmtDay(from, { month:'short', day:'numeric' }) + ' to ' + fmtDay(to, { month:'short', day:'numeric' }),
-        rows.length ? table(['#', 'Name', 'Shifts', 'Hours', 'Dials', 'Conv.', 'Offers', 'Appts', 'Conv. rate'], rows.map((x, i) => '<tr' + (x.me ? ' class="np-me"' : '') + '><td>' + medal(i) + '</td><td><b>' + esc(x.name) + '</b>' + (x.me ? ' ' + pill('You', '') : '') + '</td><td>' + x.shifts + '</td><td>' + x.hours + '</td><td>' + num(x.dials) + '</td><td>' + num(x.conversations) + '</td><td>' + num(x.offers) + '</td><td><b>' + num(x.appointments) + '</b></td><td>' + rate(x.conversations, x.dials) + '</td></tr>')) : empty('No shifts in this period yet.')) +
+        rows.length ? table(['#', 'Name', 'Shifts', 'Hours', 'Dials', 'Conv.', 'Offers', 'Appts', 'Conv. rate'], rows.map((x, i) => '<tr' + (x.me ? ' class="np-me"' : '') + '><td>' + medal(i) + '</td><td><b>' + esc(x.name) + '</b>' + (x.me ? ' ' + pill('You', '') : '') + (x.live ? ' ' + pill('On the clock now', 'ok') : '') + '</td><td>' + x.shifts + '</td><td>' + x.hours + '</td><td>' + num(x.dials) + '</td><td>' + num(x.conversations) + '</td><td>' + num(x.offers) + '</td><td><b>' + num(x.appointments) + '</b></td><td>' + rate(x.conversations, x.dials) + '</td></tr>')) : empty('No shifts in this period yet.')) +
       (owner ? card('Daily targets', 'Shown on each rep’s home', '<p class="tp-note">Leave a box empty for no target. Reps see their progress during the day.</p>' +
         table(['Rep'].concat(KEYS.map(k => k[1] + ' a day')).concat(['']), (ppl.data || []).map(p => { const t = (tg.data || []).find(x => x.user_id === p.user_id) || {};
           return '<tr data-tg="' + esc(p.user_id) + '"><td><b>' + esc(p.name) + '</b></td>' + KEYS.map(([k]) => '<td><input class="np-num" type="number" min="0" step="1" data-k="daily_' + k + '" value="' + (t['daily_' + k] != null ? t['daily_' + k] : '') + '" aria-label="' + esc(k) + ' target for ' + esc(p.name) + '"></td>').join('') +
@@ -141,7 +141,7 @@
   // ======================================================================
   const IST = { draft:['Draft', 'plain'], sent:['Sent', ''], paid:['Paid', 'ok'] };
   V.invoices = { title:'Client invoices', sec:'owner', async open(el, ok){
-    const body = page(el, 'Money', 'Client invoices', 'Build an invoice from a client’s hours and rate, print it or save it as a PDF, mark it sent, then paid. A paid invoice is added to Cash as income.');
+    const body = page(el, 'Money', 'Client invoices', 'Build an invoice from a client’s hours and rate, print it or save it as a PDF, mark it sent, then paid. A paid invoice is added to Cash as income, and its team shifts are marked paid by the client.');
     const [co, inv] = await Promise.all([safe(db().from('companies').select('id,name,bill_rate').order('name')), safe(db().from('invoices').select('*').order('created_at', { ascending:false }).limit(100))]);
     if (!ok()) return;
     if (inv.error) { body.innerHTML = failed(inv.error); return; }
@@ -190,6 +190,9 @@
           amount:inv1.amount, hours:inv1.hours, settled:true, settled_at:new Date().toISOString(), currency:'USD', period_start:inv1.period_start, period_end:inv1.period_end }).select('id').single());
         if (c.error) { say('ivMsg', 'Couldn’t add it to Cash: ' + errText(c, 'try again.')); return; }
         await safe(db().from('invoices').update({ status:'paid', paid_on:today(), cash_entry_id:c.data.id }).eq('id', inv1.id));
+        // The team shifts on this invoice are now paid by the client too, so Cash > Team doesn't ask for them again
+        await safe(db().from('shifts').update({ client_paid:true, client_paid_at:new Date().toISOString() }).eq('company_id', inv1.company_id).eq('owner', false).eq('client_paid', false)
+          .gte('shift_date', inv1.period_start).lte('shift_date', inv1.period_end));
         V.invoices.open(el, ok);
       }
     });
