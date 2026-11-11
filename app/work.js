@@ -283,7 +283,7 @@
   // where the modules sit in a content file: { modules:[...] }, { modules:{ m01:{...} } }, { course:{ modules } }, or the file itself
   const modBox = c => !c || typeof c !== 'object' ? {} : c.course && c.course.modules ? c.course.modules : c.modules && typeof c.modules === 'object' ? c.modules : c;
   const modKeys = c => { const b = modBox(c); return Object.keys(b).filter(k => b[k] && typeof b[k] === 'object'); };
-  const modTitle = (m, i) => { const n = m.number != null ? m.number : m.num != null ? m.num : m.n; return (n != null ? 'Module ' + n + ' · ' : 'Module ' + (i + 1) + ' · ') + (m.title || m.t || m.name || m.id || ''); };
+  const modTitle = (m, i) => { const n = m.number != null ? m.number : m.num != null ? m.num : m.n; const t = m.title || m.t || m.name || m.id || ''; return (n != null ? 'Module ' + n + ' · ' : 'Module ' + (i + 1) + ' · ') + (t && typeof t === 'object' ? t.en || Object.values(t)[0] || '' : t); };
 
   V.builder = { title:'Course builder', sec:'owner', async open(el, ok){
     const body = page(el, 'Learning', 'Course builder', 'Change any course without code: module titles, lessons, questions, answers and explanations. Save a draft as often as you like. Learners only see changes after you press Publish, and the old version is kept.');
