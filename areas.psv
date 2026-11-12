@@ -1,0 +1,581 @@
+0100001|nonmetro|Northwest Alabama nonmetropolitan area|AL|0.748|8
+0100002|nonmetro|Northeast Alabama nonmetropolitan area|AL|0.735|6
+0100003|nonmetro|Southwest Alabama nonmetropolitan area|AL|0.806|6
+0100004|nonmetro|Southeast Alabama nonmetropolitan area|AL|0.736|6
+0200006|nonmetro|Alaska nonmetropolitan area|AK|1.193|8
+0400001|nonmetro|Arizona nonmetropolitan area|AZ|0.891|6
+0500001|nonmetro|North Arkansas nonmetropolitan area|AR|0.762|7
+0500002|nonmetro|East Arkansas nonmetropolitan area|AR|0.736|5
+0500003|nonmetro|West Arkansas nonmetropolitan area|AR|0.762|6
+0500004|nonmetro|South Arkansas nonmetropolitan area|AR|0.757|6
+0600003|nonmetro|North Coast Region of California nonmetropolitan area|CA|1.172|8
+0600006|nonmetro|Eastern Sierra-Mother Lode Region of California nonmetropolitan area|CA|1.128|8
+0600007|nonmetro|North Valley-Northern Mountains Region of California nonmetropolitan area|CA|1.106|7
+0800001|nonmetro|Eastern and Southern Colorado nonmetropolitan area|CO|0.914|5
+0800002|nonmetro|Southwest Colorado nonmetropolitan area|CO|0.944|7
+0800003|nonmetro|Northwest Colorado nonmetropolitan area|CO|0.933|8
+0900001|nonmetro|Connecticut nonmetropolitan area|CT|1.052|6
+1000005|nonmetro|Sussex Delaware nonmetropolitan area|DE|0.87|8
+10180|metro|Abilene, TX|TX|0.752|6
+10380|metro|Aguadilla, PR|PR|0.486|5
+10420|metro|Akron, OH|OH|1.045|8
+10500|metro|Albany, GA|GA|0.799|6
+10540|metro|Albany, OR|OR|1.026|8
+10580|metro|Albany-Schenectady-Troy, NY|NY|1.049|8
+10740|metro|Albuquerque, NM|NM|0.884|8
+10780|metro|Alexandria, LA|LA|0.774|6
+10900|metro|Allentown-Bethlehem-Easton, PA-NJ|PA|0.986|8
+11020|metro|Altoona, PA|PA|0.885|7
+11100|metro|Amarillo, TX|TX|0.79|6
+11180|metro|Ames, IA|IA|0.927|6
+11200|metro|Amherst Town-Northampton, MA|MA|1.121|6
+11260|metro|Anchorage, AK|AK|1.203|8
+11460|metro|Ann Arbor, MI|MI|1.117|7
+11500|metro|Anniston-Oxford, AL|AL|0.837|6
+11540|metro|Appleton, WI|WI|1.079|7
+11640|metro|Arecibo, PR|PR|0.509|4
+11700|metro|Asheville, NC|NC|0.854|8
+1200003|nonmetro|South Florida nonmetropolitan area|FL|0.847|8
+1200006|nonmetro|North Florida nonmetropolitan area|FL|0.829|8
+12020|metro|Athens-Clarke County, GA|GA|0.765|6
+12060|metro|Atlanta-Sandy Springs-Roswell, GA|GA|0.888|8
+12100|metro|Atlantic City-Hammonton, NJ|NJ|1.049|7
+12220|metro|Auburn-Opelika, AL|AL|0.756|6
+12260|metro|Augusta-Richmond County, GA-SC|GA|0.813|7
+12420|metro|Austin-Round Rock-San Marcos, TX|TX|0.877|8
+12540|metro|Bakersfield-Delano, CA|CA|1.074|7
+12580|metro|Baltimore-Columbia-Towson, MD|MD|0.944|8
+12620|metro|Bangor, ME|ME|0.912|7
+12700|metro|Barnstable Town, MA|MA|1.122|6
+12940|metro|Baton Rouge, LA|LA|0.914|8
+12980|metro|Battle Creek, MI|MI|1.057|5
+1300001|nonmetro|North Georgia nonmetropolitan area|GA|0.767|7
+1300002|nonmetro|Middle Georgia nonmetropolitan area|GA|0.778|7
+1300003|nonmetro|East Georgia nonmetropolitan area|GA|0.767|5
+1300004|nonmetro|South Georgia nonmetropolitan area|GA|0.816|7
+13020|metro|Bay City, MI|MI|1.019|7
+13140|metro|Beaumont-Port Arthur, TX|TX|0.901|6
+13220|metro|Beckley, WV|WV|0.771|5
+13380|metro|Bellingham, WA|WA|1.202|8
+13460|metro|Bend, OR|OR|1.107|8
+13740|metro|Billings, MT|MT|1.047|7
+13780|metro|Binghamton, NY|NY|1.068|7
+13820|metro|Birmingham, AL|AL|0.817|8
+13900|metro|Bismarck, ND|ND|0.969|7
+13980|metro|Blacksburg-Christiansburg-Radford, VA|VA|0.806|6
+14010|metro|Bloomington, IL|IL|1.105|6
+14020|metro|Bloomington, IN|IN|1.028|7
+14260|metro|Boise City, ID|ID|0.885|8
+14460|metro|Boston-Cambridge-Newton, MA-NH|MA|1.227|7
+14500|metro|Boulder, CO|CO|0.992|7
+14540|metro|Bowling Green, KY|KY|0.851|7
+14580|metro|Bozeman, MT|MT|1.129|7
+14740|metro|Bremerton-Silverdale-Port Orchard, WA|WA|1.134|8
+14860|metro|Bridgeport-Stamford-Danbury, CT|CT|1.192|7
+1500001|nonmetro|Hawaii / Kauai nonmetropolitan area|HI|1.187|8
+15180|metro|Brownsville-Harlingen, TX|TX|0.698|6
+15260|metro|Brunswick-St. Simons, GA|GA|0.807|6
+15380|metro|Buffalo-Cheektowaga, NY|NY|1.049|7
+15500|metro|Burlington, NC|NC|0.8|6
+15540|metro|Burlington-South Burlington, VT|VT|1.028|7
+15940|metro|Canton-Massillon, OH|OH|0.955|7
+15980|metro|Cape Coral-Fort Myers, FL|FL|0.836|8
+1600006|nonmetro|Northwestern Idaho nonmetropolitan area|ID|0.852|7
+1600007|nonmetro|Southeast-Central Idaho nonmetropolitan area|ID|0.862|6
+16020|metro|Cape Girardeau, MO-IL|MO|0.978|6
+16180|metro|Carson City, NV|NV|1.054|6
+16220|metro|Casper, WY|WY|0.926|7
+16300|metro|Cedar Rapids, IA|IA|0.938|7
+16540|metro|Chambersburg, PA|PA|0.959|7
+16580|metro|Champaign-Urbana, IL|IL|1.285|7
+16620|metro|Charleston, WV|WV|0.88|6
+16700|metro|Charleston-North Charleston, SC|SC|0.839|8
+16740|metro|Charlotte-Concord-Gastonia, NC-SC|NC|0.861|8
+16820|metro|Charlottesville, VA|VA|0.895|6
+16860|metro|Chattanooga, TN-GA|TN|0.858|8
+16940|metro|Cheyenne, WY|WY|0.917|7
+16980|metro|Chicago-Naperville-Elgin, IL-IN|IL|1.316|8
+1700001|nonmetro|Northwest Illinois nonmetropolitan area|IL|1.155|7
+1700002|nonmetro|West Central Illinois nonmetropolitan area|IL|1.015|7
+1700003|nonmetro|East Central Illinois nonmetropolitan area|IL|1.026|7
+1700004|nonmetro|South Illinois nonmetropolitan area|IL|1.108|7
+17020|metro|Chico, CA|CA|1.013|8
+17140|metro|Cincinnati, OH-KY-IN|OH|0.961|8
+17300|metro|Clarksville, TN-KY|TN|0.801|7
+17410|metro|Cleveland, OH|OH|1.007|8
+17420|metro|Cleveland, TN|TN|0.811|5
+17660|metro|Coeur d'Alene, ID|ID|0.907|6
+17780|metro|College Station-Bryan, TX|TX|0.756|6
+17820|metro|Colorado Springs, CO|CO|0.916|8
+17860|metro|Columbia, MO|MO|0.92|7
+17900|metro|Columbia, SC|SC|0.826|8
+17980|metro|Columbus, GA-AL|GA|0.737|7
+1800001|nonmetro|Northern Indiana nonmetropolitan area|IN|0.876|8
+1800002|nonmetro|Central Indiana nonmetropolitan area|IN|0.943|7
+1800003|nonmetro|Southern Indiana nonmetropolitan area|IN|0.908|8
+18020|metro|Columbus, IN|IN|1.089|7
+18140|metro|Columbus, OH|OH|1.016|8
+18580|metro|Corpus Christi, TX|TX|0.821|7
+18700|metro|Corvallis, OR|OR|1.086|6
+18880|metro|Crestview-Fort Walton Beach-Destin, FL|FL|0.831|7
+1900001|nonmetro|Northeast Iowa nonmetropolitan area|IA|0.88|6
+1900002|nonmetro|Northwest Iowa nonmetropolitan area|IA|0.88|7
+1900003|nonmetro|Southwest Iowa nonmetropolitan area|IA|0.866|6
+1900004|nonmetro|Southeast Iowa nonmetropolitan area|IA|0.904|7
+19100|metro|Dallas-Fort Worth-Arlington, TX|TX|0.859|8
+19140|metro|Dalton, GA|GA|0.792|5
+19300|metro|Daphne-Fairhope-Foley, AL|AL|0.779|6
+19340|metro|Davenport-Moline-Rock Island, IA-IL|IA|1.03|8
+19430|metro|Dayton-Kettering-Beavercreek, OH|OH|0.956|8
+19460|metro|Decatur, AL|AL|0.829|6
+19500|metro|Decatur, IL|IL|1.203|7
+19660|metro|Deltona-Daytona Beach-Ormond Beach, FL|FL|0.797|8
+19740|metro|Denver-Aurora-Centennial, CO|CO|1.022|8
+19780|metro|Des Moines-West Des Moines, IA|IA|0.974|8
+19820|metro|Detroit-Warren-Dearborn, MI|MI|1.108|8
+2000006|nonmetro|Kansas nonmetropolitan area|KS|0.813|8
+20020|metro|Dothan, AL|AL|0.719|6
+20100|metro|Dover, DE|DE|0.896|8
+20220|metro|Dubuque, IA|IA|0.938|6
+20260|metro|Duluth, MN-WI|MN|1.137|8
+20500|metro|Durham-Chapel Hill, NC|NC|0.889|6
+20740|metro|Eau Claire, WI|WI|1.042|8
+20940|metro|El Centro, CA|CA|1.12|7
+2100001|nonmetro|West Kentucky nonmetropolitan area|KY|0.858|8
+2100002|nonmetro|South Central Kentucky nonmetropolitan area|KY|0.816|6
+2100003|nonmetro|Central Kentucky nonmetropolitan area|KY|0.875|7
+2100004|nonmetro|East Kentucky nonmetropolitan area|KY|0.842|5
+21060|metro|Elizabethtown, KY|KY|0.822|5
+21140|metro|Elkhart-Goshen, IN|IN|0.959|7
+21300|metro|Elmira, NY|NY|1.017|6
+21340|metro|El Paso, TX|TX|0.712|8
+21420|metro|Enid, OK|OK|0.852|4
+21500|metro|Erie, PA|PA|0.931|7
+21660|metro|Eugene-Springfield, OR|OR|1.029|8
+21780|metro|Evansville, IN|IN|1.034|8
+21820|metro|Fairbanks-College, AK|AK|1.348|6
+2200002|nonmetro|Central Louisiana nonmetropolitan area|LA|0.795|6
+2200003|nonmetro|Northeast Louisiana nonmetropolitan area|LA|0.798|6
+2200006|nonmetro|Southwest Louisiana nonmetropolitan area|LA|0.774|6
+22020|metro|Fargo, ND-MN|ND|1.011|8
+22140|metro|Farmington, NM|NM|0.808|7
+22180|metro|Fayetteville, NC|NC|0.808|7
+22220|metro|Fayetteville-Springdale-Rogers, AR|AR|0.784|8
+22380|metro|Flagstaff, AZ|AZ|0.901|6
+22420|metro|Flint, MI|MI|1.118|7
+22500|metro|Florence, SC|SC|0.838|6
+22520|metro|Florence-Muscle Shoals, AL|AL|0.828|6
+22540|metro|Fond du Lac, WI|WI|1.045|6
+22660|metro|Fort Collins-Loveland, CO|CO|0.942|8
+22900|metro|Fort Smith, AR-OK|AR|0.743|7
+2300001|nonmetro|Northeast Maine nonmetropolitan area|ME|0.973|6
+2300002|nonmetro|Southwest Maine nonmetropolitan area|ME|0.966|8
+23060|metro|Fort Wayne, IN|IN|0.96|8
+23420|metro|Fresno, CA|CA|1.031|8
+23460|metro|Gadsden, AL|AL|0.689|5
+23540|metro|Gainesville, FL|FL|0.826|7
+23580|metro|Gainesville, GA|GA|0.809|6
+23900|metro|Gettysburg, PA|PA|0.899|5
+2400006|nonmetro|Maryland nonmetropolitan area|MD|0.836|8
+24020|metro|Glens Falls, NY|NY|1.029|7
+24140|metro|Goldsboro, NC|NC|0.78|6
+24220|metro|Grand Forks, ND-MN|ND|0.987|7
+24260|metro|Grand Island, NE|NE|0.821|7
+24300|metro|Grand Junction, CO|CO|0.911|8
+24340|metro|Grand Rapids-Wyoming-Kentwood, MI|MI|0.966|8
+24420|metro|Grants Pass, OR|OR|0.965|6
+24500|metro|Great Falls, MT|MT|1.021|7
+24540|metro|Greeley, CO|CO|0.931|8
+24580|metro|Green Bay, WI|WI|1.066|7
+24660|metro|Greensboro-High Point, NC|NC|0.842|8
+24780|metro|Greenville, NC|NC|0.81|7
+24860|metro|Greenville-Anderson-Greer, SC|SC|0.831|7
+2500001|nonmetro|Massachusetts nonmetropolitan area|MA|1.128|6
+25060|metro|Gulfport-Biloxi, MS|MS|0.846|6
+25180|metro|Hagerstown-Martinsburg, MD-WV|MD|0.872|6
+25220|metro|Hammond, LA|LA|0.792|5
+25260|metro|Hanford-Corcoran, CA|CA|1.128|6
+25420|metro|Harrisburg-Carlisle, PA|PA|0.996|7
+25500|metro|Harrisonburg, VA|VA|0.836|8
+25540|metro|Hartford-West Hartford-East Hartford, CT|CT|1.133|7
+25620|metro|Hattiesburg, MS|MS|0.746|7
+25740|metro|Helena, MT|MT|1.045|5
+25860|metro|Hickory-Lenoir-Morganton, NC|NC|0.8|7
+25940|metro|Hilton Head Island-Bluffton-Port Royal, SC|SC|0.828|8
+25980|metro|Hinesville, GA|GA|0.83|4
+2600001|nonmetro|Upper Peninsula of Michigan nonmetropolitan area|MI|0.901|8
+2600002|nonmetro|Northern Michigan nonmetropolitan area|MI|0.897|7
+2600003|nonmetro|Mid Michigan nonmetropolitan area|MI|0.891|7
+2600004|nonmetro|Southern Michigan nonmetropolitan area|MI|0.967|8
+26140|metro|Homosassa Springs, FL|FL|0.77|6
+26300|metro|Hot Springs, AR|AR|0.7|5
+26380|metro|Houma-Bayou Cane-Thibodaux, LA|LA|0.834|6
+26420|metro|Houston-Pasadena-The Woodlands, TX|TX|0.85|8
+26580|metro|Huntington-Ashland, WV-KY-OH|WV|0.896|8
+26620|metro|Huntsville, AL|AL|0.807|7
+26820|metro|Idaho Falls, ID|ID|0.869|7
+26900|metro|Indianapolis-Carmel-Greenwood, IN|IN|1.004|8
+26980|metro|Iowa City, IA|IA|0.901|6
+2700001|nonmetro|Northwest Minnesota nonmetropolitan area|MN|0.994|8
+2700002|nonmetro|Northeast Minnesota nonmetropolitan area|MN|1.137|5
+2700003|nonmetro|Southwest Minnesota nonmetropolitan area|MN|0.939|6
+2700004|nonmetro|Southeast Minnesota nonmetropolitan area|MN|1.031|8
+27060|metro|Ithaca, NY|NY|1.007|6
+27100|metro|Jackson, MI|MI|1.0|6
+27140|metro|Jackson, MS|MS|0.805|7
+27180|metro|Jackson, TN|TN|0.832|6
+27260|metro|Jacksonville, FL|FL|0.864|8
+27340|metro|Jacksonville, NC|NC|0.774|7
+27500|metro|Janesville-Beloit, WI|WI|1.107|7
+27620|metro|Jefferson City, MO|MO|0.975|7
+27740|metro|Johnson City, TN|TN|0.763|6
+27780|metro|Johnstown, PA|PA|0.883|6
+27860|metro|Jonesboro, AR|AR|0.723|5
+27900|metro|Joplin, MO-KS|MO|0.879|7
+27980|metro|Kahului-Wailuku, HI|HI|1.319|8
+2800005|nonmetro|West Delta Mississippi nonmetropolitan area|MS|0.731|7
+2800006|nonmetro|Upper East Mississippi nonmetropolitan area|MS|0.766|7
+2800007|nonmetro|Lower West Mississippi nonmetropolitan area|MS|0.768|7
+2800008|nonmetro|Lower East Mississippi nonmetropolitan area|MS|0.762|7
+28020|metro|Kalamazoo-Portage, MI|MI|1.037|7
+28100|metro|Kankakee, IL|IL|1.269|5
+28140|metro|Kansas City, MO-KS|MO|1.0|8
+28420|metro|Kennewick-Richland, WA|WA|1.181|8
+28450|metro|Kenosha, WI|WI|1.016|6
+28660|metro|Killeen-Temple, TX|TX|0.764|7
+28700|metro|Kingsport-Bristol, TN-VA|TN|0.803|8
+28740|metro|Kingston, NY|NY|0.989|6
+28880|metro|Kiryas Joel-Poughkeepsie-Newburgh, NY|NY|1.031|7
+28940|metro|Knoxville, TN|TN|0.849|7
+2900001|nonmetro|Central Missouri nonmetropolitan area|MO|0.856|7
+2900002|nonmetro|North Missouri nonmetropolitan area|MO|0.868|7
+2900003|nonmetro|Southeast Missouri nonmetropolitan area|MO|0.88|7
+2900004|nonmetro|Southwest Missouri nonmetropolitan area|MO|0.854|6
+29020|metro|Kokomo, IN|IN|1.127|5
+29100|metro|La Crosse-Onalaska, WI-MN|WI|1.046|7
+29180|metro|Lafayette, LA|LA|0.823|7
+29200|metro|Lafayette-West Lafayette, IN|IN|0.96|7
+29340|metro|Lake Charles, LA|LA|0.868|6
+29420|metro|Lake Havasu City-Kingman, AZ|AZ|0.832|7
+29460|metro|Lakeland-Winter Haven, FL|FL|0.808|8
+29540|metro|Lancaster, PA|PA|0.943|8
+29620|metro|Lansing-East Lansing, MI|MI|1.047|8
+29700|metro|Laredo, TX|TX|0.692|6
+29740|metro|Las Cruces, NM|NM|0.783|8
+29820|metro|Las Vegas-Henderson-North Las Vegas, NV|NV|0.96|8
+29940|metro|Lawrence, KS|KS|0.894|6
+3000003|nonmetro|Southwest Montana nonmetropolitan area|MT|1.037|5
+3000004|nonmetro|West Montana nonmetropolitan area|MT|0.973|7
+3000006|nonmetro|East-Central Montana nonmetropolitan area|MT|1.032|6
+30020|metro|Lawton, OK|OK|0.837|6
+30140|metro|Lebanon, PA|PA|0.931|6
+30300|metro|Lewiston, ID-WA|ID|0.916|5
+30340|metro|Lewiston-Auburn, ME|ME|0.978|7
+30460|metro|Lexington-Fayette, KY|KY|0.875|8
+30500|metro|Lexington Park, MD|MD|0.936|6
+30620|metro|Lima, OH|OH|0.935|7
+30700|metro|Lincoln, NE|NE|0.872|8
+30780|metro|Little Rock-North Little Rock-Conway, AR|AR|0.756|7
+30860|metro|Logan, UT-ID|UT|0.846|8
+30980|metro|Longview, TX|TX|0.78|7
+3100001|nonmetro|Northwest Nebraska nonmetropolitan area|NE|0.817|6
+3100003|nonmetro|Northeast Nebraska nonmetropolitan area|NE|0.836|8
+3100006|nonmetro|South Nebraska nonmetropolitan area|NE|0.845|8
+31020|metro|Longview-Kelso, WA|WA|1.142|7
+31080|metro|Los Angeles-Long Beach-Anaheim, CA|CA|1.123|8
+31140|metro|Louisville/Jefferson County, KY-IN|KY|0.92|8
+31180|metro|Lubbock, TX|TX|0.723|7
+31340|metro|Lynchburg, VA|VA|0.817|8
+31420|metro|Macon-Bibb County, GA|GA|0.776|7
+31540|metro|Madison, WI|WI|1.095|8
+31700|metro|Manchester-Nashua, NH|NH|1.005|8
+31740|metro|Manhattan, KS|KS|0.892|6
+31860|metro|Mankato, MN|MN|1.068|7
+31900|metro|Mansfield, OH|OH|0.904|6
+3200006|nonmetro|Balance of Nevada nonmetropolitan area|NV|1.04|8
+32420|metro|Mayaguez, PR|PR|0.487|7
+32580|metro|McAllen-Edinburg-Mission, TX|TX|0.708|6
+32780|metro|Medford, OR|OR|0.994|8
+32820|metro|Memphis, TN-MS-AR|TN|0.852|8
+32900|metro|Merced, CA|CA|1.067|8
+3300001|nonmetro|Northern New Hampshire nonmetropolitan area|NH|0.984|6
+3300002|nonmetro|Central New Hampshire nonmetropolitan area|NH|0.97|7
+3300006|nonmetro|Southwestern New Hampshire nonmetropolitan area|NH|0.968|7
+33100|metro|Miami-Fort Lauderdale-West Palm Beach, FL|FL|0.871|8
+33140|metro|Michigan City-La Porte, IN|IN|1.118|6
+33220|metro|Midland, MI|MI|0.915|5
+33260|metro|Midland, TX|TX|0.884|6
+33340|metro|Milwaukee-Waukesha, WI|WI|1.073|8
+33460|metro|Minneapolis-St. Paul-Bloomington, MN-WI|MN|1.237|8
+33500|metro|Minot, ND|ND|0.936|6
+33540|metro|Missoula, MT|MT|1.03|8
+33660|metro|Mobile, AL|AL|0.82|7
+33700|metro|Modesto, CA|CA|1.077|8
+33740|metro|Monroe, LA|LA|0.814|7
+33780|metro|Monroe, MI|MI|1.056|5
+33860|metro|Montgomery, AL|AL|0.769|6
+34060|metro|Morgantown, WV|WV|0.801|6
+34100|metro|Morristown, TN|TN|0.794|7
+34580|metro|Mount Vernon-Anacortes, WA|WA|1.185|8
+34620|metro|Muncie, IN|IN|0.94|6
+34740|metro|Muskegon-Norton Shores, MI|MI|0.959|6
+34820|metro|Myrtle Beach-Conway-North Myrtle Beach, SC|SC|0.767|7
+34900|metro|Napa, CA|CA|1.214|7
+34940|metro|Naples-Marco Island, FL|FL|0.883|8
+34980|metro|Nashville-Davidson--Murfreesboro--Franklin, TN|TN|0.89|8
+3500006|nonmetro|Northern New Mexico nonmetropolitan area|NM|0.817|7
+3500007|nonmetro|Eastern New Mexico nonmetropolitan area|NM|0.84|7
+35300|metro|New Haven, CT|CT|1.136|7
+35380|metro|New Orleans-Metairie, LA|LA|0.874|7
+35620|metro|New York-Newark-Jersey City, NY-NJ|NY|1.209|8
+35660|metro|Niles, MI|MI|0.908|6
+35840|metro|North Port-Bradenton-Sarasota, FL|FL|0.865|8
+35980|metro|Norwich-New London-Willimantic, CT|CT|1.095|6
+3600001|nonmetro|Capital/Northern New York nonmetropolitan area|NY|0.994|7
+3600004|nonmetro|Southwest New York nonmetropolitan area|NY|0.998|8
+3600006|nonmetro|Central East New York nonmetropolitan area|NY|0.924|6
+36100|metro|Ocala, FL|FL|0.765|8
+36220|metro|Odessa, TX|TX|0.857|7
+36260|metro|Ogden, UT|UT|0.903|8
+36420|metro|Oklahoma City, OK|OK|0.838|8
+36500|metro|Olympia-Lacey-Tumwater, WA|WA|1.15|7
+36540|metro|Omaha, NE-IA|NE|0.915|8
+36740|metro|Orlando-Kissimmee-Sanford, FL|FL|0.81|8
+36780|metro|Oshkosh-Neenah, WI|WI|1.107|7
+36980|metro|Owensboro, KY|KY|0.881|6
+3700001|nonmetro|Eastern North Carolina nonmetropolitan area|NC|0.759|8
+3700002|nonmetro|Central North Carolina nonmetropolitan area|NC|0.777|7
+3700003|nonmetro|Western North Carolina nonmetropolitan area|NC|0.783|8
+37100|metro|Oxnard-Thousand Oaks-Ventura, CA|CA|1.066|8
+37140|metro|Paducah, KY-IL|KY|0.968|6
+37340|metro|Palm Bay-Melbourne-Titusville, FL|FL|0.862|8
+37460|metro|Panama City-Panama City Beach, FL|FL|0.806|7
+37620|metro|Parkersburg-Vienna, WV|WV|0.782|5
+37860|metro|Pensacola-Ferry Pass-Brent, FL|FL|0.811|8
+37900|metro|Peoria, IL|IL|1.248|7
+37980|metro|Philadelphia-Camden-Wilmington, PA-NJ-DE-MD|PA|1.059|8
+3800006|nonmetro|West North Dakota nonmetropolitan area|ND|1.025|6
+3800007|nonmetro|East North Dakota nonmetropolitan area|ND|0.955|6
+38060|metro|Phoenix-Mesa-Chandler, AZ|AZ|0.919|8
+38240|metro|Pinehurst-Southern Pines, NC|NC|0.789|6
+38300|metro|Pittsburgh, PA|PA|0.987|8
+38340|metro|Pittsfield, MA|MA|1.046|7
+38540|metro|Pocatello, ID|ID|0.866|6
+38660|metro|Ponce, PR|PR|0.478|6
+38860|metro|Portland-South Portland, ME|ME|1.014|8
+38900|metro|Portland-Vancouver-Hillsboro, OR-WA|OR|1.219|8
+38940|metro|Port St. Lucie, FL|FL|0.839|8
+3900001|nonmetro|West Northwestern Ohio nonmetropolitan area|OH|0.918|7
+3900002|nonmetro|North Northeastern Ohio nonmetropolitan area (noncontiguous)|OH|0.917|8
+3900003|nonmetro|Eastern Ohio nonmetropolitan area|OH|0.921|7
+3900004|nonmetro|Southern Ohio nonmetropolitan area|OH|0.951|7
+39150|metro|Prescott Valley-Prescott, AZ|AZ|0.867|8
+39300|metro|Providence-Warwick, RI-MA|RI|1.04|8
+39340|metro|Provo-Orem-Lehi, UT|UT|0.835|8
+39380|metro|Pueblo, CO|CO|0.9|7
+39460|metro|Punta Gorda, FL|FL|0.86|6
+39540|metro|Racine-Mount Pleasant, WI|WI|1.061|7
+39580|metro|Raleigh-Cary, NC|NC|0.863|8
+39660|metro|Rapid City, SD|SD|0.862|8
+39740|metro|Reading, PA|PA|0.957|7
+39820|metro|Redding, CA|CA|1.042|8
+39900|metro|Reno, NV|NV|1.011|8
+4000001|nonmetro|Northeast Oklahoma nonmetropolitan area|OK|0.752|7
+4000002|nonmetro|Northwest Oklahoma nonmetropolitan area|OK|0.765|6
+4000003|nonmetro|Southwest Oklahoma nonmetropolitan area|OK|0.743|6
+4000004|nonmetro|Southeast Oklahoma nonmetropolitan area|OK|0.777|7
+40060|metro|Richmond, VA|VA|0.874|8
+40140|metro|Riverside-San Bernardino-Ontario, CA|CA|1.05|8
+40220|metro|Roanoke, VA|VA|0.797|8
+40340|metro|Rochester, MN|MN|1.157|7
+40380|metro|Rochester, NY|NY|1.016|8
+40420|metro|Rockford, IL|IL|1.259|7
+40580|metro|Rocky Mount, NC|NC|0.796|7
+40660|metro|Rome, GA|GA|0.738|5
+40900|metro|Sacramento-Roseville-Folsom, CA|CA|1.103|8
+40980|metro|Saginaw, MI|MI|1.072|7
+4100006|nonmetro|Coast Oregon nonmetropolitan area|OR|0.965|7
+4100007|nonmetro|Central Oregon nonmetropolitan area|OR|0.975|7
+4100008|nonmetro|Eastern Oregon nonmetropolitan area|OR|0.963|8
+41060|metro|St. Cloud, MN|MN|1.16|7
+41100|metro|St. George, UT|UT|0.829|8
+41140|metro|St. Joseph, MO-KS|MO|1.042|7
+41180|metro|St. Louis, MO-IL|MO|1.108|8
+41420|metro|Salem, OR|OR|1.073|8
+41500|metro|Salinas, CA|CA|1.13|8
+41540|metro|Salisbury, MD|MD|0.858|7
+41620|metro|Salt Lake City-Murray, UT|UT|0.929|8
+41660|metro|San Angelo, TX|TX|0.736|6
+41700|metro|San Antonio-New Braunfels, TX|TX|0.82|8
+41740|metro|San Diego-Chula Vista-Carlsbad, CA|CA|1.14|8
+41780|metro|Sandusky, OH|OH|1.002|5
+41860|metro|San Francisco-Oakland-Fremont, CA|CA|1.315|8
+41940|metro|San Jose-Sunnyvale-Santa Clara, CA|CA|1.34|8
+41980|metro|San Juan-Bayamon-Caguas, PR|PR|0.482|8
+4200001|nonmetro|Northwestern Pennsylvania nonmetropolitan area|PA|0.896|7
+4200002|nonmetro|Northeastern Pennsylvania nonmetropolitan area|PA|0.894|7
+4200003|nonmetro|Central Pennsylvania nonmetropolitan area|PA|0.873|8
+4200004|nonmetro|Southwestern Pennsylvania nonmetropolitan area|PA|0.944|7
+42020|metro|San Luis Obispo-Paso Robles, CA|CA|1.13|8
+42100|metro|Santa Cruz-Watsonville, CA|CA|1.163|8
+42140|metro|Santa Fe, NM|NM|0.846|8
+42200|metro|Santa Maria-Santa Barbara, CA|CA|1.101|8
+42220|metro|Santa Rosa-Petaluma, CA|CA|1.193|8
+42340|metro|Savannah, GA|GA|0.826|7
+42540|metro|Scranton--Wilkes-Barre, PA|PA|0.93|8
+42660|metro|Seattle-Tacoma-Bellevue, WA|WA|1.264|8
+42680|metro|Sebastian-Vero Beach-West Vero Corridor, FL|FL|0.832|8
+42700|metro|Sebring, FL|FL|0.779|7
+43100|metro|Sheboygan, WI|WI|1.083|7
+43300|metro|Sherman-Denison, TX|TX|0.835|5
+43340|metro|Shreveport-Bossier City, LA|LA|0.842|7
+43420|metro|Sierra Vista-Douglas, AZ|AZ|0.799|6
+43580|metro|Sioux City, IA-NE-SD|IA|0.906|8
+43620|metro|Sioux Falls, SD-MN|SD|0.88|8
+43640|metro|Slidell-Mandeville-Covington, LA|LA|0.83|6
+43780|metro|South Bend-Mishawaka, IN-MI|IN|1.023|7
+43900|metro|Spartanburg, SC|SC|0.829|7
+44060|metro|Spokane-Spokane Valley, WA|WA|1.054|7
+44100|metro|Springfield, IL|IL|1.259|7
+44140|metro|Springfield, MA|MA|1.209|7
+44180|metro|Springfield, MO|MO|0.885|8
+44220|metro|Springfield, OH|OH|0.928|6
+44300|metro|State College, PA|PA|0.91|6
+44420|metro|Staunton-Stuarts Draft, VA|VA|0.838|5
+44700|metro|Stockton-Lodi, CA|CA|1.097|8
+44940|metro|Sumter, SC|SC|0.766|6
+4500003|nonmetro|Northwestern South Carolina nonmetropolitan area|SC|0.781|7
+4500005|nonmetro|Southern South Carolina nonmetropolitan area|SC|0.806|5
+4500007|nonmetro|Northeastern South Carolina nonmetropolitan area|SC|0.766|6
+45060|metro|Syracuse, NY|NY|1.008|8
+45220|metro|Tallahassee, FL|FL|0.787|6
+45300|metro|Tampa-St. Petersburg-Clearwater, FL|FL|0.835|8
+45460|metro|Terre Haute, IN|IN|0.993|7
+45500|metro|Texarkana, TX-AR|TX|0.772|6
+45780|metro|Toledo, OH|OH|1.007|8
+45820|metro|Topeka, KS|KS|0.937|7
+45900|metro|Traverse City, MI|MI|0.94|8
+45940|metro|Trenton-Princeton, NJ|NJ|1.216|8
+4600002|nonmetro|East South Dakota nonmetropolitan area|SD|0.847|8
+4600003|nonmetro|West South Dakota nonmetropolitan area|SD|0.842|7
+46060|metro|Tucson, AZ|AZ|0.844|8
+46140|metro|Tulsa, OK|OK|0.848|8
+46220|metro|Tuscaloosa, AL|AL|0.808|7
+46300|metro|Twin Falls, ID|ID|0.768|8
+46340|metro|Tyler, TX|TX|0.75|8
+46520|metro|Urban Honolulu, HI|HI|1.354|8
+46540|metro|Utica-Rome, NY|NY|0.993|7
+46660|metro|Valdosta, GA|GA|0.691|5
+46700|metro|Vallejo, CA|CA|1.151|7
+4700001|nonmetro|West Tennessee nonmetropolitan area|TN|0.775|8
+4700002|nonmetro|South Central Tennessee nonmetropolitan area|TN|0.755|7
+4700003|nonmetro|North Central Tennessee nonmetropolitan area|TN|0.759|7
+4700004|nonmetro|East Tennessee nonmetropolitan area|TN|0.771|6
+47020|metro|Victoria, TX|TX|0.776|6
+47220|metro|Vineland, NJ|NJ|1.16|6
+47260|metro|Virginia Beach-Chesapeake-Norfolk, VA-NC|VA|0.861|8
+47300|metro|Visalia, CA|CA|0.939|8
+47380|metro|Waco, TX|TX|0.814|8
+47460|metro|Walla Walla, WA|WA|1.003|7
+47580|metro|Warner Robins, GA|GA|0.818|5
+47900|metro|Washington-Arlington-Alexandria, DC-VA-MD-WV|DC|1.026|8
+47930|metro|Waterbury-Shelton, CT|CT|1.098|6
+47940|metro|Waterloo-Cedar Falls, IA|IA|0.957|6
+4800001|nonmetro|Northwestern Region of Texas nonmetropolitan area|TX|0.807|7
+4800002|nonmetro|North Region of Texas nonmetropolitan area|TX|0.814|7
+4800003|nonmetro|Eastern Region of Texas nonmetropolitan area|TX|0.747|7
+4800004|nonmetro|Hill Country Region of Texas nonmetropolitan area|TX|0.754|8
+4800005|nonmetro|Border Region of Texas nonmetropolitan area|TX|0.895|5
+4800006|nonmetro|Coastal Plains Region of Texas nonmetropolitan area|TX|0.83|6
+48060|metro|Watertown-Fort Drum, NY|NY|0.974|6
+48140|metro|Wausau, WI|WI|1.02|6
+48260|metro|Weirton-Steubenville, WV-OH|WV|0.929|6
+48300|metro|Wenatchee-East Wenatchee, WA|WA|1.061|8
+48540|metro|Wheeling, WV-OH|WV|0.94|7
+48620|metro|Wichita, KS|KS|0.865|8
+48660|metro|Wichita Falls, TX|TX|0.705|5
+48680|metro|Wildwood-The Villages, FL|FL|0.803|6
+48700|metro|Williamsport, PA|PA|0.894|6
+48900|metro|Wilmington, NC|NC|0.848|8
+4900010|nonmetro|Wasatch Front Fringe Utah nonmetropolitan area|UT|0.875|8
+4900011|nonmetro|High Desert Utah nonmetropolitan area|UT|0.818|8
+49020|metro|Winchester, VA-WV|VA|0.842|7
+49180|metro|Winston-Salem, NC|NC|0.8|8
+49340|metro|Worcester, MA|MA|1.264|8
+49420|metro|Yakima, WA|WA|0.994|8
+49620|metro|York-Hanover, PA|PA|0.988|7
+49660|metro|Youngstown-Warren, OH|OH|0.923|8
+49700|metro|Yuba City, CA|CA|1.032|8
+49740|metro|Yuma, AZ|AZ|0.846|7
+5000001|nonmetro|Southern Vermont nonmetropolitan area|VT|0.977|7
+5000002|nonmetro|Northern Vermont nonmetropolitan area|VT|0.956|7
+5100001|nonmetro|Southwest Virginia nonmetropolitan area|VA|0.794|6
+5100002|nonmetro|Southside Virginia nonmetropolitan area|VA|0.816|6
+5100003|nonmetro|Northeast Virginia nonmetropolitan area|VA|0.803|6
+5100004|nonmetro|Northwest Virginia nonmetropolitan area|VA|0.824|7
+5300006|nonmetro|Western Washington nonmetropolitan area|WA|1.009|7
+5300007|nonmetro|Eastern Washington nonmetropolitan area|WA|1.053|7
+5400001|nonmetro|Southern West Virginia nonmetropolitan area|WV|0.798|6
+5400002|nonmetro|Northern West Virginia nonmetropolitan area|WV|0.816|7
+5500001|nonmetro|Northwestern Wisconsin nonmetropolitan area|WI|0.985|5
+5500002|nonmetro|Northeastern Wisconsin nonmetropolitan area|WI|0.946|8
+5500003|nonmetro|South Central Wisconsin nonmetropolitan area|WI|0.992|8
+5500004|nonmetro|Western Wisconsin nonmetropolitan area|WI|0.992|8
+5600006|nonmetro|Western Wyoming nonmetropolitan area|WY|0.891|8
+5600007|nonmetro|Eastern Wyoming nonmetropolitan area|WY|0.917|7
+6600001|nonmetro|Guam|GU|0.602|6
+7800001|nonmetro|Virgin Islands|VI|0.781|6
+ST-AK|state|Alaska (state average)|AK|1.248|0
+ST-AL|state|Alabama (state average)|AL|0.78|0
+ST-AR|state|Arkansas (state average)|AR|0.747|0
+ST-AZ|state|Arizona (state average)|AZ|0.862|0
+ST-CA|state|California (state average)|CA|1.116|0
+ST-CO|state|Colorado (state average)|CO|0.94|0
+ST-CT|state|Connecticut (state average)|CT|1.118|0
+ST-DC|state|District of Columbia (state average)|DC|1.026|0
+ST-DE|state|Delaware (state average)|DE|0.883|0
+ST-FL|state|Florida (state average)|FL|0.826|0
+ST-GA|state|Georgia (state average)|GA|0.79|0
+ST-GU|state|Guam (state average)|GU|0.602|0
+ST-HI|state|Hawaii (state average)|HI|1.287|0
+ST-IA|state|Iowa (state average)|IA|0.925|0
+ST-ID|state|Idaho (state average)|ID|0.866|0
+ST-IL|state|Illinois (state average)|IL|1.187|0
+ST-IN|state|Indiana (state average)|IN|0.997|0
+ST-KS|state|Kansas (state average)|KS|0.88|0
+ST-KY|state|Kentucky (state average)|KY|0.871|0
+ST-LA|state|Louisiana (state average)|LA|0.826|0
+ST-MA|state|Massachusetts (state average)|MA|1.16|0
+ST-MD|state|Maryland (state average)|MD|0.889|0
+ST-ME|state|Maine (state average)|ME|0.969|0
+ST-MI|state|Michigan (state average)|MI|0.999|0
+ST-MN|state|Minnesota (state average)|MN|1.096|0
+ST-MO|state|Missouri (state average)|MO|0.937|0
+ST-MS|state|Mississippi (state average)|MS|0.775|0
+ST-MT|state|Montana (state average)|MT|1.039|0
+ST-NC|state|North Carolina (state average)|NC|0.813|0
+ST-ND|state|North Dakota (state average)|ND|0.98|0
+ST-NE|state|Nebraska (state average)|NE|0.851|0
+ST-NH|state|New Hampshire (state average)|NH|0.982|0
+ST-NJ|state|New Jersey (state average)|NJ|1.142|0
+ST-NM|state|New Mexico (state average)|NM|0.83|0
+ST-NV|state|Nevada (state average)|NV|1.016|0
+ST-NY|state|New York (state average)|NY|1.022|0
+ST-OH|state|Ohio (state average)|OH|0.959|0
+ST-OK|state|Oklahoma (state average)|OK|0.802|0
+ST-OR|state|Oregon (state average)|OR|1.037|0
+ST-PA|state|Pennsylvania (state average)|PA|0.937|0
+ST-PR|state|Puerto Rico (state average)|PR|0.488|0
+ST-RI|state|Rhode Island (state average)|RI|1.04|0
+ST-SC|state|South Carolina (state average)|SC|0.807|0
+ST-SD|state|South Dakota (state average)|SD|0.858|0
+ST-TN|state|Tennessee (state average)|TN|0.808|0
+ST-TX|state|Texas (state average)|TX|0.79|0
+ST-UT|state|Utah (state average)|UT|0.862|0
+ST-VA|state|Virginia (state average)|VA|0.831|0
+ST-VI|state|Virgin Islands (state average)|VI|0.781|0
+ST-VT|state|Vermont (state average)|VT|0.987|0
+ST-WA|state|Washington (state average)|WA|1.11|0
+ST-WI|state|Wisconsin (state average)|WI|1.044|0
+ST-WV|state|West Virginia (state average)|WV|0.846|0
+ST-WY|state|Wyoming (state average)|WY|0.913|0
