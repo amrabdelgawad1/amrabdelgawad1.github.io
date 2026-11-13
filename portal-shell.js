@@ -1,4 +1,4 @@
-// Portal shell: the same top bar on every signed-in page (logo, page name, Apps menu, the person's initials and name).
+// Portal shell: the same top bar on every signed-in page (logo, page name, Apps menu, the person's photo or initials, and name).
 // Each page keeps its own header element and controls (course menu button, search, progress, language, "View as learner");
 // the shell adds its pieces around them, so the pages' own scripts keep working by id.
 //
@@ -104,6 +104,20 @@
   const initials = n => String(n || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
 
   // ---------- data ----------
+  // The person's own profile photo (the one the portal's account circle shows), else the photo Amr set on their agent card.
+  // No photo, or any failure: the initials stay.
+  async function loadPhoto(db){
+    try {
+      const s = await db.auth.getSession(), id = s && s.data && s.data.session && s.data.session.user.id;
+      if (!id || !me) return;
+      const p = await db.from('profiles').select('photo_path').eq('user_id', id).maybeSingle();
+      let path = p && p.data && p.data.photo_path;
+      if (!path && me.role !== 'owner') { const c = await db.rpc('my_card'); const row = c && (Array.isArray(c.data) ? c.data[0] : c.data); path = row && row.photo_path; }
+      if (!path || !me) return;
+      me.photo = db.storage.from('avatars').getPublicUrl(path).data.publicUrl;
+      drawAll();
+    } catch(e) {}
+  }
   async function load(){
     const t = window.PORTAL_TEST || (opts && opts.test);
     if (t) {
@@ -118,6 +132,7 @@
     me = Object.assign({ keys:[], needs_code:[] }, r.data);
     if (me.role === 'owner') me.name = opts.ownerName || 'Amr';
     drawAll();
+    loadPhoto(db);   // not awaited: the bar shows initials first, then the photo
     // Counts, only for people allowed to see them (the database refuses the rest anyway)
     const jobs = [];
     if (me.role === 'owner') jobs.push(Promise.all([
@@ -242,7 +257,13 @@
     b.btn.querySelector('.p-dot').hidden = !total();
     b.btn.setAttribute('aria-label', 'Apps' + (total() ? ', something is waiting' : ''));
     if (b.meName) b.meName.textContent = me.name || '';
-    if (b.meAv) b.meAv.textContent = me.role === 'owner' ? 'AA' : initials(me.name);
+    if (b.meAv) {
+      if (me.photo && b.photo && b.photo.src === me.photo && b.photo.complete) b.meAv.replaceChildren(b.photo);   // already loaded: no flash of initials on a redraw
+      else {
+        b.meAv.textContent = me.role === 'owner' ? 'AA' : initials(me.name);
+        if (me.photo) { const img = new Image(); img.alt = ''; img.onload = () => { b.photo = img; if (b.meAv.isConnected && me && me.photo === img.src) b.meAv.replaceChildren(img); }; img.src = me.photo; }   // swaps in only once it has loaded
+      }
+    }
     if (b.meBtn) b.meBtn.setAttribute('aria-label', 'Your account' + (me.name ? ': ' + me.name : ''));
   }
   const drawAll = () => bars.forEach(draw);
