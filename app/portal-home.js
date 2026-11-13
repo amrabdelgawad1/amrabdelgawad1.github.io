@@ -464,7 +464,7 @@
     const [lr, names] = await Promise.all([learners(db, owner), nameMap(db)]);
     if (my !== run) return;
     const rows = [];
-    lr.acq.forEach(x => rows.push({ name:x.name || names[x.userId] || 'Someone', course:'Acquisitions', prog:acqWhere(x), at:x.lastActive, href:owner ? '#review/' + encodeURIComponent(x.userId) : '' }));
+    lr.acq.forEach(x => rows.push({ name:(/@/.test(x.name || '') ? names[x.userId] : x.name) || x.name || names[x.userId] || 'Someone', course:'Acquisitions', prog:acqWhere(x), at:x.lastActive, href:owner ? '#review/' + encodeURIComponent(x.userId) : '' }));
     lr.hub.forEach(x => { const c = COURSES.find(k => k.id === x.course); if (c) rows.push({ name:x.name || names[x.user_id] || (owner && x.user_id === T.user.id ? 'You' : 'Someone'), course:c.short, prog:(x.passed || 0) + ' of ' + c.total + ' modules passed', at:x.updated_at, href:owner ? '#review/' + encodeURIComponent(x.user_id) : '' }); });
     rows.sort((a, b) => a.name.localeCompare(b.name) || a.course.localeCompare(b.course));
     const ago = d => { if (!d) return '–'; const s = (Date.now() - new Date(d).getTime()) / 1000; return s < 3600 ? 'this hour' : s < 86400 ? 'today' : s < 172800 ? 'yesterday' : Math.floor(s / 86400) + ' days ago'; };
