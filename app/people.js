@@ -133,7 +133,7 @@
   function startDraft(p){
     const keys = keysOf(p.role, p.access, p.not_given);
     draft = { id:p.user_id, role:p.role === 'manager' ? 'manager' : 'agent', ticks:new Set(EXTRAS.map(e => e.key).filter(k => keys.has(k) && (k === 'course' || k === 'deals' || keys.has('learn')))),
-      company:p.company_id, until:p.deals_until || '', mfa:!!p.deals_mfa, tap:!!p.tap_counter, dirty:false };
+      company:p.company_id, until:p.deals_until || '', mfa:!!p.deals_mfa, rem:p.deals_remember !== false, tap:!!p.tap_counter, dirty:false };
   }
   // What the boxes add up to: role keys minus not_given, plus extras
   function planOf(p, d){
@@ -182,7 +182,8 @@
       (plan.keys.has('deals') ? '<fieldset class="pp-sec pp-small"><legend>Deal tools</legend>' +
         '<label class="pp-inline-l">Deal tools until <input type="date" class="pp-field pp-date" data-until value="' + esc(d.until) + '"' + (off ? ' disabled' : '') + '></label>' +
         '<label class="pp-check"><input type="checkbox" data-mfa' + (d.mfa ? ' checked' : '') + (off ? ' disabled' : '') + '> Ask for an authenticator code to open them</label>' +
-        '<p class="pp-note">Leave the date empty for no end.</p></fieldset>' : '') +
+        ('deals_remember' in p ? '<label class="pp-check"><input type="checkbox" data-rem' + (d.rem ? ' checked' : '') + (off ? ' disabled' : '') + '> Can keep the Deal CRM unlocked on their own device</label>' : '') +
+        '<p class="pp-note">Leave the date empty for no end. Unlocked on a device means up to 14 days, until they lock the CRM or sign out. Turning it off ends it on every device.</p></fieldset>' : '') +
       '<fieldset class="pp-sec pp-small"><legend>Work</legend><label class="pp-inline-l">Works for <select class="pp-field" data-co' + (off ? ' disabled' : '') + '>' + cos + '</select></label>' +
         '<label class="pp-check"><input type="checkbox" data-tap' + (d.tap ? ' checked' : '') + (off ? ' disabled' : '') + '> Counts calls as they go (for acquisitions work)</label>' +
         '<p class="pp-note">Everyone types their dials, conversations, offers and appointments at clock-out. Ticked: the tap counter starts open for ' + esc(fn) + ' and fills those numbers in.</p></fieldset>' +
@@ -222,6 +223,7 @@
       if (c.signed_out_everywhere !== undefined) out.push('Signed out on every device');
       if (c.username) out.push(c.username.from ? 'Username changed to ' + c.username.to : 'Username set to ' + c.username.to);
       if (c.deals_mfa) out.push(c.deals_mfa.to ? 'Authenticator code asked for Deal tools' : 'No authenticator code for Deal tools');
+      if (c.deals_remember) out.push(c.deals_remember.to ? 'Can keep the Deal CRM unlocked on a device' : 'Deal CRM must be unlocked each time');
       return out.length ? out : ['Changed'];
     };
     return '<ul class="pp-loglist">' + rows.map(l => '<li><time datetime="' + esc(l.at) + '">' + esc(when(l.at)) + '</time><span>' + esc(lines(l).join(', ')) + ' by ' + esc(by(l.actor)) + '</span></li>').join('') + '</ul>';
@@ -235,6 +237,7 @@
       else if (t.matches('.pp-extra input')) t.checked ? draft.ticks.add(t.value) : draft.ticks.delete(t.value);
       else if (t.matches('[data-until]')) draft.until = t.value;
       else if (t.matches('[data-mfa]')) draft.mfa = t.checked;
+      else if (t.matches('[data-rem]')) draft.rem = t.checked;
       else if (t.matches('[data-co]')) draft.company = Number(t.value);
       else if (t.matches('[data-tap]')) draft.tap = t.checked;
       else return;
@@ -242,7 +245,7 @@
       const keep = t.matches('input[type=radio], input[type=checkbox]') ? (t.name || t.value || '') : '';
       drawDetail();
       // keep the keyboard where it was
-      const again = keep && box.querySelector(t.name === 'ppRole' ? 'input[name=ppRole][value="' + t.value + '"]' : t.matches('[data-mfa]') ? '[data-mfa]' : t.matches('[data-tap]') ? '[data-tap]' : 'input[value="' + t.value + '"]');
+      const again = keep && box.querySelector(t.name === 'ppRole' ? 'input[name=ppRole][value="' + t.value + '"]' : t.matches('[data-mfa]') ? '[data-mfa]' : t.matches('[data-rem]') ? '[data-rem]' : t.matches('[data-tap]') ? '[data-tap]' : 'input[value="' + t.value + '"]');
       if (again) again.focus();
     });
     box.addEventListener('click', async e => {
@@ -292,6 +295,7 @@
     busy = true; btn.setAttribute('aria-busy', 'true');
     const row = { role:plan.role, access:plan.access, not_given:plan.not_given, company_id:d.company || p.company_id, deals_until:d.until || null, deals_mfa:d.mfa };
     if ('tap_counter' in p) row.tap_counter = !!d.tap;
+    if ('deals_remember' in p) row.deals_remember = !!d.rem;
     const { error } = await db.from('members').update(row).eq('user_id', p.user_id);
     // Settings > Agents shows the same role on their agent card
     if (!error && p.agent_id) await db.from('agents').update({ role:plan.role === 'manager' ? 'leader' : 'member' }).eq('id', p.agent_id).then(x => x, () => {});
