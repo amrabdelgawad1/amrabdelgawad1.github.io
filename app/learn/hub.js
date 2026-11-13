@@ -118,7 +118,16 @@
   let review = null;
   function loadReview(){
     if (!db || window.HUB_TEST) return;
-    db.rpc('portal_review_today').then(r => { if (r && !r.error && r.data) { review = (r.data.cards || []).length; draw(); } }, () => {});
+    // Acquisitions cards come from portal_review_today; Marketing and Psychology cards are rows in review_cards (due_on is the learner's own day).
+    // The Daily review page shows at most 20 of those, so the same cap applies here.
+    const d = new Date(), p = n => String(n).padStart(2, '0'), today = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+    Promise.all([
+      db.rpc('portal_review_today').then(r => r, () => ({})),
+      db.from('review_cards').select('card', { count:'exact', head:true }).eq('user_id', uid).or('module_id.like.mkt:%,module_id.like.psy:%').lte('due_on', today).then(r => r, () => ({}))
+    ]).then(([a, b]) => {
+      if (!a || a.error || !a.data) return;
+      review = (a.data.cards || []).length + Math.min(20, (b && !b.error && b.count) || 0); draw();
+    });
   }
   function draw(){
     const mine = COURSES.filter(canOpen).length;
