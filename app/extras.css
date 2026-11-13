@@ -350,3 +350,32 @@ html[dir=rtl] #pView .px-slot{ padding:6px 8px 6px 22px; }
 #pView .r6-dot.is-warn{ background:var(--p-accent); }
 #pView .r6-dot.is-bad{ background:var(--p-no); }
 #pView .r6-who[hidden]{ display:none; }
+/* Contracts, Nov 13: Word files, reviews, state notes, re-check */
+#pView .r5-pills{ display:inline-flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; }
+#pView .r5-chip.is-old{ outline:2px dotted var(--p-no); outline-offset:2px; }
+#pView .r5-recheck{ align-items:end; gap:8px; margin-top:14px; }
+#pView .r5-recheck input{ width:90px; }
+#pView .r5-files{ border-top:1px solid var(--p-line); margin-top:8px; padding-top:4px; }
+#pView .r5-file{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 16px; padding:12px 0; border-bottom:1px solid var(--p-line); }
+#pView .r5-file.is-retired{ opacity:.7; }
+#pView .r5-file-main{ display:grid; gap:2px; min-width:0; flex:1 1 260px; }
+#pView .r5-file-main small{ color:var(--p-muted); overflow-wrap:anywhere; }
+#pView .r5-file-main .r5-note{ color:var(--p-ink2); }
+#pView .r5-file-side{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+#pView .r5-revform{ flex:1 1 100%; display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px 14px; padding:12px; background:var(--p-soft); border-radius:var(--p-r-sm); }
+#pView .r5-revform .wk-row{ grid-column:1 / -1; }
+#pView .r5-up{ display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px 14px; align-items:end; padding:14px 0 4px; }
+#pView .r5-up input[type=file]{ min-height:44px; width:100%; }
+#pView .r5-up .p-btn{ justify-self:start; }
+#pView .r5-upmsg{ grid-column:1 / -1; margin:0; }
+#pView .r5-warn{ margin:12px 0; padding:12px 14px; border-radius:var(--p-r-sm); background:var(--p-no-soft); color:var(--p-ink); border-left:4px solid var(--p-no); }
+#pView .r5-warn b{ color:var(--p-no); }
+#pView .r5-statenote{ display:grid; gap:4px; margin:12px 0; padding:12px 14px; border-radius:var(--p-r-sm); background:var(--p-soft); }
+#pView .r5-statenote span{ color:var(--p-ink2); font-size:14px; }
+#pView .r5-src{ line-height:1.9; }
+#pView .r5-src .p-pill{ white-space:nowrap; }
+#pView .r5-boxes{ display:grid; grid-template-columns:minmax(140px, 220px) minmax(0, 1fr); gap:0; margin:0; }
+#pView .r5-boxes dt, #pView .r5-boxes dd{ margin:0; padding:9px 0; border-top:1px solid var(--p-line); overflow-wrap:anywhere; }
+#pView .r5-boxes dt{ color:var(--p-ink2); font-weight:600; padding-right:12px; }
+#pView .r5-boxes dd.is-empty{ color:var(--p-muted); font-style:italic; }
+@media (max-width:560px){ #pView .r5-boxes{ grid-template-columns:1fr; } #pView .r5-boxes dd{ border-top:0; padding-top:0; } }
