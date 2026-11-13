@@ -62,12 +62,18 @@
     const live = files.filter(x => x.template_id === tid && !x.retired).sort((a, b) => b.version - a.version);
     return live.find(x => state && x.state === state) || live.find(x => !x.state) || null;
   };
+  // docx-fill.js loads with the page. A phone still on the previous app version (before tapping Update) can get the new
+  // round5.js without it, so it is loaded here when missing.
+  let docxLoading = null;
+  const needDocx = () => window.DocxFill ? Promise.resolve(window.DocxFill) : (docxLoading = docxLoading || new Promise((ok1, bad) => {
+    const sc = document.createElement('script'); sc.src = '/app/docx-fill.js?v=1'; sc.onload = () => window.DocxFill ? ok1(window.DocxFill) : bad(new Error('Couldn’t load the Word filler. Refresh the page and try again.'));
+    sc.onerror = () => { docxLoading = null; bad(new Error('Couldn’t load the Word filler. Check your connection and try again.')); }; document.head.appendChild(sc); }));
   const docCache = new Map();
   async function loadDoc(file){
     if (docCache.has(file.path)) return docCache.get(file.path);
     const r = await db().storage.from('contract-files').download(file.path);
     if (r.error) throw new Error('Couldn’t download the Word file. Check your connection and try again.');
-    const d = await window.DocxFill.read(await r.data.arrayBuffer());
+    const d = await (await needDocx()).read(await r.data.arrayBuffer());
     docCache.set(file.path, d); return d;
   }
   const reviewPill = f => f.reviewed_by ? pill('Reviewed by ' + f.reviewed_by + ', ' + fmtDay(f.reviewed_on, { month:'short', day:'numeric', year:'numeric' }), 'ok') : pill('Not reviewed by an attorney', 'no');
@@ -189,7 +195,7 @@
       if (file.size > 10485760) { m.textContent = 'That file is larger than 10 MB. Remove big pictures and try again.'; return; }
       btn.disabled = true; m.textContent = 'Reading the file…';
       let found;
-      try { found = window.DocxFill.fields(await window.DocxFill.read(await file.arrayBuffer())); }
+      try { const DF = await needDocx(); found = DF.fields(await DF.read(await file.arrayBuffer())); }
       catch (er) { btn.disabled = false; m.textContent = 'Couldn’t read it: ' + (er.message || 'not a Word file') + '. Open it in Word, save it as .docx again, and pick it again.'; return; }
       if (!found.fields.length) { btn.disabled = false; m.textContent = 'No boxes found. Type each one in curly brackets, like {seller_name}, then add the file again.'; return; }
       const version = 1 + Math.max(0, ...files.filter(x => x.template_id === tid && (x.state || null) === state).map(x => x.version));
@@ -302,7 +308,7 @@
         }
         btn.disabled = true; say('r5Msg', 'Filling the Word file…');
         try {
-          const blob = await window.DocxFill.fill(await loadDoc(fl), k => isSign(k) ? SIGN_LINE : (value(k) == null ? BLANK : value(k)));
+          const blob = await (await needDocx()).fill(await loadDoc(fl), k => isSign(k) ? SIGN_LINE : (value(k) == null ? BLANK : value(k)));
           const who = String(vals.seller_name || vals.property_address || '').replace(/[\\/:*?"<>|]+/g, ' ').trim().slice(0, 60);
           saveBlob(blob, t.title + (who ? ' - ' + who : '') + ' - ' + (vals.today || today()) + '.docx');
           say('r5Msg', 'Downloaded. Open it in Word and read it once top to bottom before you send it.');
