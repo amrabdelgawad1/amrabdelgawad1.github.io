@@ -240,6 +240,7 @@
       b.meBtn = m.querySelector('.p-me'); b.meMenu = m.querySelector('.p-menu'); b.meName = m.querySelector('.p-me-name'); b.meAv = m.querySelector('.p-av');
       b.meBtn.addEventListener('click', () => meMenu(b, b.meMenu.hidden));
       b.meMenu.querySelector('[data-out]').addEventListener('click', async () => {
+        try { indexedDB.deleteDatabase('talents-crm'); } catch(e){}   // signing out forgets a Deal CRM kept unlocked on this device
         try { if (o.db) await o.db.auth.signOut(); } catch(e){}
         location.href = '/app/';
       });

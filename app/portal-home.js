@@ -325,7 +325,7 @@
     const need = revs.length + r.length + (payOwed > 0 ? 1 : 0);
     const v = vis.data && vis.data.visitors != null ? Number(vis.data.visitors).toLocaleString('en-US') : null;
     box().innerHTML = '<div class="p-wrap">' +
-      hero('Admin', 'Overview', need ? plural(need, 'thing') + ' need you today' : 'Nothing needs you right now',
+      hero('Admin', 'Overview', need ? plural(need, 'thing') + (need === 1 ? ' needs' : ' need') + ' you today' : 'Nothing needs you right now',
         '<div class="p-stats">' + stat(revs.length, 'to review', '#review') + stat(r.length, r.length === 1 ? 'shift request' : 'shift requests', '#requests') + stat(live == null ? '–' : live, 'clocked in now', '#live') + '</div>') +
       '<div class="p-grid p-boxes">' +
         box5('People', plural(team, 'person', 'people') + ' on the team', [row('Team overview', muted('Open'), '#teamview'), row('Onboarding', muted('Open'), '#onboarding'), row('Clocked in now', muted(live == null ? '–' : plural(live, 'person', 'people')), '#live'),

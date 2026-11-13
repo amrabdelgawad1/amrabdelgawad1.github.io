@@ -147,6 +147,7 @@
     // private course-tool entries and psychology progress kept on this device: remove them on a shared computer
     try { Object.keys(localStorage).forEach(k => { if (k.indexOf('lh-tools:') === 0 || k.indexOf('lh-psy-sync:') === 0) localStorage.removeItem(k); }); } catch(e){}
     stopTimers();
+    try { indexedDB.deleteDatabase('talents-crm'); } catch(e) {}   // signing out forgets a Deal CRM kept unlocked on this device
     await db.auth.signOut();
     role = null; profile = null; closeMenu();
     document.dispatchEvent(new Event('talents-signed-out'));
