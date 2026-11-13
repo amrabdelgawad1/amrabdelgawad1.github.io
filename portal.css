@@ -215,6 +215,7 @@ a.p-cont:hover{ border-color:var(--p-accent); }
 .p-table th{ padding:14px 18px; text-align:start; font:700 11px/1.4 var(--p-body); letter-spacing:.12em; text-transform:uppercase; color:var(--p-muted); border-bottom:1px solid var(--p-line); }
 .p-table td{ padding:12px 18px; border-bottom:1px solid var(--p-line); color:var(--p-ink); }
 .p-table tr:last-child td{ border-bottom:0; }
+.p-table .p-who-mail{ display:block; font-size:12.5px; font-weight:400; color:var(--p-muted); }
 .p-table tr.is-me td{ background:var(--p-accent-soft); font-weight:700; }
 .p-table td.p-rank{ color:var(--p-accent); font-weight:700; }
 

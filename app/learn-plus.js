@@ -125,7 +125,7 @@
   // ======================================================================
   const GAPS = [1, 3, 7, 14, 30, 60];
   async function localCards(){
-    const out = [], want = [];
+    const out = [], want = [], loaded = {};   // loaded: courses whose questions and progress were read in full this time
     const [mOk, pOk] = await Promise.all([canOpen('mkt'), canOpen('psy')]);
     const rc = await safe(db().from('review_cards').select('*').eq('user_id', uid()).or('module_id.like.mkt:%,module_id.like.psy:%'));
     const have = {}; (rc.data || []).forEach(r => have[r.card] = r);
@@ -136,6 +136,7 @@
         Object.entries((p.m || {})).forEach(([mid, s]) => { const last = (s.quiz || {}).last; const m = mods[mid]; if (!last || !m || !Array.isArray(m.quiz)) return;
           (last.ok || []).forEach((good, i) => { const q = m.quiz[i]; if (good === false && q) want.push({ id:'mkt:' + mid + ':' + i, module_id:'mkt:' + mid, src:'Marketing ' + mid.replace(/^m0?/, 'module '),
             prompt:q.q, options:q.o.map((t, j) => ({ id:String(j), text:t })), correct:(q.c || []).map(String), multi:(q.c || []).length > 1, explain:q.why, missed:last.at }); }); });
+        loaded.mkt = true;
       } catch(e) {}
     }
     if (pOk) {
@@ -147,10 +148,17 @@
           const m = byId[mid], it = m && (m.items || []).find(i => i.id === qid), list = it && it.exam && it.exam.q ? (it.exam.q.en || []) : [], q = list[+idx];
           if (q) want.push({ id:'psy:' + mid + ':' + qid + ':' + idx, module_id:'psy:' + mid, src:'Psychology ' + (m.code || mid), prompt:q.stem, options:q.opts.map((t, j) => ({ id:String(j), text:t })), correct:[String(q.ans)], multi:false, explain:q.fb, missed:+v[3] || null });
         });
+        loaded.psy = true;
       } catch(e) {}
     }
     const add = want.filter(w => !have[w.id]).map(w => ({ user_id:uid(), card:w.id, module_id:w.module_id, due_on:today(), missed_at:w.missed ? new Date(w.missed).toISOString() : null }));
     if (add.length) { await safe(db().from('review_cards').insert(add)); add.forEach(a => have[a.card] = a); }
+    // A due card whose question was since answered right in the course quiz is no longer shown here. Move it on as a right answer,
+    // so the Learning Hub's count of due cards (it counts these rows) matches the cards on this page.
+    const wanted = new Set(want.map(w => w.id));
+    const stale = Object.values(have).filter(h => !wanted.has(h.card) && h.due_on <= today() && loaded[String(h.card).split(':')[0]]);
+    await Promise.all(stale.map(h => { const box = Math.min((h.box || 0) + 1, 6), due = new Date(); due.setDate(due.getDate() + GAPS[box - 1]);
+      return safe(db().from('review_cards').update({ box, due_on:isoDay(due), last_at:new Date().toISOString() }).eq('user_id', uid()).eq('card', h.card)); }));
     want.forEach(w => { const h = have[w.id]; if (h && h.due_on <= today()) out.push(Object.assign(w, { box:h.box || 0 })); });
     return { cards:out.slice(0, 20), total:Object.keys(have).length };
   }

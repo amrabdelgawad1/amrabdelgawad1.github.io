@@ -1,10 +1,11 @@
 // Visitor counting, saved in our own database (no cookies).
 // Counts the page view, call-sample plays, links with data-count, and bookings (booking.js calls countEvent).
-// Devices where Amr signed in to /app are skipped (localStorage "nocount"), as is localhost.
+// Devices where Amr signed in to /app are skipped (localStorage "nocount"), as is any host that is not amrabdelgawad.site.
 (function () {
   "use strict";
   var cfg = window.TRACKER_CONFIG || {};
-  var off = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+  // Count only on the real site: previews, saved copies and other hosts (their paths showed up as pages) are skipped
+  var off = !/^(www\.)?amrabdelgawad\.site$/.test(location.hostname);
   try { if (localStorage.getItem("nocount") === "1") off = true; } catch (e) {}
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
 

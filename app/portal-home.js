@@ -49,6 +49,10 @@
     : '<div class="p-row"><span>' + esc(label) + '</span>' + right + '</div>';
   const muted = t => '<span>' + esc(t) + '</span>';
   const pillR = t => '<span class="p-pill">' + esc(t) + '</span>';
+  // Acquisitions: course_admin_learners gives the module the learner is in and done/total inside that module (not modules passed)
+  const acqWhere = x => x && x.module ? 'Module ' + x.module + ' · ' + (x.total ? Math.round((x.done || 0) * 100 / x.total) : 0) + '% done' : 'Not started';
+  // An account with no name yet comes back as its email: say so, and keep the email underneath
+  const who = n => /@/.test(String(n || '')) ? 'No name yet<small class="p-who-mail">' + esc(n) + '</small>' : esc(n);
   const box5 = (title, kick, rows) => '<section class="p-card"><div class="p-card-head"><h2>' + esc(title) + '</h2><span>' + esc(kick) + '</span></div>' + rows.join('') + '</section>';
   const acard = o => '<article class="p-acard"><div class="p-acard-band"><span class="p-hero-bar"></span><span class="p-acard-kick">' + esc(o.band) + '</span>' + IC[o.icon] + '</div>' +
     '<div class="p-acard-body"><span class="p-kick">' + esc(o.kick) + '</span><h3>' + esc(o.name) + '</h3><p>' + esc(o.sub) + '</p>' +
@@ -311,13 +315,14 @@
   async function admin(my){
     const T = A(), db = T.db;
     box().innerHTML = '<div class="p-wrap">' + hero('Admin', 'Overview', 'Loading…', '') + '</div>';
-    const [live, reqs, revs, lr, mem, vis, calls, ann, eod, uc, cms, g1] = await Promise.all([liveCount(db), pendingRequests(db), reviewsWaiting(db), learners(db, true),
-      safe(db.from('members').select('active')), safe(db.rpc('visit_stats', { p_hours:168 })), safe(db.rpc('portal_calls_today')), safe(db.rpc('portal_announcement')), safe(db.rpc('portal_eod')), safe(db.from('deals').select('inspection_ends,closing_on').eq('stage', 'contract')), safe(db.from('commissions').select('amount').eq('status', 'owed')), safe(db.rpc('portal_gate1'))]);
+    const [live, reqs, revs, lr, mem, vis, calls, ann, eod, uc, cms, g1, wk] = await Promise.all([liveCount(db), pendingRequests(db), reviewsWaiting(db), learners(db, true),
+      safe(db.from('members').select('active')), safe(db.rpc('visit_stats', { p_hours:168 })), safe(db.rpc('portal_calls_today')), safe(db.rpc('portal_announcement')), safe(db.rpc('portal_eod')), safe(db.from('deals').select('inspection_ends,closing_on').eq('stage', 'contract')), safe(db.from('commissions').select('amount').eq('status', 'owed')), safe(db.rpc('portal_gate1')), safe(db.rpc('portal_weekly_summary', { p_from:mondayIso() }))]);
     if (my !== run) return;
     const r = reqs || [], team = (mem.data || []).filter(x => x.active).length, dc = dealCounts();
+    const payOwed = wk && wk.data ? Number(wk.data.owed_all) || 0 : null;   // same number as Numbers > Weekly summary, "pay owed (all time)"
     const ct = Array.isArray(calls.data) ? calls.data : null, sum = k => (ct || []).reduce((a, x) => a + (Number(x[k]) || 0), 0);
     const learning = new Set(lr.hub.map(x => x.user_id).concat(lr.acq.filter(x => x.done > 0 || x.module).map(x => x.userId))).size;
-    const need = revs.length + r.length;
+    const need = revs.length + r.length + (payOwed > 0 ? 1 : 0);
     const v = vis.data && vis.data.visitors != null ? Number(vis.data.visitors).toLocaleString('en-US') : null;
     box().innerHTML = '<div class="p-wrap">' +
       hero('Admin', 'Overview', need ? plural(need, 'thing') + ' need you today' : 'Nothing needs you right now',
@@ -332,7 +337,7 @@
         box5('Deals', 'All reps', [row('Closing in the next 14 days', soon(uc.data, 'closing_on', 14), '/app/deals/#pipeline'), row('Inspection ending in 7 days', soon(uc.data, 'inspection_ends', 7), '/app/deals/#pipeline')].concat(dc ? [row('Follow-ups due', dc.due ? pillR(dc.due + ' due') : muted('None'), '/app/deals/#followups'), row('Open deals', muted(String(dc.open)), '/app/deals/'),
           row('Under contract', muted(String(dc.contract)), '/app/deals/')] : [row(UNLOCK, muted('Unlock'), '/app/deals/')])
           .concat([row('Land calculator', muted('Open'), '/land-calculator/'), row('House calculator', muted('Open'), '/house-calculator/')])) +
-        box5('Money', 'Only you', [row('Cash this month', muted('Open'), '#overview'), row('Commissions owed', owedPill(cms.data), '#expense'), row('Course payments', muted('Not set up yet'))]) +
+        box5('Money', 'Only you', [row('Cash this month', muted('Open'), '#overview'), row('Pay owed', payOwed == null ? muted('–') : payOwed > 0 ? pillR(money(payOwed)) : muted('None'), '#weekly'), row('Commissions owed', owedPill(cms.data), '#expense'), row('Course payments', muted('Not set up yet'))]) +
         box5('Site', 'Public pages', [row('Visits this week', muted(v == null ? 'Open' : v), '#visits'), row('Team emails', muted('Open'), '#emails'), row('Logs', muted('Open'), '#logs'),
           row('Zoho Campaigns', muted('Open'), 'https://campaigns.zoho.com/', true)]) +
       '</div>' + gate1(g1.data) + callsToday(ct) + eodSection(eod.data) + annForm(ann.data) + '</div>';
@@ -355,6 +360,7 @@
           '<span class="p-pill' + (ok ? ' is-ok' : x.last_missed ? ' is-no' : ' is-plain') + '">' + (ok ? 'Ready' : x.last_missed ? 'No calls logged ' + esc(shortDay(x.last_missed)) : x.clean_days + ' of 14 days') + '</span></div>'; }).join('') + '</div></section>';
   }
   // Phase 2: commissions. Amr's total still owed to reps (from the commissions table; only he can read it)
+  const mondayIso = () => { const d = new Date(); d.setDate(d.getDate() - (d.getDay() + 6) % 7); const p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); };
   const money = n => '$' + (Math.round(n * 100) / 100).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
   function owedPill(rows){
     if (!Array.isArray(rows)) return muted('–');
@@ -454,17 +460,17 @@
   // ======================================================================
   async function progress(my){
     const T = A(), db = T.db, owner = T.role === 'owner';
-    box().innerHTML = '<div class="p-wrap">' + hero('Learning', 'Learner progress', 'Passed modules in each course. Never anyone’s notes or practice work.', '') + '<p class="p-loading">Loading…</p></div>';
+    box().innerHTML = '<div class="p-wrap">' + hero('Learning', 'Learner progress', 'Where each person is in each course. Never anyone’s notes or practice work.', '') + '<p class="p-loading">Loading…</p></div>';
     const [lr, names] = await Promise.all([learners(db, owner), nameMap(db)]);
     if (my !== run) return;
     const rows = [];
-    lr.acq.forEach(x => rows.push({ name:x.name || names[x.userId] || 'Someone', course:'Acquisitions', passed:x.done || 0, total:x.total || 15, at:x.lastActive, href:owner ? '#review/' + encodeURIComponent(x.userId) : '' }));
-    lr.hub.forEach(x => { const c = COURSES.find(k => k.id === x.course); if (c) rows.push({ name:x.name || names[x.user_id] || (owner && x.user_id === T.user.id ? 'You' : 'Someone'), course:c.short, passed:x.passed || 0, total:c.total, at:x.updated_at, href:owner ? '#review/' + encodeURIComponent(x.user_id) : '' }); });
+    lr.acq.forEach(x => rows.push({ name:(/@/.test(x.name || '') ? names[x.userId] : x.name) || x.name || names[x.userId] || 'Someone', course:'Acquisitions', prog:acqWhere(x), at:x.lastActive, href:owner ? '#review/' + encodeURIComponent(x.userId) : '' }));
+    lr.hub.forEach(x => { const c = COURSES.find(k => k.id === x.course); if (c) rows.push({ name:x.name || names[x.user_id] || (owner && x.user_id === T.user.id ? 'You' : 'Someone'), course:c.short, prog:(x.passed || 0) + ' of ' + c.total + ' modules passed', at:x.updated_at, href:owner ? '#review/' + encodeURIComponent(x.user_id) : '' }); });
     rows.sort((a, b) => a.name.localeCompare(b.name) || a.course.localeCompare(b.course));
     const ago = d => { if (!d) return '–'; const s = (Date.now() - new Date(d).getTime()) / 1000; return s < 3600 ? 'this hour' : s < 86400 ? 'today' : s < 172800 ? 'yesterday' : Math.floor(s / 86400) + ' days ago'; };
     const body = lr.error ? '<p class="p-card p-empty">' + (/Not allowed/.test(lr.error.message || '') ? 'Learner progress needs your authenticator code. Sign in again with it to see this page.' : 'Couldn’t load learner progress. Check your connection and try again.') + '</p>'
-      : rows.length ? '<div class="p-tablewrap"><table class="p-table"><thead><tr><th scope="col">Name</th><th scope="col">Course</th><th scope="col">Passed</th><th scope="col">Last active</th></tr></thead><tbody>' +
-        rows.map(x => '<tr><td>' + (x.href ? '<a href="' + esc(x.href) + '">' + esc(x.name) + '</a>' : esc(x.name)) + '</td><td>' + esc(x.course) + '</td><td>' + x.passed + ' of ' + x.total + '</td><td>' + esc(ago(x.at)) + '</td></tr>').join('') + '</tbody></table></div>'
+      : rows.length ? '<div class="p-tablewrap"><table class="p-table"><thead><tr><th scope="col">Name</th><th scope="col">Course</th><th scope="col">Progress</th><th scope="col">Last active</th></tr></thead><tbody>' +
+        rows.map(x => '<tr><td>' + (x.href ? '<a href="' + esc(x.href) + '">' + who(x.name) + '</a>' : who(x.name)) + '</td><td>' + esc(x.course) + '</td><td>' + esc(x.prog) + '</td><td>' + esc(ago(x.at)) + '</td></tr>').join('') + '</tbody></table></div>'
       : '<p class="p-card p-empty">No one has started a course yet.</p>';
     box().querySelector('.p-loading').outerHTML = body;
   }
@@ -490,7 +496,7 @@
     const people = r.data.filter(x => x.role !== 'owner' && x.user_id !== T.user.id);
     if (!people.length) { $('tvBody').innerHTML = '<p class="p-card p-empty">No one on the team yet. Invite people from Invite and access.</p>'; return; }
     const courses = {};
-    lr.acq.forEach(x => (courses[x.userId] = courses[x.userId] || []).push('Acquisitions ' + (x.done || 0) + '/' + (x.total || 15)));
+    lr.acq.forEach(x => (courses[x.userId] = courses[x.userId] || []).push('Acquisitions: ' + acqWhere(x)));
     lr.hub.forEach(x => { const c = COURSES.find(k => k.id === x.course); if (c) (courses[x.user_id] = courses[x.user_id] || []).push(c.short + ' ' + (x.passed || 0) + '/' + c.total); });
     const sum = k => people.reduce((a, x) => a + (Number(x[k]) || 0), 0), deals = people.some(x => x.deals_open != null);
     const ago = d => { if (!d) return 'Not yet'; const m = (Date.now() - new Date(d).getTime()) / 60000; return m < 60 ? 'Within the hour' : m < 1440 ? Math.floor(m / 60) + 'h ago' : m < 2880 ? 'Yesterday' : Math.floor(m / 1440) + ' days ago'; };
