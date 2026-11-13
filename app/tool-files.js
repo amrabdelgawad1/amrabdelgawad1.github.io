@@ -92,8 +92,14 @@
       const back = exists ? await store.move(backup, file) : { error:null };
       return done(false, 'The upload failed. ' + (back.error ? 'Putting the old file back also failed: rename ' + backup + ' to ' + file + ' in Supabase storage.' : 'The old file is back in place, so nothing changed.'));
     }
-    const dl = await store.download(file);
-    const got = dl.error || !dl.data ? null : await sha256(await dl.data.arrayBuffer());
+    // Read it back fresh: a plain download can come from the browser's cache of the old file (seen Nov 13)
+    let got = null;
+    for (let i = 0; i < 3 && got !== p.hash; i++) {
+      if (i) await new Promise(r => setTimeout(r, 1500));
+      const su = await store.createSignedUrl(file, 120);
+      if (su.error || !su.data) continue;
+      try { const r = await fetch(su.data.signedUrl + '&fresh=' + Date.now(), { cache:'no-store' }); if (r.ok) got = await sha256(await r.arrayBuffer()); } catch(e) {}
+    }
     if (got !== p.hash) return done(false, 'Uploaded, but reading it back ' + (got ? 'gave a different file (sha256 ' + got.slice(0, 12) + '…)' : 'failed') + '. Open the tool to check; the old one is kept as ' + backup + '.');
     done(true, 'Live and checked: what’s in storage matches the file you picked. The old one is kept as ' + backup + '. Browsers may show the old version for a minute; tell the team to refresh.');
   }
