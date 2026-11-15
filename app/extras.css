@@ -379,3 +379,8 @@ html[dir=rtl] #pView .px-slot{ padding:6px 8px 6px 22px; }
 #pView .r5-boxes dt{ color:var(--p-ink2); font-weight:600; padding-right:12px; }
 #pView .r5-boxes dd.is-empty{ color:var(--p-muted); font-style:italic; }
 @media (max-width:560px){ #pView .r5-boxes{ grid-template-columns:1fr; } #pView .r5-boxes dd{ border-top:0; padding-top:0; } }
+
+/* Voice Studio (#voice): a narration's pieces list sits full width under its row */
+#pView .vs-job{ flex-wrap:wrap; }
+#pView .vs-job .vs-more{ flex-basis:100%; }
+#pView .vs-job audio{ flex-basis:100%; margin-top:8px; }
