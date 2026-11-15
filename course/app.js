@@ -875,6 +875,10 @@
     const capEl = $('vcap'), capSpan = capEl.firstChild, ccB = $('vccB'), ccM = $('vccM');
     let capLang = 'en'; try { capLang = localStorage.getItem('lessonCaptions') || 'en'; } catch(e){}
     if (capLang !== 'off' && !capLangs.some(([k]) => k === capLang)) capLang = capLangs.length ? capLangs[0][0] : 'off';
+    // Music-only videos (no narration yet): the captions carry the words, so start with them on,
+    // without changing the learner's saved choice for other videos.
+    const musicOnly = !!(X && X.musicOnly);
+    if (musicOnly && capLang === 'off' && capLangs.length) capLang = capLangs[0][0];
     let capShown = null;
     const syncCap = () => {
       const list = capLang === 'off' ? null : CAP[capLang], ms = v.currentTime * 1000;
@@ -884,17 +888,17 @@
       capShown = txt; capSpan.textContent = txt; capEl.hidden = !txt;
       capEl.dir = capLang === 'ar' ? 'rtl' : 'ltr'; capEl.lang = capLang === 'ar' ? 'ar' : 'en';
     };
-    const setCap = l => {
+    const setCap = (l, save = true) => {
       capLang = l; capShown = null; syncCap();
       if (ccB) { ccB.classList.toggle('on', l !== 'off'); ccB.setAttribute('aria-label', l === 'off' ? 'Captions off' : 'Captions on'); }
       if (ccM) ccM.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.l === l)));
-      try { localStorage.setItem('lessonCaptions', l); } catch(e){}
+      if (save) try { localStorage.setItem('lessonCaptions', l); } catch(e){}
     };
     if (ccB) {
       ccB.addEventListener('click', ev => { ev.stopPropagation(); openMenu(ccB, ccM); });
       ccM.addEventListener('click', ev => { const b = ev.target.closest('button[data-l]'); if (!b) return; ev.stopPropagation(); setCap(b.dataset.l); closeMenu(); });
     }
-    setCap(capLang);
+    setCap(capLang, !musicOnly);
     ['timeupdate', 'seeked'].forEach(e => v.addEventListener(e, syncCap));
     // Chapters: ticks on the seek bar, the current chapter's name next to the time, and a list to jump to.
     const chapEl = $('vchap'), chB = $('vchapB'), chM = $('vchapM');
