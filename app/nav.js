@@ -100,7 +100,7 @@
     { lead:'#weekly', label:'Numbers', tabs:[['#weekly','Weekly summary'], ['#leaderboard','Leaderboard'], ['#funnel','Calls to deals'], ['#scripttest','Script testing'], ['#lists','Lead lists'], ['#profit','Profit per client'], ['#clientreport','Client report']] },
     { lead:'#people', label:'People and access', tabs:[['#people','People and access'], ['#person','Person files'], ['#applications','Applicants'], ['#onboarding','Onboarding'], ['#offboarding','Offboarding'], ['#referrals','Refer a friend']] },
     { lead:'#tasks', label:'Work', owner:true, tabs:[['#tasks','Tasks'], ['#messages','Messages'], ['#handbook','Handbook']] },
-    { lead:'#review', label:'Reviews and scoring', tabs:[['#review','To score'], ['#scoring','Call scoring'], ['#progress','Learner progress'], ['#cotw','Call of the week'], ['#builder','Course builder']] },
+    { lead:'#review', label:'Reviews and scoring', tabs:[['#review','To score'], ['#scoring','Call scoring'], ['#progress','Learner progress'], ['#cotw','Call of the week'], ['#builder','Course builder'], ['#voice','Voice Studio']] },
     { lead:'#announcements', label:'Team updates', tabs:[['#announcements','Announcements'], ['#coaching','Coaching'], ['#sendmail','Send an email']] },
     { lead:'#overview', label:'Cash', tabs:[['#overview','Overview'], ['#income','Income'], ['#expense','Expenses'], ['#invoices','Invoices'], ['#receipts','Receipts'], ['#forecast','Forecast']] },
     { lead:'#visits', label:'Site and logs', tabs:[['#visits','Visits'], ['#emails','Team emails'], ['#whatsnew','What’s new'], ['#status','Status'], ['#logs','Logs']] }
