@@ -11,6 +11,10 @@
   const MOOD_NAMES = { teaching:'Teaching (default)', warm:'Warm', serious:'Serious', energetic:'Energetic' };
   const STATUS = { queued:['Waiting', ''], running:['Making it', 'warn'], done:['Ready', 'ok'], failed:['Failed', 'bad'], cancelled:['Cancelled', ''] };
   let timer = null;
+  const isAB = j => j.target && j.target.mode === 'ab';
+  const isLesson = j => j.target && j.target.mode === 'lesson';
+  // Which side is "A" in a pair: fixed per job and pair, so a reload doesn't reshuffle
+  const oursIsA = (id, i) => { let h = i * 31; for (const c of id) h = (h * 33 + c.charCodeAt(0)) >>> 0; return h % 2 === 0; };
 
   const signedUrl = async (path, download) => {
     if (!path) return null;
@@ -21,12 +25,48 @@
   const mmss = s => { s = Math.round(s || 0); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
   const fileName = (t, ext) => (String(t || 'narration').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_').slice(0, 60) || 'narration') + '.' + ext;
 
+  // The blind test: each pair plays the same words twice, once ElevenLabs and once your clone, in a fixed random order.
+  async function abTest(j, box){
+    const u = await signedUrl(j.output_json); const man = u && await fetch(u).then(x => x.json()).catch(() => null);
+    if (!man) { box.innerHTML = empty('Couldn’t load the test.'); return; }
+    const votes = {}; const v = await safe(db().from('voice_ab_votes').select('pair,picked').eq('job_id', j.id));
+    (v.data || []).forEach(x => votes[x.pair] = x.picked);
+    const folder = j.output_json.replace(/pairs\.json$/, '');
+    const score = () => {
+      const all = Object.values(votes), n = all.length;
+      if (!n) return 'Listen to each pair and pick the one that sounds better. Pick “Same” if you can’t tell.';
+      const ours = all.filter(x => x === 'ours').length, same = all.filter(x => x === 'same').length, el = n - ours - same;
+      const pct = Math.round((ours + same) / n * 100);
+      return n + ' of ' + man.pairs.length + ' voted · yours better ' + ours + ' · same ' + same + ' · ElevenLabs better ' + el +
+        ' · yours equal or better: ' + pct + '%' + (n === man.pairs.length ? (pct >= 50 ? ' · goal reached' : ' · goal is 50% or more') : '');
+    };
+    box.innerHTML = '<div class="vs-ab"><p class="p-empty" id="abScore">' + esc(score()) + '</p>' + man.pairs.map(p => {
+      const a = oursIsA(j.id, p.i);
+      return '<div class="p-row" data-pair="' + p.i + '"><span><small>Pair ' + (p.i + 1) + '</small><br>' +
+        'A <audio controls preload="none" data-src="' + esc(folder + 'p' + p.i + '_' + (a ? 'o' : 'e') + p.ext) + '"></audio> ' +
+        'B <audio controls preload="none" data-src="' + esc(folder + 'p' + p.i + '_' + (a ? 'e' : 'o') + p.ext) + '"></audio>' +
+        '<br><small class="ab-reveal">' + (votes[p.i] ? 'A was ' + (a ? 'yours' : 'ElevenLabs') + ' · “' + esc(p.text) + '”' : '') + '</small></span>' +
+        '<span class="px-tools"><button class="p-btn is-ghost" type="button" data-v="A">A better</button><button class="p-btn is-ghost" type="button" data-v="same">Same</button><button class="p-btn is-ghost" type="button" data-v="B">B better</button></span></div>';
+    }).join('') + '</div>';
+    box.querySelectorAll('audio[data-src]').forEach(async au => { const s2 = await signedUrl(au.dataset.src); if (s2) au.src = s2; });
+    box.querySelectorAll('[data-pair]').forEach(row => row.addEventListener('click', async ev => {
+      const b = ev.target.closest('button[data-v]'); if (!b) return;
+      const i = +row.dataset.pair, a = oursIsA(j.id, i), p = man.pairs.find(x => x.i === i);
+      const picked = b.dataset.v === 'same' ? 'same' : ((b.dataset.v === 'A') === a ? 'ours' : 'elevenlabs');
+      const r = await safe(db().from('voice_ab_votes').upsert({ job_id:j.id, pair:i, picked }, { onConflict:'job_id,pair' }));
+      if (r.error) { b.textContent = 'Couldn’t save'; return; }
+      votes[i] = picked;
+      row.querySelector('.ab-reveal').textContent = 'A was ' + (a ? 'yours' : 'ElevenLabs') + ' · “' + p.text + '”';
+      box.querySelector('#abScore').textContent = score();
+    }));
+  }
+
   V.voice = { title:'Voice Studio', sec:'owner', async open(el, ok){
     if (timer) { clearInterval(timer); timer = null; }
     const body = page(el, 'Course tools', 'Voice Studio', 'Narration in your own cloned voice, made on your PC. No ElevenLabs credits. Keep the worker window open on yukis-pc while it works.');
     const [w, jobs, pron] = await Promise.all([
       safe(db().from('voice_worker').select('*').eq('id', 'main').maybeSingle()),
-      safe(db().from('voice_jobs').select('id,title,status,progress,message,language,mood,duration_s,needs_review,output_mp3,output_wav,output_json,parent_id,redo_piece,created_at,finished_at').order('created_at', { ascending:false }).limit(30)),
+      safe(db().from('voice_jobs').select('id,title,status,progress,message,language,mood,target,duration_s,needs_review,output_mp3,output_wav,output_json,parent_id,redo_piece,created_at,finished_at').order('created_at', { ascending:false }).limit(30)),
       safe(db().from('voice_pronunciations').select('id,written,spoken,language').order('written'))]);
     if (!ok()) return;
     if (jobs.error) { body.innerHTML = failed(jobs.error); return; }
@@ -56,7 +96,8 @@
         (j.message && j.status !== 'done' ? ' · ' + esc(j.message) : '') + '</small>' +
         (j.status === 'running' ? '<br>' + bar(Math.round((j.progress || 0) * 100), 100) : '') + '</span>' +
         '<span class="px-tools">' +
-        (j.status === 'done' ? '<button class="p-btn is-ghost" type="button" data-act="play">Play</button><button class="p-btn is-ghost" type="button" data-act="mp3">MP3</button><button class="p-btn is-ghost" type="button" data-act="wav">WAV</button><button class="p-btn is-ghost" type="button" data-act="pieces">Pieces</button>' : '') +
+        (j.status === 'done' && isAB(j) ? '<button class="p-btn" type="button" data-act="ab">Take the blind test</button>' : '') +
+        (j.status === 'done' && !isAB(j) ? '<button class="p-btn is-ghost" type="button" data-act="play">Play</button><button class="p-btn is-ghost" type="button" data-act="mp3">MP3</button><button class="p-btn is-ghost" type="button" data-act="wav">WAV</button><button class="p-btn is-ghost" type="button" data-act="pieces">Pieces</button>' : '') +
         (live ? '<button class="p-btn is-ghost" type="button" data-act="cancel">Cancel</button>' : '') +
         '</span><div class="vs-more px-wide" hidden></div></div>';
     });
@@ -68,8 +109,12 @@
       f('Language', '<select id="vsPl">' + opt('en', 'English', true) + opt('ar', 'Arabic') + '</select>') +
       '<button class="p-btn" type="submit">Add</button><p class="p-empty" id="vsPmsg" role="status"></p></form>';
 
+    const abForm = '<form class="px-form" id="vsAb" novalidate><p class="p-empty px-wide">Upload a voice-only ElevenLabs narration (at least a minute). Your PC makes the same sentences in your voice, then you listen to the pairs without knowing which is which.</p>' +
+      f('ElevenLabs file (MP3 or WAV)', '<input type="file" id="vsAbFile" accept="audio/mpeg,audio/wav,audio/x-wav,.mp3,.wav">', 'px-wide') +
+      '<button class="p-btn" type="submit">Make the blind test</button><p class="p-empty" id="vsAbMsg" role="status"></p></form>';
     body.innerHTML = card('Worker', '', status) + card('New narration', '', form) +
       card('Narrations', 'last 30', rows.length ? rows.join('') : empty('Nothing yet.')) +
+      card('Blind test', 'your voice vs ElevenLabs', abForm) +
       card('Pronunciations', 'how names and words are said', (pronRows.length ? pronRows.join('') : empty('None yet.')) + pronForm) +
       '<audio id="vsAudio" controls preload="none" hidden></audio>';
     widths(body);
@@ -88,7 +133,7 @@
     });
 
     body.querySelectorAll('.vs-job').forEach(row => row.addEventListener('click', async ev => {
-      const b = ev.target.closest('button[data-act], button[data-redo]'); if (!b) return;
+      const b = ev.target.closest('button[data-act], button[data-redo]'); if (!b || b.closest('.vs-ab')) return;
       const j = (jobs.data || []).find(x => x.id === row.dataset.id); if (!j) return;
       const more = row.querySelector('.vs-more');
       if (b.dataset.act === 'play') {
@@ -100,6 +145,10 @@
       } else if (b.dataset.act === 'cancel') {
         await safe(db().from('voice_jobs').update({ status:'cancelled', message:'Cancelled' }).eq('id', j.id).in('status', ['queued', 'running']));
         V.voice.open(el, ok);
+      } else if (b.dataset.act === 'ab') {
+        if (!more.hidden) { more.hidden = true; return; }
+        more.hidden = false; more.innerHTML = '<p class="p-loading">Loading…</p>';
+        abTest(j, more);
       } else if (b.dataset.act === 'pieces') {
         if (!more.hidden) { more.hidden = true; return; }
         more.hidden = false; more.innerHTML = '<p class="p-loading">Loading…</p>';
@@ -113,11 +162,25 @@
         const full = await safe(db().from('voice_jobs').select('text').eq('id', j.id).single());
         if (!full.data) { b.textContent = 'Couldn’t'; return; }
         const r = await safe(db().from('voice_jobs').insert({ title:j.title.replace(/ \(piece \d+ redone\)$/, '') + ' (piece ' + b.dataset.redo + ' redone)',
-          text:full.data.text, language:j.language, mood:j.mood, parent_id:j.id, redo_piece:+b.dataset.redo }));
+          text:full.data.text, language:j.language, mood:j.mood, parent_id:j.id, redo_piece:+b.dataset.redo, target:isLesson(j) ? j.target : null }));
         if (r.error) { b.textContent = 'Couldn’t'; return; }
         V.voice.open(el, ok);
       }
     }));
+
+    $('vsAb').addEventListener('submit', async ev => {
+      ev.preventDefault(); const file = $('vsAbFile').files[0];
+      if (!file) return say('vsAbMsg', 'Choose the ElevenLabs file first.');
+      if (file.size > 50 * 1024 * 1024) return say('vsAbMsg', 'That file is over 50 MB.');
+      const ext = /\.wav$/i.test(file.name) ? 'wav' : 'mp3';
+      const path = 'ab/' + (crypto.randomUUID ? crypto.randomUUID() : Date.now()) + '/eleven.' + ext;
+      say('vsAbMsg', 'Uploading…');
+      const up = await safe(db().storage.from('voice').upload(path, file, { contentType:ext === 'wav' ? 'audio/wav' : 'audio/mpeg' }));
+      if (up.error) return say('vsAbMsg', errText(up, 'The upload didn’t work. Try again.'));
+      const r = await safe(db().from('voice_jobs').insert({ title:'Blind test: ' + file.name.replace(/\.[^.]+$/, ''), text:'Blind test against ElevenLabs', language:'en', mood:'teaching', target:{ mode:'ab', source:path } }));
+      if (r.error) return say('vsAbMsg', errText(r, 'Couldn’t start it. Try again.'));
+      V.voice.open(el, ok);
+    });
 
     $('vsPron').addEventListener('submit', async ev => {
       ev.preventDefault(); const w1 = $('vsPw').value.trim(), s1 = $('vsPs').value.trim();
@@ -135,7 +198,7 @@
     timer = setInterval(async () => {
       if (!ok() || !document.body.contains(body)) { clearInterval(timer); timer = null; return; }
       const typing = document.activeElement && body.contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
-      const playing = $('vsAudio') && !$('vsAudio').paused;
+      const playing = ($('vsAudio') && !$('vsAudio').paused) || [...body.querySelectorAll('audio')].some(a => !a.paused) || !!body.querySelector('.vs-more:not([hidden])');
       if (!typing && !playing) V.voice.open(el, ok);
     }, live ? 5000 : 30000);
   } };
