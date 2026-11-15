@@ -584,6 +584,7 @@
           '<p class="lead">' + esc(mod.shortDescription || mod.description || '') + '</p>' +
           '<div class="row" role="progressbar" aria-label="Module progress" aria-valuemin="0" aria-valuemax="' + p.total + '" aria-valuenow="' + p.done + '">' + bar(pct(p.done, p.total)) + '<span class="small muted">' + p.done + ' of ' + p.total + '</span></div>' +
           (S.isAdmin && !mod.openForLearners ? '<p class="note">Admin view: this module is still locked for you as a learner.</p>' : '') +
+          (S.isAdmin ? '<div id="narrModBox"></div>' : '') +
         '</div>' +
         '<ul class="items" aria-label="Lessons and quizzes, in order">' + parts.join('') + '</ul>' +
       '</div></main>',
@@ -594,6 +595,7 @@
           try { localStorage.setItem('ap-group:' + mod.id + ':' + b.dataset.id, open ? '1' : '0'); } catch(e){}
         }
       } });
+    if (S.isAdmin && window.CourseNarrate) CourseNarrate.module(db, mod, lessonsOf(mod).map(e => e.it), $('narrModBox'));
   }
   function groupOpen(mod, g, hasCur){
     try { const v = localStorage.getItem('ap-group:' + mod.id + ':' + g.id); if (v) return v === '1'; } catch(e){}
@@ -636,6 +638,7 @@
         '<h1>' + esc(heading(it)) + '</h1>' +
         titleBlock(mod, e, n, ls.length) +
         '<div id="videoBox"></div>' +
+        (S.isAdmin ? '<div id="narrBox"></div>' : '') +
         '<div class="prose" id="lessonText">' + MD.render(it.bodyMarkdown) + '</div>' +
         '<p class="endmark" aria-hidden="true">End of lesson</p>' +
         '<div id="renewBox"></div>' +
@@ -663,6 +666,7 @@
     if (window.CoursePractice && user) CoursePractice.mount($('practiceBox'), { db, user, mod, it, title:it.shortTitle || heading(it), toast }).then(f => { leaving = f; }).catch(() => {});
     if (mod.number === S.totalModules && /staying certified/i.test(it.title || '')) renewCard(it);
     lessonVideo(mod, it);
+    if (S.isAdmin && window.CourseNarrate) CourseNarrate.lesson(db, mod, it, $('narrBox'));
   }
 
   // ---------- Lesson video ----------
