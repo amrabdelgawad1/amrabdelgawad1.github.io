@@ -37,7 +37,9 @@
       if (t) para.push(item ? end(t) : t);
     });
     flush();
-    return out.join('\n\n');
+    // English narration: Arabic sections are left out (they get their own narration later, in فصحى)
+    const arabic = t => { const L = t.replace(/[^\p{L}]/gu, ''); return L && (L.match(/[؀-ۿ]/g) || []).length / L.length > 0.3; };
+    return out.filter(p => !arabic(p)).join('\n\n');
   }
 
   async function latest(db, mod, ids){
