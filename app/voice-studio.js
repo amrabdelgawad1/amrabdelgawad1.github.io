@@ -75,7 +75,7 @@
     const hasAr = wk && (wk.moods || []).includes('teaching_ar');
 
     const status = '<div class="p-row"><span>' + (online ? pill('Worker online', 'ok') : pill('Worker offline', 'bad')) +
-      ' <small>' + (wk ? (online ? esc(wk.gpu || '') + (wk.busy_job ? ' · working on a narration' : ' · ready') : 'last seen ' + esc(ago(wk.last_seen))) : 'never connected') + '</small></span></div>' +
+      ' <small>' + (wk ? (online ? (wk.gpu === 'loading' ? 'starting up (about a minute)' : esc(wk.gpu || '') + (wk.busy_job ? ' · working on a narration' : ' · ready')) : 'last seen ' + esc(ago(wk.last_seen))) : 'never connected') + '</small></span></div>' +
       (online ? '' : '<p class="p-empty">Jobs wait in the queue until the worker is on. On yukis-pc, double-click <b>start-worker.bat</b> in D:\\Work\\voice-cloning.</p>') +
       (wk ? '<p class="p-empty">Voices on the PC: ' + esc((wk.moods || []).join(', ') || 'none') + (hasAr ? '' : ' · no Arabic clip, so Arabic will carry an English accent') + '</p>' : '');
 
