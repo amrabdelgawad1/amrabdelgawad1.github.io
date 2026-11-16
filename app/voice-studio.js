@@ -1,8 +1,9 @@
 // Amr Voice Studio (Amr only, #voice): narration in Amr's cloned voice, made on his own PC instead of ElevenLabs.
 // Screens, in the studio's own menu:  #voice (Text to Speech)  #voice/projects (the course batch)
 //   #voice/voices (voices, moods, blind test)  #voice/history (every narration)  #voice/pron (pronunciations)
+//   #voice/computer ("Can my computer run it?": a quick check in the browser, and the PC's measured speed)
 // The page only adds jobs to voice_jobs; the worker on yukis-pc (start-worker.bat) picks them up in the order they
-// were added, narrates them and uploads the audio to the private "voice" bucket. Lesson jobs also save
+// were added (your own scripts and one-line retakes first, then course lessons by module priority), narrates them and uploads the audio to the private "voice" bucket. Lesson jobs also save
 // content/<module>/narration/<lesson>.* in the course bucket; new lesson videos are staged in content/<module>/videos/_new/.
 // Database: voice_jobs, voice_pronunciations, voice_worker, voice_ab_votes, bucket "voice" (owner only through is_tracker_admin()).
 // Looks: voice-studio.css, from the approved mockup "Amr Voice Studio".
@@ -21,8 +22,11 @@
     ['projects', 'Projects', '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/>'],
     ['voices', 'Voices', '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>'],
     ['history', 'History', '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'],
-    ['pron', 'Pronunciations', '<path d="M4 12h4l2-6 4 12 2-6h4"/>']];
-  const JOB_COLS = 'id,title,status,progress,message,language,mood,target,duration_s,needs_review,output_mp3,output_wav,output_json,parent_id,redo_piece,created_at,claimed_at,finished_at';
+    ['pron', 'Pronunciations', '<path d="M4 12h4l2-6 4 12 2-6h4"/>'],
+    ['computer', 'Your computer', '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>']];
+  const JOB_COLS = 'id,title,status,progress,message,language,mood,target,settings,duration_s,needs_review,output_mp3,output_wav,output_json,parent_id,redo_piece,created_at,claimed_at,finished_at';
+  const SLIDER_VERSION = [0, 4];   // the worker reads the sliders from version 0.4
+  const tune = { pace:50, feel:50, pause:50 };   // Text to Speech sliders, kept while you move between screens
   let timer = null;
 
   const isAB = j => j.target && j.target.mode === 'ab';
@@ -55,16 +59,22 @@
   // waiting: how many lesson jobs are still queued
   // running: the job being narrated now ({ progress: 0..1 }) or null
   // Returns the seconds of PC time left, or null when there's nothing to go on yet.
+  // Uses the middle value (median), not the average: one bad run (lesson 1.4 took 2 hours while other apps filled the
+  // graphics memory) would drag an average far off, but barely moves the median.
+  const median = a => { const b = a.slice().sort((x, y) => x - y), m = b.length >> 1; return b.length ? (b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2) : null; };
+  const workRatio = done => median(done.filter(d => d.audio > 30 && d.work > 0).map(d => d.work / d.audio));
   function queueEta(done, waiting, running){
-    // TODO(Amr): decide how to turn past lessons into a "time left" for the rest.
-    return null;
+    const ratio = workRatio(done), audio = median(done.map(d => d.audio));
+    if (!ratio || !audio) return null;
+    const perLesson = ratio * audio;
+    return Math.round(waiting * perLesson + (running ? (1 - Math.min(1, running.progress || 0)) * perLesson : 0));
   }
 
   // Everything the screens share: worker state, lesson jobs, other jobs
   async function load(){
     const [w, lessons, others] = await Promise.all([
       safe(db().from('voice_worker').select('*').eq('id', 'main').maybeSingle()),
-      safe(db().from('voice_jobs').select('id,title,status,progress,message,target,duration_s,needs_review,output_mp3,output_wav,output_json,created_at,claimed_at,finished_at').eq('target->>mode', 'lesson').order('created_at').limit(2000)),
+      safe(db().from('voice_jobs').select('id,title,status,progress,message,target,priority,parent_id,duration_s,needs_review,output_mp3,output_wav,output_json,created_at,claimed_at,finished_at').eq('target->>mode', 'lesson').order('created_at').limit(2000)),
       safe(db().from('voice_jobs').select(JOB_COLS).or('target.is.null,target->>mode.is.null,target->>mode.neq.lesson').order('created_at', { ascending:false }).limit(60))]);
     const wk = w.data, online = !!(wk && (Date.now() - new Date(wk.last_seen)) < 70000);
     // the newest job per lesson is the one that counts (a redo replaces the first)
@@ -78,11 +88,11 @@
       const j = r.job || r.extra; if (!j) return null;
       return Object.assign({}, j, { retake:r.job && r.extra ? r.extra : null });
     }).filter(Boolean).sort(byLesson);
-    const waiting = (lessons.data || []).filter(j => j.status === 'queued');
+    const waiting = (lessons.data || []).filter(j => j.status === 'queued' && !j.parent_id);
     const running = (lessons.data || []).find(j => j.status === 'running') || (others.data || []).find(j => j.status === 'running') || null;
-    const done = lessonList.filter(j => j.status === 'done' && j.duration_s && took(j)).map(j => ({ audio:j.duration_s, work:took(j) }));
+    const done = lessonList.filter(j => j.status === 'done' && !j.parent_id && j.duration_s && took(j)).map(j => ({ audio:j.duration_s, work:took(j) }));
     let eta = null; try { eta = queueEta(done, waiting.length, running); } catch(e) { eta = null; }
-    return { wk, online, error:lessons.error || others.error, lessons:lessonList, waitingLessons:waiting, others:others.data || [], running, eta };
+    return { ratio:workRatio(done), wk, online, error:lessons.error || others.error, lessons:lessonList, waitingLessons:waiting, others:others.data || [], running, eta };
   }
 
   function railStatus(S){
@@ -159,21 +169,25 @@
       '<button class="vs-btn" type="button" data-redo="' + (+p.i) + '" aria-label="Retake line ' + (+p.i) + '">Retake</button></div>').join('');
     el.querySelectorAll('[data-redo]').forEach(b => b.addEventListener('click', async () => {
       b.disabled = true;
-      const full = await safe(db().from('voice_jobs').select('text,language,mood').eq('id', j.id).single());
+      const full = await safe(db().from('voice_jobs').select('text,language,mood,settings').eq('id', j.id).single());
       if (!full.data) { b.textContent = 'Try again'; b.disabled = false; return; }
       const r = await safe(db().from('voice_jobs').insert({ title:j.title.replace(/ \(piece \d+ redone\)$/, '') + ' (piece ' + b.dataset.redo + ' redone)',
-        text:full.data.text, language:full.data.language, mood:full.data.mood, parent_id:j.id, redo_piece:+b.dataset.redo, target:isLesson(j) ? j.target : null }));
+        text:full.data.text, language:full.data.language, mood:full.data.mood, settings:full.data.settings || null, parent_id:j.id, redo_piece:+b.dataset.redo, target:isLesson(j) ? j.target : null }));
       if (r.error) { b.textContent = 'Try again'; b.disabled = false; return; }
       b.textContent = 'Queued'; reopen();
     }));
   }
 
-  // Where a job stands in the line: the worker takes the oldest waiting job first
+  // Where a job stands in the line: your own scripts, blind tests and one-line retakes go first (oldest first),
+  // then course lessons. Whatever is being made right now always finishes first.
+  const quick = j => !isLesson(j) || !!j.parent_id;
   function lineSpot(S, j){
     if (j.status !== 'queued') return '';
-    const ahead = S.waitingLessons.filter(x => x.created_at < j.created_at).length + S.others.filter(x => x.status === 'queued' && x.created_at < j.created_at).length;
-    return ahead ? ahead + ' job' + (ahead === 1 ? '' : 's') + ' ahead of it' : 'next in line';
+    const retakes = S.lessons.map(x => x.retake).filter(r => r && r.status === 'queued');
+    const ahead = S.others.concat(S.waitingLessons, retakes).filter(x => x.status === 'queued' && quick(x) && x.created_at < j.created_at).length;
+    return ahead ? ahead + ' job' + (ahead === 1 ? '' : 's') + ' ahead of it' : S.running ? 'next, after the narration being made now' : 'next in line';
   }
+  const workerAtLeast = (wk, v) => { const p = String((wk && wk.version) || '0').split('.').map(n => +n || 0); return p[0] > v[0] || (p[0] === v[0] && (p[1] || 0) >= v[1]); };
 
   // ───── Text to Speech ─────
   async function viewTts(main, S, reopen){
@@ -182,6 +196,9 @@
     const plain = S.others.filter(j => !isAB(j));
     const last = plain[0];
     let mood = 'teaching';
+    const word = (k, v) => k === 'pause' ? (v === 50 ? 'As tuned' : (v < 50 ? 'Shorter, ' : 'Longer, ') + Math.round(50 + v) + '%') : k === 'pace' ? (v < 35 ? 'Calmer' : v > 65 ? 'Brisker' : 'Natural') : (v < 35 ? 'Steady' : v > 65 ? 'Lively' : 'Natural');
+    const slider = (k, label) => '<label class="vs-slide" for="vsS_' + k + '"><span>' + esc(label) + '</span><span class="vs-val" id="vsV_' + k + '">' + esc(word(k, tune[k])) + '</span></label>' +
+      '<input type="range" class="vs-range" id="vsS_' + k + '" data-k="' + k + '" min="0" max="100" step="5" value="' + tune[k] + '" aria-valuetext="' + esc(word(k, tune[k])) + '">';
 
     main.innerHTML = '<div class="vs-split"><section class="vs-col" aria-labelledby="ttsH">' +
       head('Text to Speech', 'Type or paste a script. It’s read in your cloned voice, on your own PC.',
@@ -198,7 +215,10 @@
         moods.map(m => '<button type="button" class="vs-mood" data-mood="' + esc(m) + '" aria-pressed="' + (m === mood) + '">' + esc(MOOD_NAMES[m] || m) + '</button>').join('') + '</div>' +
         '<label class="vs-sub" for="vsLang">Language</label><select id="vsLang" class="vs-input">' + opt('auto', 'Auto (each sentence)', true) + opt('en', 'English') + opt('ar', 'Arabic (فصحى)') + '</select>' +
         (hasAr ? '' : '<p class="vs-note">No Arabic clip on the PC yet, so Arabic will carry an English accent.</p>')) +
-      box('How it sounds', '<ul class="vs-facts"><li>Settings picked by ear for your voice, the same for every mood</li><li>Calm comes from the pauses between sentences</li><li>Every line is checked with Whisper; up to 4 takes, the best one kept</li><li>Evened out to -16 LUFS so every lesson plays at the same loudness</li></ul>') +
+      box('Settings', slider('pace', 'Pace') + slider('feel', 'Expressiveness') + slider('pause', 'Pause between sentences') +
+        '<button type="button" class="vs-link vs-reset" id="vsReset">Back to how your voice was tuned</button>' +
+        (workerAtLeast(S.wk, SLIDER_VERSION) ? '' : '<p class="vs-note">The PC starts using these after its next restart. Until then, scripts use your voice as tuned.</p>') +
+        '<p class="vs-note">Every line is checked with Whisper; up to 4 takes, the best one kept. Course lessons always use your voice as tuned.</p>') +
       box('History', plain.slice(0, 3).map(j => '<div class="vs-hist"><button type="button" class="vs-round" data-play="' + j.id + '" aria-label="Play ' + esc(j.title) + '"' + (j.status === 'done' ? '' : ' disabled') + '>' + PLAY + '</button><span><b>' + esc(j.title) + '</b><small>' +
         (j.duration_s ? mmss(j.duration_s) + ' · ' : '') + esc(MOOD_NAMES[j.mood] || j.mood || '') + ' · ' + esc(ago(j.created_at)) + '</small></span></div>').join('') +
         (plain.length ? '<a class="vs-more" href="#voice/history">All narrations</a>' : empty('Nothing yet.'))) +
@@ -223,14 +243,14 @@
       const [label, kind] = STATUS[last.status] || [last.status, ''];
       take.innerHTML = '<p class="vs-title">' + esc(last.title) + '</p><div class="vs-chips">' + chip(label, kind) + (lineSpot(S, last) ? chip(lineSpot(S, last)) : '') + '</div>' +
         (last.status === 'running' ? bar(Math.round((last.progress || 0) * 100), 100) + '<p class="vs-note">' + esc(last.message || '') + '</p>' : '') +
-        (last.status === 'queued' && S.waitingLessons.some(x => x.created_at < last.created_at) ? '<p class="vs-note">The course batch was queued first, so this waits until those lessons are done.</p>' : '') +
+        (last.status === 'queued' && S.running && isLesson(S.running) ? '<p class="vs-note">Your scripts go before the course lessons, so this starts as soon as the lesson being made now is finished.</p>' : '') +
         (last.status === 'failed' ? '<p class="vs-note">' + esc(last.message || 'Something went wrong on the PC.') + '</p>' : '');
       widths(take);
     }
 
     const text = $('vsText');
     // rough time on the RTX 3050: about 15 characters a second of audio
-    const est = () => { const n = text.value.length, secs = n / 15; say('vsEst', n ? n.toLocaleString() + ' characters · about ' + mmss(secs) + ' of audio · free, no credits' : 'Free, no credits'); };
+    const est = () => { const n = text.value.length, secs = n / 15; say('vsEst', n ? n.toLocaleString() + ' characters · about ' + mmss(secs) + ' of audio' + (S.ratio ? ' · about ' + hours(secs * S.ratio) + ' to make' : '') + ' · free, no credits' : 'Free, no credits'); };
     text.addEventListener('input', est);
     $('vsTxt').addEventListener('change', async ev => {
       const file = ev.target.files[0]; if (!file) return;
@@ -244,6 +264,9 @@
       const rest = text.value.slice(start).replace(/^\[[a-z_]+\]\s*/, '');
       text.value = text.value.slice(0, start) + '[' + m + '] ' + rest; text.focus(); est();
     });
+    const syncSliders = () => main.querySelectorAll('.vs-range').forEach(r => { r.value = tune[r.dataset.k]; const w = word(r.dataset.k, tune[r.dataset.k]); r.setAttribute('aria-valuetext', w); say('vsV_' + r.dataset.k, w); });
+    main.querySelectorAll('.vs-range').forEach(r => r.addEventListener('input', () => { tune[r.dataset.k] = +r.value; syncSliders(); }));
+    $('vsReset').addEventListener('click', () => { tune.pace = tune.feel = tune.pause = 50; syncSliders(); });
     main.querySelectorAll('.vs-mood').forEach(b => b.addEventListener('click', () => {
       mood = b.dataset.mood; main.querySelectorAll('.vs-mood').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
     }));
@@ -257,7 +280,8 @@
       const first = (t.split('\n').map(l => l.replace(/^\[[a-z_]+\]\s*/, '').trim()).find(Boolean) || 'Narration');
       const title = $('vsTitle').value.trim() || first.slice(0, 50) + (first.length > 50 ? '…' : '');
       ev.submitter && (ev.submitter.disabled = true);
-      const r = await safe(db().from('voice_jobs').insert({ title, text:t, language:$('vsLang').value, mood }));
+      const custom = tune.pace !== 50 || tune.feel !== 50 || tune.pause !== 50;
+      const r = await safe(db().from('voice_jobs').insert({ title, text:t, language:$('vsLang').value, mood, settings:custom ? { pace:tune.pace, feel:tune.feel, pause:tune.pause } : null }));
       if (r.error) { ev.submitter && (ev.submitter.disabled = false); return say('vsMsg', errText(r, 'Couldn’t add it. Try again.')); }
       reopen();
     });
@@ -269,16 +293,58 @@
   let stagedCache = { at:0, mods:'', map:{} };
   async function stagedVideos(mods){
     if (Date.now() - stagedCache.at < 120000 && stagedCache.mods === mods.join()) return stagedCache.map;
-    const map = {};
+    const map = {};   // "m1/1.1" -> path of the staged mp4; map.files["m1/1.1"] -> every staged file name (mp4, json, jpg)
+    Object.defineProperty(map, 'files', { value:{}, enumerable:false });
     await Promise.all(mods.map(async m => {
       const r = await safe(db().storage.from('course').list('content/' + m + '/videos/_new', { limit:1000 }));
-      (r.data || []).forEach(o => { const k = o.name.match(/^(.+)\.mp4$/); if (k) map[m + '/' + k[1]] = 'content/' + m + '/videos/_new/' + o.name; });
+      (r.data || []).forEach(o => {
+        const k = o.name.match(/^(.+)\.(mp4|json|jpg)$/); if (!k) return;
+        (map.files[m + '/' + k[1]] = map.files[m + '/' + k[1]] || []).push(o.name);
+        if (k[2] === 'mp4') map[m + '/' + k[1]] = 'content/' + m + '/videos/_new/' + o.name;
+      });
     }));
     stagedCache = { at:Date.now(), mods:mods.join(), map };
     return map;
   }
 
   // Cancel a waiting or running job; says so on the button when it didn't work
+  // Put a module's new videos live: each live file moves to videos/_old/<time>/ (so it can be put back), then the new
+  // video, captions and cover move from videos/_new/ to where the course reads them (content/<module>/videos/<lesson>.*).
+  let putting = false, liveArmed = '';   // a Put live is running / waiting for its second click (the page won't redraw meanwhile)
+  async function putLive(m, lessons, staged, report){
+    if (putting) return 0;
+    putting = true; stagedCache.at = 0;
+    try {
+      const st = db().storage.from('course'), base = 'content/' + m + '/videos/';
+      const live = await safe(st.list('content/' + m + '/videos', { limit:1000 }));
+      if (live.error) { report('Couldn’t read the live videos. Nothing was changed.'); return 0; }
+      const have = new Set((live.data || []).map(o => o.name)), stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+      let ok = 0; const bad = [], skipped = [];
+      for (const id of lessons) {
+        const names = staged.files[m + '/' + id] || [];
+        // a new video only goes live with its own captions; a missing .json means the PC is still saving it
+        if (!names.includes(id + '.mp4') || !names.includes(id + '.json')) { skipped.push(id); continue; }
+        const done = [];
+        const mv = async (from, to) => { const r = await safe(st.move(from, to)); if (r.error) throw r.error; done.push([from, to]); };
+        try {
+          // the whole lesson moves as one: old video, captions and cover aside, then the new ones in
+          for (const ext of ['mp4', 'json', 'jpg']) { const n = id + '.' + ext; if (have.has(n) && (ext !== 'jpg' || names.includes(n))) await mv(base + n, base + '_old/' + stamp + '/' + n); }
+          for (const n of names) await mv(base + '_new/' + n, base + n);
+          ok++;
+        } catch(e) {
+          for (const [from, to] of done.reverse()) await safe(st.move(to, from));   // put everything back as it was
+          bad.push(id);
+        }
+        report('Putting ' + 'Module ' + m.replace(/^m/, '') + ' live · ' + (ok + bad.length + skipped.length) + ' of ' + lessons.length);
+      }
+      report(ok + ' video' + (ok === 1 ? '' : 's') + ' live in Module ' + m.replace(/^m/, '') +
+        (bad.length ? ' · ' + bad.join(', ') + ' didn’t work and were left as they were, try again' : '') +
+        (skipped.length ? ' · ' + skipped.join(', ') + ' skipped (captions not saved yet)' : '') +
+        (ok ? '. The old ones are kept in videos/_old/' + stamp + '.' : '.'));
+      return ok;
+    } finally { putting = false; stagedCache.at = 0; }
+  }
+
   const cancelJob = async (id, b) => {
     const r = await safe(db().from('voice_jobs').update({ status:'cancelled', message:'Cancelled' }).eq('id', id).in('status', ['queued', 'running']));
     if (r.error && b) { b.textContent = errText(r, 'Couldn’t cancel'); b.disabled = false; return false; }
@@ -294,13 +360,30 @@
     const ready = L.filter(vid).length;
     const stat = (label, value, sub) => '<div class="vs-stat"><span class="vs-cap">' + esc(label) + '</span><b>' + esc(value) + '</b><small>' + esc(sub) + '</small></div>';
     const state = j => j.status === 'running' ? chip('Narrating · ' + Math.round((j.progress || 0) * 100) + '%', 'run') : j.status === 'done' ? chip((j.needs_review || []).length ? 'Narrated · ' + j.needs_review.length + ' to check' : 'Narrated', (j.needs_review || []).length ? 'warn' : 'ok') :
-      j.status === 'queued' ? chip('In queue') : chip((STATUS[j.status] || [j.status])[0], j.status === 'failed' ? 'bad' : '');
+      j.status === 'queued' ? (firstUp && (j.id === firstUp.id) ? chip('Next', 'run') : chip('In queue')) : chip((STATUS[j.status] || [j.status])[0], j.status === 'failed' ? 'bad' : '');
     const retake = r => r ? ' ' + chip(r.status === 'running' ? 'Retake running' : r.status === 'queued' ? 'Retake waiting' : r.status === 'failed' ? 'Retake failed' : 'Retake ' + r.status, r.status === 'failed' ? 'bad' : '') : '';
     const video = j => vid(j) ? chip('Ready for review', 'ok') : j.status === 'done' ? chip('Not built yet') : chip('Waits for voice');
     const live = j => j.status === 'queued' || j.status === 'running';
     const name = j => esc('lesson ' + lessonTitle(j));
 
-    main.innerHTML = head('Acquisitions Playbook', L.length + ' lessons · narration and videos built on your PC, in course order', '<a class="vs-btn" href="/course/">Open the course</a>') +
+    const modName = m => 'Module ' + String(m).replace(/^m/, '');
+    const modNum = m => +String(m).replace(/\D/g, '') || 0;
+    const queuedMods = [...new Set(S.waitingLessons.map(j => j.target.module))].sort((a, b) => modNum(a) - modNum(b));
+    const firstUp = S.lessons.filter(j => j.retake && j.retake.status === 'queued').map(j => j.retake).concat(S.waitingLessons).sort((a, b) => (quick(b) - quick(a)) || ((b.priority || 0) - (a.priority || 0)) || (a.created_at < b.created_at ? -1 : 1))[0];
+    const fullSet = j => { const f = staged.files[j.target.module + '/' + j.target.lesson] || []; return f.includes(j.target.lesson + '.mp4') && f.includes(j.target.lesson + '.json'); };
+    const liveMods = {}; L.forEach(j => { if (vid(j) && fullSet(j)) (liveMods[j.target.module] = liveMods[j.target.module] || []).push(j.target.lesson); });
+    const liveList = Object.keys(liveMods).sort((a, b) => modNum(a) - modNum(b));
+    const tools = '<div class="vs-card vs-ops">' +
+      '<div class="vs-op"><label class="vs-sub" for="vsFront">Narrate next</label><div class="vs-btns"><select id="vsFront" class="vs-input vs-narrow">' +
+        (queuedMods.length ? queuedMods.map(m => opt(m, modName(m) + ' · ' + S.waitingLessons.filter(j => j.target.module === m).length + ' waiting', firstUp && firstUp.target.module === m)).join('') : '<option value="">Nothing waiting</option>') +
+        '</select><button type="button" class="vs-btn" id="vsFrontGo"' + (queuedMods.length ? '' : ' disabled') + '>Move to the front</button></div>' +
+        '<p class="vs-note" id="vsFrontMsg" role="status">' + (firstUp ? 'Next lesson: ' + esc(lessonTitle(firstUp)) + ' (' + esc(modName(firstUp.target.module)) + ')' : '') + '</p></div>' +
+      '<div class="vs-op"><label class="vs-sub" for="vsLive">Put new videos live</label><div class="vs-btns"><select id="vsLive" class="vs-input vs-narrow">' +
+        (liveList.length ? liveList.map(m => opt(m, modName(m) + ' · ' + liveMods[m].length + ' ready')).join('') : '<option value="">No new videos yet</option>') +
+        '</select><button type="button" class="vs-go" id="vsLiveGo"' + (liveList.length ? '' : ' disabled') + '>Put live</button></div>' +
+        '<p class="vs-note" id="vsLiveMsg" role="status">Learners see the new videos right away. The old ones are kept, so a module can be put back.</p></div></div>';
+
+    main.innerHTML = head('Acquisitions Playbook', L.length + ' lessons · narration and videos built on your PC, in course order', '<a class="vs-btn" href="/course/">Open the course</a>') + tools +
       '<div class="vs-stats">' + stat('Narrated', narrated.length + ' / ' + L.length, S.eta ? 'about ' + hours(S.eta) + ' to go' : S.waitingLessons.length + ' waiting') +
       stat('Audio made', hours(audio), 'of finished narration') + stat('Videos ready', String(ready), 'waiting for your review') + stat('Credits used', '0', 'runs on your own PC') + '</div>' +
       '<section class="vs-card vs-flush"><div class="vs-tablewrap"><table class="vs-table"><caption class="vs-sr">Lessons in course order</caption><thead><tr><th scope="col">Lesson</th><th scope="col">Length</th><th scope="col">Voice</th><th scope="col">Video</th><th scope="col" class="vs-r">Actions</th></tr></thead><tbody>' +
@@ -310,6 +393,29 @@
         (live(j) || (j.retake && live(j.retake)) ? '<button type="button" class="vs-link" data-act="cancel" aria-label="Cancel ' + (live(j) ? '' : 'the retake of ') + name(j) + '">Cancel' + (live(j) ? '' : ' retake') + '</button>' : '') + '</td></tr>' +
         '<tr class="vs-expand" hidden><td colspan="5"><div></div></td></tr>').join('') : '<tr><td colspan="5">' + empty('No lessons sent yet. Use “Narrate the lessons not done yet” on a module page in the course.') + '</td></tr>') +
       '</tbody></table></div></section>';
+
+    $('vsFrontGo').addEventListener('click', async ev => {
+      const m = $('vsFront').value; if (!m) return;
+      const top = Math.max(0, ...S.waitingLessons.map(j => j.priority || 0)) + 1;
+      ev.target.disabled = true;
+      const r = await safe(db().from('voice_jobs').update({ priority:top }).eq('status', 'queued').eq('target->>mode', 'lesson').eq('target->>module', m).select('id'));
+      if (r.error || !(r.data || []).length) { ev.target.disabled = false; return say('vsFrontMsg', r.error ? errText(r, 'Couldn’t move it. Try again.') : 'Nothing was moved. Sign in again with your authenticator code and try again.'); }
+      reopen();
+    });
+    liveArmed = '';
+    $('vsLiveGo').addEventListener('click', async ev => {
+      const m = $('vsLive').value, b = ev.target; if (!m || putting) return;
+      if (liveArmed !== m) {   // two clicks: the first says exactly what will happen
+        liveArmed = m; b.textContent = 'Yes, put ' + liveMods[m].length + ' live';
+        say('vsLiveMsg', 'This replaces the videos learners see in ' + modName(m) + ' (' + liveMods[m].join(', ') + '). Click again to go ahead.');
+        return;
+      }
+      b.disabled = true; b.textContent = 'Working…';
+      await putLive(m, liveMods[m], staged, t => say('vsLiveMsg', t));
+      liveArmed = ''; b.textContent = 'Put live'; b.disabled = false;
+      setTimeout(() => { if (document.body.contains(main) && !putting) reopen(); }, 4000);
+    });
+    $('vsLive').addEventListener('change', () => { liveArmed = ''; $('vsLiveGo').textContent = 'Put live'; });
 
     main.querySelector('tbody').addEventListener('click', async ev => {
       const b = ev.target.closest('button[data-act]'); if (!b) return;
@@ -372,7 +478,7 @@
       '<section class="vs-card">' + (jobs.length ? jobs.map(j => {
         const [label, kind] = STATUS[j.status] || [j.status, ''], live = j.status === 'queued' || j.status === 'running', checks = (j.needs_review || []).length;
         return '<div class="vs-job" data-id="' + j.id + '"><span><b>' + esc(j.title) + '</b> ' + chip(label, kind) + (checks ? ' ' + chip(checks + ' to check', 'warn') : '') +
-          '<small>' + esc(ago(j.created_at)) + (j.duration_s ? ' · ' + mmss(j.duration_s) : '') + (j.mood ? ' · ' + esc(MOOD_NAMES[j.mood] || j.mood) : '') + (j.redo_piece != null ? ' · piece ' + j.redo_piece + ' redone' : '') +
+          '<small>' + esc(ago(j.created_at)) + (j.duration_s ? ' · ' + mmss(j.duration_s) : '') + (j.mood ? ' · ' + esc(MOOD_NAMES[j.mood] || j.mood) : '') + (j.redo_piece != null ? ' · piece ' + j.redo_piece + ' redone' : '') + (j.settings ? ' · own settings' : '') +
           (lineSpot(S, j) ? ' · ' + esc(lineSpot(S, j)) : '') + (j.message && j.status !== 'done' && j.status !== 'queued' ? ' · ' + esc(j.message) : '') + '</small>' +
           (j.status === 'running' ? bar(Math.round((j.progress || 0) * 100), 100) : '') + '</span><span class="vs-btns">' +
           (j.status === 'done' ? '<button class="vs-btn" type="button" data-act="play" aria-label="Play ' + esc(j.title) + '">Play</button>' + (j.output_mp3 ? '<button class="vs-btn" type="button" data-act="mp3" aria-label="Download MP3 of ' + esc(j.title) + '">MP3</button>' : '') + (j.output_wav ? '<button class="vs-btn" type="button" data-act="wav" aria-label="Download WAV of ' + esc(j.title) + '">WAV</button>' : '') + '<button class="vs-btn" type="button" data-act="pieces" aria-expanded="false" aria-label="Lines of ' + esc(j.title) + '">Lines</button>' : '') +
@@ -417,12 +523,104 @@
     return { live:false };
   }
 
-  const VIEWS = { tts:viewTts, projects:viewProjects, voices:viewVoices, history:viewHistory, pron:viewPron };
+
+  // ───── Your computer: "Can my computer run it?" ─────
+  // A browser can't see graphics memory, so the card's name is matched against known cards. The worker app (a later
+  // round) checks the real numbers and measures the speed after install; until then yukis-pc's measured speed is shown.
+  const CARDS = [   // [pattern, GB of graphics memory; the smallest version when a card came in several]
+    [/rtx\s*50(90)/i, 32], [/rtx\s*50(80)/i, 16], [/rtx\s*5070\s*ti/i, 16], [/rtx\s*50(70)/i, 12], [/rtx\s*5060\s*ti/i, 8], [/rtx\s*50(60)/i, 8], [/rtx\s*50(50)/i, 8],
+    [/rtx\s*40(90)/i, 24], [/rtx\s*40(80)/i, 16], [/rtx\s*4070/i, 12], [/rtx\s*4060\s*ti/i, 8], [/rtx\s*40(60)/i, 8], [/rtx\s*40(50)/i, 6],
+    [/rtx\s*30(90)/i, 24], [/rtx\s*30(80)/i, 10], [/rtx\s*3070/i, 8], [/rtx\s*3060\s*ti/i, 8], [/rtx\s*30(60)/i, 12], [/rtx\s*30(50)/i, 6],
+    [/rtx\s*20(80)/i, 8], [/rtx\s*20(70)/i, 8], [/rtx\s*20(60)/i, 6], [/titan/i, 12],
+    [/rtx\s*20(50)/i, 4], [/mx\s*\d{3}/i, 2], [/gtx\s*16(60)/i, 6], [/gtx\s*16(50)/i, 4], [/gtx\s*10(80)/i, 8], [/gtx\s*10(70)/i, 8], [/gtx\s*10(60)/i, 6], [/gtx\s*1050\s*ti/i, 4], [/gtx\s*10(50)/i, 2],
+    [/rtx\s*a?(2000)/i, 6], [/rtx\s*a?(4000)/i, 16], [/rtx\s*a?(5000)/i, 24], [/rtx\s*a?(6000)/i, 48]];
+  const RATINGS = {
+    rec:{ label:'Recommended', kind:'ok', speed:'About 2x real time: a 10-minute lesson takes about 20 to 25 minutes' },
+    slow:{ label:'Works, but slow', kind:'warn', speed:'Roughly 4x to 8x real time: fine for short scripts' },
+    no:{ label:'Not recommended', kind:'bad', speed:'Roughly 10x to 15x real time on the processor: short clips only' },
+    unsure:{ label:'Can’t tell from the browser', kind:'warn', speed:'Fast with an NVIDIA card; roughly 10x to 15x real time without one' }};
+
+  async function detect(){
+    const d = { gpu:'', cores:navigator.hardwareConcurrency || 0, ram:navigator.deviceMemory || 0, os:'', bits:'', mobile:false };
+    try {
+      const gl = document.createElement('canvas').getContext('webgl');
+      const ext = gl && gl.getExtension('WEBGL_debug_renderer_info');
+      d.gpu = gl ? String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER) || '') : '';
+    } catch(e) {}
+    const ua = navigator.userAgent || '', uad = navigator.userAgentData;
+    d.mobile = uad ? !!uad.mobile : /Android|iPhone|iPad|Mobile/i.test(ua);
+    try {
+      if (uad && uad.getHighEntropyValues) {
+        const h = await uad.getHighEntropyValues(['platform', 'platformVersion', 'architecture', 'bitness']);
+        d.os = h.platform === 'Windows' ? (parseInt(h.platformVersion, 10) >= 13 ? 'Windows 11' : 'Windows 10 or older') : h.platform;
+        d.bits = h.bitness ? h.bitness + '-bit' : ''; d.arch = h.architecture;
+      }
+    } catch(e) {}
+    if (!d.os) d.os = /Windows/.test(ua) ? 'Windows' : /Mac OS X/.test(ua) ? 'macOS' : /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS' : /Linux/.test(ua) ? 'Linux' : 'Unknown';
+    if (!d.bits) d.bits = /WOW64|Win64|x64|x86_64|arm64|aarch64/i.test(ua) || d.os === 'macOS' ? '64-bit' : '';
+    // tidy "ANGLE (NVIDIA, NVIDIA GeForce RTX 3050 (0x00002584) Direct3D11 vs_5_0 ps_5_0, D3D11)" -> "NVIDIA GeForce RTX 3050"
+    d.card = (d.gpu.match(/(NVIDIA[^,(]*|AMD[^,(]*|Radeon[^,(]*|Intel[^,(]*|Apple M\d[^,(]*)/i) || [d.gpu])[0].replace(/\s+/g, ' ').trim();
+    if (/or similar/i.test(d.gpu) && /nvidia|geforce/i.test(d.gpu)) { d.hidden = true; d.gpu = 'NVIDIA'; d.card = 'An NVIDIA card (the browser hides the model)'; }
+    else if (/^WebKit WebGL$|or similar/i.test(d.gpu)) { d.hidden = true; d.gpu = ''; d.card = ''; }
+    else if (/swiftshader|llvmpipe|software|basic render/i.test(d.gpu)) d.card = 'None shared (the browser is drawing in software)';
+    else if (d.card === d.gpu) d.card = d.gpu.replace(/^ANGLE \(|\)$/g, '');
+    return d;
+  }
+
+  function rate(d){
+    const why = [];
+    const nvidia = /nvidia|geforce|rtx|gtx|quadro/i.test(d.gpu), apple = /apple m\d/i.test(d.gpu) || (d.os === 'macOS' && /apple/i.test(d.gpu));
+    const hit = nvidia && CARDS.find(c => c[0].test(d.gpu)), laptop = /laptop|mobile|max-q/i.test(d.gpu);
+    let vram = hit ? hit[1] : 0;
+    const LAPTOP = [[/rtx\s*30(50)/i, 4], [/rtx\s*30(60)/i, 6], [/rtx\s*30(70)/i, 8], [/rtx\s*30(80)/i, 8], [/rtx\s*40(70)/i, 8], [/rtx\s*40(80)/i, 12], [/rtx\s*40(90)/i, 16], [/rtx\s*50(70)/i, 8], [/rtx\s*50(80)/i, 16], [/rtx\s*50(90)/i, 24]];
+    if (hit && laptop) { const l = LAPTOP.find(x => x[0].test(d.gpu)); if (l) vram = l[1]; }   // laptop versions have less
+    if (d.mobile) return { r:'no', vram, why:['This is a phone or tablet. The voice app needs a Windows PC or a Mac.'] };
+    if (!d.gpu) why.push('Your browser didn’t share the graphics card' + (d.hidden ? ' (it gave a stand-in name)' : '') + ', so this is a guess. The app checks it exactly after install.');
+    if (d.bits === '32-bit') return { r:'no', vram, why:why.concat('32-bit system; the voice app needs 64-bit.') };
+    if (d.ram && d.ram < 8) return { r:'no', vram, why:why.concat('Less than 8 GB of memory (16 GB recommended).') };
+    if (nvidia && vram >= 6) return { r:d.os.indexOf('Windows') === 0 ? 'rec' : 'slow', vram, why:why.concat('NVIDIA card with about ' + vram + ' GB of graphics memory.', d.os.indexOf('Windows') === 0 ? 'Windows, like yukis-pc.' : 'The installer is Windows-first; other systems come later.') };
+    if (nvidia && vram && vram < 4) return { r:'no', vram, why:why.concat('NVIDIA card with about ' + vram + ' GB of graphics memory; at least 4 GB is needed.') };
+    if (nvidia && vram) return { r:'slow', vram, why:why.concat('NVIDIA card with about ' + vram + ' GB of graphics memory; 6 GB or more is recommended.') };
+    if (nvidia) return { r:'slow', vram, why:why.concat('An NVIDIA card this check doesn’t know yet. The worker measures it after install.') };
+    if (apple) return { r:'slow', vram, why:why.concat('Apple Silicon Mac: it works, slower than an NVIDIA card. 16 GB of memory recommended.') };
+    if (d.os.indexOf('Windows') === 0 && /intel|amd|radeon/i.test(d.gpu)) return { r:'unsure', vram, why:why.concat('The browser is using ' + d.card + '. Many laptops also have a separate NVIDIA card that browsers don’t show. If yours does, it likely works; the app checks for sure.') };
+    if (!d.gpu) return { r:'unsure', vram, why };
+    return { r:'no', vram, why:why.concat(d.gpu ? 'No NVIDIA or Apple Silicon graphics (' + d.card + '), so the voice would run on the processor.' : 'No graphics card could be found.') };
+  }
+
+  async function viewComputer(main, S){
+    main.innerHTML = head('Can my computer run it?', 'Amr Voice Studio runs on your own computer, so your voice and audio never leave it. Here’s how this one looks.') + '<p class="p-loading">Checking this computer…</p>';
+    const d = await detect(), res = rate(d), R = RATINGS[res.r];
+    const row = (k, v) => '<div class="vs-spec"><span>' + esc(k) + '</span><b>' + esc(v || 'Not shared by the browser') + '</b></div>';
+    const pc = S.wk, ratio = S.ratio;
+    const pcRate = pc && /\d+(\.\d+)?\s*GB/.test(pc.gpu || '') ? (parseFloat((pc.gpu.match(/(\d+(\.\d+)?)\s*GB/) || [])[1]) >= 5.5 ? 'rec' : 'slow') : null;
+    main.innerHTML = head('Can my computer run it?', 'Amr Voice Studio runs on your own computer, so your voice and audio never leave it. Here’s how this one looks.') +
+      '<div class="vs-split"><section class="vs-col">' +
+      '<section class="vs-card vs-verdict is-' + R.kind + '" aria-labelledby="vsVerdict"><span class="vs-cap">This computer</span><h2 id="vsVerdict">' + esc(R.label) + '</h2>' +
+        '<p>' + esc(R.speed) + '</p><ul class="vs-facts">' + res.why.map(w => '<li>' + esc(w) + '</li>').join('') + '</ul>' +
+        '<div class="vs-btns"><button type="button" class="vs-go" disabled>Windows app coming soon</button><span class="vs-note">This is a quick check from the browser. The app confirms it with the exact numbers and a speed test.</span></div></section>' +
+      box('What the browser could see', row('Graphics card', d.card) + row('Graphics memory', res.vram ? 'About ' + res.vram + ' GB (estimated from the card’s name)' : '') +
+        row('Processor', d.cores ? d.cores + ' threads' : '') + row('Memory', d.ram ? (d.ram >= 8 ? '8 GB or more' : d.ram + ' GB') : '') + row('System', [d.os, d.bits].filter(Boolean).join(', '))) +
+      '</section><aside class="vs-side">' +
+      box('yukis-pc, measured', pc ? '<div class="vs-chips">' + chip(pcRate ? RATINGS[pcRate].label : 'Not measured', pcRate ? RATINGS[pcRate].kind : '') + '</div>' +
+        row('Graphics card', String(pc.gpu || '').replace(/^NVIDIA GeForce /, '')) + row('Speed', ratio ? 'About ' + ratio.toFixed(1) + 'x real time (from the finished lessons)' : 'Not enough lessons yet') +
+        '<p class="vs-note">When other apps fill the graphics memory (NVIDIA Broadcast, Discord, browsers), narration can get about 10x slower. Close them for full speed.</p>' : empty('The PC hasn’t connected yet.')) +
+      '</aside></div>' +
+      '<section class="vs-card vs-flush"><div class="vs-tablewrap"><table class="vs-table"><caption class="vs-sr">What each rating means</caption><thead><tr><th scope="col">Rating</th><th scope="col">Graphics card</th><th scope="col">Memory and disk</th><th scope="col">Expected speed</th></tr></thead><tbody>' +
+      '<tr><td>' + chip('Recommended', 'ok') + '</td><td>NVIDIA with 6 GB or more (RTX 3050 6 GB, 3060, 4060 and up)</td><td>16 GB memory, 15 GB free disk, Windows 10 or 11, 64-bit</td><td>About 2x real time</td></tr>' +
+      '<tr><td>' + chip('Works, but slow', 'warn') + '</td><td>NVIDIA with 4 GB; Apple Silicon Mac (M1 or newer) with 16 GB</td><td>16 GB memory, 15 GB free disk</td><td>Roughly 4x to 8x real time</td></tr>' +
+      '<tr><td>' + chip('Not recommended', 'bad') + '</td><td>Intel or AMD graphics only, under 8 GB memory, or 32-bit</td><td>Any</td><td>Roughly 10x to 15x real time</td></tr>' +
+      '</tbody></table></div></section>';
+    return { live:false };
+  }
+
+  const VIEWS = { tts:viewTts, projects:viewProjects, voices:viewVoices, history:viewHistory, pron:viewPron, computer:viewComputer };
 
   let openId = 0;
   V.voice = { title:'Voice Studio', sec:'owner', async open(el, ok){
     if (timer) { clearInterval(timer); timer = null; }
     const me = ++openId, mine = () => me === openId && ok();
+    if (!putting) liveArmed = '';   // a Put live waiting for its second click is forgotten on a new screen
     const sub = location.hash.split('/')[1] || 'tts', tab = VIEWS[sub] ? sub : 'tts';
     el.innerHTML = shell(tab);
     const main = el.querySelector('#vsMain'), wkBox = el.querySelector('#vsWk');
@@ -452,7 +650,7 @@
       if (fresh.error) return;
       showWk(fresh);
       const act = document.activeElement;
-      const busy = (act && main.contains(act) && /INPUT|TEXTAREA|SELECT/.test(act.tagName)) || [...main.querySelectorAll('audio')].some(a => !a.paused) ||
+      const busy = putting || !!liveArmed || (act && main.contains(act) && /INPUT|TEXTAREA|SELECT/.test(act.tagName)) || [...main.querySelectorAll('audio')].some(a => !a.paused) ||
         !!main.querySelector('.vs-jobmore:not([hidden]), .vs-expand:not([hidden])') || !!($('vsText') && $('vsText').value.trim()) || !!($('vsTitle') && $('vsTitle').value.trim());
       if (busy || (!S.error && sig(fresh) === sig(S))) return;
       const y = window.scrollY; S = fresh; await draw(); if (!mine()) return; window.scrollTo(0, y); every();
