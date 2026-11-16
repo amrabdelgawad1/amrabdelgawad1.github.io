@@ -259,3 +259,6 @@ body.vs-noscroll{ overflow:hidden; }
   .vs-findbar{ order:1; } .vs-mods, #vsNone{ order:2; } .vs-ops{ order:3; } .vs-stats{ order:4; }
   .vs-go{ white-space:nowrap; }
 }
+
+/* round 4: module zip */
+.vs-modtools{ display:flex; justify-content:flex-end; padding:0 18px 4px; }
