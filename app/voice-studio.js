@@ -183,7 +183,8 @@
   const quick = j => !isLesson(j) || !!j.parent_id;
   function lineSpot(S, j){
     if (j.status !== 'queued') return '';
-    const ahead = S.others.concat(S.waitingLessons).filter(x => x.status === 'queued' && quick(x) && x.created_at < j.created_at).length;
+    const retakes = S.lessons.map(x => x.retake).filter(r => r && r.status === 'queued');
+    const ahead = S.others.concat(S.waitingLessons, retakes).filter(x => x.status === 'queued' && quick(x) && x.created_at < j.created_at).length;
     return ahead ? ahead + ' job' + (ahead === 1 ? '' : 's') + ' ahead of it' : S.running ? 'next, after the narration being made now' : 'next in line';
   }
   const workerAtLeast = (wk, v) => { const p = String((wk && wk.version) || '0').split('.').map(n => +n || 0); return p[0] > v[0] || (p[0] === v[0] && (p[1] || 0) >= v[1]); };
@@ -327,7 +328,7 @@
         const mv = async (from, to) => { const r = await safe(st.move(from, to)); if (r.error) throw r.error; done.push([from, to]); };
         try {
           // the whole lesson moves as one: old video, captions and cover aside, then the new ones in
-          for (const ext of ['mp4', 'json', 'jpg']) { const n = id + '.' + ext; if (have.has(n)) await mv(base + n, base + '_old/' + stamp + '/' + n); }
+          for (const ext of ['mp4', 'json', 'jpg']) { const n = id + '.' + ext; if (have.has(n) && (ext !== 'jpg' || names.includes(n))) await mv(base + n, base + '_old/' + stamp + '/' + n); }
           for (const n of names) await mv(base + '_new/' + n, base + n);
           ok++;
         } catch(e) {
@@ -369,7 +370,8 @@
     const modNum = m => +String(m).replace(/\D/g, '') || 0;
     const queuedMods = [...new Set(S.waitingLessons.map(j => j.target.module))].sort((a, b) => modNum(a) - modNum(b));
     const firstUp = S.lessons.filter(j => j.retake && j.retake.status === 'queued').map(j => j.retake).concat(S.waitingLessons).sort((a, b) => (quick(b) - quick(a)) || ((b.priority || 0) - (a.priority || 0)) || (a.created_at < b.created_at ? -1 : 1))[0];
-    const liveMods = {}; L.forEach(j => { if (vid(j)) (liveMods[j.target.module] = liveMods[j.target.module] || []).push(j.target.lesson); });
+    const fullSet = j => { const f = staged.files[j.target.module + '/' + j.target.lesson] || []; return f.includes(j.target.lesson + '.mp4') && f.includes(j.target.lesson + '.json'); };
+    const liveMods = {}; L.forEach(j => { if (vid(j) && fullSet(j)) (liveMods[j.target.module] = liveMods[j.target.module] || []).push(j.target.lesson); });
     const liveList = Object.keys(liveMods).sort((a, b) => modNum(a) - modNum(b));
     const tools = '<div class="vs-card vs-ops">' +
       '<div class="vs-op"><label class="vs-sub" for="vsFront">Narrate next</label><div class="vs-btns"><select id="vsFront" class="vs-input vs-narrow">' +
@@ -530,7 +532,7 @@
     [/rtx\s*40(90)/i, 24], [/rtx\s*40(80)/i, 16], [/rtx\s*4070/i, 12], [/rtx\s*4060\s*ti/i, 8], [/rtx\s*40(60)/i, 8], [/rtx\s*40(50)/i, 6],
     [/rtx\s*30(90)/i, 24], [/rtx\s*30(80)/i, 10], [/rtx\s*3070/i, 8], [/rtx\s*3060\s*ti/i, 8], [/rtx\s*30(60)/i, 12], [/rtx\s*30(50)/i, 6],
     [/rtx\s*20(80)/i, 8], [/rtx\s*20(70)/i, 8], [/rtx\s*20(60)/i, 6], [/titan/i, 12],
-    [/rtx\s*20(50)/i, 4], [/mx\s*\d{3}/i, 2], [/gtx\s*16(60)/i, 6], [/gtx\s*16(50)/i, 4], [/gtx\s*10(80)/i, 8], [/gtx\s*10(70)/i, 8], [/gtx\s*10(60)/i, 3], [/gtx\s*10(50)/i, 2],
+    [/rtx\s*20(50)/i, 4], [/mx\s*\d{3}/i, 2], [/gtx\s*16(60)/i, 6], [/gtx\s*16(50)/i, 4], [/gtx\s*10(80)/i, 8], [/gtx\s*10(70)/i, 8], [/gtx\s*10(60)/i, 6], [/gtx\s*1050\s*ti/i, 4], [/gtx\s*10(50)/i, 2],
     [/rtx\s*a?(2000)/i, 6], [/rtx\s*a?(4000)/i, 16], [/rtx\s*a?(5000)/i, 24], [/rtx\s*a?(6000)/i, 48]];
   const RATINGS = {
     rec:{ label:'Recommended', kind:'ok', speed:'About 2x real time: a 10-minute lesson takes about 20 to 25 minutes' },
@@ -558,7 +560,8 @@
     if (!d.bits) d.bits = /WOW64|Win64|x64|x86_64|arm64|aarch64/i.test(ua) || d.os === 'macOS' ? '64-bit' : '';
     // tidy "ANGLE (NVIDIA, NVIDIA GeForce RTX 3050 (0x00002584) Direct3D11 vs_5_0 ps_5_0, D3D11)" -> "NVIDIA GeForce RTX 3050"
     d.card = (d.gpu.match(/(NVIDIA[^,(]*|AMD[^,(]*|Radeon[^,(]*|Intel[^,(]*|Apple M\d[^,(]*)/i) || [d.gpu])[0].replace(/\s+/g, ' ').trim();
-    if (/^WebKit WebGL$|or similar|^Mali|^Adreno/i.test(d.gpu) && !/apple/i.test(d.gpu)) { d.hidden = true; d.gpu = ''; d.card = ''; }
+    if (/or similar/i.test(d.gpu) && /nvidia|geforce/i.test(d.gpu)) { d.hidden = true; d.gpu = 'NVIDIA'; d.card = 'An NVIDIA card (the browser hides the model)'; }
+    else if (/^WebKit WebGL$|or similar/i.test(d.gpu)) { d.hidden = true; d.gpu = ''; d.card = ''; }
     else if (/swiftshader|llvmpipe|software|basic render/i.test(d.gpu)) d.card = 'None shared (the browser is drawing in software)';
     else if (d.card === d.gpu) d.card = d.gpu.replace(/^ANGLE \(|\)$/g, '');
     return d;
@@ -569,7 +572,7 @@
     const nvidia = /nvidia|geforce|rtx|gtx|quadro/i.test(d.gpu), apple = /apple m\d/i.test(d.gpu) || (d.os === 'macOS' && /apple/i.test(d.gpu));
     const hit = nvidia && CARDS.find(c => c[0].test(d.gpu)), laptop = /laptop|mobile|max-q/i.test(d.gpu);
     let vram = hit ? hit[1] : 0;
-    const LAPTOP = [[/30(50)/, 4], [/30(60)/, 6], [/30(70)/, 8], [/30(80)/, 8], [/40(70)/, 8], [/40(80)/, 12], [/40(90)/, 16], [/50(70)/, 8], [/50(80)/, 16], [/50(90)/, 24]];
+    const LAPTOP = [[/rtx\s*30(50)/i, 4], [/rtx\s*30(60)/i, 6], [/rtx\s*30(70)/i, 8], [/rtx\s*30(80)/i, 8], [/rtx\s*40(70)/i, 8], [/rtx\s*40(80)/i, 12], [/rtx\s*40(90)/i, 16], [/rtx\s*50(70)/i, 8], [/rtx\s*50(80)/i, 16], [/rtx\s*50(90)/i, 24]];
     if (hit && laptop) { const l = LAPTOP.find(x => x[0].test(d.gpu)); if (l) vram = l[1]; }   // laptop versions have less
     if (d.mobile) return { r:'no', vram, why:['This is a phone or tablet. The voice app needs a Windows PC or a Mac.'] };
     if (!d.gpu) why.push('Your browser didn’t share the graphics card' + (d.hidden ? ' (it gave a stand-in name)' : '') + ', so this is a guess. The app checks it exactly after install.');
@@ -617,6 +620,7 @@
   V.voice = { title:'Voice Studio', sec:'owner', async open(el, ok){
     if (timer) { clearInterval(timer); timer = null; }
     const me = ++openId, mine = () => me === openId && ok();
+    if (!putting) liveArmed = '';   // a Put live waiting for its second click is forgotten on a new screen
     const sub = location.hash.split('/')[1] || 'tts', tab = VIEWS[sub] ? sub : 'tts';
     el.innerHTML = shell(tab);
     const main = el.querySelector('#vsMain'), wkBox = el.querySelector('#vsWk');
