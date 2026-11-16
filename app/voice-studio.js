@@ -77,12 +77,13 @@
 
   // Everything the screens share: worker state, lesson jobs, other jobs
   async function load(){
-    const [w, lessons, others, set, samples] = await Promise.all([
+    const [w, lessons, others, set, samples, saved] = await Promise.all([
       safe(db().from('voice_worker').select('*').eq('id', 'main').maybeSingle()),
       safe(db().from('voice_jobs').select('id,title,status,progress,message,target,priority,parent_id,duration_s,needs_review,output_mp3,output_wav,output_json,created_at,claimed_at,finished_at').eq('target->>mode', 'lesson').order('created_at').limit(2000)),
       safe(db().from('voice_jobs').select(JOB_COLS).or('target.is.null,target->>mode.is.null,target->>mode.neq.lesson').not('title', 'like', SAMPLE + '%').order('created_at', { ascending:false }).limit(60)),
       safe(db().from('voice_settings').select('*').eq('id', 'main').maybeSingle()),
-      safe(db().from('voice_jobs').select('id,title,status,output_mp3,output_wav,created_at').like('title', SAMPLE + '%').neq('status', 'cancelled').order('created_at', { ascending:false }).limit(40))]);
+      safe(db().from('voice_jobs').select('id,title,status,output_mp3,output_wav,created_at').like('title', SAMPLE + '%').neq('status', 'cancelled').order('created_at', { ascending:false }).limit(40)),
+      safe(db().rpc('voice_saved_stats'))]);
     const wk = w.data, online = !!(wk && (Date.now() - new Date(wk.last_seen)) < 70000);
     // the newest job per lesson is the one that counts (a redo replaces the first)
     // one row per lesson: the newest finished narration, plus a newer retake that's waiting, running or failed
@@ -113,7 +114,7 @@
     // what needs a listen: finished narrations with lines the word check flagged
     const review = lessonList.filter(j => j.status === 'done' && (j.needs_review || []).length).concat((others.data || []).filter(j => j.status === 'done' && !isAB(j) && (j.needs_review || []).length));
     return { ratio:workRatio(done), wk, online, error:lessons.error || others.error, lessons:lessonList, waitingLessons:waiting, others:others.data || [], running, eta,
-      paused:!!(set.data && set.data.paused), pausedAt:set.data && set.data.paused_at, pauseReady:!set.error, set:set.data || {}, offHours:offHours(set.data), today, moodSamples, review, all };
+      paused:!!(set.data && set.data.paused), pausedAt:set.data && set.data.paused_at, pauseReady:!set.error, set:set.data || {}, offHours:offHours(set.data), saved:(saved.data && saved.data[0]) || null, today, moodSamples, review, all };
   }
 
   function railStatus(S){
@@ -560,9 +561,14 @@
         '</select><button type="button" class="vs-go" id="vsLiveGo"' + (liveList.length ? '' : ' disabled') + '>Put live</button></div>' +
         '<p class="vs-note" id="vsLiveMsg" role="status">Learners see the new videos right away. The old ones are kept, so a module can be put back.</p></div></div>';
 
+    const rate = S.set && S.set.usd_per_1k_credits != null ? +S.set.usd_per_1k_credits : 0, sv = S.saved;
+    const savedStat = () => '<div class="vs-stat"><span class="vs-cap">Credits saved</span><b>' + esc(sv ? short(sv.chars_all) : '·') + '</b><small>' +
+      (sv && rate ? 'about ' + esc(usd(sv.chars_all, rate)) + ' at your ElevenLabs price · ' : 'ElevenLabs credits not spent · ') +
+      '<button type="button" class="vs-link vs-inline" id="vsRateBtn">' + (rate ? 'Change price' : 'Add your price') + '</button></small>' +
+      '<form id="vsRate" class="vs-rate" hidden novalidate><label class="vs-sub" for="vsRateIn">US dollars per 1,000 credits on your plan</label><div class="vs-btns"><input type="number" min="0" step="0.01" id="vsRateIn" class="vs-input vs-narrow" value="' + (rate || '') + '" placeholder="0.30"><button class="vs-btn" type="submit">Save</button></div><p class="vs-note vs-msg" id="vsRateMsg" role="status"></p></form></div>';
     const todayCard = S.today.lessons || S.today.scripts || S.today.failed ? '<section class="vs-card vs-today"><span class="vs-cap">Today</span><p><b>' + S.today.lessons + ' lesson' + (S.today.lessons === 1 ? '' : 's') + '</b> narrated' +
         (S.today.scripts ? ', ' + S.today.scripts + ' script' + (S.today.scripts === 1 ? '' : 's') : '') + (S.today.retakes ? ', ' + S.today.retakes + ' retake' + (S.today.retakes === 1 ? '' : 's') : '') +
-        ' · ' + esc(hours(S.today.audio)) + ' of audio · PC busy ' + esc(hours(S.today.work)) + (S.today.failed ? ' · <span class="vs-badtext">' + S.today.failed + ' failed</span>' : '') + (S.eta ? ' · about ' + esc(hours(S.eta)) + ' left in the queue' : '') + '</p></section>' : '';
+        ' · ' + esc(hours(S.today.audio)) + ' of audio · PC busy ' + esc(hours(S.today.work)) + (S.today.failed ? ' · <span class="vs-badtext">' + S.today.failed + ' failed</span>' : '') + (S.eta ? ' · about ' + esc(hours(S.eta)) + ' left in the queue' : '') + (sv && sv.chars_today ? ' · ' + esc(short(sv.chars_today)) + ' credits saved' + (rate ? ' (' + esc(usd(sv.chars_today, rate)) + ')' : '') : '') + '</p></section>' : '';
     // the lesson groups: one fold per module, the one being narrated (or next) open
     const FILTERS = [['all', 'All'], ['check', 'To check'], ['waiting', 'Waiting'], ['failed', 'Failed'], ['video', 'Video ready']];
     const pass = (j, flt) => flt === 'check' ? j.status === 'done' && (j.needs_review || []).length : flt === 'waiting' ? live(j) : flt === 'failed' ? j.status === 'failed' || (j.retake && j.retake.status === 'failed') : flt === 'video' ? !!vid(j) : true;
@@ -582,9 +588,9 @@
         '<div class="vs-tablewrap"><table class="vs-table"><caption class="vs-sr">' + esc(modName(m)) + ' lessons</caption><thead><tr><th scope="col">Lesson</th><th scope="col">Voice</th><th scope="col">Video</th><th scope="col" class="vs-r">Actions</th></tr></thead><tbody>' +
         ls.map(row).join('') + '</tbody></table></div></details>'; };
 
-    main.innerHTML = head('Acquisitions Playbook', narrated.length + ' of ' + L.length + ' lessons narrated' + (S.eta ? ' · about ' + hours(S.eta) + ' to go' : '') + ' · 0 credits used', '<a class="vs-btn" href="/course/">Open the course</a>') + todayCard + tools +
+    main.innerHTML = head('Acquisitions Playbook', narrated.length + ' of ' + L.length + ' lessons narrated' + (S.eta ? ' · about ' + hours(S.eta) + ' to go' : '') + (sv ? ' · ' + short(sv.chars_all) + ' ElevenLabs credits saved' : ''), '<a class="vs-btn" href="/course/">Open the course</a>') + todayCard + tools +
       '<div class="vs-stats">' + stat('Narrated', narrated.length + ' / ' + L.length, S.eta ? 'about ' + hours(S.eta) + ' to go' : S.waitingLessons.length + ' waiting') +
-      stat('Audio made', hours(audio), 'of finished narration') + stat('Videos ready', String(ready), 'waiting for your review') + stat('Credits used', '0', 'runs on your own PC') + '</div>' +
+      stat('Audio made', hours(audio), 'of finished narration') + stat('Videos ready', String(ready), 'waiting for your review') + savedStat() + '</div>' +
       '<div class="vs-findbar"><label class="vs-sr" for="vsFind">Find a lesson</label><input type="search" id="vsFind" class="vs-input vs-find" placeholder="Find a lesson, like 4.4 or discovery" value="' + esc(projFind) + '">' +
       '<div class="vs-filters" role="group" aria-label="Show">' + FILTERS.map(x => '<button type="button" class="vs-filter" data-f="' + x[0] + '" aria-pressed="' + (projFilter === x[0]) + '">' + x[1] + ' <span>' + count(x[0]) + '</span></button>').join('') + '</div></div>' +
       (L.length ? '<div class="vs-mods" id="vsMods">' + mods.map(group).join('') + '</div><p class="vs-note" id="vsNone" hidden>No lessons match.</p>' : '<section class="vs-card">' + empty('No lessons sent yet. Use “Narrate the lessons not done yet” on a module page in the course.') + '</section>');
@@ -607,6 +613,14 @@
       applyFind();
     }
 
+    $('vsRateBtn').addEventListener('click', () => { const f2 = $('vsRate'); f2.hidden = !f2.hidden; if (!f2.hidden) $('vsRateIn').focus(); });
+    $('vsRate').addEventListener('submit', async ev => {
+      ev.preventDefault(); const v = $('vsRateIn').value.trim(), n = v === '' ? null : +v;
+      if (n != null && !(n >= 0)) return say('vsRateMsg', 'Type a number, like 0.30.');
+      const r = await safe(db().from('voice_settings').update({ usd_per_1k_credits:n, updated_at:new Date().toISOString() }).eq('id', 'main').select('id'));
+      if (r.error || !(r.data || []).length) return say('vsRateMsg', r.error ? errText(r, 'Couldn’t save it.') : 'Not saved. Sign in again with your authenticator code.');
+      reopen();
+    });
     $('vsFrontGo').addEventListener('click', async ev => {
       const m = $('vsFront').value; if (!m) return;
       const top = Math.max(0, ...S.waitingLessons.map(j => j.priority || 0)) + 1;
@@ -836,6 +850,10 @@
   }
 
   const VIEWS = { tts:viewTts, projects:viewProjects, review:viewReview, voices:viewVoices, history:viewHistory, pron:viewPron, computer:viewComputer };
+
+  // ElevenLabs credits not spent: about 1 credit per character narrated on the PC
+  const short = n => n >= 1e6 ? (Math.round(n / 1e5) / 10) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'k' : String(n || 0);
+  const usd = (chars, rate) => rate ? '$' + (chars / 1000 * rate).toLocaleString('en-US', chars / 1000 * rate < 100 ? { minimumFractionDigits:2, maximumFractionDigits:2 } : { maximumFractionDigits:0 }) : '';
 
   // Working hours, in Cairo time: outside them the course lessons wait (your own scripts still run)
   const cairoHour = () => +new Intl.DateTimeFormat('en-US', { timeZone:'Africa/Cairo', hour:'numeric', hourCycle:'h23' }).format(new Date()) % 24;
