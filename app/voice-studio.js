@@ -213,6 +213,52 @@
   }
   const loadPron = async () => (await safe(db().from('voice_pronunciations').select('written,spoken,language'))).data || [];
 
+  // ───── Versions of a lesson's narration ─────
+  // The course plays content/<module>/narration/<lesson>.mp3 (+ .json captions). Before anything replaces them, they're
+  // copied to narration/_versions/<lesson>/<time>.mp3/.json, so an earlier narration can be put back.
+  const VER = (m, l) => 'content/' + m + '/narration/_versions/' + l + '/';
+  async function saveVersion(m, l){
+    const st = db().storage.from('course'), dir = 'content/' + m + '/narration/';
+    const cur = await safe(st.list('content/' + m + '/narration', { limit:1000, search:l + '.' }));
+    const mp3 = (cur.data || []).find(o => o.name === l + '.mp3'); if (!mp3) return true;   // nothing live yet
+    const tag = new Date(mp3.updated_at || mp3.created_at || Date.now()).toISOString().slice(0, 16).replace(/[:T]/g, '-');
+    const have = await safe(st.list(VER(m, l).replace(/\/$/, ''), { limit:1000 }));
+    if ((have.data || []).some(o => o.name === tag + '.mp3')) return true;   // already kept
+    for (const ext of ['mp3', 'json']) {
+      const r = await safe(st.copy(dir + l + '.' + ext, VER(m, l) + tag + '.' + ext));
+      if (r.error && ext === 'mp3') return false;
+    }
+    return true;
+  }
+  async function versions(j, el, reopen){
+    const m = j.target.module, l = j.target.lesson, st = db().storage.from('course');
+    const r = await safe(st.list(VER(m, l).replace(/\/$/, ''), { limit:1000, sortBy:{ column:'name', order:'desc' } }));
+    const list = (r.data || []).filter(o => /\.mp3$/.test(o.name));
+    const when = n => { const p2 = n.replace(/\.mp3$/, '').split('-'); const d = new Date(Date.UTC(+p2[0], +p2[1] - 1, +p2[2], +p2[3], +p2[4])); return isNaN(d) ? n : fmtDay(d) + ' ' + fmtTime(d); };
+    el.innerHTML = '<div class="vs-sub">Earlier narrations of ' + esc(lessonTitle(j)) + '</div>' + (list.length ? list.map(o =>
+      '<div class="vs-piece"><span><b>' + esc(when(o.name)) + '</b><small>' + Math.round(((o.metadata && o.metadata.size) || 0) / 1e6 * 10) / 10 + ' MB</small></span><span class="vs-btns">' +
+      '<button type="button" class="vs-btn" data-vplay="' + esc(o.name) + '">' + PLAY + 'Play</button><button type="button" class="vs-btn" data-vuse="' + esc(o.name) + '">Use this one</button></span></div>').join('') :
+      '<p class="vs-note">None kept yet. From now on, the narration learners hear is kept here before a retake or “Narrate again” replaces it.</p>') +
+      '<p class="vs-note vs-msg" role="status" data-vmsg></p>';
+    const msg = t => { const m2 = el.querySelector('[data-vmsg]'); if (m2) m2.textContent = t; };
+    el.querySelectorAll('[data-vplay]').forEach(b => b.addEventListener('click', () => play(el.closest('.vs-main') || el, VER(m, l) + b.dataset.vplay, 'course', b.closest('.vs-piece'))));
+    el.querySelectorAll('[data-vuse]').forEach(b => b.addEventListener('click', async () => {
+      if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Yes, use it'; msg('Learners will hear this one. The one live now is kept here too, so you can switch back.'); return; }
+      b.disabled = true; msg('Switching…');
+      if (!(await saveVersion(m, l))) { b.disabled = false; msg('Couldn’t keep the current one, so nothing was changed. Try again.'); return; }
+      const base = VER(m, l) + b.dataset.vuse.replace(/\.mp3$/, ''), dir = 'content/' + m + '/narration/' + l;
+      let ok = true;
+      for (const ext of ['mp3', 'json']) {
+        await safe(st.remove([dir + '.' + ext]));
+        const c = await safe(st.copy(base + '.' + ext, dir + '.' + ext));
+        if (c.error && ext === 'mp3') ok = false;
+      }
+      if (!ok) { msg('Something went wrong. The live narration may be missing; use “Use this one” again on any version.'); b.disabled = false; return; }
+      msg('Done. Learners hear this narration now. The lesson video still has the voice it was built with until it’s rebuilt.');
+      setTimeout(reopen, 2500);
+    }));
+  }
+
   // Share: a private link to the MP3 that works for 7 days, copied for you to paste anywhere
   async function share(j, b){
     const p = j.output_mp3 || j.output_wav; if (!p) return;
@@ -342,6 +388,7 @@
     }));
     el.querySelectorAll('[data-redo]').forEach(b => b.addEventListener('click', async () => {
       b.disabled = true;
+      if (isLesson(j) && !(await saveVersion(j.target.module, j.target.lesson))) { b.textContent = 'Couldn’t keep the current one'; b.disabled = false; return; }
       const full = await safe(db().from('voice_jobs').select('text,language,mood,settings').eq('id', j.id).single());
       if (!full.data) { b.textContent = 'Try again'; b.disabled = false; return; }
       const r = await safe(db().from('voice_jobs').insert({ title:j.title.replace(/ \(piece \d+ redone\)$/, '') + ' (piece ' + b.dataset.redo + ' redone)',
@@ -652,7 +699,7 @@
     const mods = [...new Set(L.map(j => j.target.module))].sort((a, b) => modNum(a) - modNum(b));
     const openMod = (S.running && isLesson(S.running) && S.running.target.module) || (firstUp && firstUp.target.module) || mods[0];
     const row = j => '<tr data-id="' + j.id + '" data-q="' + esc((lessonTitle(j) + ' ' + modName(j.target.module)).toLowerCase()) + '"><td><b>' + esc(lessonTitle(j)) + '</b><small>' + (j.duration_s ? mmss(j.duration_s) : 'Not narrated yet') + '</small></td><td>' + state(j) + retake(j.retake) + '</td><td>' + video(j) + '</td>' +
-      '<td class="vs-r">' + (j.status === 'done' ? '<button type="button" class="vs-link" data-act="play" aria-label="Play ' + name(j) + '">Play</button><button type="button" class="vs-link" data-act="pieces" aria-expanded="false" aria-label="Lines of ' + name(j) + '">Lines</button><button type="button" class="vs-link" data-act="share" aria-label="Copy a share link for ' + name(j) + '">Share</button>' : '') +
+      '<td class="vs-r">' + (j.status === 'done' ? '<button type="button" class="vs-link" data-act="play" aria-label="Play ' + name(j) + '">Play</button><button type="button" class="vs-link" data-act="pieces" aria-expanded="false" aria-label="Lines of ' + name(j) + '">Lines</button><button type="button" class="vs-link" data-act="share" aria-label="Copy a share link for ' + name(j) + '">Share</button><button type="button" class="vs-link" data-act="versions" aria-expanded="false" aria-label="Earlier narrations of ' + name(j) + '">Versions</button>' : '') +
       (isRetake(j) ? '<button type="button" class="vs-link" data-cmp="before" aria-label="Line ' + (+j.redo_piece) + ' before the retake">Before</button><button type="button" class="vs-link" data-cmp="after" aria-label="Line ' + (+j.redo_piece) + ' after the retake">After</button>' : '') +
       (vid(j) ? '<button type="button" class="vs-link" data-act="video" aria-label="Open the new video of ' + name(j) + '">Video</button>' : '') +
       (live(j) || (j.retake && live(j.retake)) ? '<button type="button" class="vs-link" data-act="cancel" aria-label="Cancel ' + (live(j) ? '' : 'the retake of ') + name(j) + '">Cancel' + (live(j) ? '' : ' retake') + '</button>' : '') + '</td></tr>' +
@@ -746,6 +793,10 @@
         more.hidden = false; b.setAttribute('aria-expanded', 'true'); cell.innerHTML = '<p class="p-loading">Loading…</p>'; pieces(j, cell, reopen);
       }
       else if (b.dataset.act === 'share') share(j, b);
+      else if (b.dataset.act === 'versions') {
+        if (!more.hidden && cell.querySelector('[data-vmsg]')) { more.hidden = true; b.setAttribute('aria-expanded', 'false'); return; }
+        more.hidden = false; b.setAttribute('aria-expanded', 'true'); cell.innerHTML = '<p class="p-loading">Loading…</p>'; versions(j, cell, reopen);
+      }
       else if (b.dataset.act === 'video') { const w = window.open('', '_blank'); const u = await signedUrl(vid(j), null, 'course'); if (u && w) w.location = u; else if (w) w.close(); }
       else if (b.dataset.act === 'cancel') { b.disabled = true; if (await cancelJob(live(j) ? j.id : j.retake.id, b)) reopen(); }
     }));

@@ -53,6 +53,20 @@
   const words = { queued:'waiting for your PC', running:'being narrated', done:'narrated', failed:'failed', cancelled:'cancelled' };
   const notAllowed = e => /row-level|permission|policy|JWT|42501/i.test((e && e.message) || '');
 
+  // Copies narration/<lesson>.mp3/.json to narration/_versions/<lesson>/<time>.* (the same as Voice Studio does)
+  async function keep(db, m, l){
+    const st = db.storage.from('course'), dir = 'content/' + m + '/narration/', ver = dir + '_versions/' + l;
+    const cur = await st.list('content/' + m + '/narration', { limit:1000, search:l + '.' }).catch(() => ({}));
+    const mp3 = ((cur && cur.data) || []).find(o => o.name === l + '.mp3'); if (!mp3) return true;
+    const tag = new Date(mp3.updated_at || mp3.created_at || Date.now()).toISOString().slice(0, 16).replace(/[:T]/g, '-');
+    const have = await st.list(ver, { limit:1000 }).catch(() => ({}));
+    if (((have && have.data) || []).some(o => o.name === tag + '.mp3')) return true;
+    const c = await st.copy(dir + l + '.mp3', ver + '/' + tag + '.mp3').catch(e => ({ error:e }));
+    if (c && c.error) return false;
+    await st.copy(dir + l + '.json', ver + '/' + tag + '.json').catch(() => null);
+    return true;
+  }
+
   async function lesson(db, mod, it, box){
     if (!box || !it.bodyMarkdown) return;
     const draw = async () => {
@@ -68,6 +82,8 @@
         ' · <a href="/app/#voice">Open Voice Studio</a></span>' + play + '</div>';
       box.querySelector('#narrGo').addEventListener('click', async ev => {
         ev.target.disabled = true;
+        // keep the narration learners hear now, so it can be put back from Voice Studio (Projects, Versions)
+        if (j && j.status === 'done' && !(await keep(db, mod.id, it.id))) { box.querySelector('#narrState').textContent = 'Couldn’t keep a copy of the current narration, so nothing was sent. Try again.'; ev.target.disabled = false; return; }
         const r = await db.from('voice_jobs').insert(job(mod, it));
         if (r.error) { box.querySelector('#narrState').textContent = notAllowed(r.error) ? 'Not allowed here. Sign in to the portal with your authenticator code, then try again.' : 'Couldn’t send it. Try again.'; ev.target.disabled = false; return; }
         draw();
