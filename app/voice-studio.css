@@ -155,3 +155,24 @@
 .vs-titlein:focus{ outline:2px solid var(--vs-clay); outline-offset:2px; border-radius:6px; }
 .vs-script .vs-titlerow + .vs-cap{ padding-top:14px; }
 .vs-expand audio.vs-live, .vs-jobmore audio.vs-live{ display:block; margin:8px 0; }
+
+/* sliders */
+.vs-slide{ display:flex; justify-content:space-between; gap:8px; font-size:13px; font-weight:600; margin-top:2px; }
+.vs-val{ font-weight:400; color:var(--vs-mute); }
+.vs-range{ width:100%; accent-color:var(--vs-clay); min-height:28px; }
+.vs-app .vs-reset{ margin:0; align-self:flex-start; }
+
+/* Projects: narrate next, put live */
+.vs-ops{ flex-direction:row; flex-wrap:wrap; gap:20px; }
+.vs-op{ flex:1 1 320px; display:flex; flex-direction:column; gap:6px; }
+.vs-narrow{ width:auto; flex:1 1 200px; }
+
+/* Your computer */
+.vs-verdict h2{ margin:0; font-family:'Space Grotesk', Inter, sans-serif; font-size:28px; }
+.vs-verdict p{ margin:0; color:var(--vs-soft); }
+.vs-verdict.is-ok{ border-color:#9BD2B1; background:#F3FAF6; }
+.vs-verdict.is-warn{ border-color:#F0BE9E; background:#FFF8F3; }
+.vs-verdict.is-bad{ border-color:#E7AFA6; background:#FDF5F4; }
+.vs-spec{ display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid #EEF1EF; font-size:14px; }
+.vs-spec span{ color:var(--vs-mute); }
+.vs-spec b{ text-align:right; font-weight:600; }
