@@ -42,7 +42,7 @@
   };
   const ago = d => { const s = (Date.now() - new Date(d)) / 1000; return s < 90 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : fmtDay(d) + ' ' + fmtTime(d); };
   const mmss = s => { s = Math.round(s || 0); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
-  const hours = s => s < 3600 ? Math.max(1, Math.round(s / 60)) + ' min' : (s < 36000 ? Math.round(s / 360) / 10 : Math.round(s / 3600)) + ' h';
+  const hours = s => !s ? '0 min' : s < 3600 ? Math.max(1, Math.round(s / 60)) + ' min' : (s < 36000 ? Math.round(s / 360) / 10 : Math.round(s / 3600)) + ' h';
   const fileName = (t, ext) => (String(t || 'narration').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_').slice(0, 60) || 'narration') + '.' + ext;
   const took = j => j.claimed_at && j.finished_at ? (new Date(j.finished_at) - new Date(j.claimed_at)) / 1000 : 0;
   // "Lesson 1.1 1.1 What Acquisitions Is" -> "1.1 What Acquisitions Is"
@@ -65,11 +65,19 @@
     const [w, lessons, others] = await Promise.all([
       safe(db().from('voice_worker').select('*').eq('id', 'main').maybeSingle()),
       safe(db().from('voice_jobs').select('id,title,status,progress,message,target,duration_s,needs_review,output_mp3,output_wav,output_json,created_at,claimed_at,finished_at').eq('target->>mode', 'lesson').order('created_at').limit(2000)),
-      safe(db().from('voice_jobs').select(JOB_COLS).or('target.is.null,target->>mode.neq.lesson').order('created_at', { ascending:false }).limit(60))]);
+      safe(db().from('voice_jobs').select(JOB_COLS).or('target.is.null,target->>mode.is.null,target->>mode.neq.lesson').order('created_at', { ascending:false }).limit(60))]);
     const wk = w.data, online = !!(wk && (Date.now() - new Date(wk.last_seen)) < 70000);
     // the newest job per lesson is the one that counts (a redo replaces the first)
-    const latest = {}; (lessons.data || []).forEach(j => { latest[j.target.module + '/' + j.target.lesson] = j; });
-    const lessonList = Object.values(latest).sort(byLesson);
+    // one row per lesson: the newest finished narration, plus a newer retake that's waiting, running or failed
+    const latest = {};
+    (lessons.data || []).forEach(j => {
+      const k = j.target.module + '/' + j.target.lesson, row = latest[k] || (latest[k] = { job:null, extra:null });
+      if (j.status === 'done') { row.job = j; row.extra = null; } else if (j.status !== 'cancelled' || !row.job) row.extra = j;
+    });
+    const lessonList = Object.values(latest).map(r => {
+      const j = r.job || r.extra; if (!j) return null;
+      return Object.assign({}, j, { retake:r.job && r.extra ? r.extra : null });
+    }).filter(Boolean).sort(byLesson);
     const waiting = (lessons.data || []).filter(j => j.status === 'queued');
     const running = (lessons.data || []).find(j => j.status === 'running') || (others.data || []).find(j => j.status === 'running') || null;
     const done = lessonList.filter(j => j.status === 'done' && j.duration_s && took(j)).map(j => ({ audio:j.duration_s, work:took(j) }));
@@ -95,9 +103,15 @@
   }
 
   // One audio player shared by every Play button on a screen
+  // Each Play makes a fresh player where it was asked for, and closes the one before (and its opened row if that was all it held)
   async function play(main, path, bucket, near){
-    const a = main.querySelector('#vsAudio'); const u = await signedUrl(path, null, bucket); if (!u || !a) return;
-    a.hidden = false; (near || main).appendChild(a); a.src = u; a.play().catch(() => {});
+    const u = await signedUrl(path, null, bucket); if (!u) return;
+    main.querySelectorAll('audio.vs-live').forEach(old => {
+      old.pause(); const holder = old.closest('.vs-expand, .vs-jobmore'); old.remove();
+      if (holder && holder !== (near && near.closest('.vs-expand, .vs-jobmore')) && !holder.querySelector('.vs-piece, .vs-ab')) holder.hidden = true;
+    });
+    const a = document.createElement('audio'); a.className = 'vs-live'; a.controls = true; a.src = u;
+    (near || main).appendChild(a); a.play().catch(() => {});
   }
 
   // The blind test: each pair plays the same words twice, once ElevenLabs and once your clone, in a fixed random order.
@@ -117,7 +131,7 @@
     };
     el.innerHTML = '<div class="vs-ab"><p class="vs-note" id="abScore">' + esc(score()) + '</p>' + man.pairs.map(p => {
       const a = oursIsA(j.id, p.i);
-      return '<div class="vs-abpair" data-pair="' + p.i + '"><small>Pair ' + (p.i + 1) + '</small>' +
+      return '<div class="vs-abpair" data-pair="' + (+p.i) + '"><small>Pair ' + (+p.i + 1) + '</small>' +
         '<div class="vs-abrow">A <audio controls preload="none" data-src="' + esc(folder + 'p' + p.i + '_' + (a ? 'o' : 'e') + p.ext) + '"></audio></div>' +
         '<div class="vs-abrow">B <audio controls preload="none" data-src="' + esc(folder + 'p' + p.i + '_' + (a ? 'e' : 'o') + p.ext) + '"></audio></div>' +
         '<div class="vs-btns"><button class="vs-btn" type="button" data-v="A">A better</button><button class="vs-btn" type="button" data-v="same">Same</button><button class="vs-btn" type="button" data-v="B">B better</button></div>' +
@@ -140,16 +154,16 @@
   async function pieces(j, el, reopen){
     const u = await signedUrl(j.output_json); const m = u && await fetch(u).then(x => x.json()).catch(() => null);
     if (!m || !m.pieces) { el.innerHTML = empty('Couldn’t load the pieces.'); return; }
-    el.innerHTML = m.pieces.map(p => '<div class="vs-piece' + (p.ok ? '' : ' is-check') + '"><span><small>#' + p.i + ' · ' + mmss(p.start) + ' · ' + esc(MOOD_NAMES[p.mood] || p.mood) + (p.language === 'ar' ? ' · Arabic' : '') +
+    el.innerHTML = m.pieces.map(p => '<div class="vs-piece' + (p.ok ? '' : ' is-check') + '"><span><small>#' + (+p.i) + ' · ' + mmss(p.start) + ' · ' + esc(MOOD_NAMES[p.mood] || p.mood) + (p.language === 'ar' ? ' · Arabic' : '') +
       (p.ok ? '' : ' · ' + esc(p.reason || 'check this one')) + '</small>' + esc(p.text) + '</span>' +
-      '<button class="vs-btn" type="button" data-redo="' + p.i + '">Retake</button></div>').join('');
+      '<button class="vs-btn" type="button" data-redo="' + (+p.i) + '" aria-label="Retake line ' + (+p.i) + '">Retake</button></div>').join('');
     el.querySelectorAll('[data-redo]').forEach(b => b.addEventListener('click', async () => {
       b.disabled = true;
       const full = await safe(db().from('voice_jobs').select('text,language,mood').eq('id', j.id).single());
-      if (!full.data) { b.textContent = 'Couldn’t'; return; }
+      if (!full.data) { b.textContent = 'Try again'; b.disabled = false; return; }
       const r = await safe(db().from('voice_jobs').insert({ title:j.title.replace(/ \(piece \d+ redone\)$/, '') + ' (piece ' + b.dataset.redo + ' redone)',
         text:full.data.text, language:full.data.language, mood:full.data.mood, parent_id:j.id, redo_piece:+b.dataset.redo, target:isLesson(j) ? j.target : null }));
-      if (r.error) { b.textContent = 'Couldn’t'; return; }
+      if (r.error) { b.textContent = 'Try again'; b.disabled = false; return; }
       b.textContent = 'Queued'; reopen();
     }));
   }
@@ -172,7 +186,7 @@
     main.innerHTML = '<div class="vs-split"><section class="vs-col" aria-labelledby="ttsH">' +
       head('Text to Speech', 'Type or paste a script. It’s read in your cloned voice, on your own PC.',
         '<a class="vs-btn" href="#voice/projects">Open a lesson</a><label class="vs-btn vs-file">Upload .txt<input type="file" id="vsTxt" accept=".txt,text/plain"></label>').replace('<h1>', '<h1 id="ttsH">') +
-      '<form class="vs-card vs-script" id="vsForm" novalidate><label for="vsText" class="vs-cap">Script</label>' +
+      '<form class="vs-card vs-script" id="vsForm" novalidate><div class="vs-titlerow"><label for="vsTitle" class="vs-cap">Title</label><input type="text" id="vsTitle" class="vs-titlein" maxlength="120" placeholder="Optional, the first line is used if empty"></div><label for="vsText" class="vs-cap">Script</label>' +
       '<textarea id="vsText" rows="12" maxlength="200000" placeholder="Paste the script. A blank line starts a new paragraph. Start a paragraph with a mood tag like [warm] to change the mood. English and Arabic can be mixed."></textarea>' +
       '<div class="vs-bar"><span id="vsEst" class="vs-note" role="status">Free, no credits</span><span class="vs-btns">' +
       '<label class="vs-sr" for="vsTag">Insert mood tag</label><select id="vsTag" class="vs-btn vs-select"><option value="">Insert mood tag</option>' + moods.map(m => opt(m, MOOD_NAMES[m] || m)).join('') + '</select>' +
@@ -188,7 +202,7 @@
       box('History', plain.slice(0, 3).map(j => '<div class="vs-hist"><button type="button" class="vs-round" data-play="' + j.id + '" aria-label="Play ' + esc(j.title) + '"' + (j.status === 'done' ? '' : ' disabled') + '>' + PLAY + '</button><span><b>' + esc(j.title) + '</b><small>' +
         (j.duration_s ? mmss(j.duration_s) + ' · ' : '') + esc(MOOD_NAMES[j.mood] || j.mood || '') + ' · ' + esc(ago(j.created_at)) + '</small></span></div>').join('') +
         (plain.length ? '<a class="vs-more" href="#voice/history">All narrations</a>' : empty('Nothing yet.'))) +
-      '</aside></div><audio id="vsAudio" controls preload="none" hidden></audio>';
+      '</aside></div>';
 
     // the latest take: a player when it's ready, where it stands while it's waiting or being made
     const take = $('vsTake'), dl = $('vsDl');
@@ -240,8 +254,8 @@
       ev.preventDefault();
       const t = text.value.trim();
       if (!t) return say('vsMsg', 'Type or paste a script first.');
-      const first = t.split('\n').find(l => l.replace(/^\[[a-z_]+\]\s*/, '').trim()) || t;
-      const title = first.replace(/^\[[a-z_]+\]\s*/, '').trim().slice(0, 50) + (first.length > 50 ? '…' : '');
+      const first = (t.split('\n').map(l => l.replace(/^\[[a-z_]+\]\s*/, '').trim()).find(Boolean) || 'Narration');
+      const title = $('vsTitle').value.trim() || first.slice(0, 50) + (first.length > 50 ? '…' : '');
       ev.submitter && (ev.submitter.disabled = true);
       const r = await safe(db().from('voice_jobs').insert({ title, text:t, language:$('vsLang').value, mood }));
       if (r.error) { ev.submitter && (ev.submitter.disabled = false); return say('vsMsg', errText(r, 'Couldn’t add it. Try again.')); }
@@ -251,39 +265,58 @@
   }
 
   // ───── Projects: the real estate course batch ─────
-  async function viewProjects(main, S){
-    const L = S.lessons;
-    // staged new videos: content/<module>/videos/_new/<lesson>.mp4
-    const mods = [...new Set(L.map(j => j.target.module))];
-    const staged = {};
+  // staged new videos: content/<module>/videos/_new/<lesson>.mp4 (kept for 2 minutes, so a refresh doesn't list them again)
+  let stagedCache = { at:0, mods:'', map:{} };
+  async function stagedVideos(mods){
+    if (Date.now() - stagedCache.at < 120000 && stagedCache.mods === mods.join()) return stagedCache.map;
+    const map = {};
     await Promise.all(mods.map(async m => {
       const r = await safe(db().storage.from('course').list('content/' + m + '/videos/_new', { limit:1000 }));
-      (r.data || []).forEach(o => { const k = o.name.match(/^(.+)\.mp4$/); if (k) staged[m + '/' + k[1]] = 'content/' + m + '/videos/_new/' + o.name; });
+      (r.data || []).forEach(o => { const k = o.name.match(/^(.+)\.mp4$/); if (k) map[m + '/' + k[1]] = 'content/' + m + '/videos/_new/' + o.name; });
     }));
+    stagedCache = { at:Date.now(), mods:mods.join(), map };
+    return map;
+  }
+
+  const cancelJob = id => safe(db().from('voice_jobs').update({ status:'cancelled', message:'Cancelled' }).eq('id', id).in('status', ['queued', 'running']));
+
+  // ───── Projects: the real estate course batch ─────
+  async function viewProjects(main, S, reopen){
+    const L = S.lessons;
+    const staged = await stagedVideos([...new Set(L.map(j => j.target.module))]);
+    const vid = j => staged[j.target.module + '/' + j.target.lesson];
     const narrated = L.filter(j => j.status === 'done'), audio = narrated.reduce((s, j) => s + (j.duration_s || 0), 0);
-    const ready = L.filter(j => staged[j.target.module + '/' + j.target.lesson]).length;
+    const ready = L.filter(vid).length;
     const stat = (label, value, sub) => '<div class="vs-stat"><span class="vs-cap">' + esc(label) + '</span><b>' + esc(value) + '</b><small>' + esc(sub) + '</small></div>';
-    const voice = j => j.status === 'running' ? chip('Narrating · ' + Math.round((j.progress || 0) * 100) + '%', 'run') : j.status === 'done' ? chip((j.needs_review || []).length ? 'Narrated · ' + j.needs_review.length + ' to check' : 'Narrated', (j.needs_review || []).length ? 'warn' : 'ok') :
+    const state = j => j.status === 'running' ? chip('Narrating · ' + Math.round((j.progress || 0) * 100) + '%', 'run') : j.status === 'done' ? chip((j.needs_review || []).length ? 'Narrated · ' + j.needs_review.length + ' to check' : 'Narrated', (j.needs_review || []).length ? 'warn' : 'ok') :
       j.status === 'queued' ? chip('In queue') : chip((STATUS[j.status] || [j.status])[0], j.status === 'failed' ? 'bad' : '');
-    const video = j => staged[j.target.module + '/' + j.target.lesson] ? chip('Ready for review', 'ok') : j.status === 'done' ? chip('Not built yet') : chip('Waits for voice');
+    const retake = r => r ? ' ' + chip(r.status === 'running' ? 'Retake running' : r.status === 'queued' ? 'Retake waiting' : r.status === 'failed' ? 'Retake failed' : 'Retake ' + r.status, r.status === 'failed' ? 'bad' : '') : '';
+    const video = j => vid(j) ? chip('Ready for review', 'ok') : j.status === 'done' ? chip('Not built yet') : chip('Waits for voice');
+    const live = j => j.status === 'queued' || j.status === 'running';
+    const name = j => esc('lesson ' + lessonTitle(j));
 
     main.innerHTML = head('Acquisitions Playbook', L.length + ' lessons · narration and videos built on your PC, in course order', '<a class="vs-btn" href="/course/">Open the course</a>') +
       '<div class="vs-stats">' + stat('Narrated', narrated.length + ' / ' + L.length, S.eta ? 'about ' + hours(S.eta) + ' to go' : S.waitingLessons.length + ' waiting') +
       stat('Audio made', hours(audio), 'of finished narration') + stat('Videos ready', String(ready), 'waiting for your review') + stat('Credits used', '0', 'runs on your own PC') + '</div>' +
       '<section class="vs-card vs-flush"><div class="vs-tablewrap"><table class="vs-table"><caption class="vs-sr">Lessons in course order</caption><thead><tr><th scope="col">Lesson</th><th scope="col">Length</th><th scope="col">Voice</th><th scope="col">Video</th><th scope="col" class="vs-r">Actions</th></tr></thead><tbody>' +
-      (L.length ? L.map(j => '<tr data-id="' + j.id + '"><td><b>' + esc(lessonTitle(j)) + '</b><small>Module ' + esc(String(j.target.module).replace(/^m/, '')) + '</small></td><td>' + (j.duration_s ? mmss(j.duration_s) : '·') + '</td><td>' + voice(j) + '</td><td>' + video(j) + '</td>' +
-        '<td class="vs-r">' + (j.status === 'done' ? '<button type="button" class="vs-link" data-act="play">Play</button><button type="button" class="vs-link" data-act="pieces">Retake a line</button>' : '') +
-        (staged[j.target.module + '/' + j.target.lesson] ? '<button type="button" class="vs-link" data-act="video">Open video</button>' : '') + '</td></tr>' +
+      (L.length ? L.map(j => '<tr data-id="' + j.id + '"><td><b>' + esc(lessonTitle(j)) + '</b><small>Module ' + esc(String(j.target.module).replace(/^m/, '')) + '</small></td><td>' + (j.duration_s ? mmss(j.duration_s) : '·') + '</td><td>' + state(j) + retake(j.retake) + '</td><td>' + video(j) + '</td>' +
+        '<td class="vs-r">' + (j.status === 'done' ? '<button type="button" class="vs-link" data-act="play" aria-label="Play ' + name(j) + '">Play</button><button type="button" class="vs-link" data-act="pieces" aria-expanded="false" aria-label="Retake a line in ' + name(j) + '">Retake a line</button>' : '') +
+        (vid(j) ? '<button type="button" class="vs-link" data-act="video" aria-label="Open the new video of ' + name(j) + '">Open video</button>' : '') +
+        (live(j) || (j.retake && live(j.retake)) ? '<button type="button" class="vs-link" data-act="cancel" aria-label="Cancel ' + (live(j) ? '' : 'the retake of ') + name(j) + '">Cancel' + (live(j) ? '' : ' retake') + '</button>' : '') + '</td></tr>' +
         '<tr class="vs-expand" hidden><td colspan="5"><div></div></td></tr>').join('') : '<tr><td colspan="5">' + empty('No lessons sent yet. Use “Narrate the lessons not done yet” on a module page in the course.') + '</td></tr>') +
-      '</tbody></table></div></section><audio id="vsAudio" controls preload="none" hidden></audio>';
+      '</tbody></table></div></section>';
 
     main.querySelector('tbody').addEventListener('click', async ev => {
       const b = ev.target.closest('button[data-act]'); if (!b) return;
       const row = b.closest('tr'), j = L.find(x => x.id === row.dataset.id); if (!j) return;
       const more = row.nextElementSibling, cell = more.querySelector('div');
-      if (b.dataset.act === 'play') { more.hidden = false; cell.innerHTML = ''; play(main, j.output_mp3 || j.output_wav, null, cell); }
-      else if (b.dataset.act === 'pieces') { if (!more.hidden && cell.querySelector('.vs-piece')) { more.hidden = true; return; } more.hidden = false; cell.innerHTML = '<p class="p-loading">Loading…</p>'; pieces(j, cell, () => {}); }
-      else if (b.dataset.act === 'video') { const w = window.open('', '_blank'); const u = await signedUrl(staged[j.target.module + '/' + j.target.lesson], null, 'course'); if (u && w) w.location = u; else if (w) w.close(); }
+      if (b.dataset.act === 'play') { more.hidden = false; if (!cell.querySelector('.vs-piece')) cell.innerHTML = ''; play(main, j.output_mp3 || j.output_wav, null, cell); }
+      else if (b.dataset.act === 'pieces') {
+        if (!more.hidden && cell.querySelector('.vs-piece')) { more.hidden = true; b.setAttribute('aria-expanded', 'false'); return; }
+        more.hidden = false; b.setAttribute('aria-expanded', 'true'); cell.innerHTML = '<p class="p-loading">Loading…</p>'; pieces(j, cell, reopen);
+      }
+      else if (b.dataset.act === 'video') { const w = window.open('', '_blank'); const u = await signedUrl(vid(j), null, 'course'); if (u && w) w.location = u; else if (w) w.close(); }
+      else if (b.dataset.act === 'cancel') { b.disabled = true; await cancelJob(live(j) ? j.id : j.retake.id); reopen(); }
     });
     return { live:!!S.running };
   }
@@ -299,16 +332,18 @@
         '<p class="vs-note">Adding a new voice from a recording comes in a later round.</p>') +
       '<section class="vs-card" aria-labelledby="abH"><div class="vs-cardhead"><h2 id="abH">Blind test</h2><span class="vs-note">your voice vs ElevenLabs</span></div>' +
       (tests.length ? tests.map(j => { const [label, kind] = STATUS[j.status] || [j.status, '']; return '<div class="vs-job" data-id="' + j.id + '"><span><b>' + esc(j.title) + '</b> ' + chip(label, kind) + '<small>' + esc(ago(j.created_at)) + '</small></span>' +
-        (j.status === 'done' ? '<button type="button" class="vs-btn" data-act="ab">Take the blind test</button>' : '') + '<div class="vs-jobmore" hidden></div></div>'; }).join('') : '') +
+        (j.status === 'done' ? '<button type="button" class="vs-btn" data-act="ab" aria-expanded="false">Take the blind test</button>' : '') +
+        (j.status === 'queued' || j.status === 'running' ? '<button type="button" class="vs-btn" data-act="cancel" aria-label="Cancel ' + esc(j.title) + '">Cancel</button>' : '') + '<div class="vs-jobmore" hidden></div></div>'; }).join('') : '') +
       '<form class="vs-form" id="vsAb" novalidate><p class="vs-note">Upload a voice-only ElevenLabs narration (at least a minute). Your PC makes the same sentences in your voice, then you listen to the pairs without knowing which is which.</p>' +
       '<label class="vs-sub" for="vsAbFile">ElevenLabs file (MP3 or WAV)</label><input type="file" id="vsAbFile" accept="audio/mpeg,audio/wav,audio/x-wav,.mp3,.wav">' +
       '<button class="vs-go" type="submit">Make the blind test</button><p class="vs-note" id="vsAbMsg" role="status"></p></form></section>';
 
     main.querySelectorAll('.vs-job [data-act="ab"]').forEach(b => b.addEventListener('click', () => {
       const row = b.closest('.vs-job'), j = tests.find(x => x.id === row.dataset.id), more = row.querySelector('.vs-jobmore');
-      if (!more.hidden) { more.hidden = true; return; }
-      more.hidden = false; more.innerHTML = '<p class="p-loading">Loading…</p>'; abTest(j, more);
+      if (!more.hidden) { more.hidden = true; b.setAttribute('aria-expanded', 'false'); return; }
+      more.hidden = false; b.setAttribute('aria-expanded', 'true'); more.innerHTML = '<p class="p-loading">Loading…</p>'; abTest(j, more);
     }));
+    main.querySelectorAll('.vs-job [data-act="cancel"]').forEach(b => b.addEventListener('click', async () => { b.disabled = true; await cancelJob(b.closest('.vs-job').dataset.id); reopen(); }));
     $('vsAb').addEventListener('submit', async ev => {
       ev.preventDefault(); const file = $('vsAbFile').files[0];
       if (!file) return say('vsAbMsg', 'Choose the ElevenLabs file first.');
@@ -335,18 +370,21 @@
           '<small>' + esc(ago(j.created_at)) + (j.duration_s ? ' · ' + mmss(j.duration_s) : '') + (j.mood ? ' · ' + esc(MOOD_NAMES[j.mood] || j.mood) : '') + (j.redo_piece != null ? ' · piece ' + j.redo_piece + ' redone' : '') +
           (lineSpot(S, j) ? ' · ' + esc(lineSpot(S, j)) : '') + (j.message && j.status !== 'done' && j.status !== 'queued' ? ' · ' + esc(j.message) : '') + '</small>' +
           (j.status === 'running' ? bar(Math.round((j.progress || 0) * 100), 100) : '') + '</span><span class="vs-btns">' +
-          (j.status === 'done' ? '<button class="vs-btn" type="button" data-act="play">Play</button>' + (j.output_mp3 ? '<button class="vs-btn" type="button" data-act="mp3">MP3</button>' : '') + (j.output_wav ? '<button class="vs-btn" type="button" data-act="wav">WAV</button>' : '') + '<button class="vs-btn" type="button" data-act="pieces">Lines</button>' : '') +
-          (live ? '<button class="vs-btn" type="button" data-act="cancel">Cancel</button>' : '') + '</span><div class="vs-jobmore" hidden></div></div>';
-      }).join('') : empty('Nothing yet. Make one in Text to Speech.')) + '</section><audio id="vsAudio" controls preload="none" hidden></audio>';
+          (j.status === 'done' ? '<button class="vs-btn" type="button" data-act="play" aria-label="Play ' + esc(j.title) + '">Play</button>' + (j.output_mp3 ? '<button class="vs-btn" type="button" data-act="mp3" aria-label="Download MP3 of ' + esc(j.title) + '">MP3</button>' : '') + (j.output_wav ? '<button class="vs-btn" type="button" data-act="wav" aria-label="Download WAV of ' + esc(j.title) + '">WAV</button>' : '') + '<button class="vs-btn" type="button" data-act="pieces" aria-expanded="false" aria-label="Lines of ' + esc(j.title) + '">Lines</button>' : '') +
+          (live ? '<button class="vs-btn" type="button" data-act="cancel" aria-label="Cancel ' + esc(j.title) + '">Cancel</button>' : '') + '</span><div class="vs-jobmore" hidden></div></div>';
+      }).join('') : empty('Nothing yet. Make one in Text to Speech.')) + '</section>';
     widths(main);
     main.querySelectorAll('.vs-job').forEach(row => row.addEventListener('click', async ev => {
       const b = ev.target.closest('button[data-act]'); if (!b) return;
       const j = jobs.find(x => x.id === row.dataset.id); if (!j) return;
       const more = row.querySelector('.vs-jobmore');
-      if (b.dataset.act === 'play') { more.hidden = false; more.innerHTML = ''; play(main, j.output_mp3 || j.output_wav, null, more); }
+      if (b.dataset.act === 'play') { more.hidden = false; if (!more.querySelector('.vs-piece')) more.innerHTML = ''; play(main, j.output_mp3 || j.output_wav, null, more); }
       else if (b.dataset.act === 'mp3' || b.dataset.act === 'wav') { const p = b.dataset.act === 'mp3' ? j.output_mp3 : j.output_wav; const u = await signedUrl(p, fileName(j.title, p.split('.').pop())); if (u) location.href = u; }
-      else if (b.dataset.act === 'cancel') { await safe(db().from('voice_jobs').update({ status:'cancelled', message:'Cancelled' }).eq('id', j.id).in('status', ['queued', 'running'])); reopen(); }
-      else if (b.dataset.act === 'pieces') { if (!more.hidden && more.querySelector('.vs-piece')) { more.hidden = true; return; } more.hidden = false; more.innerHTML = '<p class="p-loading">Loading…</p>'; pieces(j, more, reopen); }
+      else if (b.dataset.act === 'cancel') { b.disabled = true; await cancelJob(j.id); reopen(); }
+      else if (b.dataset.act === 'pieces') {
+        if (!more.hidden && more.querySelector('.vs-piece')) { more.hidden = true; b.setAttribute('aria-expanded', 'false'); return; }
+        more.hidden = false; b.setAttribute('aria-expanded', 'true'); more.innerHTML = '<p class="p-loading">Loading…</p>'; pieces(j, more, reopen);
+      }
     }));
     return { live:jobs.some(j => j.status === 'queued' || j.status === 'running') };
   }
@@ -376,28 +414,41 @@
 
   const VIEWS = { tts:viewTts, projects:viewProjects, voices:viewVoices, history:viewHistory, pron:viewPron };
 
+  let openId = 0;
   V.voice = { title:'Voice Studio', sec:'owner', async open(el, ok){
     if (timer) { clearInterval(timer); timer = null; }
+    const me = ++openId, mine = () => me === openId && ok();
     const sub = location.hash.split('/')[1] || 'tts', tab = VIEWS[sub] ? sub : 'tts';
     el.innerHTML = shell(tab);
     const main = el.querySelector('#vsMain'), wkBox = el.querySelector('#vsWk');
     const reopen = () => V.voice.open(el, ok);
-    const S = await load();
-    if (!ok()) return;
-    if (S.error) { main.innerHTML = failed(S.error); return; }
-    wkBox.innerHTML = railStatus(S);
-    const res = await VIEWS[tab](main, S, reopen) || {};
-    if (!ok()) return;
+    let wkHtml = '';
+    const showWk = S2 => { const h = railStatus(S2); if (h !== wkHtml) { wkHtml = h; wkBox.innerHTML = h; } };
+    // what the screen shows depends on these; a redraw only happens when one of them changes
+    const sig = S2 => S2.lessons.concat(S2.others).map(j => j.id + j.status + Math.round((j.progress || 0) * 20) + (j.retake ? j.retake.status : '')).join();
+    let S = await load();
+    if (!mine()) return;
+    let res = {};
+    const draw = async () => {
+      if (S.error) { main.innerHTML = failed(S.error); return; }
+      showWk(S); res = await VIEWS[tab](main, S, reopen) || {};
+    };
+    await draw();
+    if (!mine()) return;
 
-    // While something is being made: keep the PC status fresh every 15 s, and redraw the screen when you're not
-    // typing, listening or looking at an opened row. Otherwise check the PC once a minute.
-    timer = setInterval(async () => {
-      if (!ok() || !document.body.contains(main)) { clearInterval(timer); timer = null; return; }
-      const busy = (document.activeElement && main.contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) ||
-        [...main.querySelectorAll('audio')].some(a => !a.paused) || !!main.querySelector('.vs-jobmore:not([hidden]), .vs-expand:not([hidden])') ||
-        !!($('vsText') && $('vsText').value.trim());
-      if (res.live && !busy) return reopen();
-      const fresh = await load(); if (ok() && document.body.contains(wkBox) && !fresh.error) wkBox.innerHTML = railStatus(fresh);
-    }, res.live ? 15000 : 60000);
+    // Every 15 s while something is being made (every minute otherwise, or after a failed load): refresh the PC status,
+    // and redraw this screen in place when a job changed and you're not typing, listening or looking at an opened row.
+    const id = setInterval(async () => {
+      if (!mine() || !document.body.contains(main)) { clearInterval(id); if (timer === id) timer = null; return; }
+      const fresh = await load();
+      if (!mine() || !document.body.contains(main) || fresh.error) return;
+      showWk(fresh);
+      const act = document.activeElement;
+      const busy = (act && main.contains(act) && act !== document.body) || [...main.querySelectorAll('audio')].some(a => !a.paused) ||
+        !!main.querySelector('.vs-jobmore:not([hidden]), .vs-expand:not([hidden])') || !!($('vsText') && $('vsText').value.trim());
+      if (busy || sig(fresh) === sig(S)) return;
+      const y = window.scrollY; S = fresh; await draw(); if (mine()) window.scrollTo(0, y);
+    }, res.live && !S.error ? 15000 : 60000);
+    timer = id;
   } };
 })();

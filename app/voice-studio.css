@@ -148,3 +148,10 @@
   .vs-side{ max-width:none; }
   .vs-head h1{ font-size:26px; }
 }
+
+/* optional title above the script */
+.vs-titlerow{ display:flex; align-items:center; gap:12px; padding:12px 18px 10px; border-bottom:1px solid var(--vs-line2); }
+.vs-titlein{ flex:1; min-width:0; min-height:40px; border:0; font:600 16px Inter, sans-serif; color:var(--vs-ink); background:transparent; }
+.vs-titlein:focus{ outline:2px solid var(--vs-clay); outline-offset:2px; border-radius:6px; }
+.vs-script .vs-titlerow + .vs-cap{ padding-top:14px; }
+.vs-expand audio.vs-live, .vs-jobmore audio.vs-live{ display:block; margin:8px 0; }
