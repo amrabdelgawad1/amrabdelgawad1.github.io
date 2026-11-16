@@ -268,3 +268,8 @@ body.vs-noscroll{ overflow:hidden; }
 .vs-switch{ display:flex; align-items:center; gap:10px; font-weight:600; min-height:40px; }
 .vs-switch input{ width:20px; height:20px; accent-color:var(--vs-clay); }
 .vs-app .vs-wk a.vs-wklink{ color:#F2A67F; }
+
+/* round 4: credits saved */
+.vs-app .vs-inline{ margin:0; padding:0; min-height:0; font-size:13px; }
+.vs-rate{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+.vs-rate[hidden]{ display:none; }
