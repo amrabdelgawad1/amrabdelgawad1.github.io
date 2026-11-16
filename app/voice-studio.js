@@ -278,7 +278,12 @@
     return map;
   }
 
-  const cancelJob = id => safe(db().from('voice_jobs').update({ status:'cancelled', message:'Cancelled' }).eq('id', id).in('status', ['queued', 'running']));
+  // Cancel a waiting or running job; says so on the button when it didn't work
+  const cancelJob = async (id, b) => {
+    const r = await safe(db().from('voice_jobs').update({ status:'cancelled', message:'Cancelled' }).eq('id', id).in('status', ['queued', 'running']));
+    if (r.error && b) { b.textContent = errText(r, 'Couldn’t cancel'); b.disabled = false; return false; }
+    return true;
+  };
 
   // ───── Projects: the real estate course batch ─────
   async function viewProjects(main, S, reopen){
@@ -316,7 +321,7 @@
         more.hidden = false; b.setAttribute('aria-expanded', 'true'); cell.innerHTML = '<p class="p-loading">Loading…</p>'; pieces(j, cell, reopen);
       }
       else if (b.dataset.act === 'video') { const w = window.open('', '_blank'); const u = await signedUrl(vid(j), null, 'course'); if (u && w) w.location = u; else if (w) w.close(); }
-      else if (b.dataset.act === 'cancel') { b.disabled = true; await cancelJob(live(j) ? j.id : j.retake.id); reopen(); }
+      else if (b.dataset.act === 'cancel') { b.disabled = true; if (await cancelJob(live(j) ? j.id : j.retake.id, b)) reopen(); }
     });
     return { live:!!S.running };
   }
@@ -343,7 +348,7 @@
       if (!more.hidden) { more.hidden = true; b.setAttribute('aria-expanded', 'false'); return; }
       more.hidden = false; b.setAttribute('aria-expanded', 'true'); more.innerHTML = '<p class="p-loading">Loading…</p>'; abTest(j, more);
     }));
-    main.querySelectorAll('.vs-job [data-act="cancel"]').forEach(b => b.addEventListener('click', async () => { b.disabled = true; await cancelJob(b.closest('.vs-job').dataset.id); reopen(); }));
+    main.querySelectorAll('.vs-job [data-act="cancel"]').forEach(b => b.addEventListener('click', async () => { b.disabled = true; if (await cancelJob(b.closest('.vs-job').dataset.id, b)) reopen(); }));
     $('vsAb').addEventListener('submit', async ev => {
       ev.preventDefault(); const file = $('vsAbFile').files[0];
       if (!file) return say('vsAbMsg', 'Choose the ElevenLabs file first.');
@@ -380,7 +385,7 @@
       const more = row.querySelector('.vs-jobmore');
       if (b.dataset.act === 'play') { more.hidden = false; if (!more.querySelector('.vs-piece')) more.innerHTML = ''; play(main, j.output_mp3 || j.output_wav, null, more); }
       else if (b.dataset.act === 'mp3' || b.dataset.act === 'wav') { const p = b.dataset.act === 'mp3' ? j.output_mp3 : j.output_wav; const u = await signedUrl(p, fileName(j.title, p.split('.').pop())); if (u) location.href = u; }
-      else if (b.dataset.act === 'cancel') { b.disabled = true; await cancelJob(j.id); reopen(); }
+      else if (b.dataset.act === 'cancel') { b.disabled = true; if (await cancelJob(j.id, b)) reopen(); }
       else if (b.dataset.act === 'pieces') {
         if (!more.hidden && more.querySelector('.vs-piece')) { more.hidden = true; b.setAttribute('aria-expanded', 'false'); return; }
         more.hidden = false; b.setAttribute('aria-expanded', 'true'); more.innerHTML = '<p class="p-loading">Loading…</p>'; pieces(j, more, reopen);
@@ -438,17 +443,22 @@
 
     // Every 15 s while something is being made (every minute otherwise, or after a failed load): refresh the PC status,
     // and redraw this screen in place when a job changed and you're not typing, listening or looking at an opened row.
-    const id = setInterval(async () => {
-      if (!mine() || !document.body.contains(main)) { clearInterval(id); if (timer === id) timer = null; return; }
+    let rate = 0, mineTimer = null;
+    const stop = () => { clearInterval(mineTimer); if (timer === mineTimer) timer = null; mineTimer = null; };
+    const tick = async () => {
+      if (!mine() || !document.body.contains(main)) { stop(); return; }
       const fresh = await load();
-      if (!mine() || !document.body.contains(main) || fresh.error) return;
+      if (!mine() || !document.body.contains(main)) { stop(); return; }
+      if (fresh.error) return;
       showWk(fresh);
       const act = document.activeElement;
-      const busy = (act && main.contains(act) && act !== document.body) || [...main.querySelectorAll('audio')].some(a => !a.paused) ||
-        !!main.querySelector('.vs-jobmore:not([hidden]), .vs-expand:not([hidden])') || !!($('vsText') && $('vsText').value.trim());
-      if (busy || sig(fresh) === sig(S)) return;
-      const y = window.scrollY; S = fresh; await draw(); if (mine()) window.scrollTo(0, y);
-    }, res.live && !S.error ? 15000 : 60000);
-    timer = id;
+      const busy = (act && main.contains(act) && /INPUT|TEXTAREA|SELECT/.test(act.tagName)) || [...main.querySelectorAll('audio')].some(a => !a.paused) ||
+        !!main.querySelector('.vs-jobmore:not([hidden]), .vs-expand:not([hidden])') || !!($('vsText') && $('vsText').value.trim()) || !!($('vsTitle') && $('vsTitle').value.trim());
+      if (busy || (!S.error && sig(fresh) === sig(S))) return;
+      const y = window.scrollY; S = fresh; await draw(); if (!mine()) return; window.scrollTo(0, y); every();
+    };
+    // the pace follows what's on screen: faster while something is being made
+    const every = () => { const want = res.live && !S.error ? 15000 : 60000; if (want === rate && mineTimer) return; stop(); rate = want; timer = mineTimer = setInterval(tick, want); };
+    every();
   } };
 })();
