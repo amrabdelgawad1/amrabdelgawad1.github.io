@@ -223,7 +223,7 @@
   .vs-wk{ border-radius:0; background:transparent; padding:6px 14px; display:flex; flex-wrap:wrap; align-items:center; gap:2px 10px; font-size:12px; }
   .vs-wk > div:not(.vs-wk-top):nth-child(n+3){ display:none; }
   .vs-wkbtn{ width:auto; margin:0 0 0 auto; min-height:32px; padding:0 10px; }
-  .vs-alerts{ display:none; }
+  .vs-alerts{ width:auto; margin:0 0 6px 14px; min-height:30px; padding:0; font-size:12px; text-decoration:underline; }
   .vs-main{ padding:18px 14px 28px; }
   .vs-head h1{ font-size:24px; }
   .vs-stats{ grid-template-columns:repeat(2, 1fr); gap:10px; }
@@ -286,3 +286,7 @@ body.vs-noscroll{ overflow:hidden; }
 .vs-app .vs-word .vs-btn{ min-height:38px; padding:0 12px; }
 .vs-arlist .vs-word span{ font-weight:600; color:#1D5E3A; }
 .vs-okline{ color:#1D5E3A; }
+
+/* round 4: phone alerts panel (the portal's own push settings inside) */
+.vs-push .set-head h3{ display:none; }
+.vs-push .acts{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }

@@ -136,7 +136,7 @@
     return '<div class="vs-app"><nav class="vs-rail" aria-label="Voice Studio">' +
       '<div class="vs-brand"><span class="vs-logo">' + icon('<path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/>') + '</span><span><b>Amr Voice Studio</b><small>Your voice, your PC</small></span></div>' +
       '<div class="vs-navs">' + TABS.map(t => '<a class="vs-nav' + (t[0] === tab ? ' is-on' : '') + '" href="#voice' + (t[0] === 'tts' ? '' : '/' + t[0]) + '"' + (t[0] === tab ? ' aria-current="page"' : '') + '>' + icon(t[2]) + '<span>' + t[1] + '</span>' + (t[0] === 'review' ? '<span class="vs-badge" id="vsRevN" hidden></span>' : '') + '</a>').join('') + '</div>' +
-      '<div class="vs-wkbox"><div id="vsWk" role="status"></div><button type="button" class="vs-alerts" id="vsAlerts">' + (alertsOn() ? 'Alerts on · turn off' : 'Alerts off · turn on') + '</button></div></nav><main class="vs-main" id="vsMain"><p class="p-loading">Loading…</p></main></div>';
+      '<div class="vs-wkbox"><div id="vsWk" role="status"></div><button type="button" class="vs-alerts" id="vsAlerts" aria-expanded="false">Phone alerts</button></div></nav><main class="vs-main" id="vsMain"><p class="p-loading">Loading…</p></main></div>';
   }
 
   // One audio player shared by every Play button on a screen
@@ -318,23 +318,6 @@
     const go = () => { try { a.currentTime = Math.max(0, from - 0.05); } catch(e) {} a.play().catch(() => {}); };
     if (a.readyState >= 1) go(); else a.addEventListener('loadedmetadata', go, { once:true });
     if (to) a.addEventListener('timeupdate', function stopAt(){ if (a.currentTime >= to + 0.1) { a.pause(); a.removeEventListener('timeupdate', stopAt); } });
-  }
-
-  // Alerts: a notification on this device when a narration finishes or fails (while the portal is open in a tab)
-  const alertsOn = () => { try { return localStorage.getItem('vsAlerts') === '1' && 'Notification' in window && Notification.permission === 'granted'; } catch(e) { return false; } };
-  function notifyChanges(before, after){
-    if (!alertsOn() || !before) return;
-    const was = {}; before.all.forEach(j => was[j.id] = j.status);
-    const mods = {};
-    after.all.forEach(j => {
-      if (!was[j.id] || was[j.id] === j.status) return;
-      if (j.status === 'failed') new Notification('Voice Studio: something failed', { body:(isLesson(j) ? 'Lesson ' + lessonTitle(j) : j.title) + (j.message ? ' · ' + j.message : ''), tag:'vs-' + j.id });
-      else if (j.status === 'done' && !isLesson(j) && !String(j.title).startsWith(SAMPLE)) new Notification('Voice Studio: ready', { body:j.title, tag:'vs-' + j.id });
-      else if (j.status === 'done' && isLesson(j) && !j.parent_id) mods[j.target.module] = true;
-    });
-    // a module is finished when it was the last lesson waiting there
-    Object.keys(mods).forEach(m => { if (!after.waitingLessons.some(j => j.target.module === m) && !(after.running && isLesson(after.running) && after.running.target.module === m))
-      new Notification('Voice Studio: Module ' + m.replace(/^m/, '') + ' narrated', { body:'Every lesson in it has your voice now.', tag:'vs-mod-' + m }); });
   }
 
   // The blind test: each pair plays the same words twice, once ElevenLabs and once your clone, in a fixed random order.
@@ -1028,16 +1011,23 @@
     if (r.error || !(r.data || []).length) { b.disabled = false; b.textContent = r.error ? errText(r, 'Couldn’t change it') : 'Sign in again with your code'; return false; }
     return true;
   }
-  // Alerts on this device: asks the browser once
-  async function toggleAlerts(b){
-    if (!('Notification' in window)) { b.textContent = 'This browser can’t show alerts'; b.disabled = true; return; }
-    if (alertsOn()) { try { localStorage.removeItem('vsAlerts'); } catch(e) {} b.textContent = 'Alerts off · turn on'; return; }
-    const p = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
-    if (p !== 'granted') { b.textContent = 'Alerts are blocked in the browser settings'; return; }
-    try { localStorage.setItem('vsAlerts', '1'); } catch(e) {}
-    b.textContent = 'Alerts on · turn off';
-    new Notification('Voice Studio alerts are on', { body:'You’ll hear when a module is narrated or something fails, while the portal is open.' });
+  // Phone alerts: the portal's own "Allow alerts on this phone" (Settings › Phone alerts), plus Voice Studio's switch.
+  // Alerts come from the database when a job finishes, so they arrive with the portal closed.
+  async function alertsPanel(main, S, reopen){
+    let p = main.querySelector('#vsPhone');
+    if (p) { p.remove(); return false; }
+    main.insertAdjacentHTML('afterbegin', '<section class="vs-card" id="vsPhone" aria-labelledby="vsPhoneH"><div class="vs-cardhead"><h2 id="vsPhoneH">Phone alerts</h2><button type="button" class="vs-link" id="vsPhoneX">Close</button></div>' +
+      '<label class="vs-switch"><input type="checkbox" id="vsPhoneOn"' + (S.set.phone_alerts === false ? '' : ' checked') + '> Voice Studio alerts: a module narrated, all lessons done, your script ready, anything failed</label>' +
+      '<div id="vsPush" class="vs-push"><p class="p-loading">Loading…</p></div></section>');
+    p = main.querySelector('#vsPhone');
+    p.querySelector('#vsPhoneX').addEventListener('click', () => { p.remove(); const b = document.getElementById('vsAlerts'); if (b) b.setAttribute('aria-expanded', 'false'); });
+    p.querySelector('#vsPhoneOn').addEventListener('change', async ev => { await safe(db().from('voice_settings').update({ phone_alerts:ev.target.checked, updated_at:new Date().toISOString() }).eq('id', 'main')); });
+    const box2 = p.querySelector('#vsPush');
+    if (window.PortalPush && window.PortalPush.draw) window.PortalPush.draw(box2); else box2.innerHTML = '<p class="vs-note">Open Settings › Phone alerts in the portal menu to allow alerts on this phone.</p>';
+    window.scrollTo(0, 0);
+    return true;
   }
+
 
   let openId = 0;
   V.voice = { title:'Voice Studio', sec:'owner', async open(el, ok){
@@ -1055,11 +1045,11 @@
       const n = S2.review.length, badge = el.querySelector('#vsRevN'); if (badge) { badge.hidden = !n; badge.textContent = n; }
     };
     wkBox.addEventListener('click', async ev => { const b = ev.target.closest('[data-pause]'); if (b && await setPause(b.dataset.pause === '1', b)) reopen(); });
-    el.querySelector('#vsAlerts').addEventListener('click', ev => toggleAlerts(ev.currentTarget));
+    el.querySelector('#vsAlerts').addEventListener('click', async ev => { const b = ev.currentTarget; b.setAttribute('aria-expanded', String(await alertsPanel(main, S, reopen))); });
     // what the screen shows depends on these; a redraw only happens when one of them changes
     const sig = S2 => S2.lessons.concat(S2.others).map(j => j.id + j.status + Math.round((j.progress || 0) * 20) + (j.retake ? j.retake.status : '')).join() +
       S2.paused + Object.values(S2.moodSamples).map(j => j.id + j.status).join();
-    let S = await load(), seen = S;   // seen: what the last check found, so an alert fires once per change
+    let S = await load();
     if (!mine()) return;
     let res = {};
     const draw = async () => {
@@ -1078,12 +1068,10 @@
       const fresh = await load();
       if (!mine() || !document.body.contains(main)) { stop(); return; }
       if (fresh.error) return;
-      try { notifyChanges(seen, fresh); } catch(e) {}
-      seen = fresh;
       showWk(fresh);
       const act = document.activeElement;
       const busy = putting || !!liveArmed || (act && main.contains(act) && /INPUT|TEXTAREA|SELECT/.test(act.tagName)) || [...main.querySelectorAll('audio')].some(a => !a.paused) ||
-        !!main.querySelector('.vs-jobmore:not([hidden]), .vs-expand:not([hidden]), .vs-checks:not([hidden])') || !!($('vsText') && $('vsText').value.trim()) || !!($('vsTitle') && $('vsTitle').value.trim());
+        !!main.querySelector('.vs-jobmore:not([hidden]), .vs-expand:not([hidden]), .vs-checks:not([hidden]), #vsPhone') || !!($('vsText') && $('vsText').value.trim()) || !!($('vsTitle') && $('vsTitle').value.trim());
       if (busy || (!S.error && sig(fresh) === sig(S))) return;
       const y = window.scrollY; S = fresh; await draw(); if (!mine()) return; window.scrollTo(0, y); every();
     };
