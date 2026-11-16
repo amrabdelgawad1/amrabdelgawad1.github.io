@@ -438,7 +438,8 @@
       (retakes.length ? '<section class="vs-card"><div class="vs-cardhead"><h2>Recent retakes</h2><span class="vs-note">Hear the line before and after</span></div>' + retakes.map(j =>
         '<div class="vs-job" data-id="' + j.id + '"><span><b>' + esc(name(j).replace(/ \(piece \d+ redone\)$/, '')) + '</b><small>Line ' + (+j.redo_piece) + ' · ' + esc(ago(j.finished_at || j.created_at)) + '</small></span><span class="vs-btns">' + compareBtns(j) + '</span><div class="vs-jobmore" hidden></div></div>').join('') + '</section>' : '');
     main.querySelectorAll('.vs-job').forEach(row => row.addEventListener('click', ev => {
-      const b = ev.target.closest('button'); if (!b) return;
+      // only the row's own buttons; Play and Retake inside the opened lines have their own handlers and must not close the list
+      const b = ev.target.closest('button[data-act], button[data-cmp]'); if (!b || b.closest('.vs-jobmore')) return;
       const j = S.all.find(x => x.id === row.dataset.id) || R.find(x => x.id === row.dataset.id); if (!j) return;
       const more = row.querySelector('.vs-jobmore');
       if (b.dataset.cmp) { more.hidden = false; compare(main, S, j, b.dataset.cmp, more); return; }
