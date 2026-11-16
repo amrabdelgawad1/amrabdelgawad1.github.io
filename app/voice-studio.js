@@ -81,7 +81,7 @@
       safe(db().from('voice_worker').select('*').eq('id', 'main').maybeSingle()),
       safe(db().from('voice_jobs').select('id,title,status,progress,message,target,priority,parent_id,duration_s,needs_review,output_mp3,output_wav,output_json,created_at,claimed_at,finished_at').eq('target->>mode', 'lesson').order('created_at').limit(2000)),
       safe(db().from('voice_jobs').select(JOB_COLS).or('target.is.null,target->>mode.is.null,target->>mode.neq.lesson').not('title', 'like', SAMPLE + '%').order('created_at', { ascending:false }).limit(60)),
-      safe(db().from('voice_settings').select('paused,paused_at').eq('id', 'main').maybeSingle()),
+      safe(db().from('voice_settings').select('*').eq('id', 'main').maybeSingle()),
       safe(db().from('voice_jobs').select('id,title,status,output_mp3,output_wav,created_at').like('title', SAMPLE + '%').neq('status', 'cancelled').order('created_at', { ascending:false }).limit(40))]);
     const wk = w.data, online = !!(wk && (Date.now() - new Date(wk.last_seen)) < 70000);
     // the newest job per lesson is the one that counts (a redo replaces the first)
@@ -113,7 +113,7 @@
     // what needs a listen: finished narrations with lines the word check flagged
     const review = lessonList.filter(j => j.status === 'done' && (j.needs_review || []).length).concat((others.data || []).filter(j => j.status === 'done' && !isAB(j) && (j.needs_review || []).length));
     return { ratio:workRatio(done), wk, online, error:lessons.error || others.error, lessons:lessonList, waitingLessons:waiting, others:others.data || [], running, eta,
-      paused:!!(set.data && set.data.paused), pausedAt:set.data && set.data.paused_at, pauseReady:!set.error, today, moodSamples, review, all };
+      paused:!!(set.data && set.data.paused), pausedAt:set.data && set.data.paused_at, pauseReady:!set.error, set:set.data || {}, offHours:offHours(set.data), today, moodSamples, review, all };
   }
 
   function railStatus(S){
@@ -121,6 +121,8 @@
     const gpu = wk && wk.gpu ? (wk.gpu === 'loading' ? 'starting up' : String(wk.gpu).replace(/^NVIDIA GeForce /, '').replace(/\s*\(.*\)$/, '')) : '';
     if (S.paused) return '<div class="vs-wk"><div class="vs-wk-top"><span class="vs-dot is-pause"></span>Queue paused</div><div>' + esc(S.running ? 'Finishing ' + (isLesson(S.running) ? 'lesson ' + lessonTitle(S.running) : S.running.title) + ', then it waits' : 'Nothing new starts until you resume') + '</div>' +
       '<button type="button" class="vs-wkbtn" data-pause="0">Resume</button></div>';
+    if (S.offHours && S.waitingLessons.length && !S.running) return '<div class="vs-wk"><div class="vs-wk-top"><span class="vs-dot is-pause"></span>' + (S.online ? 'yukis-pc online' : 'yukis-pc offline') + '</div><div>Lessons wait until ' + esc(hourName(S.set.hour_start)) + ' (working hours)</div>' +
+      '<div><a href="#voice/computer" class="vs-wklink">Change the hours</a></div></div>';
     const line2 = S.waitingLessons.length ? S.waitingLessons.length + ' lesson' + (S.waitingLessons.length === 1 ? '' : 's') + ' in queue' : (wk && wk.busy_job ? 'working' : 'queue empty');
     return '<div class="vs-wk"><div class="vs-wk-top"><span class="vs-dot' + (S.online ? ' is-on' : '') + '"></span>' + (S.online ? 'yukis-pc online' : 'yukis-pc offline') + '</div>' +
       '<div>' + esc(S.online ? (gpu ? gpu + ' · ' : '') + line2 : wk ? 'last seen ' + ago(wk.last_seen) : 'never connected') + '</div>' +
@@ -805,7 +807,7 @@
     return { r:'no', vram, why:why.concat(d.gpu ? 'No NVIDIA or Apple Silicon graphics (' + d.card + '), so the voice would run on the processor.' : 'No graphics card could be found.') };
   }
 
-  async function viewComputer(main, S){
+  async function viewComputer(main, S, reopen){
     main.innerHTML = head('Can my computer run it?', 'Amr Voice Studio runs on your own computer, so your voice and audio never leave it. Here’s how this one looks.') + '<p class="p-loading">Checking this computer…</p>';
     const d = await detect(), res = rate(d), R = RATINGS[res.r];
     const row = (k, v) => '<div class="vs-spec"><span>' + esc(k) + '</span><b>' + esc(v || 'Not shared by the browser') + '</b></div>';
@@ -822,16 +824,42 @@
       box('yukis-pc, measured', pc ? '<div class="vs-chips">' + chip(pcRate ? RATINGS[pcRate].label : 'Not measured', pcRate ? RATINGS[pcRate].kind : '') + '</div>' +
         row('Graphics card', String(pc.gpu || '').replace(/^NVIDIA GeForce /, '')) + row('Speed', ratio ? 'About ' + ratio.toFixed(1) + 'x real time (from the finished lessons)' : 'Not enough lessons yet') +
         '<p class="vs-note">When other apps fill the graphics memory (NVIDIA Broadcast, Discord, browsers), narration can get about 10x slower. Close them for full speed.</p>' : empty('The PC hasn’t connected yet.')) +
+      (S.pauseReady ? '<section class="vs-card" aria-labelledby="hrsH"><h2 class="vs-cap" id="hrsH">Working hours</h2><div id="vsHrs" class="vs-hrs"></div></section>' : '') +
       '</aside></div>' +
       '<section class="vs-card vs-flush"><div class="vs-tablewrap"><table class="vs-table"><caption class="vs-sr">What each rating means</caption><thead><tr><th scope="col">Rating</th><th scope="col">Graphics card</th><th scope="col">Memory and disk</th><th scope="col">Expected speed</th></tr></thead><tbody>' +
       '<tr><td>' + chip('Recommended', 'ok') + '</td><td>NVIDIA with 6 GB or more (RTX 3050 6 GB, 3060, 4060 and up)</td><td>16 GB memory, 15 GB free disk, Windows 10 or 11, 64-bit</td><td>About 2x real time</td></tr>' +
       '<tr><td>' + chip('Works, but slow', 'warn') + '</td><td>NVIDIA with 4 GB; Apple Silicon Mac (M1 or newer) with 16 GB</td><td>16 GB memory, 15 GB free disk</td><td>Roughly 4x to 8x real time</td></tr>' +
       '<tr><td>' + chip('Not recommended', 'bad') + '</td><td>Intel or AMD graphics only, under 8 GB memory, or 32-bit</td><td>Any</td><td>Roughly 10x to 15x real time</td></tr>' +
       '</tbody></table></div></section>';
+    if ($('vsHrs')) viewHours($('vsHrs'), S, reopen);
     return { live:false };
   }
 
   const VIEWS = { tts:viewTts, projects:viewProjects, review:viewReview, voices:viewVoices, history:viewHistory, pron:viewPron, computer:viewComputer };
+
+  // Working hours, in Cairo time: outside them the course lessons wait (your own scripts still run)
+  const cairoHour = () => +new Intl.DateTimeFormat('en-US', { timeZone:'Africa/Cairo', hour:'numeric', hourCycle:'h23' }).format(new Date()) % 24;
+  const hourName = h => (h % 12 || 12) + ' ' + (h < 12 ? 'AM' : 'PM');
+  function offHours(st){
+    if (!st || !st.hours_on || st.hour_start === st.hour_end) return false;
+    const h = cairoHour(), a = st.hour_start, b = st.hour_end;
+    return !(a < b ? h >= a && h < b : h >= a || h < b);
+  }
+  async function viewHours(el, S, reopen){
+    const st = S.set, hrs = Array.from({ length:24 }, (_, h) => h);
+    const sel = (id, v) => '<select class="vs-input vs-narrow" id="' + id + '">' + hrs.map(h => opt(h, hourName(h), h === v)).join('') + '</select>';
+    el.innerHTML = '<label class="vs-switch"><input type="checkbox" id="vsHrsOn"' + (st.hours_on ? ' checked' : '') + '> Only narrate course lessons during set hours</label>' +
+      '<div class="vs-btns">From ' + sel('vsHrsA', st.hour_start == null ? 0 : st.hour_start) + ' to ' + sel('vsHrsB', st.hour_end == null ? 9 : st.hour_end) + '</div>' +
+      '<p class="vs-note">Cairo time. Outside these hours the lesson queue waits, so the PC stays free while you work. Your own scripts, mood samples and retakes still run any time. A lesson already being made finishes first.</p>' +
+      '<button type="button" class="vs-go" id="vsHrsSave">Save</button><p class="vs-note vs-msg" id="vsHrsMsg" role="status"></p>';
+    $('vsHrsSave').addEventListener('click', async ev => {
+      ev.target.disabled = true;
+      const r = await safe(db().from('voice_settings').update({ hours_on:$('vsHrsOn').checked, hour_start:+$('vsHrsA').value, hour_end:+$('vsHrsB').value, updated_at:new Date().toISOString() }).eq('id', 'main').select('id'));
+      ev.target.disabled = false;
+      if (r.error || !(r.data || []).length) return say('vsHrsMsg', r.error ? errText(r, 'Couldn’t save it. Try again.') : 'Not saved. Sign in again with your authenticator code.');
+      say('vsHrsMsg', 'Saved.'); setTimeout(reopen, 800);
+    });
+  }
 
   // Pause or resume the queue: the PC finishes what it's making and then claims nothing new
   async function setPause(on, b){
