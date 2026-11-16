@@ -151,6 +151,68 @@
     (near || main).appendChild(a); a.play().catch(() => {});
   }
 
+  // ───── Word checks, before anything is narrated ─────
+  // 1. Names, places and short forms the voice may say wrong: capitalised words in the middle of a sentence and
+  //    all-caps short forms (ARV, LLC), minus ones already in Pronunciations and everyday words.
+  // 2. Colloquial Arabic: the narration must be فصحى, so common spoken words are flagged with the فصحى word to use.
+  const COMMON = new Set(('I Im Ive Id Ill Mr Mrs Ms Dr OK Okay Monday Tuesday Wednesday Thursday Friday Saturday Sunday January February March April May June July August September October November December ' +
+    'English Arabic America American US USA Google Zillow Facebook YouTube Excel Word PDF Module Lesson Step Part Chapter Section Rule Note Tip Example Yes No The A An And But Or So If When What Why How Who Where Which This That These Those ' +
+    'He She We They You It Your My Our Their His Her Linda Amr Kyle Florida Texas Georgia California New York North South East West Street Road Avenue County City State Mom Dad God').split(' '));
+  const AR_FIX = { 'ده':'هذا', 'دا':'هذا', 'دي':'هذه', 'دول':'هؤلاء', 'إزاي':'كيف', 'ازاي':'كيف', 'ليه':'لماذا', 'فين':'أين', 'إمتى':'متى', 'امتى':'متى', 'عايز':'يريد / أريد', 'عاوز':'يريد / أريد',
+    'عايزة':'تريد', 'عاوزة':'تريد', 'عايزين':'يريدون', 'كده':'هكذا', 'كدا':'هكذا', 'بتاع':'الخاص بـ', 'بتاعة':'الخاصة بـ', 'بتاعك':'الخاص بك', 'بتاعي':'الخاص بي', 'مش':'ليس / لا', 'اللي':'الذي / التي / الذين',
+    'إيه':'ماذا / ما', 'ايه':'ماذا / ما', 'علشان':'لأن / لكي', 'عشان':'لأن / لكي', 'لسه':'ما زال / لم بعد', 'دلوقتي':'الآن', 'دلوقت':'الآن', 'برضه':'أيضًا', 'برضو':'أيضًا', 'كمان':'أيضًا', 'أوي':'جدًا', 'اوي':'جدًا',
+    'خالص':'إطلاقًا', 'حاجة':'شيء', 'حاجات':'أشياء', 'مفيش':'لا يوجد', 'مافيش':'لا يوجد', 'إحنا':'نحن', 'احنا':'نحن', 'إنتو':'أنتم', 'انتو':'أنتم', 'شوية':'قليلًا', 'كويس':'جيد', 'كويسة':'جيدة', 'زي':'مثل',
+    'طب':'حسنًا', 'لازم':'يجب', 'يلا':'هيا', 'خلاص':'انتهى / إذن', 'ماشي':'حسنًا', 'بس':'لكن / فقط', 'هنعمل':'سنفعل', 'بنعمل':'نفعل', 'بيقول':'يقول', 'بتقول':'تقول', 'هيقول':'سيقول' };
+  function checkWords(text, pron){
+    const known = new Set((pron || []).map(p => String(p.written).toLowerCase()));
+    const names = {}, ar = {};
+    String(text || '').split(/(?<=[.!?؟:\n])\s+/).forEach(sentence => {
+      const words = sentence.replace(/^\[[a-z_]+\]\s*/, '').match(/[A-Za-z][A-Za-z'’\-]*|[\u0600-\u06FF]+/g) || [];
+      words.forEach((w, i) => {
+        if (/[\u0600-\u06FF]/.test(w)) {
+          const bare = w.replace(/[\u064B-\u0652]/g, ''), core = AR_FIX[bare] ? bare : /^[وف]/.test(bare) && AR_FIX[bare.slice(1)] ? bare.slice(1) : null;
+          if (core) (ar[core] = ar[core] || { w:core, fix:AR_FIX[core], n:0 }).n++;
+          return;
+        }
+        const clean = w.replace(/['’]s$/, '').replace(/['’\-]+$/, '');
+        const acronym = /^[A-Z]{2,6}s?$/.test(clean), mid = i > 0 && /^[A-Z][a-z]/.test(clean);
+        if (!acronym && !mid) return;
+        if (COMMON.has(clean.replace(/['’]/g, '')) || known.has(clean.toLowerCase())) return;
+        (names[clean] = names[clean] || { w:clean, n:0, acronym }).n++;
+      });
+    });
+    return { names:Object.values(names).sort((a, b) => b.n - a.n), ar:Object.values(ar).sort((a, b) => b.n - a.n) };
+  }
+  // The list of what was found, with "Add how to say it" for names and the فصحى word for Arabic
+  function showChecks(el, res, opts){
+    let dismissed = []; try { dismissed = JSON.parse(localStorage.getItem('vsWordsOk') || '[]'); } catch(e) {}
+    const names = res.names.filter(x => !dismissed.includes(x.w));
+    if (!names.length && !res.ar.length) { el.innerHTML = '<p class="vs-note vs-okline">No unusual names and no colloquial Arabic found.</p>'; return 0; }
+    el.innerHTML = (names.length ? '<div class="vs-sub">Names and short forms to check (' + names.length + ')</div><p class="vs-note">The voice guesses these. Add how to say any it might get wrong; it’s used everywhere from then on.</p>' +
+        names.slice(0, 40).map(x => '<div class="vs-word" data-w="' + esc(x.w) + '"><b>' + esc(x.w) + '</b><small>' + (x.acronym ? 'short form · ' : '') + x.n + '×' + (x.where ? ' · ' + esc(x.where) : '') + '</small>' +
+          '<span class="vs-btns"><label class="vs-sr" for="vsSay_' + esc(x.w) + '">Say ' + esc(x.w) + ' as</label><input class="vs-input vs-say" id="vsSay_' + esc(x.w) + '" placeholder="' + (x.acronym ? esc(x.w.split('').join(' ')) : 'Say it as') + '">' +
+          '<button type="button" class="vs-btn" data-add>Add</button><button type="button" class="vs-link" data-fine>It’s fine</button></span></div>').join('') : '') +
+      (res.ar.length ? '<div class="vs-sub">Colloquial Arabic (' + res.ar.length + ')</div><p class="vs-note">The narration is فصحى. Use the word on the right instead.</p><div class="vs-arlist" dir="rtl" lang="ar">' +
+        res.ar.map(x => '<div class="vs-word"><b>' + esc(x.w) + '</b><span>← ' + esc(x.fix) + '</span><small>' + x.n + '×' + (x.where ? ' · ' + esc(x.where) : '') + '</small>' +
+          (opts && opts.replace && x.fix.indexOf('/') < 0 ? '<button type="button" class="vs-link" data-fix="' + esc(x.w) + '">Replace</button>' : '') + '</div>').join('') + '</div>' : '');
+    el.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', async () => {
+      const row = b.closest('.vs-word'), w = row.dataset.w, said = row.querySelector('.vs-say').value.trim();
+      if (!said) { row.querySelector('.vs-say').focus(); return; }
+      b.disabled = true;
+      const r = await safe(db().from('voice_pronunciations').upsert({ written:w, spoken:said, language:'en' }, { onConflict:'written,language' }));
+      if (r.error) { b.disabled = false; b.textContent = 'Try again'; return; }
+      row.innerHTML = '<b>' + esc(w) + '</b><small>said as “' + esc(said) + '” from now on</small>';
+    }));
+    el.querySelectorAll('[data-fine]').forEach(b => b.addEventListener('click', () => {
+      const row = b.closest('.vs-word'); dismissed.push(row.dataset.w);
+      try { localStorage.setItem('vsWordsOk', JSON.stringify(dismissed.slice(-500))); } catch(e) {}
+      row.remove();
+    }));
+    el.querySelectorAll('[data-fix]').forEach(b => b.addEventListener('click', () => { opts.replace(b.dataset.fix, AR_FIX[b.dataset.fix]); b.closest('.vs-word').remove(); }));
+    return names.length + res.ar.length;
+  }
+  const loadPron = async () => (await safe(db().from('voice_pronunciations').select('written,spoken,language'))).data || [];
+
   // Share: a private link to the MP3 that works for 7 days, copied for you to paste anywhere
   async function share(j, b){
     const p = j.output_mp3 || j.output_wav; if (!p) return;
@@ -375,7 +437,8 @@
       '<div class="vs-bar"><span id="vsEst" class="vs-note" role="status">Free, no credits</span><span class="vs-btns">' +
       '<button type="button" class="vs-btn vs-sheetbtn" id="vsSheetBtn" aria-controls="vsSide" aria-expanded="false">' + icon('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>', 16) + '<span id="vsSheetSum">' + esc(MOOD_NAMES[mood]) + '</span></button>' +
       '<label class="vs-sr" for="vsTag">Insert mood tag</label><select id="vsTag" class="vs-btn vs-select"><option value="">Insert mood tag</option>' + moods.map(m => opt(m, MOOD_NAMES[m] || m)).join('') + '</select>' +
-      '<button class="vs-go" type="submit">' + PLAY + 'Generate</button></span></div><p class="vs-note vs-msg" id="vsMsg" role="status"></p></form>' +
+      '<button type="button" class="vs-btn" id="vsCheck">Check words</button><button class="vs-go" type="submit">' + PLAY + 'Generate</button></span></div><p class="vs-note vs-msg" id="vsMsg" role="status"></p>' +
+      '<div class="vs-checks" id="vsChecks" hidden></div></form>' +
       '<section class="vs-card" aria-labelledby="takeH"><div class="vs-cardhead"><h2 id="takeH">Latest take</h2><span class="vs-links" id="vsDl"></span></div><div id="vsTake"></div></section>' +
       '</section><aside class="vs-side" id="vsSide" aria-label="Voice settings"><div class="vs-sheethead"><b>Voice and settings</b><button type="button" class="vs-btn" id="vsSheetClose">Done</button></div>' +
       box('Voice', '<div class="vs-voice"><span class="vs-avatar" aria-hidden="true">AA</span><span><b>Amr · cloned voice</b><small>English' + (hasAr ? ' and Arabic (فصحى)' : '') + '</small></span><a href="#voice/voices">Change</a></div>' +
@@ -450,10 +513,21 @@
     main.querySelectorAll('[data-play]').forEach(b => b.addEventListener('click', () => {
       const j = plain.find(x => x.id === b.dataset.play); if (j) play(main, j.output_mp3 || j.output_wav, null, b.closest('.vs-card'));
     }));
+    // Check words: on the button, and once before the first Generate of a script (Generate again goes ahead)
+    let checkedText = null;
+    const runCheck = async () => {
+      const box2 = $('vsChecks'); box2.hidden = false; box2.innerHTML = '<p class="p-loading">Checking…</p>';
+      checkedText = text.value.trim();
+      return showChecks(box2, checkWords(text.value, await loadPron()), { replace:(w, fix) => {
+        text.value = text.value.replace(new RegExp('(^|[\\s،.؟!])([وف]?)' + w + '(?=$|[\\s،.؟!])', 'g'), '$1$2' + fix); est();
+      } });
+    };
+    $('vsCheck').addEventListener('click', () => { if (text.value.trim()) runCheck(); else say('vsMsg', 'Type or paste a script first.'); });
     $('vsForm').addEventListener('submit', async ev => {
       ev.preventDefault();
       const t = text.value.trim();
       if (!t) return say('vsMsg', 'Type or paste a script first.');
+      if (checkedText !== t) { const found = await runCheck(); if (found) return say('vsMsg', 'Have a look at the words below first. Press Generate again to go ahead as it is.'); }
       const first = (t.split('\n').map(l => l.replace(/^\[[a-z_]+\]\s*/, '').trim()).find(Boolean) || 'Narration');
       const title = $('vsTitle').value.trim() || first.slice(0, 50) + (first.length > 50 ? '…' : '');
       ev.submitter && (ev.submitter.disabled = true);
@@ -559,7 +633,9 @@
       '<div class="vs-op"><label class="vs-sub" for="vsLive">Put new videos live</label><div class="vs-btns"><select id="vsLive" class="vs-input vs-narrow">' +
         (liveList.length ? liveList.map(m => opt(m, modName(m) + ' · ' + liveMods[m].length + ' ready')).join('') : '<option value="">No new videos yet</option>') +
         '</select><button type="button" class="vs-go" id="vsLiveGo"' + (liveList.length ? '' : ' disabled') + '>Put live</button></div>' +
-        '<p class="vs-note" id="vsLiveMsg" role="status">Learners see the new videos right away. The old ones are kept, so a module can be put back.</p></div></div>';
+        '<p class="vs-note" id="vsLiveMsg" role="status">Learners see the new videos right away. The old ones are kept, so a module can be put back.</p></div>' +
+      '<div class="vs-op vs-opwide"><span class="vs-sub">Check words before they’re narrated</span><div class="vs-btns"><button type="button" class="vs-btn" id="vsWordsGo"' + (S.waitingLessons.length ? '' : ' disabled') + '>Check the ' + S.waitingLessons.length + ' waiting lessons</button></div>' +
+        '<div class="vs-checks" id="vsWords" hidden></div></div></div>';
 
     const rate = S.set && S.set.usd_per_1k_credits != null ? +S.set.usd_per_1k_credits : 0, sv = S.saved;
     const savedStat = () => '<div class="vs-stat"><span class="vs-cap">Credits saved</span><b>' + esc(sv ? short(sv.chars_all) : '·') + '</b><small>' +
@@ -613,6 +689,21 @@
       applyFind();
     }
 
+    $('vsWordsGo').addEventListener('click', async ev => {
+      const b = ev.currentTarget, out = $('vsWords'); b.disabled = true; out.hidden = false; out.innerHTML = '<p class="p-loading">Reading the waiting lessons…</p>';
+      const [r, pron] = await Promise.all([safe(db().from('voice_jobs').select('id,title,text,target').eq('status', 'queued').eq('target->>mode', 'lesson').is('parent_id', null).limit(1000)), loadPron()]);
+      b.disabled = false;
+      if (r.error) { out.innerHTML = empty('Couldn’t read the lessons. Try again.'); return; }
+      // one list for all of them, with the first lessons each word is in
+      const names = {}, ar = {};
+      (r.data || []).sort(byLesson).forEach(j => { const c = checkWords(j.text, pron), at = j.target.lesson;
+        c.names.forEach(x => { const y = names[x.w] = names[x.w] || Object.assign({}, x, { n:0, at:[] }); y.n += x.n; if (y.at.length < 3) y.at.push(at); });
+        c.ar.forEach(x => { const y = ar[x.w] = ar[x.w] || Object.assign({}, x, { n:0, at:[] }); y.n += x.n; if (y.at.length < 3) y.at.push(at); }); });
+      const fin = o => Object.values(o).map(x => Object.assign(x, { where:'in ' + x.at.join(', ') + (x.at.length === 3 ? '…' : '') })).sort((a, b) => b.n - a.n);
+      const n = showChecks(out, { names:fin(names), ar:fin(ar) });
+      if (Object.keys(ar).length) out.insertAdjacentHTML('beforeend', '<p class="vs-note">Fix colloquial Arabic in the lesson text in the course, then send those lessons again.</p>');
+      if (!n) out.insertAdjacentHTML('afterbegin', '');
+    });
     $('vsRateBtn').addEventListener('click', () => { const f2 = $('vsRate'); f2.hidden = !f2.hidden; if (!f2.hidden) $('vsRateIn').focus(); });
     $('vsRate').addEventListener('submit', async ev => {
       ev.preventDefault(); const v = $('vsRateIn').value.trim(), n = v === '' ? null : +v;
@@ -941,7 +1032,7 @@
       showWk(fresh);
       const act = document.activeElement;
       const busy = putting || !!liveArmed || (act && main.contains(act) && /INPUT|TEXTAREA|SELECT/.test(act.tagName)) || [...main.querySelectorAll('audio')].some(a => !a.paused) ||
-        !!main.querySelector('.vs-jobmore:not([hidden]), .vs-expand:not([hidden])') || !!($('vsText') && $('vsText').value.trim()) || !!($('vsTitle') && $('vsTitle').value.trim());
+        !!main.querySelector('.vs-jobmore:not([hidden]), .vs-expand:not([hidden]), .vs-checks:not([hidden])') || !!($('vsText') && $('vsText').value.trim()) || !!($('vsTitle') && $('vsTitle').value.trim());
       if (busy || (!S.error && sig(fresh) === sig(S))) return;
       const y = window.scrollY; S = fresh; await draw(); if (!mine()) return; window.scrollTo(0, y); every();
     };

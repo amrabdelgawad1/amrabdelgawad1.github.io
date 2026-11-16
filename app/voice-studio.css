@@ -273,3 +273,16 @@ body.vs-noscroll{ overflow:hidden; }
 .vs-app .vs-inline{ margin:0; padding:0; min-height:0; font-size:13px; }
 .vs-rate{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
 .vs-rate[hidden]{ display:none; }
+
+/* round 4: word checks */
+.vs-checks{ display:flex; flex-direction:column; gap:8px; padding:12px 18px 16px; border-top:1px solid var(--vs-line2); }
+.vs-op .vs-checks{ padding:10px 0 0; border-top:0; }
+.vs-opwide{ flex-basis:100%; }
+.vs-word{ display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; padding:6px 0; border-bottom:1px solid #EEF1EF; }
+.vs-word b{ min-width:110px; }
+.vs-word small{ color:var(--vs-mute); font-size:12px; flex:1 1 120px; }
+.vs-word .vs-btns{ flex:1 1 300px; justify-content:flex-end; }
+.vs-say{ flex:1 1 160px; max-width:240px; min-height:38px; }
+.vs-app .vs-word .vs-btn{ min-height:38px; padding:0 12px; }
+.vs-arlist .vs-word span{ font-weight:600; color:#1D5E3A; }
+.vs-okline{ color:#1D5E3A; }
