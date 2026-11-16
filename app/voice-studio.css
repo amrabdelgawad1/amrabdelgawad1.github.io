@@ -290,3 +290,20 @@ body.vs-noscroll{ overflow:hidden; }
 /* round 4: phone alerts panel (the portal's own push settings inside) */
 .vs-push .set-head h3{ display:none; }
 .vs-push .acts{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+
+/* Review round (Nov 16): Whisper heard, keys, Play all, 3 takes */
+.vs-heard{ display:block; margin-top:4px; font-size:13px; color:var(--vs-soft); }
+.vs-heard em{ font-style:normal; font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--vs-mute); margin-right:4px; }
+.vs-heard i{ color:var(--vs-mute); }
+.vs-heard del{ color:var(--vs-clay3); text-decoration:line-through 2px; background:#FBEDE6; border-radius:3px; padding:0 2px; }
+.vs-heard ins{ color:#1F5E3B; text-decoration:underline 2px; background:#E6F2EA; border-radius:3px; padding:0 2px; }
+.vs-piece.is-cur{ background:#F6F8F6; box-shadow:inset 3px 0 0 var(--vs-clay); padding-left:10px; border-radius:6px; }
+.vs-piece:focus{ outline:none; }
+.vs-revbar{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 20px; margin:0 0 4px; }
+.vs-keys kbd{ display:inline-block; min-width:20px; padding:1px 6px; border:1px solid var(--vs-line); border-bottom-width:2px; border-radius:5px; background:#FFFFFF; font:600 12px Inter, sans-serif; color:var(--vs-ink); text-align:center; }
+.vs-pbar{ display:flex; justify-content:flex-end; padding:6px 0 2px; }
+.vs-takes{ border:1px solid var(--vs-line2); border-radius:12px; padding:10px 14px; display:flex; flex-direction:column; }
+.vs-takeshead{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; padding-bottom:4px; }
+.vs-takes .vs-piece:last-of-type{ border-bottom:0; }
+.vs-takes .vs-msg:empty{ display:none; }
+@media (max-width:640px){ .vs-keys{ display:none; } .vs-piece{ flex-wrap:wrap; } .vs-piece .vs-btns{ flex-wrap:wrap; } }

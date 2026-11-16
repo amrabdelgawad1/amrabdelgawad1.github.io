@@ -36,6 +36,8 @@
 
   const isAB = j => j.target && j.target.mode === 'ab';
   const isLesson = j => j.target && j.target.mode === 'lesson';
+  const isTake = j => !!(j && j.settings && j.settings.take_group);   // one of the 3 takes of a line (target.mode 'take')
+  const TAKES = [{ k:'A', feel:40 }, { k:'B', feel:55 }, { k:'C', feel:70 }];
   const icon = (d, size) => '<svg class="vs-i" width="' + (size || 18) + '" height="' + (size || 18) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
   const PLAY = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5l12 7-12 7z"/></svg>';
   const chip = (t, kind) => '<span class="vs-chip' + (kind ? ' is-' + kind : '') + '">' + esc(t) + '</span>';
@@ -112,7 +114,7 @@
     const moodSamples = {};
     (samples.data || []).forEach(j => { const m = j.title.slice(SAMPLE.length); if (!moodSamples[m] || (moodSamples[m].status !== 'done' && j.status === 'done')) moodSamples[m] = j; });
     // what needs a listen: finished narrations with lines the word check flagged
-    const review = lessonList.filter(j => j.status === 'done' && (j.needs_review || []).length).concat((others.data || []).filter(j => j.status === 'done' && !isAB(j) && (j.needs_review || []).length));
+    const review = lessonList.filter(j => j.status === 'done' && (j.needs_review || []).length).concat((others.data || []).filter(j => j.status === 'done' && !isAB(j) && !isTake(j) && (j.needs_review || []).length));
     return { ratio:workRatio(done), wk, online, error:lessons.error || others.error, lessons:lessonList, waitingLessons:waiting, others:others.data || [], running, eta,
       paused:!!(set.data && set.data.paused), pausedAt:set.data && set.data.paused_at, pauseReady:!set.error, set:set.data || {}, offHours:offHours(set.data), saved:(saved.data && saved.data[0]) || null, today, moodSamples, review, all };
   }
@@ -310,14 +312,45 @@
   }
   // Where one line sits in the audio: from its start to the next line's start (the end of the file for the last one)
   const span = (m, i) => { const ps = m.pieces, k = ps.findIndex(p => +p.i === +i); if (k < 0) return null; const nx = ps[k + 1]; return [ps[k].start || 0, nx ? nx.start : (ps[k].end || null)]; };
-  // Play just that stretch of a narration
+  // Play just that stretch of a narration. Resolves when it stops: { finished:true } when it reached the end of the
+  // stretch, { finished:false } when it was paused or another Play took over (Play all uses this to know when to go on).
   async function playPart(main, path, from, to, near){
     await play(main, path, null, near);
-    const a = near ? near.querySelector('audio.vs-live') : main.querySelector('audio.vs-live'); if (!a) return;
+    const a = near ? near.querySelector('audio.vs-live') : main.querySelector('audio.vs-live'); if (!a) return { finished:false };
     a.pause();
-    const go = () => { try { a.currentTime = Math.max(0, from - 0.05); } catch(e) {} a.play().catch(() => {}); };
-    if (a.readyState >= 1) go(); else a.addEventListener('loadedmetadata', go, { once:true });
-    if (to) a.addEventListener('timeupdate', function stopAt(){ if (a.currentTime >= to + 0.1) { a.pause(); a.removeEventListener('timeupdate', stopAt); } });
+    return new Promise(resolve => {
+      let started = false, over = false;
+      const end = fin => { if (over) return; over = true; a.removeEventListener('timeupdate', stopAt); a.removeEventListener('pause', paused); a.removeEventListener('ended', ended); resolve({ finished:fin, a }); };
+      const stopAt = () => { if (to && a.currentTime >= to + 0.1) { end(true); a.pause(); } };
+      const paused = () => { if (started) end(a.ended); };
+      const ended = () => end(true);
+      const go = () => { try { a.currentTime = Math.max(0, from - 0.05); } catch(e) {} a.addEventListener('playing', () => { started = true; }, { once:true }); a.play().catch(() => end(false)); };
+      a.addEventListener('timeupdate', stopAt); a.addEventListener('pause', paused); a.addEventListener('ended', ended);
+      if (a.readyState >= 1) go(); else a.addEventListener('loadedmetadata', go, { once:true });
+    });
+  }
+  // Play a line, with a second before and after it when "Play with a second around each line" is on
+  const ctxOn = () => { try { return localStorage.getItem('vsCtx') === '1'; } catch(e) { return false; } };
+  function hearLine(j, m, i, near, main){
+    const sp = span(m, i); if (!sp) return Promise.resolve({ finished:false });
+    const pad = ctxOn() ? 1 : 0;
+    return playPart(main, j.output_mp3 || j.output_wav, Math.max(0, sp[0] - pad), sp[1] != null ? sp[1] + pad : null, near);
+  }
+
+  // What Whisper heard next to the script, word by word: words it missed are struck through, words it added are underlined
+  const normW = w => w.toLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]/gu, '');
+  function heardDiff(said, heard){
+    const a = String(said || '').split(/\s+/).filter(Boolean), b = String(heard || '').split(/\s+/).filter(Boolean);
+    const A = a.map(normW), B = b.map(normW), n = A.length, k = B.length;
+    const L = Array.from({ length:n + 1 }, () => new Array(k + 1).fill(0));
+    for (let x = n - 1; x >= 0; x--) for (let y = k - 1; y >= 0; y--) L[x][y] = A[x] === B[y] ? L[x + 1][y + 1] + 1 : Math.max(L[x + 1][y], L[x][y + 1]);
+    const out = []; let x = 0, y = 0, diff = 0;
+    while (x < n || y < k) {
+      if (x < n && y < k && A[x] === B[y]) { out.push(esc(b[y])); x++; y++; }
+      else if (x < n && (y >= k || L[x + 1][y] >= L[x][y + 1])) { if (A[x]) diff++; out.push('<del title="In the script, but not heard">' + esc(a[x]) + '</del>'); x++; }
+      else { if (B[y]) diff++; out.push('<ins title="Heard, but not in the script">' + esc(b[y]) + '</ins>'); y++; }
+    }
+    return { html:out.join(' '), diff };
   }
 
   // The blind test: each pair plays the same words twice, once ElevenLabs and once your clone, in a fixed random order.
@@ -357,17 +390,66 @@
   }
 
   // The pieces of a narration, each with Redo (a redo builds on this exact version and reuses every other piece)
+  // onlyFlagged is the Review screen: just the lines still to check, with Sounds fine, 3 takes, Play all and keyboard keys
   async function pieces(j, el, reopen, onlyFlagged){
     const m = await manifest(j);
     if (!m || !m.pieces) { el.innerHTML = empty('Couldn’t load the pieces.'); return; }
-    const list = onlyFlagged ? m.pieces.filter(p => !p.ok) : m.pieces;
+    const flagged = Array.isArray(j.needs_review) ? j.needs_review.map(Number) : null;
+    const isFlag = p => flagged ? flagged.includes(+p.i) : !p.ok;
+    const list = onlyFlagged ? m.pieces.filter(isFlag) : m.pieces;
     if (!list.length) { el.innerHTML = empty('Every line passed the word check.'); return; }
-    el.innerHTML = list.map(p => '<div class="vs-piece' + (p.ok ? '' : ' is-check') + '"><span><small>#' + (+p.i) + ' · ' + mmss(p.start) + ' · ' + esc(MOOD_NAMES[p.mood] || p.mood) + (p.language === 'ar' ? ' · Arabic' : '') +
-      (p.ok ? '' : ' · ' + esc(p.reason || 'check this one')) + '</small>' + esc(p.text) + '</span>' +
-      '<span class="vs-btns"><button class="vs-btn" type="button" data-hear="' + (+p.i) + '" aria-label="Play line ' + (+p.i) + '">' + PLAY + 'Play</button>' +
-      '<button class="vs-btn" type="button" data-redo="' + (+p.i) + '" aria-label="Retake line ' + (+p.i) + '">Retake</button></span></div>').join('');
-    el.querySelectorAll('[data-hear]').forEach(b => b.addEventListener('click', () => {
-      const sp = span(m, b.dataset.hear); if (sp) playPart(el.closest('.vs-main') || el, j.output_mp3 || j.output_wav, sp[0], sp[1], b.closest('.vs-piece'));
+    const rv = !!onlyFlagged, main = el.closest('.vs-main') || el;
+    el.innerHTML = (rv && list.length > 1 ? '<div class="vs-pbar"><button class="vs-btn" type="button" data-all>' + PLAY + 'Play all ' + list.length + '</button></div>' : '') +
+      list.map(p => { const chk = isFlag(p), d = chk && p.heard != null ? heardDiff(p.text, p.heard) : null;
+        return '<div class="vs-piece' + (chk ? ' is-check' : '') + '" data-i="' + (+p.i) + '" tabindex="-1"><span><small>#' + (+p.i) + ' · ' + mmss(p.start) + ' · ' + esc(MOOD_NAMES[p.mood] || p.mood) + (p.language === 'ar' ? ' · Arabic' : '') +
+        (chk ? ' · ' + esc(p.reason || 'check this one') : '') + '</small>' + esc(p.text) +
+        (d ? '<span class="vs-heard"' + (p.language === 'ar' ? ' dir="rtl" lang="ar"' : '') + '><em>Whisper heard</em> ' + (d.diff ? d.html : esc(p.heard) + ' <i>(every word)</i>') + '</span>' : '') + '</span>' +
+        '<span class="vs-btns"><button class="vs-btn" type="button" data-hear="' + (+p.i) + '" aria-label="Play line ' + (+p.i) + '">' + PLAY + 'Play</button>' +
+        (rv ? '<button class="vs-btn" type="button" data-fine="' + (+p.i) + '" aria-label="Line ' + (+p.i) + ' sounds fine">Sounds fine</button>' : '') +
+        '<button class="vs-btn" type="button" data-redo="' + (+p.i) + '" aria-label="Retake line ' + (+p.i) + '">Retake</button>' +
+        (rv ? '<button class="vs-btn" type="button" data-takes="' + (+p.i) + '" aria-label="Make 3 takes of line ' + (+p.i) + ' to pick from">3 takes</button>' : '') + '</span></div>'; }).join('');
+    const cur = row => { main.querySelectorAll('.vs-piece.is-cur').forEach(x => x.classList.remove('is-cur')); if (row) row.classList.add('is-cur'); };
+    el.querySelectorAll('[data-hear]').forEach(b => b.addEventListener('click', () => { const row = b.closest('.vs-piece'); cur(row); hearLine(j, m, b.dataset.hear, row, main); }));
+    // Play all: the flagged lines one after another; stops when you pause or press Stop
+    let seq = 0;
+    const all = el.querySelector('[data-all]');
+    if (all) all.addEventListener('click', async () => {
+      if (all.dataset.on === '1') { seq++; main.querySelectorAll('audio.vs-live').forEach(a => a.pause()); return; }
+      const me = ++seq; all.dataset.on = '1'; all.innerHTML = 'Stop';
+      for (const row of [...el.querySelectorAll('.vs-piece')]) {
+        if (me !== seq || !row.isConnected) break;
+        cur(row); row.scrollIntoView({ block:'nearest' });
+        const r = await hearLine(j, m, row.dataset.i, row, main);
+        if (me !== seq || !r.finished) break;
+        await new Promise(ok => setTimeout(ok, 500));
+      }
+      all.dataset.on = ''; all.innerHTML = PLAY + 'Play all ' + el.querySelectorAll('.vs-piece').length;
+    });
+    // Sounds fine: the line leaves the "to check" list without a retake
+    el.querySelectorAll('[data-fine]').forEach(b => b.addEventListener('click', async () => {
+      b.disabled = true;
+      const left = (j.needs_review || []).filter(x => +x !== +b.dataset.fine);
+      const r = await safe(db().from('voice_jobs').update({ needs_review:left }).eq('id', j.id));
+      if (r.error) { b.textContent = 'Try again'; b.disabled = false; return; }
+      j.needs_review = left;
+      const row = b.closest('.vs-piece'), next = row.nextElementSibling; row.remove();
+      if (next && next.classList.contains('vs-piece')) cur(next);
+      el.dispatchEvent(new CustomEvent('vs-lines', { bubbles:true, detail:{ id:j.id, left:left.length } }));
+    }));
+    // 3 takes: the same line made three times with a little less to a little more expressiveness, to pick the best.
+    // They don't touch what learners hear until you pick one.
+    el.querySelectorAll('[data-takes]').forEach(b => b.addEventListener('click', async () => {
+      b.disabled = true;
+      const full = await safe(db().from('voice_jobs').select('text,language,mood,settings').eq('id', j.id).single());
+      if (!full.data) { b.textContent = 'Try again'; b.disabled = false; return; }
+      const i = +b.dataset.takes, base = Object.assign({ pace:50, pause:50 }, full.data.settings || {}), group = j.id.slice(0, 8) + '-' + i + '-' + Date.now().toString(36);
+      const rows = TAKES.map((t, n) => ({ title:j.title.replace(/ \((piece|line) \d+ (redone|take [ABC])\)$/, '') + ' (line ' + i + ' take ' + t.k + ')',
+        text:full.data.text, language:full.data.language, mood:full.data.mood, parent_id:j.id, redo_piece:i,
+        target:Object.assign({}, j.target || {}, { mode:'take' }),
+        settings:Object.assign({}, base, { feel:t.feel, seed:1000 + Math.floor(Math.random() * 9000) + n, take_group:group, take:t.k }) }));
+      const r = await safe(db().from('voice_jobs').insert(rows));
+      if (r.error) { b.textContent = 'Try again'; b.disabled = false; return; }
+      b.textContent = 'Queued'; reopen();
     }));
     el.querySelectorAll('[data-redo]').forEach(b => b.addEventListener('click', async () => {
       b.disabled = true;
@@ -427,16 +509,39 @@
   }
 
   // ───── Review: every line the word check flagged, lessons and your own scripts in one place ─────
+  // Keys (when you're not typing): J / K next and previous line, Space play it, F sounds fine, R twice retake it
+  let reviewKeys = null;
   async function viewReview(main, S, reopen){
     const R = S.review, lines = R.reduce((t, j) => t + (j.needs_review || []).length, 0);
-    const retakes = S.all.filter(j => isRetake(j)).sort((a, b) => (a.finished_at < b.finished_at ? 1 : -1)).slice(0, 8);
-    const name = j => isLesson(j) ? 'Lesson ' + lessonTitle(j) : j.title;
-    main.innerHTML = head('Review', lines ? lines + ' line' + (lines === 1 ? '' : 's') + ' to listen to, in ' + R.length + ' narration' + (R.length === 1 ? '' : 's') + '. Play a line, retake it if it sounds off.' : 'Nothing to check. Every finished line passed the word check.') +
+    const retakes = S.all.filter(j => isRetake(j) && !isTake(j)).sort((a, b) => (a.finished_at < b.finished_at ? 1 : -1)).slice(0, 8);
+    const name = j => isLesson(j) || (j.target && j.target.lesson) ? 'Lesson ' + lessonTitle(j).replace(/ \((piece|line) \d+ (redone|take [ABC])\)$/, '') : j.title.replace(/ \((piece|line) \d+ (redone|take [ABC])\)$/, '');
+    // takes waiting for a pick, three to a line
+    const groups = {};
+    S.all.filter(isTake).forEach(t => { (groups[t.settings.take_group] = groups[t.settings.take_group] || []).push(t); });
+    const open = Object.values(groups).filter(g => g.every(t => t.settings.picked === undefined)).map(g => g.sort((a, b) => (a.settings.take < b.settings.take ? -1 : 1)))
+      .sort((a, b) => (a[0].created_at < b[0].created_at ? 1 : -1));
+    const TAKE_NOTE = { A:'a little steadier', B:'about as tuned', C:'a little livelier' };
+    const takeCard = g => { const t0 = g[0], done = g.filter(t => t.status === 'done').length, live = g.some(t => /queued|running/.test(t.status));
+      return '<div class="vs-takes" data-group="' + esc(t0.settings.take_group) + '"><div class="vs-takeshead"><span><b>' + esc(name(t0)) + '</b> ' + chip('Line ' + (+t0.redo_piece)) + ' ' +
+        (live ? chip(done + ' of ' + g.length + ' made', 'run') : chip('Pick one', 'ok')) + '</span><button type="button" class="vs-link" data-drop>Keep the original</button></div>' +
+        '<div class="vs-piece"><span><b>Original</b><small>the line as it is now</small></span><span class="vs-btns"><button class="vs-btn" type="button" data-orig>' + PLAY + 'Play</button></span></div>' +
+        g.map(t => '<div class="vs-piece" data-take="' + t.id + '"><span><b>Take ' + esc(t.settings.take) + '</b><small>' + esc(TAKE_NOTE[t.settings.take] || '') +
+          (t.status === 'done' ? (t.needs_review || []).includes(+t.redo_piece) ? ' · the word check flagged this one too' : ' · passed the word check' : ' · ' + esc((STATUS[t.status] || [t.status])[0]) + (t.status === 'running' ? ' ' + Math.round((t.progress || 0) * 100) + '%' : '')) + '</small></span>' +
+          '<span class="vs-btns">' + (t.status === 'done' ? '<button class="vs-btn" type="button" data-tplay>' + PLAY + 'Play</button><button class="vs-btn" type="button" data-tuse>Use take ' + esc(t.settings.take) + '</button>' : '') + '</span></div>').join('') +
+        '<p class="vs-note vs-msg" role="status" data-tmsg></p></div>'; };
+    let ctx = ctxOn();
+    main.innerHTML = head('Review', lines ? lines + ' line' + (lines === 1 ? '' : 's') + ' to listen to, in ' + R.length + ' narration' + (R.length === 1 ? '' : 's') + '. Play a line, then mark it fine or retake it.' : 'Nothing to check. Every finished line passed the word check, or you marked it fine.') +
+      '<div class="vs-revbar"><label class="vs-switch"><input type="checkbox" id="vsCtx"' + (ctx ? ' checked' : '') + '> Play a second before and after each line</label>' +
+      '<span class="vs-note vs-keys">Keys: <kbd>J</kbd> <kbd>K</kbd> next / previous line · <kbd>Space</kbd> play · <kbd>F</kbd> sounds fine · <kbd>R</kbd> twice retake</span></div>' +
+      (open.length ? '<section class="vs-card"><div class="vs-cardhead"><h2>Takes to pick</h2><span class="vs-note">Learners keep hearing the original until you pick a take</span></div>' + open.map(takeCard).join('') +
+        (workerAtLeast(S.wk, SLIDER_VERSION) ? '' : '<p class="vs-note">The PC needs worker 0.4 or newer for the takes to sound different. Restart it after the current lesson.</p>') + '</section>' : '') +
       (R.length ? '<section class="vs-card">' + R.map(j => '<div class="vs-job" data-id="' + j.id + '"><span><b>' + esc(name(j)) + '</b> ' + chip(j.needs_review.length + ' to check', 'warn') +
-        '<small>' + (isLesson(j) ? 'Module ' + esc(String(j.target.module).replace(/^m/, '')) + ' · ' : '') + esc(ago(j.finished_at || j.created_at)) + (j.duration_s ? ' · ' + mmss(j.duration_s) : '') + '</small></span>' +
+        '<small>' + (j.target && j.target.module ? 'Module ' + esc(String(j.target.module).replace(/^m/, '')) + ' · ' : '') + esc(ago(j.finished_at || j.created_at)) + (j.duration_s ? ' · ' + mmss(j.duration_s) : '') + '</small></span>' +
         '<span class="vs-btns"><button type="button" class="vs-btn" data-act="lines" aria-expanded="false">Listen to the lines</button></span><div class="vs-jobmore" hidden></div></div>').join('') + '</section>' : '') +
       (retakes.length ? '<section class="vs-card"><div class="vs-cardhead"><h2>Recent retakes</h2><span class="vs-note">Hear the line before and after</span></div>' + retakes.map(j =>
-        '<div class="vs-job" data-id="' + j.id + '"><span><b>' + esc(name(j).replace(/ \(piece \d+ redone\)$/, '')) + '</b><small>Line ' + (+j.redo_piece) + ' · ' + esc(ago(j.finished_at || j.created_at)) + '</small></span><span class="vs-btns">' + compareBtns(j) + '</span><div class="vs-jobmore" hidden></div></div>').join('') + '</section>' : '');
+        '<div class="vs-job" data-id="' + j.id + '"><span><b>' + esc(name(j)) + '</b><small>Line ' + (+j.redo_piece) + ' · ' + esc(ago(j.finished_at || j.created_at)) + '</small></span><span class="vs-btns">' + compareBtns(j) + '</span><div class="vs-jobmore" hidden></div></div>').join('') + '</section>' : '');
+
+    $('vsCtx').addEventListener('change', ev => { try { localStorage.setItem('vsCtx', ev.target.checked ? '1' : '0'); } catch(e) {} });
     main.querySelectorAll('.vs-job').forEach(row => row.addEventListener('click', ev => {
       // only the row's own buttons; Play and Retake inside the opened lines have their own handlers and must not close the list
       const b = ev.target.closest('button[data-act], button[data-cmp]'); if (!b || b.closest('.vs-jobmore')) return;
@@ -446,7 +551,115 @@
       if (!more.hidden && more.querySelector('.vs-piece')) { more.hidden = true; b.setAttribute('aria-expanded', 'false'); return; }
       more.hidden = false; b.setAttribute('aria-expanded', 'true'); more.innerHTML = '<p class="p-loading">Loading…</p>'; pieces(j, more, reopen, true);
     }));
-    return { live:false };
+    // a line marked fine: update its narration's count, and the badge in the menu
+    if (main._vsLines) main.removeEventListener('vs-lines', main._vsLines);   // the screen can be redrawn into the same box
+    main.addEventListener('vs-lines', main._vsLines = ev => {
+      const row = main.querySelector('.vs-job[data-id="' + ev.detail.id + '"]'); if (!row) return;
+      const c = row.querySelector('.vs-chip.is-warn');
+      if (ev.detail.left) { if (c) c.textContent = ev.detail.left + ' to check'; return; }
+      row.innerHTML = '<span><b>' + row.querySelector('b').innerHTML + '</b> ' + chip('All lines checked', 'ok') + '</span>';
+      const badge = document.getElementById('vsRevN'); if (badge) { const n = Math.max(0, (+badge.textContent || 1) - 1); badge.textContent = n; badge.hidden = !n; }
+    });
+    // the takes
+    main.querySelectorAll('.vs-takes').forEach(box2 => {
+      const g = groups[box2.dataset.group], t0 = g[0], msg = t => { box2.querySelector('[data-tmsg]').textContent = t; };
+      const parentOf = async () => S.all.find(x => x.id === t0.parent_id) || (await safe(db().from('voice_jobs').select(JOB_COLS).eq('id', t0.parent_id).maybeSingle())).data;
+      box2.addEventListener('click', async ev => {
+        const b = ev.target.closest('button'); if (!b) return;
+        const row = b.closest('.vs-piece'), t = row && row.dataset.take ? g.find(x => x.id === row.dataset.take) : null;
+        if (b.hasAttribute('data-orig') || b.hasAttribute('data-tplay')) {
+          const src = t || await parentOf(), m = src && await manifest(src);
+          if (!m) { msg('Couldn’t load that one.'); return; }
+          main.querySelectorAll('.vs-piece.is-cur').forEach(x => x.classList.remove('is-cur')); row.classList.add('is-cur');
+          hearLine(src, m, t0.redo_piece, row, main); return;
+        }
+        if (b.hasAttribute('data-drop')) {
+          if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Yes, keep the original'; msg('The three takes are put away. The line stays as it is now.'); return; }
+          b.disabled = true;
+          for (const x of g) await safe(db().from('voice_jobs').update({ settings:Object.assign({}, x.settings, { picked:false }) }).eq('id', x.id));
+          reopen(); return;
+        }
+        if (b.hasAttribute('data-tuse')) {
+          if (b.dataset.sure !== '1') { box2.querySelectorAll('[data-tuse]').forEach(x => { x.dataset.sure = ''; x.textContent = 'Use take ' + g.find(y => y.id === x.closest('.vs-piece').dataset.take).settings.take; });
+            b.dataset.sure = '1'; b.textContent = 'Yes, use take ' + t.settings.take;
+            msg(t.target && t.target.lesson ? 'Learners will hear take ' + t.settings.take + '. The narration live now is kept in Versions, so you can switch back.' : 'Take ' + t.settings.take + ' becomes this script’s narration in History.'); return; }
+          box2.querySelectorAll('button').forEach(x => { x.disabled = true; }); msg('Switching…');
+          const err = await useTake(g, t, await parentOf());
+          if (err) { msg(err); box2.querySelectorAll('button').forEach(x => { x.disabled = false; }); return; }
+          msg(t.target && t.target.lesson ? 'Done. Learners hear take ' + t.settings.take + ' now. The lesson video keeps its old voice until it’s rebuilt.' : 'Done.');
+          setTimeout(reopen, 2000);
+        }
+      });
+    });
+    // keys
+    if (reviewKeys) document.removeEventListener('keydown', reviewKeys);
+    let armed = null;
+    reviewKeys = ev => {
+      if (!document.body.contains(main) || !/^#voice\/review/.test(location.hash)) { document.removeEventListener('keydown', reviewKeys); reviewKeys = null; return; }
+      if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      const t = ev.target; if (t && (/INPUT|TEXTAREA|SELECT/.test(t.tagName) || t.isContentEditable)) return;
+      const k = ev.key.toLowerCase(), rows = [...main.querySelectorAll('.vs-piece')], at = rows.findIndex(r => r.classList.contains('is-cur'));
+      const pick = r => { rows.forEach(x => x.classList.remove('is-cur')); if (r) { r.classList.add('is-cur'); r.scrollIntoView({ block:'nearest' }); } return r; };
+      const hit = (r, sel) => { const b = r && r.querySelector(sel); if (b && !b.disabled) b.click(); };
+      if (k === 'j' || k === 'k') {
+        ev.preventDefault();
+        if (!rows.length) { const b = main.querySelector('.vs-job [data-act="lines"]'); if (b) b.click(); return; }
+        hit(pick(rows[Math.max(0, Math.min(rows.length - 1, at < 0 ? 0 : at + (k === 'j' ? 1 : -1)))]), '[data-hear], [data-orig], [data-tplay]');
+      } else if (k === ' ' && at >= 0) { ev.preventDefault();
+        const live = rows[at].querySelector('audio.vs-live');
+        if (live && !live.paused) live.pause(); else hit(rows[at], '[data-hear], [data-orig], [data-tplay]');
+      } else if (k === 'f' && at >= 0) { ev.preventDefault(); hit(rows[at], '[data-fine]');
+      } else if (k === 'r' && at >= 0 && rows[at].querySelector('[data-redo]')) { ev.preventDefault();
+        if (armed === rows[at]) { armed = null; hit(rows[at], '[data-redo]'); return; }
+        armed = rows[at]; const small = rows[at].querySelector('small'); const was = small.innerHTML; small.innerHTML = '<b>Press R again to retake this line</b>';
+        setTimeout(() => { if (armed === rows[at]) armed = null; if (small.isConnected) small.innerHTML = was; }, 2500);
+      }
+    };
+    document.addEventListener('keydown', reviewKeys);
+    return { live:open.some(g => g.some(t => /queued|running/.test(t.status))) };
+  }
+
+  // Use one of the 3 takes. For a lesson it becomes what learners hear: the take's MP3 replaces the live one (kept in
+  // Versions first), and the caption and chapter times move with the line that changed length.
+  function timeMap(pm, tm){
+    const P = pm.pieces, Q = tm.pieces, pd = pm.duration_s || 0, qd = tm.duration_s || 0, qs = {};
+    Q.forEach((q, n) => { qs[+q.i] = [q.start || 0, Q[n + 1] ? Q[n + 1].start : qd]; });
+    return ms => { const t = ms / 1000; let k = -1;
+      for (let n = 0; n < P.length; n++) { if ((P[n].start || 0) <= t + 1e-6) k = n; else break; }
+      if (k < 0) return ms;
+      const a = P[k].start || 0, b = P[k + 1] ? P[k + 1].start : pd, q = qs[+P[k].i]; if (!q) return ms;
+      const f = b > a ? Math.min(1, Math.max(0, (t - a) / (b - a))) : 0;
+      return Math.round((q[0] + f * (q[1] - q[0])) * 1000); };
+  }
+  async function useTake(g, t, parent){
+    if (!parent) return 'Couldn’t find the narration these takes came from.';
+    const tidy = parent.title.replace(/ \((piece|line) \d+ (redone|take [ABC])\)$/, '') + ' (piece ' + (+t.redo_piece) + ' redone)';
+    if (t.target && t.target.lesson) {
+      const m = t.target.module, l = t.target.lesson, st = db().storage.from('course'), dir = 'content/' + m + '/narration/' + l;
+      const cu = await signedUrl(dir + '.json', null, 'course'), cur = cu && await fetch(cu, { cache:'no-store' }).then(x => x.json()).catch(() => null);
+      if (!cur || !cur.narration || cur.narration.job !== parent.id) return 'The narration learners hear changed after these takes were made, so nothing was switched. Make new takes from the lesson as it is now.';
+      const pm = await manifest(parent), tm = await manifest(t);
+      if (!pm || !tm || pm.pieces.length !== tm.pieces.length) return 'Couldn’t line up the take with the lesson, so nothing was switched.';
+      const au = await signedUrl(t.output_mp3), blob = au && await fetch(au).then(x => x.ok ? x.blob() : null).catch(() => null);
+      if (!blob) return 'Couldn’t load the take’s audio, so nothing was switched. Try again.';
+      if (!(await saveVersion(m, l))) return 'Couldn’t keep the current narration, so nothing was switched. Try again.';
+      const map = timeMap(pm, tm), next = Object.assign({}, cur, { end:Math.round((tm.duration_s || 0) * 1000) || map(cur.end || 0), narration:Object.assign({}, cur.narration, { job:t.id }) });
+      next.captions = {}; Object.keys(cur.captions || {}).forEach(k => { next.captions[k] = (cur.captions[k] || []).map(c => [map(c[0])].concat(c.slice(1))); });
+      if (Array.isArray(cur.chapters)) next.chapters = cur.chapters.map(c => [map(c[0])].concat(c.slice(1)));
+      const a = await safe(st.upload(dir + '.mp3', new Blob([blob], { type:'audio/mpeg' }), { upsert:true, contentType:'audio/mpeg', cacheControl:'60' }));
+      if (a.error) return 'Couldn’t put the take live: ' + errText(a, 'try again') + '. Nothing was changed.';
+      const b = await safe(st.upload(dir + '.json', new Blob([JSON.stringify(next)], { type:'application/json' }), { upsert:true, contentType:'application/json', cacheControl:'60' }));
+      if (b.error) return 'The audio switched but the captions didn’t. Use “Use this one” in Versions to put the earlier one back, then try again.';
+      // from now on the take is the lesson's narration, in Projects and everywhere else
+      const r = await safe(db().from('voice_jobs').update({ title:tidy, target:Object.assign({}, t.target, { mode:'lesson' }), settings:Object.assign({}, t.settings, { picked:true }) }).eq('id', t.id));
+      if (r.error) return 'Learners hear the take now, but Projects couldn’t be updated. Reload the page.';
+    } else {
+      const r = await safe(db().from('voice_jobs').update({ title:tidy, settings:Object.assign({}, t.settings, { picked:true }) }).eq('id', t.id));
+      if (r.error) return 'Couldn’t save the pick. Try again.';
+      await safe(db().from('voice_jobs').update({ needs_review:(parent.needs_review || []).filter(x => +x !== +t.redo_piece) }).eq('id', parent.id));
+    }
+    for (const x of g) if (x.id !== t.id) await safe(db().from('voice_jobs').update({ settings:Object.assign({}, x.settings, { picked:false }) }).eq('id', x.id));
+    return null;
   }
 
   // ───── Text to Speech ─────
@@ -829,7 +1042,7 @@
 
   // ───── History: every narration that isn't a course lesson ─────
   async function viewHistory(main, S, reopen){
-    const jobs = S.others.filter(j => !isAB(j));
+    const jobs = S.others.filter(j => !isAB(j) && !(isTake(j) && j.settings.picked === false));   // takes you didn't pick are put away
     main.innerHTML = head('History', 'Your narrations, newest first. Course lessons are in Projects.') +
       '<section class="vs-card">' + (jobs.length ? jobs.map(j => {
         const [label, kind] = STATUS[j.status] || [j.status, ''], live = j.status === 'queued' || j.status === 'running', checks = (j.needs_review || []).length;
