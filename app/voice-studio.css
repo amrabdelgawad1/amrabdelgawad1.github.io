@@ -262,3 +262,9 @@ body.vs-noscroll{ overflow:hidden; }
 
 /* round 4: module zip */
 .vs-modtools{ display:flex; justify-content:flex-end; padding:0 18px 4px; }
+
+/* round 4: working hours */
+.vs-hrs{ display:flex; flex-direction:column; gap:10px; align-items:flex-start; }
+.vs-switch{ display:flex; align-items:center; gap:10px; font-weight:600; min-height:40px; }
+.vs-switch input{ width:20px; height:20px; accent-color:var(--vs-clay); }
+.vs-app .vs-wk a.vs-wklink{ color:#F2A67F; }
