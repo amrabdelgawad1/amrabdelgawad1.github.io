@@ -137,18 +137,6 @@
 .vs-app .px-bar{ display:block; height:10px; background:#EEF1EF; border-radius:6px; overflow:hidden; }
 .vs-app .px-bar i{ display:block; height:100%; width:0; background:var(--vs-clay); border-radius:6px; transition:width .4s; }
 
-/* phones: the menu becomes a row of tabs on top */
-@media (max-width: 760px){
-  .vs-rail{ max-width:none; flex-basis:100%; flex-direction:row; flex-wrap:wrap; padding:12px; gap:4px; }
-  .vs-brand{ flex-basis:100%; padding:2px 6px 8px; }
-  .vs-app .vs-nav{ padding:0 10px; font-size:13px; }
-  .vs-nav .vs-i{ display:none; }
-  .vs-wkbox{ flex-basis:100%; margin-top:6px; padding-top:0; }
-  .vs-main{ padding:20px 16px; }
-  .vs-side{ max-width:none; }
-  .vs-head h1{ font-size:26px; }
-}
-
 /* optional title above the script */
 .vs-titlerow{ display:flex; align-items:center; gap:12px; padding:12px 18px 10px; border-bottom:1px solid var(--vs-line2); }
 .vs-titlein{ flex:1; min-width:0; min-height:40px; border:0; font:600 16px Inter, sans-serif; color:var(--vs-ink); background:transparent; }
@@ -176,3 +164,98 @@
 .vs-spec{ display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid #EEF1EF; font-size:14px; }
 .vs-spec span{ color:var(--vs-mute); }
 .vs-spec b{ text-align:right; font-weight:600; }
+
+/* ───── Nov 16 round 3: simpler to use ───── */
+.vs-navs{ display:flex; flex-direction:column; gap:6px; }
+.vs-nav > span:first-of-type{ flex:1; }
+.vs-badge{ min-width:22px; height:22px; padding:0 7px; border-radius:999px; background:#E2602A; color:#FFFFFF; font-size:12px; font-weight:700; display:inline-grid; place-items:center; }
+.vs-dot.is-pause{ background:#E9B44C; }
+.vs-wkbtn, .vs-alerts{ margin-top:10px; width:100%; min-height:40px; border-radius:10px; border:1px solid #3A5144; background:transparent; color:#E9EEEA; font:600 13px Inter, sans-serif; cursor:pointer; }
+.vs-wkbtn:hover, .vs-alerts:hover{ background:var(--vs-rail2); }
+.vs-alerts{ border:0; margin-top:6px; min-height:36px; color:#A9B8AE; font-weight:500; }
+.vs-app .vs-wkbtn:focus-visible, .vs-app .vs-alerts:focus-visible{ outline-color:#F2A67F; }
+
+/* mood samples */
+.vs-samples{ display:flex; flex-wrap:wrap; gap:6px; }
+.vs-sample{ display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:0 12px; border-radius:999px; border:1px dashed #CDD5CF; background:#FAFBFA; color:var(--vs-soft); font:600 12px Inter, sans-serif; cursor:pointer; }
+.vs-sample:hover{ border-color:var(--vs-clay); color:var(--vs-clay3); }
+.vs-sample:disabled{ opacity:.45; cursor:default; }
+.vs-piece .vs-btns{ flex:none; }
+
+/* Today and the lesson finder */
+.vs-today{ flex-direction:row; align-items:baseline; gap:14px; flex-wrap:wrap; background:#F3FAF6; border-color:#CBE6D6; }
+.vs-today p{ margin:0; color:var(--vs-soft); }
+.vs-today b{ color:var(--vs-ink); }
+.vs-badtext{ color:#8E2A1F; font-weight:600; }
+.vs-findbar{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.vs-find{ flex:1 1 260px; width:auto; }
+.vs-filters{ display:flex; gap:6px; flex-wrap:wrap; }
+.vs-filter{ min-height:40px; padding:0 14px; border-radius:999px; border:1px solid #CDD5CF; background:#FFFFFF; color:var(--vs-ink); font:600 13px Inter, sans-serif; cursor:pointer; }
+.vs-filter span{ color:var(--vs-mute); font-weight:500; margin-left:2px; }
+.vs-filter[aria-pressed="true"]{ background:var(--vs-rail); border-color:var(--vs-rail); color:#FFFFFF; }
+.vs-filter[aria-pressed="true"] span{ color:#A9B8AE; }
+
+/* one fold per module */
+.vs-mods{ display:flex; flex-direction:column; gap:10px; }
+.vs-mod{ background:#FFFFFF; border:1px solid var(--vs-line); border-radius:14px; overflow:hidden; }
+.vs-mod > summary{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; min-height:56px; padding:10px 18px; cursor:pointer; list-style:none; }
+.vs-mod > summary::-webkit-details-marker{ display:none; }
+.vs-mod > summary::before{ content:''; width:8px; height:8px; border-right:2px solid var(--vs-mute); border-bottom:2px solid var(--vs-mute); transform:rotate(-45deg); transition:transform .15s; flex:none; }
+.vs-mod[open] > summary::before{ transform:rotate(45deg); }
+.vs-mod > summary:hover{ background:#FAFBFA; }
+.vs-modname{ font-weight:700; font-size:15px; min-width:90px; }
+.vs-modbar{ flex:1 1 120px; max-width:260px; height:8px; border-radius:6px; background:#EEF1EF; overflow:hidden; }
+.vs-modbar i{ display:block; height:100%; background:#2E8B57; border-radius:6px; }
+.vs-modn{ font-size:13px; color:var(--vs-mute); font-variant-numeric:tabular-nums; }
+.vs-mod .vs-table{ min-width:640px; }
+.vs-sheetbtn, .vs-sheethead{ display:none; }
+
+/* phones */
+@media (max-width: 760px){
+  .vs-app{ flex-direction:column; flex-wrap:nowrap; }
+  .vs-rail{ max-width:none; flex:none; padding:8px 8px 0; gap:0; position:sticky; top:var(--p-top, 0px); z-index:5; }
+  .vs-brand{ display:none; }
+  .vs-navs{ flex-direction:row; overflow-x:auto; gap:4px; scrollbar-width:none; padding-bottom:8px; }
+  .vs-navs::-webkit-scrollbar{ display:none; }
+  .vs-app .vs-nav{ flex:none; padding:0 12px; font-size:13px; min-height:40px; gap:6px; white-space:nowrap; }
+  .vs-nav .vs-i{ display:none; }
+  .vs-wkbox{ margin:0 -8px; padding:0; border-top:1px solid var(--vs-rail2); }
+  .vs-wk{ border-radius:0; background:transparent; padding:6px 14px; display:flex; flex-wrap:wrap; align-items:center; gap:2px 10px; font-size:12px; }
+  .vs-wk > div:not(.vs-wk-top):nth-child(n+3){ display:none; }
+  .vs-wkbtn{ width:auto; margin:0 0 0 auto; min-height:32px; padding:0 10px; }
+  .vs-alerts{ display:none; }
+  .vs-main{ padding:18px 14px 28px; }
+  .vs-head h1{ font-size:24px; }
+  .vs-stats{ grid-template-columns:repeat(2, 1fr); gap:10px; }
+  .vs-stat b{ font-size:24px; }
+  /* settings become a drawer from the bottom, opened from the button next to Generate */
+  .vs-sheetbtn{ display:inline-flex; }
+  .vs-side{ position:fixed; left:0; right:0; bottom:0; max-width:none; max-height:82vh; overflow-y:auto; z-index:50; background:var(--vs-paper);
+    padding:0 14px 20px; border-radius:20px 20px 0 0; box-shadow:0 -12px 40px rgba(0,0,0,.25); transform:translateY(105%); transition:transform .25s ease; visibility:hidden; }
+  .vs-side.is-open{ transform:none; visibility:visible; }
+  .vs-sheethead{ display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:var(--vs-paper); padding:14px 0 10px; z-index:1; }
+  .vs-script textarea{ min-height:180px; height:36vh; font-size:17px; }
+  .vs-split .vs-head p{ display:none; }
+  .vs-split .vs-head .vs-btn{ min-height:38px; padding:0 12px; font-size:13px; }
+  .vs-titlerow{ padding:10px 16px 8px; }
+  .vs-bar .vs-btns{ width:100%; }
+  .vs-go{ flex:1; justify-content:center; }
+  /* lessons as cards instead of a wide table */
+  .vs-mod .vs-table{ min-width:0; }
+  .vs-mod thead{ display:none; }
+  .vs-mod tr[data-id]{ display:flex; flex-wrap:wrap; gap:6px 10px; padding:12px 14px; border-top:1px solid #EEF1EF; }
+  .vs-mod tr[data-id][hidden], .vs-mod tr.vs-expand[hidden]{ display:none; }
+  .vs-mod tr[data-id] td{ border:0; padding:0; }
+  .vs-mod tr[data-id] td:first-child{ flex-basis:100%; padding-left:0; }
+  .vs-mod tr[data-id] .vs-r{ flex-basis:100%; text-align:left; white-space:normal; padding-right:0; }
+  .vs-mod tr.vs-expand{ display:block; }
+  .vs-mod tr.vs-expand td{ display:block; padding:0 14px 12px; }
+  .vs-piece{ flex-wrap:wrap; }
+}
+body.vs-noscroll{ overflow:hidden; }
+@media (prefers-reduced-motion: reduce){ .vs-side, .vs-mod > summary::before{ transition:none; } }
+@media (max-width: 760px){
+  /* Projects on a phone: the lessons first, the tools and totals after them */
+  .vs-findbar{ order:1; } .vs-mods, #vsNone{ order:2; } .vs-ops{ order:3; } .vs-stats{ order:4; }
+  .vs-go{ white-space:nowrap; }
+}
