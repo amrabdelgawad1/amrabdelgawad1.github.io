@@ -29,14 +29,20 @@
     ['pron', 'Pronunciations', '<path d="M4 12h4l2-6 4 12 2-6h4"/>'],
     ['computer', 'Your computer', '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>']];
   const isAmr = () => T().role === 'owner';
-  const AMR_ONLY = ['projects', 'voices'];   // the course batch, and Amr's own voice and moods
+  const AMR_ONLY = ['projects'];   // the course batch
+  const WK_COLS = 'id,owner,name,last_seen,gpu,moods,version,busy_job,specs,rating,speed,checked_at,installed_at,free_vram_mb,os';
+  // The Windows app's download link. Empty until the installer is published; then the portal shows the button.
+  const WORKER_DOWNLOAD = '';
+  const VOICE_COLS = 'id,name,language,status,message,moods,created_at,consent_at,clip_path';
+  const consentLine = name => 'My name is ' + (String(name || '').trim() || '[your name]') + '. This is my own voice, and I agree that Amr Voice Studio may make a copy of it for my narrations.';
+  const VOICE_STATUS = { uploaded:['Waiting for your computer', ''], preparing:['Getting ready', 'warn'], ready:['Ready', 'ok'], failed:['Failed', 'bad'] };
   const tabsFor = () => TABS.filter(t => isAmr() || !AMR_ONLY.includes(t[0]));
   const uid = () => (T().user && T().user.id) || '';
   const wkName = wk => (wk && wk.name) || (isAmr() ? 'yukis-pc' : 'Your computer');
   const SAMPLE = 'Mood sample · ';   // title of the short clips made to hear a mood before picking it
   const SAMPLE_TEXT = { en:'Here is how this mood sounds. When a seller tells you the price is firm, slow down, ask one more question, and listen to the answer.',
     ar:'هكذا يبدو هذا الصوت. عندما يخبرك البائع أن السعر نهائي، تمهّل، واطرح سؤالًا آخر، واستمع إلى الإجابة جيدًا.' };
-  const JOB_COLS = 'id,title,status,progress,message,language,mood,target,settings,duration_s,needs_review,output_mp3,output_wav,output_json,parent_id,redo_piece,created_at,claimed_at,finished_at';
+  const JOB_COLS = 'id,title,status,progress,message,language,mood,target,settings,voice_id,duration_s,needs_review,output_mp3,output_wav,output_json,parent_id,redo_piece,created_at,claimed_at,finished_at';
   const SLIDER_VERSION = [0, 4];   // the worker reads the sliders from version 0.4
   const tune = { pace:50, feel:50, pause:50 };   // Text to Speech sliders, kept while you move between screens
   let timer = null;
@@ -86,14 +92,15 @@
 
   // Everything the screens share: worker state, lesson jobs, other jobs
   async function load(){
-    const [w, lessons, others, set, samples, saved] = await Promise.all([
-      isAmr() ? safe(db().from('voice_worker').select('*').eq('id', 'main').maybeSingle())
-        : safe(db().from('voice_worker').select('*').eq('owner', uid()).order('last_seen', { ascending:false }).limit(1).maybeSingle()),
+    const [w, lessons, others, set, samples, saved, vv] = await Promise.all([
+      isAmr() ? safe(db().from('voice_worker').select(WK_COLS).eq('id', 'main').maybeSingle())
+        : safe(db().from('voice_worker').select(WK_COLS).eq('owner', uid()).order('last_seen', { ascending:false }).limit(1).maybeSingle()),
       isAmr() ? safe(db().from('voice_jobs').select('id,title,status,progress,message,target,priority,parent_id,duration_s,needs_review,output_mp3,output_wav,output_json,created_at,claimed_at,finished_at').eq('target->>mode', 'lesson').order('created_at').limit(2000)) : { data:[] },
-      safe(db().from('voice_jobs').select(JOB_COLS).or('target.is.null,target->>mode.is.null,target->>mode.neq.lesson').not('title', 'like', SAMPLE + '%').order('created_at', { ascending:false }).limit(60)),
+      safe(db().from('voice_jobs').select(JOB_COLS).eq('owner', uid()).or('target.is.null,target->>mode.is.null,target->>mode.neq.lesson').not('title', 'like', SAMPLE + '%').order('created_at', { ascending:false }).limit(60)),
       isAmr() ? safe(db().from('voice_settings').select('*').eq('id', 'main').maybeSingle()) : { data:null, error:'not yours' },
-      safe(db().from('voice_jobs').select('id,title,status,output_mp3,output_wav,created_at').like('title', SAMPLE + '%').neq('status', 'cancelled').order('created_at', { ascending:false }).limit(40)),
-      safe(db().rpc('voice_saved_stats'))]);
+      safe(db().from('voice_jobs').select('id,title,status,output_mp3,output_wav,created_at').eq('owner', uid()).like('title', SAMPLE + '%').neq('status', 'cancelled').order('created_at', { ascending:false }).limit(40)),
+      safe(db().rpc('voice_saved_stats')),
+      safe(db().from('voice_voices').select(VOICE_COLS).eq('owner', uid()).order('created_at'))]);
     const wk = w.data, online = !!(wk && (Date.now() - new Date(wk.last_seen)) < 70000);
     // the newest job per lesson is the one that counts (a redo replaces the first)
     // one row per lesson: the newest finished narration, plus a newer retake that's waiting, running or failed
@@ -124,7 +131,7 @@
     // what needs a listen: finished narrations with lines the word check flagged
     const review = lessonList.filter(j => j.status === 'done' && (j.needs_review || []).length).concat((others.data || []).filter(j => j.status === 'done' && !isAB(j) && !isTake(j) && (j.needs_review || []).length));
     return { ratio:workRatio(done), wk, online, error:lessons.error || others.error, lessons:lessonList, waitingLessons:waiting, others:others.data || [], running, eta,
-      paused:!!(set.data && set.data.paused), pausedAt:set.data && set.data.paused_at, pauseReady:!set.error && isAmr(), set:set.data || {}, offHours:offHours(set.data), saved:(saved.data && saved.data[0]) || null, today, moodSamples, review, all };
+      paused:!!(set.data && set.data.paused), pausedAt:set.data && set.data.paused_at, pauseReady:!set.error && isAmr(), set:set.data || {}, offHours:offHours(set.data), saved:(saved.data && saved.data[0]) || null, today, moodSamples, review, all, voices:vv.data || [] };
   }
 
   function railStatus(S){
@@ -679,6 +686,7 @@
     const hasAr = !!(S.wk && (S.wk.moods || []).includes('teaching_ar'));
     const plain = S.others.filter(j => !isAB(j));
     const last = plain[0];
+    const ready = (S.voices || []).filter(v => v.status === 'ready');
     let mood = 'teaching';
     const word = (k, v) => k === 'pause' ? (v === 50 ? 'As tuned' : (v < 50 ? 'Shorter, ' : 'Longer, ') + Math.round(50 + v) + '%') : k === 'pace' ? (v < 35 ? 'Calmer' : v > 65 ? 'Brisker' : 'Natural') : (v < 35 ? 'Steady' : v > 65 ? 'Lively' : 'Natural');
     const slider = (k, label) => '<label class="vs-slide" for="vsS_' + k + '"><span>' + esc(label) + '</span><span class="vs-val" id="vsV_' + k + '">' + esc(word(k, tune[k])) + '</span></label>' +
@@ -696,7 +704,9 @@
       '<div class="vs-checks" id="vsChecks" hidden></div></form>' +
       '<section class="vs-card" aria-labelledby="takeH"><div class="vs-cardhead"><h2 id="takeH">Latest take</h2><span class="vs-links" id="vsDl"></span></div><div id="vsTake"></div></section>' +
       '</section><aside class="vs-side" id="vsSide" aria-label="Voice settings"><div class="vs-sheethead"><b>Voice and settings</b><button type="button" class="vs-btn" id="vsSheetClose">Done</button></div>' +
-      box('Voice', '<div class="vs-voice"><span class="vs-avatar" aria-hidden="true">AA</span><span><b>Amr · cloned voice</b><small>English' + (hasAr ? ' and Arabic (فصحى)' : '') + '</small></span><a href="#voice/voices">Change</a></div>' +
+      box('Voice', (isAmr() ? '<div class="vs-voice"><span class="vs-avatar" aria-hidden="true">AA</span><span><b>Amr · cloned voice</b><small>English' + (hasAr ? ' and Arabic (فصحى)' : '') + '</small></span><a href="#voice/voices">Change</a></div>'
+          : ready.length ? '<label class="vs-sub" for="vsVoice">Voice</label><select id="vsVoice" class="vs-input">' + ready.map((v, i) => opt(v.id, v.name + (v.language === 'ar' ? ' (Arabic)' : ''), i === 0)).join('') + '</select><a class="vs-more" href="#voice/voices">Your voices</a>'
+          : '<p class="vs-note">Add your voice first: <a href="#voice/voices">Voices</a>. It takes a 30-second recording and a short consent line.</p>') +
         '<div class="vs-sub" id="moodL">Mood</div><div class="vs-moods" role="group" aria-labelledby="moodL">' +
         moods.map(m => '<button type="button" class="vs-mood" data-mood="' + esc(m) + '" aria-pressed="' + (m === mood) + '">' + esc(MOOD_NAMES[m] || m) + '</button>').join('') + '</div>' +
         sampleRow(S, moods.concat(hasAr ? ['teaching_ar'] : [])) +
@@ -787,7 +797,10 @@
       const title = $('vsTitle').value.trim() || first.slice(0, 50) + (first.length > 50 ? '…' : '');
       ev.submitter && (ev.submitter.disabled = true);
       const custom = tune.pace !== 50 || tune.feel !== 50 || tune.pause !== 50;
-      const r = await safe(db().from('voice_jobs').insert({ title, text:t, language:$('vsLang').value, mood, settings:custom ? { pace:tune.pace, feel:tune.feel, pause:tune.pause } : null }));
+      if (!isAmr() && !ready.length) { ev.submitter && (ev.submitter.disabled = false); return say('vsMsg', 'Add your voice in Voices first.'); }
+      const row = { title, text:t, language:$('vsLang').value, mood, settings:custom ? { pace:tune.pace, feel:tune.feel, pause:tune.pause } : null };
+      if (!isAmr() && $('vsVoice')) row.voice_id = $('vsVoice').value;
+      const r = await safe(db().from('voice_jobs').insert(row));
       if (r.error) { ev.submitter && (ev.submitter.disabled = false); return say('vsMsg', errText(r, 'Couldn’t add it. Try again.')); }
       reopen();
     });
@@ -1001,6 +1014,17 @@
         more.hidden = false; b.setAttribute('aria-expanded', 'true'); cell.innerHTML = '<p class="p-loading">Loading…</p>'; pieces(j, cell, reopen);
       }
       else if (b.dataset.act === 'share') share(j, b);
+      else if (b.dataset.act === 'again') {
+        b.disabled = true;
+        const full = await safe(db().from('voice_jobs').select('text,language,mood,settings,voice_id').eq('id', j.id).single());
+        if (full.error) { b.disabled = false; return; }
+        const d = full.data, row2 = { title:j.title.replace(/ \(again\)$/, '') + ' (again)', text:d.text, language:d.language, mood:d.mood,
+          settings:Object.assign({}, d.settings || {}, { seed:Math.floor(Math.random() * 1e9) }) };
+        if (d.voice_id) row2.voice_id = d.voice_id;
+        const r = await safe(db().from('voice_jobs').insert(row2));
+        if (r.error) { b.disabled = false; b.textContent = 'Try again'; return; }
+        reopen();
+      }
       else if (b.dataset.act === 'versions') {
         if (!more.hidden && cell.querySelector('[data-vmsg]')) { more.hidden = true; b.setAttribute('aria-expanded', 'false'); return; }
         more.hidden = false; b.setAttribute('aria-expanded', 'true'); cell.innerHTML = '<p class="p-loading">Loading…</p>'; versions(j, cell, reopen);
@@ -1012,14 +1036,102 @@
   }
 
   // ───── Voices: moods on the PC and the blind test ─────
+  // ───── Voices with consent (phase 5): a clean 25 to 30 second clip and a spoken consent line, both in voice/<your id>/voices/<voice id>/ ─────
+  function voicesCard(S){
+    const list = S.voices || [];
+    return '<section class="vs-card" aria-labelledby="vvH"><div class="vs-cardhead"><h2 id="vvH">' + (isAmr() ? 'Other voices' : 'Your voices') + '</h2></div>' +
+      (list.length ? list.map(v => { const [label, kind] = VOICE_STATUS[v.status] || [v.status, '']; return '<div class="vs-job" data-voice="' + v.id + '"><span><b>' + esc(v.name) + '</b> ' + chip(label, kind) +
+        '<small>' + (v.language === 'ar' ? 'Arabic (فصحى)' : 'English') + ' · consent recorded ' + esc(fmtDay(v.consent_at)) + (v.status === 'failed' && v.message ? ' · ' + esc(v.message) : '') +
+        (v.status === 'uploaded' ? ' · your computer prepares it the next time the Voice Studio app is running' : '') + '</small></span>' +
+        '<span class="vs-btns"><button type="button" class="vs-btn" data-vact="play" aria-label="Play the clip of ' + esc(v.name) + '">Play clip</button><button type="button" class="vs-btn" data-vact="del" aria-label="Remove ' + esc(v.name) + '">Remove</button></span><div class="vs-jobmore" hidden></div></div>'; }).join('')
+        : empty(isAmr() ? 'Only your cloned voice so far.' : 'No voice yet. Add yours below.')) +
+      '<form class="vs-form" id="vsVoiceForm" novalidate><h3 class="vs-sub">Add a voice</h3>' +
+      '<p class="vs-note">Use a quiet room and your normal speaking voice. Only you can add your own voice: the consent line has to be said by the person whose voice it is.</p>' +
+      f('Name', '<input class="vs-input" type="text" id="vsVName" maxlength="60" placeholder="Sara, teaching">') +
+      f('Language', '<select class="vs-input" id="vsVLang">' + opt('en', 'English', true) + opt('ar', 'Arabic (فصحى)') + '</select>') +
+      '<div class="vs-sub">1. A clean clip, 25 to 30 seconds</div><p class="vs-note">Read anything aloud, for example a paragraph from a lesson.</p>' +
+      '<div class="vs-btns"><button type="button" class="vs-btn" id="vsRecClip">Record</button><label class="vs-btn vs-file">Upload a file<input type="file" id="vsClipFile" accept="audio/*"></label><span class="vs-note" id="vsClipSt" role="status">Nothing yet</span></div>' +
+      '<div class="vs-sub">2. Say this consent line</div><p class="vs-quote" id="vsConsentText">' + esc(consentLine('')) + '</p>' +
+      '<div class="vs-btns"><button type="button" class="vs-btn" id="vsRecConsent">Record</button><label class="vs-btn vs-file">Upload a file<input type="file" id="vsConsentFile" accept="audio/*"></label><span class="vs-note" id="vsConsentSt" role="status">Nothing yet</span></div>' +
+      '<label class="vs-switch"><input type="checkbox" id="vsVMine"> This is my own voice, and I said the consent line myself.</label>' +
+      '<button class="vs-go" type="submit">Add the voice</button><p class="vs-note" id="vsVMsg" role="status"></p></form></section>';
+  }
+  // Record from the microphone: press once to start, again to stop (stops by itself at maxS seconds)
+  function recButton(btn, stEl, maxS, onDone){
+    let rec = null, chunks = [], started = 0, tick = null;
+    btn.addEventListener('click', async () => {
+      if (rec) { rec.stop(); return; }
+      if (!navigator.mediaDevices || !window.MediaRecorder) { stEl.textContent = 'This browser can’t record. Upload a file instead.'; return; }
+      let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false } }); }
+      catch(e) { stEl.textContent = 'The microphone wasn’t allowed. Allow it in the browser, or upload a file.'; return; }
+      chunks = []; rec = new MediaRecorder(stream); started = Date.now();
+      rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+      rec.onstop = () => {
+        clearInterval(tick); stream.getTracks().forEach(t => t.stop());
+        const secs = Math.round((Date.now() - started) / 1000), blob = new Blob(chunks, { type:rec.mimeType || 'audio/webm' });
+        rec = null; btn.textContent = 'Record again'; stEl.textContent = 'Recorded ' + secs + ' s'; onDone(blob, secs);
+      };
+      rec.start(); btn.textContent = 'Stop';
+      tick = setInterval(() => { const s2 = Math.round((Date.now() - started) / 1000); stEl.textContent = 'Recording… ' + s2 + ' s'; if (s2 >= maxS && rec) rec.stop(); }, 500);
+    });
+  }
+  function wireVoices(main, S, reopen){
+    const form = main.querySelector('#vsVoiceForm'); if (!form) return;
+    let clip = null, consent = null;
+    const extOf = b => /wav/.test(b.type) ? 'wav' : /mpeg|mp3/.test(b.type) ? 'mp3' : /ogg/.test(b.type) ? 'ogg' : /mp4|m4a|aac/.test(b.type) ? 'm4a' : 'webm';
+    $('vsVName').addEventListener('input', () => { $('vsConsentText').textContent = consentLine($('vsVName').value); });
+    recButton($('vsRecClip'), $('vsClipSt'), 40, (b, secs) => { clip = b; if (secs < 20) $('vsClipSt').textContent += ' (a bit short; 25 to 30 s works best)'; });
+    recButton($('vsRecConsent'), $('vsConsentSt'), 20, b => { consent = b; });
+    $('vsClipFile').addEventListener('change', ev => { const fl = ev.target.files[0]; if (fl) { clip = fl; $('vsClipSt').textContent = fl.name; } });
+    $('vsConsentFile').addEventListener('change', ev => { const fl = ev.target.files[0]; if (fl) { consent = fl; $('vsConsentSt').textContent = fl.name; } });
+    form.addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const name = $('vsVName').value.trim();
+      if (!name) return say('vsVMsg', 'Give the voice a name.');
+      if (!clip) return say('vsVMsg', 'Record or upload the 25 to 30 second clip.');
+      if (!consent) return say('vsVMsg', 'Record or upload the consent line.');
+      if (!$('vsVMine').checked) return say('vsVMsg', 'Tick the box to confirm it’s your own voice.');
+      if (clip.size > 25 * 1024 * 1024 || consent.size > 10 * 1024 * 1024) return say('vsVMsg', 'One of the files is too big.');
+      const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), dir = uid() + '/voices/' + id + '/';
+      const clipPath = dir + 'clip.' + extOf(clip), consentPath = dir + 'consent.' + extOf(consent);
+      ev.submitter && (ev.submitter.disabled = true); say('vsVMsg', 'Uploading…');
+      const st = db().storage.from('voice');
+      const a = await safe(st.upload(clipPath, clip, { contentType:clip.type || 'audio/webm' }));
+      const b = a.error ? a : await safe(st.upload(consentPath, consent, { contentType:consent.type || 'audio/webm' }));
+      if (a.error || b.error) { ev.submitter && (ev.submitter.disabled = false); return say('vsVMsg', errText(a.error ? a : b, 'The upload didn’t work. Try again.')); }
+      const r = await safe(db().from('voice_voices').insert({ id, name, language:$('vsVLang').value, clip_path:clipPath, consent_path:consentPath, consent_text:consentLine(name) }));
+      if (r.error) { await safe(st.remove([clipPath, consentPath])); ev.submitter && (ev.submitter.disabled = false); return say('vsVMsg', errText(r, 'Couldn’t save the voice. Try again.')); }
+      reopen();
+    });
+    main.querySelectorAll('[data-voice] [data-vact]').forEach(btn => btn.addEventListener('click', async () => {
+      const row = btn.closest('[data-voice]'), v = (S.voices || []).find(x => x.id === row.dataset.voice); if (!v) return;
+      if (btn.dataset.vact === 'play') { const more = row.querySelector('.vs-jobmore'); more.hidden = false; more.innerHTML = ''; play(main, v.clip_path, null, more); return; }
+      if (btn.dataset.vact === 'del') {
+        if (btn.dataset.sure !== '1') { btn.dataset.sure = '1'; btn.textContent = 'Press again to remove'; return; }
+        btn.disabled = true;
+        const r = await safe(db().from('voice_voices').delete().eq('id', v.id));
+        if (r.error) { btn.disabled = false; return; }
+        const dir = v.clip_path.split('/').slice(0, -1).join('/'), ls = await safe(db().storage.from('voice').list(dir));
+        if (ls.data && ls.data.length) await safe(db().storage.from('voice').remove(ls.data.map(o => dir + '/' + o.name)));
+        reopen();
+      }
+    }));
+  }
+  async function viewMemberVoices(main, S, reopen){
+    main.innerHTML = head('Voices', 'Your own voices. Each one is a short clip of you that your computer copies.') + voicesCard(S);
+    wireVoices(main, S, reopen);
+    return { live:(S.voices || []).some(v => v.status === 'uploaded' || v.status === 'preparing') };
+  }
+
   async function viewVoices(main, S, reopen){
+    if (!isAmr()) return viewMemberVoices(main, S, reopen);
     const ORDER = ['teaching', 'warm', 'serious', 'energetic', 'teaching_ar'];
     const moods = ((S.wk && S.wk.moods) || []).slice().sort((a, b) => (ORDER.indexOf(a) + 1 || 99) - (ORDER.indexOf(b) + 1 || 99));
     const tests = S.others.filter(isAB);
     main.innerHTML = head('Voices', 'The voices your PC can speak in. Each mood is a short clip of you the clone copies.') +
       box('', '<div class="vs-voice is-big"><span class="vs-avatar" aria-hidden="true">AA</span><span><b>Amr · cloned voice</b><small>Made from your ElevenLabs Lesson 4.2 narration · lives on yukis-pc</small></span></div>' +
         (moods.length ? '<ul class="vs-moodlist">' + moods.map(m => '<li><b>' + esc(MOOD_NAMES[m] || m) + '</b><span>' + esc(MOOD_NOTES[m] || '') + '</span></li>').join('') + '</ul>' : empty('The worker hasn’t reported its voices yet.')) +
-        sampleRow(S, moods) + '<p class="vs-note">Adding a new voice from a recording comes in a later round.</p>') +
+        sampleRow(S, moods)) + voicesCard(S) +
       '<section class="vs-card" aria-labelledby="abH"><div class="vs-cardhead"><h2 id="abH">Blind test</h2><span class="vs-note">your voice vs ElevenLabs</span></div>' +
       (tests.length ? tests.map(j => { const [label, kind] = STATUS[j.status] || [j.status, '']; return '<div class="vs-job" data-id="' + j.id + '"><span><b>' + esc(j.title) + '</b> ' + chip(label, kind) + '<small>' + esc(ago(j.created_at)) + '</small></span>' +
         (j.status === 'done' ? '<button type="button" class="vs-btn" data-act="ab" aria-expanded="false">Take the blind test</button>' : '') +
@@ -1029,6 +1141,7 @@
       '<button class="vs-go" type="submit">Make the blind test</button><p class="vs-note" id="vsAbMsg" role="status"></p></form></section>';
 
     wireSamples(main, S, reopen);
+    wireVoices(main, S, reopen);
     main.querySelectorAll('.vs-job [data-act="ab"]').forEach(b => b.addEventListener('click', () => {
       const row = b.closest('.vs-job'), j = tests.find(x => x.id === row.dataset.id), more = row.querySelector('.vs-jobmore');
       if (!more.hidden) { more.hidden = true; b.setAttribute('aria-expanded', 'false'); return; }
@@ -1062,7 +1175,8 @@
           (lineSpot(S, j) ? ' · ' + esc(lineSpot(S, j)) : '') + (j.message && j.status !== 'done' && j.status !== 'queued' ? ' · ' + esc(j.message) : '') + '</small>' +
           (j.status === 'running' ? bar(Math.round((j.progress || 0) * 100), 100) : '') + '</span><span class="vs-btns">' +
           (j.status === 'done' ? '<button class="vs-btn" type="button" data-act="play" aria-label="Play ' + esc(j.title) + '">Play</button>' + (j.output_mp3 ? '<button class="vs-btn" type="button" data-act="mp3" aria-label="Download MP3 of ' + esc(j.title) + '">MP3</button>' : '') + (j.output_wav ? '<button class="vs-btn" type="button" data-act="wav" aria-label="Download WAV of ' + esc(j.title) + '">WAV</button>' : '') + '<button class="vs-btn" type="button" data-act="pieces" aria-expanded="false" aria-label="Lines of ' + esc(j.title) + '">Lines</button>' +
-            '<button class="vs-btn" type="button" data-act="share" aria-label="Copy a share link for ' + esc(j.title) + '">Share</button>' : '') +
+            '<button class="vs-btn" type="button" data-act="share" aria-label="Copy a share link for ' + esc(j.title) + '">Share</button>' +
+            (j.parent_id ? '' : '<button class="vs-btn" type="button" data-act="again" aria-label="Make ' + esc(j.title) + ' again with a fresh take">Make again</button>') : '') +
           compareBtns(j) + (live ? '<button class="vs-btn" type="button" data-act="cancel" aria-label="Cancel ' + esc(j.title) + '">Cancel</button>' : '') + '</span><div class="vs-jobmore" hidden></div></div>';
       }).join('') : empty('Nothing yet. Make one in Text to Speech.')) + '</section>';
     widths(main);
@@ -1085,23 +1199,42 @@
 
   // ───── Pronunciations ─────
   async function viewPron(main, S, reopen){
-    const pron = await safe(db().from('voice_pronunciations').select('id,written,spoken,language').order('written'));
-    main.innerHTML = head('Pronunciations', 'How names and words are said. Used for every narration, lessons included.') +
-      '<section class="vs-card">' + ((pron.data || []).length ? pron.data.map(p => '<div class="vs-job"><span><b>' + esc(p.written) + '</b> → ' + esc(p.spoken) + ' <small>' + (p.language === 'ar' ? 'Arabic' : 'English') + '</small></span>' +
+    const [pron, openR] = await Promise.all([safe(db().from('voice_pronunciations').select('id,written,spoken,language,status,source,heard,note').eq('owner', uid()).order('written')),
+      isAmr() ? { data:true } : safe(db().rpc('voice_pron_open'))]);
+    const canSave = isAmr() || openR.data === true;
+    const all = pron.data || [], waiting = all.filter(p => p.status === 'pending'), mine = all.filter(p => p.status !== 'pending');
+    const SRC = { auto:'found by the word check', dictionary:'from the dictionary' };
+    main.innerHTML = head('Pronunciations', 'How names and words are said. Used for every narration' + (isAmr() ? ', lessons included.' : '.')) +
+      (waiting.length ? '<section class="vs-card" aria-labelledby="pwH"><div class="vs-cardhead"><h2 id="pwH">Waiting for you</h2><span class="vs-note">' + waiting.length + ' found by your computer</span></div>' +
+        '<p class="vs-note">Your computer heard these words come out wrong and found a spelling that sounded right. Nothing changes until you approve it.</p>' +
+        waiting.map(p => '<div class="vs-job" data-pid="' + p.id + '"><span><b>' + esc(p.written) + '</b> → ' + esc(p.spoken) + ' <small>' + (p.language === 'ar' ? 'Arabic' : 'English') +
+          (p.heard ? ' · Whisper heard “' + esc(p.heard) + '”' : '') + (SRC[p.source] ? ' · ' + esc(SRC[p.source]) : '') + (p.note ? ' · ' + esc(p.note) : '') + '</small></span>' +
+          '<span class="vs-btns"><button class="vs-go" type="button" data-pa="ok">Approve</button><button class="vs-btn" type="button" data-pa="edit">Change</button><button class="vs-btn" type="button" data-pa="no">Reject</button></span></div>').join('') + '</section>' : '') +
+      '<section class="vs-card">' + (mine.length ? mine.map(p => '<div class="vs-job"><span><b>' + esc(p.written) + '</b> → ' + esc(p.spoken) + ' <small>' + (p.language === 'ar' ? 'Arabic' : 'English') + (SRC[p.source] ? ' · ' + esc(SRC[p.source]) : '') + '</small></span>' +
         '<button class="vs-btn" type="button" data-pron="' + p.id + '" aria-label="Remove ' + esc(p.written) + '">Remove</button></div>').join('') : empty('None yet.')) +
-      '<form class="vs-form vs-row" id="vsPron" novalidate>' + f('Written', '<input class="vs-input" type="text" id="vsPw" maxlength="80" placeholder="Hillsborough">') +
-      f('Say it as', '<input class="vs-input" type="text" id="vsPs" maxlength="120" placeholder="Hills burrow">') +
-      f('Language', '<select class="vs-input" id="vsPl">' + opt('en', 'English', true) + opt('ar', 'Arabic') + '</select>') +
-      '<button class="vs-go" type="submit">Add</button><p class="vs-note" id="vsPmsg" role="status"></p></form></section>';
-    $('vsPron').addEventListener('submit', async ev => {
+      (canSave ? '<form class="vs-form vs-row" id="vsPron" novalidate>' + f('Written', '<input class="vs-input" type="text" id="vsPw" maxlength="80" placeholder="Hillsborough">') +
+        f('Say it as', '<input class="vs-input" type="text" id="vsPs" maxlength="120" placeholder="Hills burrow">') +
+        f('Language', '<select class="vs-input" id="vsPl">' + opt('en', 'English', true) + opt('ar', 'Arabic') + '</select>') +
+        '<button class="vs-go" type="submit">Add</button><p class="vs-note" id="vsPmsg" role="status"></p></form>'
+        : '<p class="vs-note">Saving your own pronunciations opens with the next Voice Studio app update.</p>') + '</section>';
+    if ($('vsPron')) $('vsPron').addEventListener('submit', async ev => {
       ev.preventDefault(); const w1 = $('vsPw').value.trim(), s1 = $('vsPs').value.trim();
       if (!w1 || !s1) return say('vsPmsg', 'Fill in both.');
-      const r = await safe(db().from('voice_pronunciations').upsert({ written:w1, spoken:s1, language:$('vsPl').value }, { onConflict:'owner,written,language' }));
+      const r = await safe(db().from('voice_pronunciations').upsert({ written:w1, spoken:s1, language:$('vsPl').value, status:'approved', source:'you' }, { onConflict:'owner,written,language' }));
       if (r.error) return say('vsPmsg', errText(r, 'Couldn’t save it.'));
       reopen();
     });
     main.querySelectorAll('[data-pron]').forEach(b => b.addEventListener('click', async () => {
       await safe(db().from('voice_pronunciations').delete().eq('id', b.dataset.pron)); reopen();
+    }));
+    main.querySelectorAll('[data-pid] [data-pa]').forEach(b => b.addEventListener('click', async () => {
+      const p = waiting.find(x => x.id === b.closest('[data-pid]').dataset.pid); if (!p) return;
+      if (b.dataset.pa === 'edit') { if ($('vsPw')) { $('vsPw').value = p.written; $('vsPs').value = p.spoken; $('vsPl').value = p.language; $('vsPs').focus(); } return; }
+      b.disabled = true;
+      const r = b.dataset.pa === 'ok' ? await safe(db().from('voice_pronunciations').update({ status:'approved' }).eq('id', p.id))
+        : await safe(db().from('voice_pronunciations').delete().eq('id', p.id));
+      if (r.error) { b.disabled = false; return; }
+      reopen();
     }));
     return { live:false };
   }
@@ -1177,17 +1310,28 @@
     const row = (k, v) => '<div class="vs-spec"><span>' + esc(k) + '</span><b>' + esc(v || 'Not shared by the browser') + '</b></div>';
     const pc = S.wk, ratio = S.ratio;
     const pcRate = pc && /\d+(\.\d+)?\s*GB/.test(pc.gpu || '') ? (parseFloat((pc.gpu.match(/(\d+(\.\d+)?)\s*GB/) || [])[1]) >= 5.5 ? 'rec' : 'slow') : null;
+    const pcRating = pc && RATINGS[pc.rating] ? pc.rating : pcRate, sp = (pc && pc.specs) || {};
+    const lowVram = !!(pc && pc.free_vram_mb != null && pc.free_vram_mb < 4500 && (Date.now() - new Date(pc.last_seen)) < 120000);
     main.innerHTML = head('Can my computer run it?', 'Amr Voice Studio runs on your own computer, so your voice and audio never leave it. Here’s how this one looks.') +
       '<div class="vs-split"><section class="vs-col">' +
       '<section class="vs-card vs-verdict is-' + R.kind + '" aria-labelledby="vsVerdict"><span class="vs-cap">This computer</span><h2 id="vsVerdict">' + esc(R.label) + '</h2>' +
         '<p>' + esc(R.speed) + '</p><ul class="vs-facts">' + res.why.map(w => '<li>' + esc(w) + '</li>').join('') + '</ul>' +
-        '<div class="vs-btns"><button type="button" class="vs-go" disabled>Windows app coming soon</button><span class="vs-note">This is a quick check from the browser. The app confirms it with the exact numbers and a speed test.</span></div></section>' +
+        '<div class="vs-btns">' + (WORKER_DOWNLOAD ? '<a class="vs-go" href="' + esc(WORKER_DOWNLOAD) + '">Download the Windows app</a>' : '<button type="button" class="vs-go" disabled>Windows app coming soon</button>') + '<span class="vs-note">This is a quick check from the browser. The app confirms it with the exact numbers and a speed test.</span></div></section>' +
+      '<section class="vs-card" aria-labelledby="vsLinkH"><h2 class="vs-cap" id="vsLinkH">' + (pc ? 'Connect another computer' : 'Connect this computer') + '</h2>' +
+        '<ol class="vs-steps"><li>' + (WORKER_DOWNLOAD ? '<a href="' + esc(WORKER_DOWNLOAD) + '">Download the Windows app</a> and install it.' : 'Install the Windows app (the download link shows here once it’s published).') + '</li>' +
+        '<li>Get a code below and type it into the app. It works once, for 15 minutes.</li><li>The app checks the computer, runs a 20-second speed test, and starts taking your scripts.</li></ol>' +
+        '<div class="vs-btns"><button type="button" class="vs-btn" id="vsLinkBtn">Get a code</button><span class="vs-code" id="vsLinkCode" aria-live="polite"></span></div></section>' +
       box('What the browser could see', row('Graphics card', d.card) + row('Graphics memory', res.vram ? 'About ' + res.vram + ' GB (estimated from the card’s name)' : '') +
         row('Processor', d.cores ? d.cores + ' threads' : '') + row('Memory', d.ram ? (d.ram >= 8 ? '8 GB or more' : d.ram + ' GB') : '') + row('System', [d.os, d.bits].filter(Boolean).join(', '))) +
       '</section><aside class="vs-side">' +
-      box(wkName(S.wk) + ', measured', pc ? '<div class="vs-chips">' + chip(pcRate ? RATINGS[pcRate].label : 'Not measured', pcRate ? RATINGS[pcRate].kind : '') + '</div>' +
-        row('Graphics card', String(pc.gpu || '').replace(/^NVIDIA GeForce /, '')) + row('Speed', ratio ? 'About ' + ratio.toFixed(1) + 'x real time (from the finished lessons)' : 'Not enough lessons yet') +
-        '<p class="vs-note">When other apps fill the graphics memory (NVIDIA Broadcast, Discord, browsers), narration can get about 10x slower. Close them for full speed.</p>' : empty(isAmr() ? 'The PC hasn’t connected yet.' : 'Your computer hasn’t connected yet. The Windows app comes in the next update.')) +
+      box(wkName(S.wk) + ', measured', pc ? '<div class="vs-chips">' + chip(pcRating ? RATINGS[pcRating].label : 'Not measured', pcRating ? RATINGS[pcRating].kind : '') + '</div>' +
+        row('Graphics card', String(pc.gpu || '').replace(/^NVIDIA GeForce /, '')) +
+        (sp.vram_gb ? row('Graphics memory', sp.vram_gb + ' GB') : '') + (sp.ram_gb ? row('Memory', sp.ram_gb + ' GB') : '') + (sp.disk_free_gb ? row('Free disk', sp.disk_free_gb + ' GB') : '') +
+        (sp.cpu ? row('Processor', sp.cpu) : '') + (pc.os || sp.os ? row('System', pc.os || sp.os) : '') +
+        row('Speed', pc.speed ? 'About ' + Number(pc.speed).toFixed(1) + 'x real time (20-second test' + (pc.checked_at ? ', ' + fmtDay(pc.checked_at) : '') + ')' : ratio ? 'About ' + ratio.toFixed(1) + 'x real time (from the finished lessons)' : 'Not measured yet') +
+        (lowVram ? '<p class="vs-note is-warn" role="status">Other apps are using your graphics memory. Close them for full speed.</p>' : '') +
+        '<p class="vs-note">When other apps fill the graphics memory (NVIDIA Broadcast, Discord, browsers), narration can get about 10x slower. Close them for full speed.</p>' +
+        (pc.id !== 'main' ? '<button type="button" class="vs-link" id="vsForget">Disconnect this computer</button>' : '') : empty(isAmr() ? 'The PC hasn’t connected yet.' : 'Your computer hasn’t connected yet. The Windows app comes in the next update.')) +
       (S.pauseReady ? '<section class="vs-card" aria-labelledby="hrsH"><h2 class="vs-cap" id="hrsH">Working hours</h2><div id="vsHrs" class="vs-hrs"></div></section>' : '') +
       '</aside></div>' +
       '<section class="vs-card vs-flush"><div class="vs-tablewrap"><table class="vs-table"><caption class="vs-sr">What each rating means</caption><thead><tr><th scope="col">Rating</th><th scope="col">Graphics card</th><th scope="col">Memory and disk</th><th scope="col">Expected speed</th></tr></thead><tbody>' +
@@ -1196,6 +1340,20 @@
       '<tr><td>' + chip('Not recommended', 'bad') + '</td><td>Intel or AMD graphics only, under 8 GB memory, or 32-bit</td><td>Any</td><td>Roughly 10x to 15x real time</td></tr>' +
       '</tbody></table></div></section>';
     if ($('vsHrs')) viewHours($('vsHrs'), S, reopen);
+    $('vsLinkBtn').addEventListener('click', async ev => {
+      const b = ev.currentTarget; b.disabled = true;
+      const r = await safe(db().rpc('voice_link_create'));
+      b.disabled = false;
+      const row = r.data && r.data[0];
+      if (r.error || !row) { $('vsLinkCode').textContent = errText(r, 'Couldn’t get a code. Try again.'); return; }
+      b.textContent = 'Get a new code';
+      $('vsLinkCode').innerHTML = '<b>' + esc(row.code.slice(0, 4) + ' ' + row.code.slice(4)) + '</b> <small>works until ' + esc(fmtTime(row.expires_at)) + '</small>';
+    });
+    if ($('vsForget')) $('vsForget').addEventListener('click', async ev => {
+      const b = ev.currentTarget;
+      if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Press again to disconnect it'; return; }
+      b.disabled = true; const r = await safe(db().rpc('voice_worker_forget', { p_worker:S.wk.id })); if (!r.error) reopen(); else b.disabled = false;
+    });
     return { live:false };
   }
 
@@ -1242,11 +1400,11 @@
     let p = main.querySelector('#vsPhone');
     if (p) { p.remove(); return false; }
     main.insertAdjacentHTML('afterbegin', '<section class="vs-card" id="vsPhone" aria-labelledby="vsPhoneH"><div class="vs-cardhead"><h2 id="vsPhoneH">Phone alerts</h2><button type="button" class="vs-link" id="vsPhoneX">Close</button></div>' +
-      '<label class="vs-switch"><input type="checkbox" id="vsPhoneOn"' + (S.set.phone_alerts === false ? '' : ' checked') + '> Voice Studio alerts: a module narrated, all lessons done, your script ready, anything failed</label>' +
+      (isAmr() ? '<label class="vs-switch"><input type="checkbox" id="vsPhoneOn"' + (S.set.phone_alerts === false ? '' : ' checked') + '> Voice Studio alerts: a module narrated, all lessons done, your script ready, anything failed</label>' : '<p class="vs-note">You get an alert when a narration is ready or something failed.</p>') +
       '<div id="vsPush" class="vs-push"><p class="p-loading">Loading…</p></div></section>');
     p = main.querySelector('#vsPhone');
     p.querySelector('#vsPhoneX').addEventListener('click', () => { p.remove(); const b = document.getElementById('vsAlerts'); if (b) b.setAttribute('aria-expanded', 'false'); });
-    p.querySelector('#vsPhoneOn').addEventListener('change', async ev => { await safe(db().from('voice_settings').update({ phone_alerts:ev.target.checked, updated_at:new Date().toISOString() }).eq('id', 'main')); });
+    if (p.querySelector('#vsPhoneOn')) p.querySelector('#vsPhoneOn').addEventListener('change', async ev => { await safe(db().from('voice_settings').update({ phone_alerts:ev.target.checked, updated_at:new Date().toISOString() }).eq('id', 'main')); });
     const box2 = p.querySelector('#vsPush');
     if (window.PortalPush && window.PortalPush.draw) window.PortalPush.draw(box2); else box2.innerHTML = '<p class="vs-note">Open Settings › Phone alerts in the portal menu to allow alerts on this phone.</p>';
     window.scrollTo(0, 0);
