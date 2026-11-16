@@ -307,3 +307,7 @@ body.vs-noscroll{ overflow:hidden; }
 .vs-takes .vs-piece:last-of-type{ border-bottom:0; }
 .vs-takes .vs-msg:empty{ display:none; }
 @media (max-width:640px){ .vs-keys{ display:none; } .vs-piece{ flex-wrap:wrap; } .vs-piece .vs-btns{ flex-wrap:wrap; } }
+/* a player opened inside a line sits on its own row under the words, not beside them */
+.vs-piece{ flex-wrap:wrap; }
+.vs-piece > span:first-child{ flex:1 1 300px; }
+.vs-piece > audio.vs-live{ flex:1 1 100%; width:100%; margin:4px 0 0; }
