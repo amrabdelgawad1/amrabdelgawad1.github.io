@@ -46,6 +46,7 @@
   const SLIDER_VERSION = [0, 4];   // the worker reads the sliders from version 0.4
   const tune = { pace:50, feel:50, pause:50 };   // Text to Speech sliders, kept while you move between screens
   let timer = null;
+  let voiceFormBusy = false, stopRecording = null;   // a voice being recorded or ready to save: the screen doesn't redraw under it
 
   const isAB = j => j.target && j.target.mode === 'ab';
   const isLesson = j => j.target && j.target.mode === 'lesson';
@@ -1059,8 +1060,9 @@
   // Record from the microphone: press once to start, again to stop (stops by itself at maxS seconds)
   function recButton(btn, stEl, maxS, onDone){
     let rec = null, chunks = [], started = 0, tick = null;
+    const stop = () => { if (rec && rec.state === 'recording') rec.stop(); };
     btn.addEventListener('click', async () => {
-      if (rec) { rec.stop(); return; }
+      if (rec) { stop(); return; }
       if (!navigator.mediaDevices || !window.MediaRecorder) { stEl.textContent = 'This browser can’t record. Upload a file instead.'; return; }
       let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false } }); }
       catch(e) { stEl.textContent = 'The microphone wasn’t allowed. Allow it in the browser, or upload a file.'; return; }
@@ -1071,8 +1073,8 @@
         const secs = Math.round((Date.now() - started) / 1000), blob = new Blob(chunks, { type:rec.mimeType || 'audio/webm' });
         rec = null; btn.textContent = 'Record again'; stEl.textContent = 'Recorded ' + secs + ' s'; onDone(blob, secs);
       };
-      rec.start(); btn.textContent = 'Stop';
-      tick = setInterval(() => { const s2 = Math.round((Date.now() - started) / 1000); stEl.textContent = 'Recording… ' + s2 + ' s'; if (s2 >= maxS && rec) rec.stop(); }, 500);
+      rec.start(); btn.textContent = 'Stop'; voiceFormBusy = true; stopRecording = stop;
+      tick = setInterval(() => { const s2 = Math.round((Date.now() - started) / 1000); stEl.textContent = 'Recording… ' + s2 + ' s'; if (s2 >= maxS) stop(); }, 500);
     });
   }
   function wireVoices(main, S, reopen){
@@ -1080,10 +1082,12 @@
     let clip = null, consent = null;
     const extOf = b => /wav/.test(b.type) ? 'wav' : /mpeg|mp3/.test(b.type) ? 'mp3' : /ogg/.test(b.type) ? 'ogg' : /mp4|m4a|aac/.test(b.type) ? 'm4a' : 'webm';
     $('vsVName').addEventListener('input', () => { $('vsConsentText').textContent = consentLine($('vsVName').value); });
-    recButton($('vsRecClip'), $('vsClipSt'), 40, (b, secs) => { clip = b; if (secs < 20) $('vsClipSt').textContent += ' (a bit short; 25 to 30 s works best)'; });
-    recButton($('vsRecConsent'), $('vsConsentSt'), 20, b => { consent = b; });
-    $('vsClipFile').addEventListener('change', ev => { const fl = ev.target.files[0]; if (fl) { clip = fl; $('vsClipSt').textContent = fl.name; } });
-    $('vsConsentFile').addEventListener('change', ev => { const fl = ev.target.files[0]; if (fl) { consent = fl; $('vsConsentSt').textContent = fl.name; } });
+    voiceFormBusy = false;
+    $('vsVName').addEventListener('input', () => { voiceFormBusy = voiceFormBusy || !!$('vsVName').value.trim(); });
+    recButton($('vsRecClip'), $('vsClipSt'), 40, (b, secs) => { clip = b; voiceFormBusy = true; if (secs < 20) $('vsClipSt').textContent += ' (a bit short; 25 to 30 s works best)'; });
+    recButton($('vsRecConsent'), $('vsConsentSt'), 20, b => { consent = b; voiceFormBusy = true; });
+    $('vsClipFile').addEventListener('change', ev => { const fl = ev.target.files[0]; if (fl) { clip = fl; voiceFormBusy = true; $('vsClipSt').textContent = fl.name; } });
+    $('vsConsentFile').addEventListener('change', ev => { const fl = ev.target.files[0]; if (fl) { consent = fl; voiceFormBusy = true; $('vsConsentSt').textContent = fl.name; } });
     form.addEventListener('submit', async ev => {
       ev.preventDefault();
       const name = $('vsVName').value.trim();
@@ -1101,7 +1105,7 @@
       if (a.error || b.error) { ev.submitter && (ev.submitter.disabled = false); return say('vsVMsg', errText(a.error ? a : b, 'The upload didn’t work. Try again.')); }
       const r = await safe(db().from('voice_voices').insert({ id, name, language:$('vsVLang').value, clip_path:clipPath, consent_path:consentPath, consent_text:consentLine(name) }));
       if (r.error) { await safe(st.remove([clipPath, consentPath])); ev.submitter && (ev.submitter.disabled = false); return say('vsVMsg', errText(r, 'Couldn’t save the voice. Try again.')); }
-      reopen();
+      voiceFormBusy = false; reopen();
     });
     main.querySelectorAll('[data-voice] [data-vact]').forEach(btn => btn.addEventListener('click', async () => {
       const row = btn.closest('[data-voice]'), v = (S.voices || []).find(x => x.id === row.dataset.voice); if (!v) return;
@@ -1109,6 +1113,8 @@
       if (btn.dataset.vact === 'del') {
         if (btn.dataset.sure !== '1') { btn.dataset.sure = '1'; btn.textContent = 'Press again to remove'; return; }
         btn.disabled = true;
+        // scripts still waiting for this voice are cancelled, so they never run in another voice
+        await safe(db().from('voice_jobs').update({ status:'cancelled', message:'Cancelled: the voice was removed' }).eq('voice_id', v.id).in('status', ['queued']));
         const r = await safe(db().from('voice_voices').delete().eq('id', v.id));
         if (r.error) { btn.disabled = false; return; }
         const dir = v.clip_path.split('/').slice(0, -1).join('/'), ls = await safe(db().storage.from('voice').list(dir));
@@ -1231,9 +1237,9 @@
       const p = waiting.find(x => x.id === b.closest('[data-pid]').dataset.pid); if (!p) return;
       if (b.dataset.pa === 'edit') { if ($('vsPw')) { $('vsPw').value = p.written; $('vsPs').value = p.spoken; $('vsPl').value = p.language; $('vsPs').focus(); } return; }
       b.disabled = true;
-      const r = b.dataset.pa === 'ok' ? await safe(db().from('voice_pronunciations').update({ status:'approved' }).eq('id', p.id))
-        : await safe(db().from('voice_pronunciations').delete().eq('id', p.id));
-      if (r.error) { b.disabled = false; return; }
+      const r = b.dataset.pa === 'ok' ? await safe(db().from('voice_pronunciations').update({ status:'approved' }).eq('id', p.id).select('id'))
+        : await safe(db().from('voice_pronunciations').delete().eq('id', p.id).select('id'));
+      if (r.error || !(r.data || []).length) { b.disabled = false; b.textContent = 'Couldn’t save, try again'; return; }
       reopen();
     }));
     return { live:false };
@@ -1416,7 +1422,9 @@
   V.voice = { title:'Voice Studio', sec:'voice', async open(el, ok){
     if (timer) { clearInterval(timer); timer = null; }
     const me = ++openId, mine = () => me === openId && ok();
-    if (!putting) liveArmed = '';   // a Put live waiting for its second click is forgotten on a new screen
+    if (!putting) liveArmed = '';
+    if (stopRecording) { stopRecording(); stopRecording = null; }   // leaving the screen ends a recording and frees the microphone
+    voiceFormBusy = false;   // a Put live waiting for its second click is forgotten on a new screen
     const sub = location.hash.split('/')[1] || 'tts', tab = VIEWS[sub] && (isAmr() || !AMR_ONLY.includes(sub)) ? sub : 'tts';
     document.body.classList.remove('vs-noscroll');
     el.innerHTML = shell(tab);
@@ -1431,7 +1439,7 @@
     el.querySelector('#vsAlerts').addEventListener('click', async ev => { const b = ev.currentTarget; b.setAttribute('aria-expanded', String(await alertsPanel(main, S, reopen))); });
     // what the screen shows depends on these; a redraw only happens when one of them changes
     const sig = S2 => S2.lessons.concat(S2.others).map(j => j.id + j.status + Math.round((j.progress || 0) * 20) + (j.retake ? j.retake.status : '')).join() +
-      S2.paused + Object.values(S2.moodSamples).map(j => j.id + j.status).join();
+      S2.paused + Object.values(S2.moodSamples).map(j => j.id + j.status).join() + (S2.voices || []).map(v => v.id + v.status).join();
     let S = await load();
     if (!mine()) return;
     let res = {};
@@ -1453,7 +1461,7 @@
       if (fresh.error) return;
       showWk(fresh);
       const act = document.activeElement;
-      const busy = putting || !!liveArmed || (act && main.contains(act) && /INPUT|TEXTAREA|SELECT/.test(act.tagName)) || [...main.querySelectorAll('audio')].some(a => !a.paused) ||
+      const busy = putting || !!liveArmed || voiceFormBusy || (act && main.contains(act) && /INPUT|TEXTAREA|SELECT/.test(act.tagName)) || [...main.querySelectorAll('audio')].some(a => !a.paused) ||
         !!main.querySelector('.vs-jobmore:not([hidden]), .vs-expand:not([hidden]), .vs-checks:not([hidden]), #vsPhone') || !!($('vsText') && $('vsText').value.trim()) || !!($('vsTitle') && $('vsTitle').value.trim());
       if (busy || (!S.error && sig(fresh) === sig(S))) return;
       const y = window.scrollY; S = fresh; await draw(); if (!mine()) return; window.scrollTo(0, y); every();
