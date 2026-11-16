@@ -24,11 +24,12 @@
     { key:'course', name:'Real Estate Acquisitions course' },
     { key:'deals', name:'Deal CRM and calculators' },
     { key:'mkt', name:'Marketing course' },
-    { key:'psy', name:'Psychology and Therapy course' }
+    { key:'psy', name:'Psychology and Therapy course' },
+    { key:'voice', name:'Amr Voice Studio' }
   ];
-  const KEY_NAME = { course:'Acquisitions course', deals:'Deal CRM and calculators', learn:'Learning Hub', mkt:'Marketing course', psy:'Psychology course',
+  const KEY_NAME = { course:'Acquisitions course', deals:'Deal CRM and calculators', learn:'Learning Hub', mkt:'Marketing course', psy:'Psychology course', voice:'Amr Voice Studio',
     live:'Live now', requests:'Missed-shift requests', team:'Everyone’s hours', money:'Money' };
-  const CONTROLLED = ['course', 'deals', 'learn', 'mkt', 'psy', 'money'];
+  const CONTROLLED = ['course', 'deals', 'learn', 'mkt', 'psy', 'voice', 'money'];
 
   let people = [], log = [], filter = 'all', q = '', current = '', draft = null, busy = false;
   let unames = {}, lastIn = {};   // user_id -> username, user_id -> { at, method }
@@ -132,7 +133,7 @@
   }
   function startDraft(p){
     const keys = keysOf(p.role, p.access, p.not_given);
-    draft = { id:p.user_id, role:p.role === 'manager' ? 'manager' : 'agent', ticks:new Set(EXTRAS.map(e => e.key).filter(k => keys.has(k) && (k === 'course' || k === 'deals' || keys.has('learn')))),
+    draft = { id:p.user_id, role:p.role === 'manager' ? 'manager' : 'agent', ticks:new Set(EXTRAS.map(e => e.key).filter(k => keys.has(k) && (k === 'course' || k === 'deals' || k === 'voice' || keys.has('learn')))),
       company:p.company_id, until:p.deals_until || '', mfa:!!p.deals_mfa, rem:p.deals_remember !== false, tap:!!p.tap_counter, dirty:false };
   }
   // What the boxes add up to: role keys minus not_given, plus extras
@@ -153,6 +154,7 @@
     if (k.has('course')) out.push('Acquisitions course');
     if (k.has('learn') && k.has('mkt')) out.push('Marketing course');
     if (k.has('learn') && k.has('psy')) out.push('Psychology course');
+    if (k.has('voice')) out.push('Amr Voice Studio');
     if (plan.role === 'manager') out.push('Learner progress');
     return out;
   }
