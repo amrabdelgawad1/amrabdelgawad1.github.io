@@ -148,6 +148,46 @@
     (near || main).appendChild(a); a.play().catch(() => {});
   }
 
+  // Share: a private link to the MP3 that works for 7 days, copied for you to paste anywhere
+  async function share(j, b){
+    const p = j.output_mp3 || j.output_wav; if (!p) return;
+    const r = await safe(db().storage.from('voice').createSignedUrl(p, 7 * 24 * 3600, { download:fileName(isLesson(j) ? 'Lesson ' + lessonTitle(j) : j.title, p.split('.').pop()) }));
+    const u = r.data && r.data.signedUrl, was = b.textContent;
+    if (!u) { b.textContent = 'Couldn’t make a link'; return; }
+    let copied = false; try { await navigator.clipboard.writeText(u); copied = true; } catch(e) {}
+    if (!copied) { window.prompt('Copy this link (works for 7 days):', u); return; }
+    b.textContent = 'Link copied · 7 days'; setTimeout(() => { b.textContent = was; }, 4000);
+  }
+
+  // A zip of MP3s, made in the browser. MP3s are already compressed, so the files are stored as they are.
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc32 = d => { let c = 0xFFFFFFFF; for (let i = 0; i < d.length; i++) c = CRC[(c ^ d[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+  function zip(files){   // files: [{ name, data:Uint8Array }]
+    const enc = new TextEncoder(), parts = [], dir = []; let off = 0;
+    const u16 = v => [v & 255, (v >>> 8) & 255], u32 = v => [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255];
+    files.forEach(f => {
+      const nm = enc.encode(f.name), c = crc32(f.data), n = f.data.length;
+      const local = new Uint8Array([...u32(0x04034b50), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21), ...u32(c), ...u32(n), ...u32(n), ...u16(nm.length), ...u16(0)]);
+      parts.push(local, nm, f.data);
+      dir.push(new Uint8Array([...u32(0x02014b50), ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21), ...u32(c), ...u32(n), ...u32(n), ...u16(nm.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(off)]), nm);
+      off += local.length + nm.length + n;
+    });
+    const size = dir.reduce((t, d) => t + d.length, 0);
+    return new Blob(parts.concat(dir, [new Uint8Array([...u32(0x06054b50), ...u16(0), ...u16(0), ...u16(files.length), ...u16(files.length), ...u32(size), ...u32(off), ...u16(0)])]), { type:'application/zip' });
+  }
+  async function moduleZip(m, ls, b){
+    const done = ls.filter(j => j.status === 'done' && j.output_mp3); if (!done.length) return;
+    b.disabled = true; const files = [];
+    for (const j of done) {
+      b.textContent = 'Getting ' + (files.length + 1) + ' of ' + done.length + '…';
+      const u = await signedUrl(j.output_mp3); const buf = u && await fetch(u).then(x => x.ok ? x.arrayBuffer() : null).catch(() => null);
+      if (buf) files.push({ name:fileName(lessonTitle(j), 'mp3'), data:new Uint8Array(buf) });
+    }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(zip(files)); a.download = 'Module_' + String(m).replace(/^m/, '') + '_narration.zip';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    b.disabled = false; b.textContent = files.length === done.length ? 'Downloaded ' + files.length + ' MP3s' : 'Downloaded ' + files.length + ' of ' + done.length + ' (try again for the rest)';
+  }
+
   // A narration's manifest (its lines with start times and checks), kept so opening a row twice doesn't fetch it twice
   const manCache = {};
   async function manifest(j){
@@ -360,7 +400,8 @@
         (last.duration_s ? chip(mmss(last.duration_s) + ' of audio') : '') + chip('-16 LUFS') + chip(ago(last.finished_at || last.created_at)) + '</div>' +
         (checks ? '<p class="vs-note">Open it in <a href="#voice/history">History</a> to hear the flagged lines and retake them.</p>' : '');
       signedUrl(last.output_mp3 || last.output_wav).then(u => { const a = $('vsLast'); if (u && a) a.src = u; });
-      dl.innerHTML = (last.output_mp3 ? '<button type="button" class="vs-link" data-dl="mp3">Download MP3</button>' : '') + (last.output_wav ? '<button type="button" class="vs-link" data-dl="wav">Download WAV</button>' : '');
+      dl.innerHTML = (last.output_mp3 ? '<button type="button" class="vs-link" data-dl="mp3">Download MP3</button>' : '') + (last.output_wav ? '<button type="button" class="vs-link" data-dl="wav">Download WAV</button>' : '') + '<button type="button" class="vs-link" id="vsShareLast">Share</button>';
+      $('vsShareLast').addEventListener('click', ev => share(last, ev.currentTarget));
       dl.querySelectorAll('[data-dl]').forEach(b => b.addEventListener('click', async () => {
         const p = b.dataset.dl === 'mp3' ? last.output_mp3 : last.output_wav;
         const u = await signedUrl(p, fileName(last.title, p.split('.').pop())); if (u) location.href = u;
@@ -527,7 +568,7 @@
     const mods = [...new Set(L.map(j => j.target.module))].sort((a, b) => modNum(a) - modNum(b));
     const openMod = (S.running && isLesson(S.running) && S.running.target.module) || (firstUp && firstUp.target.module) || mods[0];
     const row = j => '<tr data-id="' + j.id + '" data-q="' + esc((lessonTitle(j) + ' ' + modName(j.target.module)).toLowerCase()) + '"><td><b>' + esc(lessonTitle(j)) + '</b><small>' + (j.duration_s ? mmss(j.duration_s) : 'Not narrated yet') + '</small></td><td>' + state(j) + retake(j.retake) + '</td><td>' + video(j) + '</td>' +
-      '<td class="vs-r">' + (j.status === 'done' ? '<button type="button" class="vs-link" data-act="play" aria-label="Play ' + name(j) + '">Play</button><button type="button" class="vs-link" data-act="pieces" aria-expanded="false" aria-label="Lines of ' + name(j) + '">Lines</button>' : '') +
+      '<td class="vs-r">' + (j.status === 'done' ? '<button type="button" class="vs-link" data-act="play" aria-label="Play ' + name(j) + '">Play</button><button type="button" class="vs-link" data-act="pieces" aria-expanded="false" aria-label="Lines of ' + name(j) + '">Lines</button><button type="button" class="vs-link" data-act="share" aria-label="Copy a share link for ' + name(j) + '">Share</button>' : '') +
       (isRetake(j) ? '<button type="button" class="vs-link" data-cmp="before" aria-label="Line ' + (+j.redo_piece) + ' before the retake">Before</button><button type="button" class="vs-link" data-cmp="after" aria-label="Line ' + (+j.redo_piece) + ' after the retake">After</button>' : '') +
       (vid(j) ? '<button type="button" class="vs-link" data-act="video" aria-label="Open the new video of ' + name(j) + '">Video</button>' : '') +
       (live(j) || (j.retake && live(j.retake)) ? '<button type="button" class="vs-link" data-act="cancel" aria-label="Cancel ' + (live(j) ? '' : 'the retake of ') + name(j) + '">Cancel' + (live(j) ? '' : ' retake') + '</button>' : '') + '</td></tr>' +
@@ -535,6 +576,7 @@
     const group = m => { const ls = L.filter(j => j.target.module === m), n = ls.filter(j => j.status === 'done').length, pc = Math.round(n / ls.length * 100), chk = ls.filter(j => pass(j, 'check')).length;
       return '<details class="vs-mod" data-mod="' + esc(m) + '"' + (m === projOpen[m] || (projOpen[m] === undefined && m === openMod) ? ' open' : '') + '><summary><span class="vs-modname">' + esc(modName(m)) + '</span>' +
         '<span class="vs-modbar" aria-hidden="true"><i style="width:' + pc + '%"></i></span><span class="vs-modn">' + n + ' / ' + ls.length + '</span>' + (chk ? chip(chk + ' to check', 'warn') : '') + '</summary>' +
+        (n ? '<div class="vs-modtools"><button type="button" class="vs-link" data-zip="' + esc(m) + '">Download ' + n + ' MP3' + (n === 1 ? '' : 's') + ' as a zip</button></div>' : '') +
         '<div class="vs-tablewrap"><table class="vs-table"><caption class="vs-sr">' + esc(modName(m)) + ' lessons</caption><thead><tr><th scope="col">Lesson</th><th scope="col">Voice</th><th scope="col">Video</th><th scope="col" class="vs-r">Actions</th></tr></thead><tbody>' +
         ls.map(row).join('') + '</tbody></table></div></details>'; };
 
@@ -558,6 +600,7 @@
     if ($('vsFind')) {
       $('vsFind').addEventListener('input', ev => { projFind = ev.target.value; applyFind(); });
       main.querySelectorAll('.vs-filter').forEach(b => b.addEventListener('click', () => { projFilter = b.dataset.f; main.querySelectorAll('.vs-filter').forEach(x => x.setAttribute('aria-pressed', String(x === b))); applyFind(); }));
+      main.querySelectorAll('[data-zip]').forEach(b => b.addEventListener('click', () => moduleZip(b.dataset.zip, L.filter(j => j.target.module === b.dataset.zip), b)));
       main.querySelectorAll('.vs-mod').forEach(d => d.addEventListener('toggle', () => { projOpen[d.dataset.mod] = d.open ? d.dataset.mod : null; }));
       applyFind();
     }
@@ -595,6 +638,7 @@
         if (!more.hidden && cell.querySelector('.vs-piece')) { more.hidden = true; b.setAttribute('aria-expanded', 'false'); return; }
         more.hidden = false; b.setAttribute('aria-expanded', 'true'); cell.innerHTML = '<p class="p-loading">Loading…</p>'; pieces(j, cell, reopen);
       }
+      else if (b.dataset.act === 'share') share(j, b);
       else if (b.dataset.act === 'video') { const w = window.open('', '_blank'); const u = await signedUrl(vid(j), null, 'course'); if (u && w) w.location = u; else if (w) w.close(); }
       else if (b.dataset.act === 'cancel') { b.disabled = true; if (await cancelJob(live(j) ? j.id : j.retake.id, b)) reopen(); }
     }));
@@ -651,7 +695,8 @@
           '<small>' + esc(ago(j.created_at)) + (j.duration_s ? ' · ' + mmss(j.duration_s) : '') + (j.mood ? ' · ' + esc(MOOD_NAMES[j.mood] || j.mood) : '') + (j.redo_piece != null ? ' · piece ' + j.redo_piece + ' redone' : '') + (j.settings ? ' · own settings' : '') +
           (lineSpot(S, j) ? ' · ' + esc(lineSpot(S, j)) : '') + (j.message && j.status !== 'done' && j.status !== 'queued' ? ' · ' + esc(j.message) : '') + '</small>' +
           (j.status === 'running' ? bar(Math.round((j.progress || 0) * 100), 100) : '') + '</span><span class="vs-btns">' +
-          (j.status === 'done' ? '<button class="vs-btn" type="button" data-act="play" aria-label="Play ' + esc(j.title) + '">Play</button>' + (j.output_mp3 ? '<button class="vs-btn" type="button" data-act="mp3" aria-label="Download MP3 of ' + esc(j.title) + '">MP3</button>' : '') + (j.output_wav ? '<button class="vs-btn" type="button" data-act="wav" aria-label="Download WAV of ' + esc(j.title) + '">WAV</button>' : '') + '<button class="vs-btn" type="button" data-act="pieces" aria-expanded="false" aria-label="Lines of ' + esc(j.title) + '">Lines</button>' : '') +
+          (j.status === 'done' ? '<button class="vs-btn" type="button" data-act="play" aria-label="Play ' + esc(j.title) + '">Play</button>' + (j.output_mp3 ? '<button class="vs-btn" type="button" data-act="mp3" aria-label="Download MP3 of ' + esc(j.title) + '">MP3</button>' : '') + (j.output_wav ? '<button class="vs-btn" type="button" data-act="wav" aria-label="Download WAV of ' + esc(j.title) + '">WAV</button>' : '') + '<button class="vs-btn" type="button" data-act="pieces" aria-expanded="false" aria-label="Lines of ' + esc(j.title) + '">Lines</button>' +
+            '<button class="vs-btn" type="button" data-act="share" aria-label="Copy a share link for ' + esc(j.title) + '">Share</button>' : '') +
           compareBtns(j) + (live ? '<button class="vs-btn" type="button" data-act="cancel" aria-label="Cancel ' + esc(j.title) + '">Cancel</button>' : '') + '</span><div class="vs-jobmore" hidden></div></div>';
       }).join('') : empty('Nothing yet. Make one in Text to Speech.')) + '</section>';
     widths(main);
@@ -661,6 +706,7 @@
       const more = row.querySelector('.vs-jobmore');
       if (b.dataset.cmp) { more.hidden = false; if (!more.querySelector('.vs-piece')) more.innerHTML = ''; compare(main, S, j, b.dataset.cmp, more); return; }
       if (b.dataset.act === 'play') { more.hidden = false; if (!more.querySelector('.vs-piece')) more.innerHTML = ''; play(main, j.output_mp3 || j.output_wav, null, more); }
+      else if (b.dataset.act === 'share') share(j, b);
       else if (b.dataset.act === 'mp3' || b.dataset.act === 'wav') { const p = b.dataset.act === 'mp3' ? j.output_mp3 : j.output_wav; const u = await signedUrl(p, fileName(j.title, p.split('.').pop())); if (u) location.href = u; }
       else if (b.dataset.act === 'cancel') { b.disabled = true; if (await cancelJob(j.id, b)) reopen(); }
       else if (b.dataset.act === 'pieces') {
