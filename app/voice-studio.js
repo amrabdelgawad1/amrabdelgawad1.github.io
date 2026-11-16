@@ -88,9 +88,9 @@
       const j = r.job || r.extra; if (!j) return null;
       return Object.assign({}, j, { retake:r.job && r.extra ? r.extra : null });
     }).filter(Boolean).sort(byLesson);
-    const waiting = (lessons.data || []).filter(j => j.status === 'queued');
+    const waiting = (lessons.data || []).filter(j => j.status === 'queued' && !j.parent_id);
     const running = (lessons.data || []).find(j => j.status === 'running') || (others.data || []).find(j => j.status === 'running') || null;
-    const done = lessonList.filter(j => j.status === 'done' && j.duration_s && took(j)).map(j => ({ audio:j.duration_s, work:took(j) }));
+    const done = lessonList.filter(j => j.status === 'done' && !j.parent_id && j.duration_s && took(j)).map(j => ({ audio:j.duration_s, work:took(j) }));
     let eta = null; try { eta = queueEta(done, waiting.length, running); } catch(e) { eta = null; }
     return { ratio:workRatio(done), wk, online, error:lessons.error || others.error, lessons:lessonList, waitingLessons:waiting, others:others.data || [], running, eta };
   }
@@ -195,7 +195,7 @@
     const plain = S.others.filter(j => !isAB(j));
     const last = plain[0];
     let mood = 'teaching';
-    const word = (k, v) => k === 'pause' ? (0.30 * (0.5 + v / 100)).toFixed(2) + ' s' : k === 'pace' ? (v < 35 ? 'Calmer' : v > 65 ? 'Brisker' : 'Natural') : (v < 35 ? 'Steady' : v > 65 ? 'Lively' : 'Natural');
+    const word = (k, v) => k === 'pause' ? (v === 50 ? 'As tuned' : (v < 50 ? 'Shorter, ' : 'Longer, ') + Math.round(50 + v) + '%') : k === 'pace' ? (v < 35 ? 'Calmer' : v > 65 ? 'Brisker' : 'Natural') : (v < 35 ? 'Steady' : v > 65 ? 'Lively' : 'Natural');
     const slider = (k, label) => '<label class="vs-slide" for="vsS_' + k + '"><span>' + esc(label) + '</span><span class="vs-val" id="vsV_' + k + '">' + esc(word(k, tune[k])) + '</span></label>' +
       '<input type="range" class="vs-range" id="vsS_' + k + '" data-k="' + k + '" min="0" max="100" step="5" value="' + tune[k] + '" aria-valuetext="' + esc(word(k, tune[k])) + '">';
 
@@ -309,24 +309,39 @@
   // Cancel a waiting or running job; says so on the button when it didn't work
   // Put a module's new videos live: each live file moves to videos/_old/<time>/ (so it can be put back), then the new
   // video, captions and cover move from videos/_new/ to where the course reads them (content/<module>/videos/<lesson>.*).
+  let putting = false, liveArmed = '';   // a Put live is running / waiting for its second click (the page won't redraw meanwhile)
   async function putLive(m, lessons, staged, report){
-    const st = db().storage.from('course'), base = 'content/' + m + '/videos/';
-    const live = await safe(st.list('content/' + m + '/videos', { limit:1000 }));
-    if (live.error) { report('Couldn’t read the live videos. Nothing was changed.'); return 0; }
-    const have = new Set((live.data || []).map(o => o.name)), stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
-    let ok = 0; const bad = [];
-    for (const id of lessons) {
-      const names = staged.files[m + '/' + id] || []; let fine = true;
-      for (const name of names) {
-        if (have.has(name)) { const r = await safe(st.move(base + name, base + '_old/' + stamp + '/' + name)); if (r.error) { fine = false; break; } }
-        const r2 = await safe(st.move(base + '_new/' + name, base + name)); if (r2.error) { fine = false; break; }
+    if (putting) return 0;
+    putting = true; stagedCache.at = 0;
+    try {
+      const st = db().storage.from('course'), base = 'content/' + m + '/videos/';
+      const live = await safe(st.list('content/' + m + '/videos', { limit:1000 }));
+      if (live.error) { report('Couldn’t read the live videos. Nothing was changed.'); return 0; }
+      const have = new Set((live.data || []).map(o => o.name)), stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+      let ok = 0; const bad = [], skipped = [];
+      for (const id of lessons) {
+        const names = staged.files[m + '/' + id] || [];
+        // a new video only goes live with its own captions; a missing .json means the PC is still saving it
+        if (!names.includes(id + '.mp4') || !names.includes(id + '.json')) { skipped.push(id); continue; }
+        const done = [];
+        const mv = async (from, to) => { const r = await safe(st.move(from, to)); if (r.error) throw r.error; done.push([from, to]); };
+        try {
+          // the whole lesson moves as one: old video, captions and cover aside, then the new ones in
+          for (const ext of ['mp4', 'json', 'jpg']) { const n = id + '.' + ext; if (have.has(n)) await mv(base + n, base + '_old/' + stamp + '/' + n); }
+          for (const n of names) await mv(base + '_new/' + n, base + n);
+          ok++;
+        } catch(e) {
+          for (const [from, to] of done.reverse()) await safe(st.move(to, from));   // put everything back as it was
+          bad.push(id);
+        }
+        report('Putting ' + 'Module ' + m.replace(/^m/, '') + ' live · ' + (ok + bad.length + skipped.length) + ' of ' + lessons.length);
       }
-      if (fine) ok++; else bad.push(id);
-      report('Putting Module ' + m.replace(/^m/, '') + ' live · ' + (ok + bad.length) + ' of ' + lessons.length);
-    }
-    report(ok + ' video' + (ok === 1 ? '' : 's') + ' live in Module ' + m.replace(/^m/, '') + (bad.length ? ' · didn’t work for ' + bad.join(', ') + ', try again' : '') + '. The old ones are kept in videos/_old/' + stamp + '.');
-    stagedCache.at = 0;
-    return ok;
+      report(ok + ' video' + (ok === 1 ? '' : 's') + ' live in Module ' + m.replace(/^m/, '') +
+        (bad.length ? ' · ' + bad.join(', ') + ' didn’t work and were left as they were, try again' : '') +
+        (skipped.length ? ' · ' + skipped.join(', ') + ' skipped (captions not saved yet)' : '') +
+        (ok ? '. The old ones are kept in videos/_old/' + stamp + '.' : '.'));
+      return ok;
+    } finally { putting = false; stagedCache.at = 0; }
   }
 
   const cancelJob = async (id, b) => {
@@ -344,7 +359,7 @@
     const ready = L.filter(vid).length;
     const stat = (label, value, sub) => '<div class="vs-stat"><span class="vs-cap">' + esc(label) + '</span><b>' + esc(value) + '</b><small>' + esc(sub) + '</small></div>';
     const state = j => j.status === 'running' ? chip('Narrating · ' + Math.round((j.progress || 0) * 100) + '%', 'run') : j.status === 'done' ? chip((j.needs_review || []).length ? 'Narrated · ' + j.needs_review.length + ' to check' : 'Narrated', (j.needs_review || []).length ? 'warn' : 'ok') :
-      j.status === 'queued' ? (firstUp && j.id === firstUp.id ? chip('Next', 'run') : chip('In queue')) : chip((STATUS[j.status] || [j.status])[0], j.status === 'failed' ? 'bad' : '');
+      j.status === 'queued' ? (firstUp && (j.id === firstUp.id) ? chip('Next', 'run') : chip('In queue')) : chip((STATUS[j.status] || [j.status])[0], j.status === 'failed' ? 'bad' : '');
     const retake = r => r ? ' ' + chip(r.status === 'running' ? 'Retake running' : r.status === 'queued' ? 'Retake waiting' : r.status === 'failed' ? 'Retake failed' : 'Retake ' + r.status, r.status === 'failed' ? 'bad' : '') : '';
     const video = j => vid(j) ? chip('Ready for review', 'ok') : j.status === 'done' ? chip('Not built yet') : chip('Waits for voice');
     const live = j => j.status === 'queued' || j.status === 'running';
@@ -353,7 +368,7 @@
     const modName = m => 'Module ' + String(m).replace(/^m/, '');
     const modNum = m => +String(m).replace(/\D/g, '') || 0;
     const queuedMods = [...new Set(S.waitingLessons.map(j => j.target.module))].sort((a, b) => modNum(a) - modNum(b));
-    const firstUp = S.waitingLessons.slice().sort((a, b) => (b.priority || 0) - (a.priority || 0) || (a.created_at < b.created_at ? -1 : 1))[0];
+    const firstUp = S.lessons.filter(j => j.retake && j.retake.status === 'queued').map(j => j.retake).concat(S.waitingLessons).sort((a, b) => (quick(b) - quick(a)) || ((b.priority || 0) - (a.priority || 0)) || (a.created_at < b.created_at ? -1 : 1))[0];
     const liveMods = {}; L.forEach(j => { if (vid(j)) (liveMods[j.target.module] = liveMods[j.target.module] || []).push(j.target.lesson); });
     const liveList = Object.keys(liveMods).sort((a, b) => modNum(a) - modNum(b));
     const tools = '<div class="vs-card vs-ops">' +
@@ -381,24 +396,24 @@
       const m = $('vsFront').value; if (!m) return;
       const top = Math.max(0, ...S.waitingLessons.map(j => j.priority || 0)) + 1;
       ev.target.disabled = true;
-      const r = await safe(db().from('voice_jobs').update({ priority:top }).eq('status', 'queued').eq('target->>mode', 'lesson').eq('target->>module', m));
-      if (r.error) { ev.target.disabled = false; return say('vsFrontMsg', errText(r, 'Couldn’t move it. Try again.')); }
+      const r = await safe(db().from('voice_jobs').update({ priority:top }).eq('status', 'queued').eq('target->>mode', 'lesson').eq('target->>module', m).select('id'));
+      if (r.error || !(r.data || []).length) { ev.target.disabled = false; return say('vsFrontMsg', r.error ? errText(r, 'Couldn’t move it. Try again.') : 'Nothing was moved. Sign in again with your authenticator code and try again.'); }
       reopen();
     });
-    let armed = '';
+    liveArmed = '';
     $('vsLiveGo').addEventListener('click', async ev => {
-      const m = $('vsLive').value, b = ev.target; if (!m) return;
-      if (armed !== m) {   // two clicks: the first says exactly what will happen
-        armed = m; b.textContent = 'Yes, put ' + liveMods[m].length + ' live';
+      const m = $('vsLive').value, b = ev.target; if (!m || putting) return;
+      if (liveArmed !== m) {   // two clicks: the first says exactly what will happen
+        liveArmed = m; b.textContent = 'Yes, put ' + liveMods[m].length + ' live';
         say('vsLiveMsg', 'This replaces the videos learners see in ' + modName(m) + ' (' + liveMods[m].join(', ') + '). Click again to go ahead.');
         return;
       }
-      armed = ''; b.disabled = true; b.textContent = 'Working…';
+      b.disabled = true; b.textContent = 'Working…';
       await putLive(m, liveMods[m], staged, t => say('vsLiveMsg', t));
-      b.textContent = 'Put live'; b.disabled = false;
-      setTimeout(reopen, 2500);
+      liveArmed = ''; b.textContent = 'Put live'; b.disabled = false;
+      setTimeout(() => { if (document.body.contains(main) && !putting) reopen(); }, 4000);
     });
-    $('vsLive').addEventListener('change', () => { armed = ''; $('vsLiveGo').textContent = 'Put live'; });
+    $('vsLive').addEventListener('change', () => { liveArmed = ''; $('vsLiveGo').textContent = 'Put live'; });
 
     main.querySelector('tbody').addEventListener('click', async ev => {
       const b = ev.target.closest('button[data-act]'); if (!b) return;
@@ -515,12 +530,13 @@
     [/rtx\s*40(90)/i, 24], [/rtx\s*40(80)/i, 16], [/rtx\s*4070/i, 12], [/rtx\s*4060\s*ti/i, 8], [/rtx\s*40(60)/i, 8], [/rtx\s*40(50)/i, 6],
     [/rtx\s*30(90)/i, 24], [/rtx\s*30(80)/i, 10], [/rtx\s*3070/i, 8], [/rtx\s*3060\s*ti/i, 8], [/rtx\s*30(60)/i, 12], [/rtx\s*30(50)/i, 6],
     [/rtx\s*20(80)/i, 8], [/rtx\s*20(70)/i, 8], [/rtx\s*20(60)/i, 6], [/titan/i, 12],
-    [/gtx\s*16(60)/i, 6], [/gtx\s*16(50)/i, 4], [/gtx\s*10(80)/i, 8], [/gtx\s*10(70)/i, 8], [/gtx\s*10(60)/i, 3], [/gtx\s*10(50)/i, 2],
+    [/rtx\s*20(50)/i, 4], [/mx\s*\d{3}/i, 2], [/gtx\s*16(60)/i, 6], [/gtx\s*16(50)/i, 4], [/gtx\s*10(80)/i, 8], [/gtx\s*10(70)/i, 8], [/gtx\s*10(60)/i, 3], [/gtx\s*10(50)/i, 2],
     [/rtx\s*a?(2000)/i, 6], [/rtx\s*a?(4000)/i, 16], [/rtx\s*a?(5000)/i, 24], [/rtx\s*a?(6000)/i, 48]];
   const RATINGS = {
     rec:{ label:'Recommended', kind:'ok', speed:'About 2x real time: a 10-minute lesson takes about 20 to 25 minutes' },
     slow:{ label:'Works, but slow', kind:'warn', speed:'Roughly 4x to 8x real time: fine for short scripts' },
-    no:{ label:'Not recommended', kind:'bad', speed:'Roughly 10x to 15x real time on the processor: short clips only' }};
+    no:{ label:'Not recommended', kind:'bad', speed:'Roughly 10x to 15x real time on the processor: short clips only' },
+    unsure:{ label:'Can’t tell from the browser', kind:'warn', speed:'Fast with an NVIDIA card; roughly 10x to 15x real time without one' }};
 
   async function detect(){
     const d = { gpu:'', cores:navigator.hardwareConcurrency || 0, ram:navigator.deviceMemory || 0, os:'', bits:'', mobile:false };
@@ -542,7 +558,8 @@
     if (!d.bits) d.bits = /WOW64|Win64|x64|x86_64|arm64|aarch64/i.test(ua) || d.os === 'macOS' ? '64-bit' : '';
     // tidy "ANGLE (NVIDIA, NVIDIA GeForce RTX 3050 (0x00002584) Direct3D11 vs_5_0 ps_5_0, D3D11)" -> "NVIDIA GeForce RTX 3050"
     d.card = (d.gpu.match(/(NVIDIA[^,(]*|AMD[^,(]*|Radeon[^,(]*|Intel[^,(]*|Apple M\d[^,(]*)/i) || [d.gpu])[0].replace(/\s+/g, ' ').trim();
-    if (/swiftshader|llvmpipe|software|basic render/i.test(d.gpu)) d.card = 'None shared (the browser is drawing in software)';
+    if (/^WebKit WebGL$|or similar|^Mali|^Adreno/i.test(d.gpu) && !/apple/i.test(d.gpu)) { d.hidden = true; d.gpu = ''; d.card = ''; }
+    else if (/swiftshader|llvmpipe|software|basic render/i.test(d.gpu)) d.card = 'None shared (the browser is drawing in software)';
     else if (d.card === d.gpu) d.card = d.gpu.replace(/^ANGLE \(|\)$/g, '');
     return d;
   }
@@ -552,15 +569,19 @@
     const nvidia = /nvidia|geforce|rtx|gtx|quadro/i.test(d.gpu), apple = /apple m\d/i.test(d.gpu) || (d.os === 'macOS' && /apple/i.test(d.gpu));
     const hit = nvidia && CARDS.find(c => c[0].test(d.gpu)), laptop = /laptop|mobile|max-q/i.test(d.gpu);
     let vram = hit ? hit[1] : 0;
-    if (hit && laptop) vram = /30(50)/.test(d.gpu) ? 4 : /30(60)/.test(d.gpu) ? 6 : vram;   // laptop versions have less
+    const LAPTOP = [[/30(50)/, 4], [/30(60)/, 6], [/30(70)/, 8], [/30(80)/, 8], [/40(70)/, 8], [/40(80)/, 12], [/40(90)/, 16], [/50(70)/, 8], [/50(80)/, 16], [/50(90)/, 24]];
+    if (hit && laptop) { const l = LAPTOP.find(x => x[0].test(d.gpu)); if (l) vram = l[1]; }   // laptop versions have less
     if (d.mobile) return { r:'no', vram, why:['This is a phone or tablet. The voice app needs a Windows PC or a Mac.'] };
-    if (!d.gpu) why.push('Your browser didn’t share the graphics card, so this is a guess. The worker checks it exactly after install.');
+    if (!d.gpu) why.push('Your browser didn’t share the graphics card' + (d.hidden ? ' (it gave a stand-in name)' : '') + ', so this is a guess. The app checks it exactly after install.');
     if (d.bits === '32-bit') return { r:'no', vram, why:why.concat('32-bit system; the voice app needs 64-bit.') };
     if (d.ram && d.ram < 8) return { r:'no', vram, why:why.concat('Less than 8 GB of memory (16 GB recommended).') };
     if (nvidia && vram >= 6) return { r:d.os.indexOf('Windows') === 0 ? 'rec' : 'slow', vram, why:why.concat('NVIDIA card with about ' + vram + ' GB of graphics memory.', d.os.indexOf('Windows') === 0 ? 'Windows, like yukis-pc.' : 'The installer is Windows-first; other systems come later.') };
+    if (nvidia && vram && vram < 4) return { r:'no', vram, why:why.concat('NVIDIA card with about ' + vram + ' GB of graphics memory; at least 4 GB is needed.') };
     if (nvidia && vram) return { r:'slow', vram, why:why.concat('NVIDIA card with about ' + vram + ' GB of graphics memory; 6 GB or more is recommended.') };
     if (nvidia) return { r:'slow', vram, why:why.concat('An NVIDIA card this check doesn’t know yet. The worker measures it after install.') };
     if (apple) return { r:'slow', vram, why:why.concat('Apple Silicon Mac: it works, slower than an NVIDIA card. 16 GB of memory recommended.') };
+    if (d.os.indexOf('Windows') === 0 && /intel|amd|radeon/i.test(d.gpu)) return { r:'unsure', vram, why:why.concat('The browser is using ' + d.card + '. Many laptops also have a separate NVIDIA card that browsers don’t show. If yours does, it likely works; the app checks for sure.') };
+    if (!d.gpu) return { r:'unsure', vram, why };
     return { r:'no', vram, why:why.concat(d.gpu ? 'No NVIDIA or Apple Silicon graphics (' + d.card + '), so the voice would run on the processor.' : 'No graphics card could be found.') };
   }
 
@@ -625,7 +646,7 @@
       if (fresh.error) return;
       showWk(fresh);
       const act = document.activeElement;
-      const busy = (act && main.contains(act) && /INPUT|TEXTAREA|SELECT/.test(act.tagName)) || [...main.querySelectorAll('audio')].some(a => !a.paused) ||
+      const busy = putting || !!liveArmed || (act && main.contains(act) && /INPUT|TEXTAREA|SELECT/.test(act.tagName)) || [...main.querySelectorAll('audio')].some(a => !a.paused) ||
         !!main.querySelector('.vs-jobmore:not([hidden]), .vs-expand:not([hidden])') || !!($('vsText') && $('vsText').value.trim()) || !!($('vsTitle') && $('vsTitle').value.trim());
       if (busy || (!S.error && sig(fresh) === sig(S))) return;
       const y = window.scrollY; S = fresh; await draw(); if (!mine()) return; window.scrollTo(0, y); every();
