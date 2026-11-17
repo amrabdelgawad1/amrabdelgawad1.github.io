@@ -319,3 +319,8 @@ body.vs-noscroll{ overflow:hidden; }
 .vs-code b{ font:700 22px/1.2 ui-monospace, Consolas, monospace; letter-spacing:.12em; }
 .vs-code small{ display:block; color:var(--vs-mute); font-size:13px; }
 .vs-note.is-warn{ color:#9A5B00; font-weight:600; }
+
+/* Script tools round */
+.vs-tools{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px; }
+.vs-find{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px; }
+.vs-find .vs-input{ flex:1 1 160px; min-width:0; }
