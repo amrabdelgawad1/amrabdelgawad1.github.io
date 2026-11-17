@@ -42,7 +42,10 @@
     // clock-out
     'Count as you go (optional)':'العدّ أثناء العمل (اختياري)',
     'You type your dials, conversations and appointments when you clock out. Counting as you go is optional.':'تكتب اتصالاتك ومحادثاتك ومواعيدك عند إنهاء الوردية. العدّ أثناء العمل اختياري.',
-    'Fill in your dials, conversations, offers and appointments for today. Type 0 if there were none.':'املأ اتصالاتك ومحادثاتك وعروضك ومواعيدك لليوم. اكتب 0 إن لم يكن هناك شيء.'
+    'Fill in your dials, conversations, offers and appointments for today. Type 0 if there were none.':'املأ اتصالاتك ومحادثاتك وعروضك ومواعيدك لليوم. اكتب 0 إن لم يكن هناك شيء.',
+    // Round 17: daily alerts email
+    'Email me a daily list of new alerts':'أرسل لي بريدًا يوميًا بالتنبيهات الجديدة', 'Cairo time':'بتوقيت القاهرة', 'at':'في',
+    'Saved. Only alerts you haven’t opened are sent, once a day.':'تم الحفظ. تُرسل التنبيهات التي لم تفتحها فقط، مرة واحدة يوميًا.', 'Daily email off.':'البريد اليومي متوقف.',
   });
 })();
 

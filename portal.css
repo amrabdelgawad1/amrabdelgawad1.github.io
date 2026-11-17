@@ -254,6 +254,11 @@ a.p-cont:hover{ border-color:var(--p-accent); }
 .p-badge{ position:absolute; top:-6px; right:-6px; min-width:20px; height:20px; padding:0 5px; border-radius:99px; background:var(--p-accent-hi); color:#fff; font:800 11.5px/20px var(--p-body); text-align:center; box-shadow:0 0 0 2px var(--p-card); }
 .p-notes{ position:absolute; top:calc(100% + 8px); right:0; z-index:60; width:min(400px, calc(100vw - 16px)); max-height:calc(100vh - var(--p-top) - 24px); overflow:auto; background:var(--p-card); border:1px solid var(--p-line); border-radius:14px; box-shadow:var(--p-shadow); color:var(--p-ink); font:15px/1.4 var(--p-body); text-align:start; }
 .p-notes-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px 10px; border-bottom:1px solid var(--p-line); }
+.p-notes-foot{ display:grid; gap:6px; padding:10px 16px 14px; border-top:1px solid var(--p-line); font-size:13.5px; color:var(--p-ink2); }
+.p-notes-foot label{ display:flex; align-items:center; gap:8px; min-height:var(--p-tap); cursor:pointer; }
+.p-notes-foot select{ min-height:36px; padding:0 8px; border:1px solid var(--p-line); border-radius:8px; background:var(--p-card, #fff); color:inherit; font:inherit; }
+.p-notes-foot small{ color:var(--p-muted, #6b7280); }
+.p-notes-foot small:empty{ display:none; }
 .p-notes-head p{ margin:0; font:800 16px/1.2 var(--p-body); }
 .p-notes-head button{ min-height:var(--p-tap); padding:0 10px; border:0; background:none; color:var(--p-accent); font:700 14px/1 var(--p-body); cursor:pointer; }
 .p-notes-list{ list-style:none; margin:0; padding:6px; }
