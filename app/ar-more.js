@@ -69,6 +69,7 @@
     'Most stop after this':'يتوقف معظمهم بعد هذه', 'Quiet a week+':'غائب أسبوعًا أو أكثر',
     'More checks':'فحوصات أخرى', 'RentCast and narration':'RentCast والتعليق الصوتي', 'RentCast lookups':'عمليات بحث RentCast', 'Put back missing rows':'أعد الصفوف المفقودة',
     'Type the table name to confirm':'اكتب اسم الجدول للتأكيد', 'Daily alerts email':'بريد التنبيهات اليومي',
+    'Budgets and savings goals':'الميزانيات وأهداف الادخار', 'Monthly budgets':'الميزانيات الشهرية', 'Savings goals':'أهداف الادخار', 'Save budget':'احفظ الميزانية', 'Add goal':'أضف هدفًا',
   });
 })();
 

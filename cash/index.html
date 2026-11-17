@@ -597,7 +597,7 @@
     table.log.mylist td.c-hrs{ grid-row:3; }
   }
 </style>
-<link rel="stylesheet" href="look.css?v=18">
+<link rel="stylesheet" href="look.css?v=19">
 <link rel="stylesheet" href="../ask.css?v=3">
 <link rel="stylesheet" href="../hub.css?v=7">
 </head>
@@ -777,6 +777,36 @@
           <div class="snums" id="splitNums"></div>
           <small class="hint">Deals are income with the category “Deal income” (assignment fees, flips, sold deals). Everything else is client work.</small>
         </div>
+      </section>
+
+      <!-- Round 17: monthly budgets and savings goals (cash_budgets, cash_goals) -->
+      <section class="t-card block" id="planCard">
+        <div class="card-title"><h2>Budgets and savings goals</h2><span id="planLabel"></span></div>
+        <div class="plan-grid">
+          <div>
+            <h3 class="plan-h">Monthly budgets <small>expenses, in pounds</small></h3>
+            <div id="budgetList"></div>
+            <form class="plan-form" id="budgetForm" novalidate>
+              <label class="label">Category<input class="field" id="bCat" list="bCats" maxlength="40" placeholder="e.g. Subscriptions"><datalist id="bCats"></datalist></label>
+              <label class="label">Limit a month (EGP)<input class="field" id="bAmt" type="number" min="0" step="1" inputmode="decimal"></label>
+              <button type="submit" class="btn btn-ghost btn-sm">Save budget</button>
+            </form>
+          </div>
+          <div>
+            <h3 class="plan-h">Savings goals <small>from your “Savings” entries</small></h3>
+            <div id="goalList"></div>
+            <form class="plan-form" id="goalForm" novalidate>
+              <label class="label">Goal<input class="field" id="gName" maxlength="60" placeholder="e.g. Emergency fund"></label>
+              <label class="label">Target (EGP)<input class="field" id="gTarget" type="number" min="1" step="1" inputmode="decimal"></label>
+              <label class="label">Count savings from<input class="field" id="gStart" type="date"></label>
+              <label class="label">Already saved before (EGP)<input class="field" id="gBefore" type="number" min="0" step="1" inputmode="decimal" placeholder="0"></label>
+              <label class="label">By (optional)<input class="field" id="gDue" type="date"></label>
+              <label class="label">Save a month (optional, EGP)<input class="field" id="gMonthly" type="number" min="0" step="1" inputmode="decimal"></label>
+              <button type="submit" class="btn btn-ghost btn-sm">Add goal</button>
+            </form>
+          </div>
+        </div>
+        <p class="hint" id="planMsg" role="status"></p>
       </section>
 
       <section class="t-card block">
@@ -1181,6 +1211,6 @@
 <script src="../tracker/config.js"></script>
 <script src="../ask.js?v=5"></script>
 <script src="team.js?v=21"></script>
-<script src="cash.js?v=31"></script>
+<script src="cash.js?v=32"></script>
 </body>
 </html>
