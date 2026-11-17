@@ -54,6 +54,14 @@
     'Play':'تشغيل', 'Tag':'صنّف', 'Edit tags':'عدّل التصنيف', 'Save tags':'احفظ التصنيف', 'Stage of the call':'مرحلة المكالمة', 'Objections in this call':'الاعتراضات في هذه المكالمة', 'Note (optional)':'ملاحظة (اختياري)',
     'Opening':'الافتتاح', 'Building rapport':'بناء العلاقة', 'Motivation':'الدافع', 'Timeline':'الجدول الزمني', 'Property condition':'حالة العقار', 'Price and numbers':'السعر والأرقام',
     'Making the offer':'تقديم العرض', 'Handling objections':'التعامل مع الاعتراضات', 'Closing and next step':'الإغلاق والخطوة التالية', 'Follow-up call':'مكالمة متابعة',
+    'Lead lists':'قوائم العملاء', 'My lead lists':'قوائمي', 'Calling hours':'ساعات الاتصال', 'Add a list':'أضف قائمة', 'Save list':'احفظ القائمة', 'Your lists':'قوائمك', 'Manage':'إدارة', 'Close':'إغلاق',
+    'Reps who call this list':'المندوبون الذين يتصلون بهذه القائمة', 'Skip trace':'البحث عن الأرقام', 'Not sent':'لم تُرسل', 'Sent to skip trace':'أُرسلت للبحث', 'Partly back':'عاد جزء منها', 'Back':'عادت',
+    'Download clean CSV':'نزّل ملف CSV نظيف', 'Download rows with no phone':'نزّل الصفوف بلا رقم', 'Upload skip trace results':'ارفع نتائج البحث', 'Retire this list':'أوقف هذه القائمة', 'Put back in use':'أعدها للاستخدام', 'Delete list':'احذف القائمة',
+    'Leave out duplicates':'استبعد المكرر', 'rows in the file':'صفوف في الملف', 'duplicates in the file':'مكرر داخل الملف', 'already in a saved list':'موجود في قائمة محفوظة', 'on your do-not-call list':'في قائمة عدم الاتصال', 'rows to save':'صفوف للحفظ',
+    'Open':'افتح', 'All my lists':'كل قوائمي', 'Owner':'المالك', 'Phone':'الهاتف', 'Property':'العقار', 'Their time':'توقيتهم', 'Outcome':'النتيجة',
+    'No answer':'لا رد', 'Left voicemail':'ترك رسالة صوتية', 'Callback':'معاودة الاتصال', 'Not interested':'غير مهتم', 'Interested':'مهتم', 'Appointment set':'تم تحديد موعد', 'Wrong number':'رقم خاطئ', 'Do not call':'عدم الاتصال',
+    'All states':'كل الولايات', 'Only states open now':'الولايات المفتوحة الآن فقط', 'Every state':'كل الولايات', 'Open now':'مفتوح الآن', 'Closed':'مغلق', 'Rule':'القاعدة', 'Add rule':'أضف قاعدة', 'Edit':'تعديل',
+    'Back to federal only':'عودة للقاعدة الفيدرالية فقط', 'Sundays allowed':'الأحد مسموح', 'Holidays allowed':'العطلات مسموحة', 'Note or law':'ملاحظة أو قانون',
   });
 })();
 
