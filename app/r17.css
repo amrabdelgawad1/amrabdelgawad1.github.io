@@ -45,3 +45,10 @@
 #pView .r17-big.is-ok{ border-left:6px solid var(--p-ok); }
 #pView .r17-big.is-no{ border-left:6px solid var(--p-no); }
 #pView .r17-big small{ color:var(--p-muted); }
+/* Learner analytics */
+#pView .r17-funnel{ display:grid; gap:10px; }
+#pView .r17-frow{ display:grid; grid-template-columns:minmax(140px, 260px) 1fr; gap:4px 14px; align-items:center; }
+#pView .r17-frow .px-bar{ height:14px; }
+#pView .r17-fname{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#pView .r17-fnum{ grid-column:2; font-size:13px; color:var(--p-muted); }
+@media (max-width:560px){ #pView .r17-frow{ grid-template-columns:1fr; } #pView .r17-fnum{ grid-column:1; } }
