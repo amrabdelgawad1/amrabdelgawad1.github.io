@@ -209,7 +209,7 @@
       const fix = n + ' ' + unit[u.toLowerCase()] + (d ? ' dollars' : '');
       (nums[all] = nums[all] || { w:all, fix, n:0 }).n++; return all;
     });
-    String(text || '').replace(/(\d+)\s?(sq\.?\s?ft|sqft|SF)\b/g, (all, n) => { (nums[all] = nums[all] || { w:all, fix:n + ' square feet', n:0 }).n++; return all; });
+    String(text || '').replace(/(\d[\d,]*)\s?(sq\.?\s?ft|sqft|SF)\b/g, (all, n) => { (nums[all] = nums[all] || { w:all, fix:n + ' square feet', n:0 }).n++; return all; });
     String(text || '').replace(/(\d+)\s?(bd|br|ba)\b/gi, (all, n, u) => { const f = n + (/ba/i.test(u) ? ' bath' : ' bedroom'); (nums[all] = nums[all] || { w:all, fix:f, n:0 }).n++; return all; });
     return { names:Object.values(names).sort((a, b) => b.n - a.n), ar:Object.values(ar).sort((a, b) => b.n - a.n), nums:Object.values(nums) };
   }
