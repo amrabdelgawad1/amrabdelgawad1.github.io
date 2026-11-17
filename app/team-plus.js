@@ -127,18 +127,35 @@
       const t = (a.dataset.orig || [...a.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join(' ')).trim();
       if (t) out.push({ kind:'Page', title:t, href:a.getAttribute('href') });
     });
-    const [ppl, hb, lib, tk, dl] = await Promise.all([
+    const [ppl, hb, lib, tk, dl, ct, cs, cf, pd, an, cst] = await Promise.all([
       owner ? people() : Promise.resolve([]),
       safe(db().from('handbook_pages').select('id,title,body')),
       safe(db().from('library_entries').select('id,title,section,kind,body').eq('active', true).limit(500)),
       safe(db().from('portal_tasks').select('id,title,notes,due_on').is('done_at', null).limit(300)),
-      safe(db().from('deals').select('id,kind,state,county,acreage,stage').limit(500))
+      safe(db().from('deals').select('id,kind,state,county,acreage,stage').limit(500)),
+      // Round 15: contracts, files, announcements and Acquisitions lessons too (each only if this person may read it)
+      safe(db().from('contract_templates').select('id,title,about')),
+      safe(db().from('contract_states').select('state,name')),
+      safe(db().from('contract_files').select('id,file_name,state,template_id').eq('retired', false)),
+      owner ? safe(db().from('person_docs').select('id,user_id,title,kind')) : Promise.resolve({}),
+      safe(db().from('announcements').select('id,title,body,at').order('at', { ascending:false }).limit(100)),
+      safe(db().rpc('course_state', { p_content:true }))
     ]);
     ppl.forEach(p => out.push({ kind:'Person', title:p.name, sub:[p.email, p.active ? (p.role === 'manager' ? 'Manager' : 'Agent') : 'Access off'].filter(Boolean).join(' · '), href:'#person/' + p.user_id }));
     (hb.data || []).forEach(p => out.push({ kind:'Handbook', title:p.title, sub:(p.body || '').split('\n')[0], text:p.body, href:'#handbook/' + p.id }));
     (lib.data || []).forEach(e => out.push({ kind:'Script', title:e.title, sub:e.section, text:e.body, href:'#library' }));
     (tk.data || []).forEach(t => out.push({ kind:'Task', title:t.title, sub:t.due_on ? 'Due ' + fmtDay(t.due_on) : '', text:t.notes, href:'#tasks' }));
     (dl.data || []).forEach(d => out.push({ kind:'Deal', title:dealName(d), sub:d.stage || '', text:d.id, href:'/app/deals/' }));
+    (ct.data || []).forEach(c => out.push({ kind:'Contract', title:c.title, sub:(c.about || '').split('\n')[0], text:c.about, href:'#contracts' }));
+    (cs.data || []).forEach(c => out.push({ kind:'Contract', title:c.name + ' contract notes', sub:c.state, href:'#contracts' }));
+    (cf.data || []).forEach(c => out.push({ kind:'File', title:c.file_name, sub:[c.state, 'Contract file'].filter(Boolean).join(' · '), href:'#contracts' }));
+    const names = {}; ppl.forEach(p => names[p.user_id] = p.name);
+    (pd.data || []).forEach(d => out.push({ kind:'File', title:d.title, sub:[names[d.user_id], d.kind].filter(Boolean).join(' · '), href:'#person/' + d.user_id }));
+    (an.data || []).forEach(a => out.push({ kind:'Update', title:a.title || 'Announcement', sub:(a.body || '').split('\n')[0], text:a.body, href:'#announcements' }));
+    const mods = cst.data && Array.isArray(cst.data.modules) ? cst.data.modules : [];
+    mods.forEach(m => (m.items || []).forEach(it => (it.type === 'group' ? (it.items || []) : [it]).forEach(c => {
+      if (c && c.type === 'lesson' && c.title) out.push({ kind:'Lesson', title:c.title, sub:'Acquisitions · Module ' + m.number + (m.open === false ? ' · locked' : ''), href:'/course/#/m/' + m.id + '/l/' + c.id });
+    })));
     return out;
   }
   function find(q){
@@ -152,7 +169,7 @@
   }
   V.search = { title:'Search', sec:'everyone', async open(el, ok){
     const q0 = decodeURIComponent((location.hash.split('/')[1] || ''));
-    el.innerHTML = '<div class="p-wrap px"><section class="p-hero"><div><span class="p-hero-bar"></span><span class="p-hero-kick">Search</span><h1>Find anything</h1><p>Pages, people, tasks, handbook pages, scripts and deals.</p></div></section>' +
+    el.innerHTML = '<div class="p-wrap px"><section class="p-hero"><div><span class="p-hero-bar"></span><span class="p-hero-kick">Search</span><h1>Find anything</h1><p>Pages, people, tasks, handbook pages, scripts, deals, contracts, files, updates and lessons.</p></div></section>' +
       '<div class="px-body"><input class="wk-find tp-q" id="tpQ" type="search" placeholder="Type to search" aria-label="Search the portal" value="' + esc(q0) + '"><div id="tpRes" role="list"></div></div></div>';
     $('tpQ').focus();
     if (!index) { $('tpRes').innerHTML = PX.loading; index = await buildIndex(); if (!ok()) return; }

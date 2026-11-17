@@ -298,15 +298,93 @@
       '<section aria-labelledby="pvWait"><h2 class="p-h2" id="pvWait">Waiting for you</h2>' + waitingList(revs, r, names) + '</section>' +
       '</div>';
   }
-  function waitingList(revs, reqs, names){
+  function waitingList(revs, reqs, names, extra){
     const items = revs.slice(0, 6).map(x => ({ tag:'Review', text:x.title + ', from ' + (names[x.who] || 'a learner'), href:x.drill ? '/course/#/admin' : '#review/' + encodeURIComponent(x.who), act:'Score it' }))
-      .concat(reqs.slice(0, 6).map(x => ({ tag:'Team', text:'Missed-shift request from ' + first(x.name || names[x.user_id]) + (x.shift_date ? ' for ' + day(x.shift_date) : ''), href:'#requests', act:'Approve or decline' })));
+      .concat(reqs.slice(0, 6).map(x => ({ tag:'Team', text:'Missed-shift request from ' + first(x.name || names[x.user_id]) + (x.shift_date ? ' for ' + day(x.shift_date) : ''), href:'#requests', act:'Approve or decline' })))
+      .concat(extra || []);
     if (!items.length) return '<p class="p-card p-empty">Nothing is waiting for you. Nice.</p>';
-    return '<div class="p-card p-wait">' + items.map(x => '<div class="p-wait-row"><span class="p-pill">' + esc(x.tag) + '</span><span class="p-wait-txt">' + esc(x.text) + '</span><a href="' + esc(x.href) + '">' + esc(x.act) + '</a></div>').join('') + '</div>';
+    return '<div class="p-card p-wait">' + items.map(x => '<div class="p-wait-row"><span class="p-pill">' + esc(x.tag) + '</span><span class="p-wait-txt">' + esc(x.text) + '</span><a href="' + esc(x.href) + '"' + (x.bell ? ' data-open-bell' : '') + '>' + esc(x.act) + '</a></div>').join('') + '</div>';
   }
   async function nameMap(db){
     const r = await safe(db.from('members').select('user_id,name'));
     const m = {}; (r.data || []).forEach(x => m[x.user_id] = x.name); return m;
+  }
+
+  // ======================================================================
+  // Command center (round 15): the top of Amr's Admin overview.
+  //   Waiting     one list of everything that needs Amr: reviews, shift and time-off requests, swaps to approve,
+  //               new applicants, course access asks, open feedback and unread alerts
+  //   Right now   who is on shift (names and since when), the narration queue and whether the PC worker is online,
+  //               and this month's cash (came in, spent, still expected) worked out like the Cash page
+  // ======================================================================
+  const AUTO_TEAM_FROM = '2026-11-17';   // same date as cash.js: team profit from hours counts from here on
+  const egpTxt = n => 'EGP ' + Math.round(n).toLocaleString('en-US');
+  const since = t => { try { return new Date(t).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', timeZone:'Africa/Cairo' }); } catch(e) { return ''; } };
+  async function command(db, names){
+    const now = new Date(), mStart = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
+    const ymd = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const mEnd = ymd(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    const [live, code, vq, vw, vd, en, sh, fx, to, sw, ja, fb, al] = await Promise.all([
+      safe(db.from('live_status').select('user_id,mode,started_at')),
+      safe(db.from('code_live_status').select('name,mode,started_at,updated_at')),
+      safe(db.from('voice_jobs').select('id,title,claimed_at,progress').eq('status', 'queued').order('priority', { ascending:false }).limit(500)),
+      safe(db.from('voice_worker').select('name,last_seen,busy_job').order('last_seen', { ascending:false }).limit(5)),
+      safe(db.from('voice_jobs').select('id', { count:'exact', head:true }).eq('status', 'done').gte('finished_at', todayStart)),
+      safe(db.from('cash_entries').select('kind,category,amount,currency,fx_rate,settled,entry_date').gte('entry_date', mStart).lte('entry_date', mEnd)),
+      safe(db.from('shifts').select('owner,work_seconds,pay_rate,bill_rate,paid,client_paid,client_fx,shift_date,pay_type').gte('shift_date', mStart).lte('shift_date', mEnd)),
+      safe(db.from('fx_rates').select('from_date,rate').order('from_date', { ascending:false }).limit(1)),
+      safe(db.from('time_off').select('id').eq('status', 'pending')),
+      safe(db.from('shift_swaps').select('id').eq('status', 'taken')),
+      safe(db.from('job_applications').select('id,name,created_at').eq('status', 'new').order('created_at', { ascending:false })),
+      safe(db.from('feedback').select('id').eq('done', false)),
+      safe(db.from('notifications').select('id,kind,title,link,created_at').is('read_at', null).order('created_at', { ascending:false }).limit(50))
+    ]);
+    // Right now: who is working
+    const onShift = (live.data || []).map(x => ({ name:names[x.user_id] || 'Someone', mode:x.mode, at:x.started_at }))
+      .concat((code.data || []).filter(r => Date.now() - new Date(r.updated_at).getTime() < 16 * 3600e3).map(x => ({ name:x.name || 'Tracker', mode:x.mode, at:x.started_at })));
+    const shiftRows = onShift.length ? onShift.slice(0, 8).map(x => row(first(x.name), muted((x.mode === 'break' ? 'On break' : 'Working') + (x.at ? ' since ' + since(x.at) : '')), '#live'))
+      : [row('Nobody is clocked in', muted(''), '#live')];
+    // Narration queue
+    const q = vq.data || [], running = q.filter(j => j.claimed_at), worker = (vw.data || [])[0];
+    const online = !!worker && Date.now() - new Date(worker.last_seen).getTime() < 3 * 60e3;
+    const pct = p => p == null ? '' : ' · ' + Math.round(Number(p) <= 1 ? Number(p) * 100 : Number(p)) + '%';
+    const voiceRows = [row('Narration PC', online ? '<span class="p-pill is-plain">Online</span>' : pillR(worker ? 'Offline · seen ' + since(worker.last_seen) : 'Not set up'), '#voice'),
+      row('Narrating now', muted(running.length ? running.slice(0, 2).map(j => (j.title || 'Job') + pct(j.progress)).join(', ') : 'Nothing'), '#voice'),
+      row('In the queue', muted(plural(q.length - running.length, 'job')), '#voice'), row('Finished today', muted(vd.count == null ? '–' : plural(vd.count, 'job')), '#voice')];
+    // This month's cash, in pounds (dollars at the rate saved with each entry, else the latest rate)
+    const rate = fx.data && fx.data[0] ? Number(fx.data[0].rate) : 0;
+    const egpOf = e => e.currency === 'EGP' ? Number(e.amount) : Number(e.amount) * (Number(e.fx_rate) || rate);
+    const key = c => String(c || '').trim().toLowerCase();
+    let came = 0, spent = 0, expected = 0;
+    (en.data || []).forEach(e => {
+      if (e.kind === 'income') { came += egpOf(e); if (!e.settled) expected += egpOf(e); }
+      else if (key(e.category) !== 'savings') spent += egpOf(e);
+    });
+    (sh.data || []).forEach(s => {
+      if (s.bill_rate == null) return;
+      const h = s.work_seconds / 3600, fxS = Number(s.client_fx) || rate;
+      if (s.owner) { const v = h * Number(s.bill_rate) * fxS; came += v; if (!s.paid) expected += v; return; }
+      if (s.pay_type === 'commission' || s.shift_date < AUTO_TEAM_FROM) return;
+      const v = h * (Number(s.bill_rate) - Number(s.pay_rate || 0)) * fxS; came += v; if (!s.client_paid) expected += v;
+    });
+    const cashOk = !en.error && !sh.error;
+    const cashRows = cashOk ? [row('Came in', muted(egpTxt(came)), '#overview'), row('Spent', muted(egpTxt(spent)), '#expense'),
+      row('Profit so far', '<span class="p-pill is-plain">' + esc(egpTxt(came - spent)) + '</span>', '#overview'),
+      row('Still expected', expected > 0 ? pillR(egpTxt(expected)) : muted('Nothing'), '#overview')] : [row('Cash', muted('Open'), '#overview')];
+    // Waiting for you
+    const alerts = al.data || [], access = alerts.filter(n => n.kind === 'access_request'), other = alerts.filter(n => n.kind !== 'access_request');
+    const waits = [];
+    if ((to.data || []).length) waits.push({ tag:'Team', text:plural(to.data.length, 'time-off request') + ' to decide', href:'#schedule', act:'Decide' });
+    if ((sw.data || []).length) waits.push({ tag:'Team', text:plural(sw.data.length, 'shift swap') + ' to approve', href:'#schedule', act:'Approve' });
+    if ((ja.data || []).length) waits.push({ tag:'Hiring', text:plural(ja.data.length, 'new applicant') + (ja.data[0] ? ', latest ' + first(ja.data[0].name) : ''), href:'#applications', act:'Open' });
+    access.slice(0, 5).forEach(n => waits.push({ tag:'Access', text:n.title, href:String(n.link || '#people').replace(/^\/app\//, ''), act:'Give access' }));
+    if ((fb.data || []).length) waits.push({ tag:'Feedback', text:plural(fb.data.length, 'problem or idea', 'problems or ideas') + ' not marked done', href:'#logs/feedback', act:'Read' });
+    if (other.length) waits.push({ tag:'Alerts', text:plural(other.length, 'unread alert') + ': ' + other.slice(0, 2).map(n => n.title).join(' · '), href:'#', act:'Open the bell', bell:true });
+    const html = '<section aria-labelledby="pvNow"><h2 class="p-h2" id="pvNow">Right now</h2><div class="p-grid p-boxes">' +
+      box5('On shift', plural(onShift.length, 'person', 'people'), shiftRows) + box5('Narration', online ? 'PC online' : 'PC offline', voiceRows) +
+      box5('Cash this month', cashOk ? 'In pounds' : '', cashRows) + '</div></section>';
+    return { html, waits };
   }
 
   // ======================================================================
@@ -318,16 +396,20 @@
     const [live, reqs, revs, lr, mem, vis, calls, ann, eod, uc, cms, g1, wk] = await Promise.all([liveCount(db), pendingRequests(db), reviewsWaiting(db), learners(db, true),
       safe(db.from('members').select('active')), safe(db.rpc('visit_stats', { p_hours:168 })), safe(db.rpc('portal_calls_today')), safe(db.rpc('portal_announcement')), safe(db.rpc('portal_eod')), safe(db.from('deals').select('inspection_ends,closing_on').eq('stage', 'contract')), safe(db.from('commissions').select('amount').eq('status', 'owed')), safe(db.rpc('portal_gate1')), safe(db.rpc('portal_weekly_summary', { p_from:mondayIso() }))]);
     if (my !== run) return;
+    const names = await nameMap(db), cc = await command(db, names);
+    if (my !== run) return;
     const r = reqs || [], team = (mem.data || []).filter(x => x.active).length, dc = dealCounts();
     const payOwed = wk && wk.data ? Number(wk.data.owed_all) || 0 : null;   // same number as Numbers > Weekly summary, "pay owed (all time)"
     const ct = Array.isArray(calls.data) ? calls.data : null, sum = k => (ct || []).reduce((a, x) => a + (Number(x[k]) || 0), 0);
     const learning = new Set(lr.hub.map(x => x.user_id).concat(lr.acq.filter(x => x.done > 0 || x.module).map(x => x.userId))).size;
-    const need = revs.length + r.length + (payOwed > 0 ? 1 : 0);
+    const need = revs.length + r.length + (payOwed > 0 ? 1 : 0) + cc.waits.length;
     const v = vis.data && vis.data.visitors != null ? Number(vis.data.visitors).toLocaleString('en-US') : null;
     box().innerHTML = '<div class="p-wrap">' +
       hero('Admin', 'Overview', need ? plural(need, 'thing') + (need === 1 ? ' needs' : ' need') + ' you today' : 'Nothing needs you right now',
         '<div class="p-stats">' + stat(revs.length, 'to review', '#review') + stat(r.length, r.length === 1 ? 'shift request' : 'shift requests', '#requests') + stat(live == null ? '–' : live, 'clocked in now', '#live') + '</div>') +
-      '<div class="p-grid p-boxes">' +
+      '<section aria-labelledby="pvWaitA"><h2 class="p-h2" id="pvWaitA">Waiting for you</h2>' + waitingList(revs, r, names, cc.waits) + '</section>' +
+      cc.html +
+      '<h2 class="p-h2">Everything</h2><div class="p-grid p-boxes">' +
         box5('People', plural(team, 'person', 'people') + ' on the team', [row('Team overview', muted('Open'), '#teamview'), row('Onboarding', muted('Open'), '#onboarding'), row('Clocked in now', muted(live == null ? '–' : plural(live, 'person', 'people')), '#live'),
           row('Missed-shift requests', r.length ? pillR(r.length + ' waiting') : muted('None'), '#requests'),
           row('Calls today', muted(ct ? plural(sum('dials'), 'dial') + ' · ' + plural(sum('appointments'), 'appointment') : '–')),
@@ -343,6 +425,7 @@
       '</div>' + gate1(g1.data) + callsToday(ct) + eodSection(eod.data) + annForm(ann.data) + '</div>';
     wireAnnForm(db);
     wireEod(db, my);
+    box().querySelectorAll('[data-open-bell]').forEach(x => x.addEventListener('click', e => { e.preventDefault(); const b = document.querySelector('.p-bell'); if (b) { b.click(); b.focus(); } }));
     box().querySelectorAll('.p-g1-bar i[data-w]').forEach(i => { i.style.width = i.dataset.w + '%'; });
   }
 
