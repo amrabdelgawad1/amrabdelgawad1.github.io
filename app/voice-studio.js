@@ -1317,7 +1317,8 @@
     const pc = S.wk, ratio = S.ratio;
     const pcRate = pc && /\d+(\.\d+)?\s*GB/.test(pc.gpu || '') ? (parseFloat((pc.gpu.match(/(\d+(\.\d+)?)\s*GB/) || [])[1]) >= 5.5 ? 'rec' : 'slow') : null;
     const pcRating = pc && RATINGS[pc.rating] ? pc.rating : pcRate, sp = (pc && pc.specs) || {};
-    const lowVram = !!(pc && pc.free_vram_mb != null && pc.free_vram_mb < 4500 && (Date.now() - new Date(pc.last_seen)) < 120000);
+    // the voice model itself fills most of a 6 GB card, so only a nearly full card means other apps are in the way
+    const lowVram = !!(pc && pc.free_vram_mb != null && pc.free_vram_mb < 300 && (Date.now() - new Date(pc.last_seen)) < 120000);
     main.innerHTML = head('Can my computer run it?', 'Amr Voice Studio runs on your own computer, so your voice and audio never leave it. Here’s how this one looks.') +
       '<div class="vs-split"><section class="vs-col">' +
       '<section class="vs-card vs-verdict is-' + R.kind + '" aria-labelledby="vsVerdict"><span class="vs-cap">This computer</span><h2 id="vsVerdict">' + esc(R.label) + '</h2>' +
