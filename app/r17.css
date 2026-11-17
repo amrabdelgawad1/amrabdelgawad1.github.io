@@ -1,0 +1,30 @@
+/* Round 17 (Nov 17 2026): handbook history, weekly targets and streaks, call library, lead lists, learner analytics,
+   status additions, Files hub, calling hours. Scoped to #pView like extras.css; no inline styles. */
+#pView .p-hint{ margin:8px 0 0; font-size:13px; color:var(--p-muted); }
+#pView .p-hint:empty{ display:none; }
+#pView .r17-h{ margin:20px 0 8px; font:800 16px/1.2 var(--p-body); }
+#pView .r17-acts{ display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; }
+#pView .r17-ver{ align-items:center; }
+#pView .r17-verbody{ margin:0 0 10px; padding:10px 14px 10px 28px; background:var(--p-soft); border-radius:10px; }
+#pView .r17-goal{ display:grid; gap:4px; min-width:90px; font-variant-numeric:tabular-nums; }
+#pView .r17-goal .px-bar{ height:6px; }
+#pView .px-bar i.ok{ background:var(--p-ok); }
+#pView .r17-streak{ font-weight:800; color:var(--p-accent); white-space:nowrap; }
+#pView .r17-wt .np-num{ width:76px; }
+#pView .r17-filters{ display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:12px; }
+#pView .r17-filters .sc-f{ min-width:180px; }
+#pView .r17-check{ display:flex; align-items:center; gap:8px; min-height:44px; font-weight:600; color:var(--p-ink2); cursor:pointer; }
+#pView .r17-call{ padding:4px 0 10px; border-bottom:1px solid var(--p-line); }
+#pView .r17-call:last-child{ border-bottom:0; }
+#pView .r17-tags{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:4px; }
+#pView .r17-tags small{ color:var(--p-muted); }
+#pView .r17-tags:empty{ display:none; }
+#pView .p-pill.is-warn{ background:var(--p-accent-soft, #FBEDE6); color:var(--p-accent); }
+#pView .r17-tagform{ margin-top:10px; padding:12px; border:1px solid var(--p-line); border-radius:12px; }
+#pView .r17-tagform fieldset{ border:0; margin:0 0 10px; padding:0; }
+#pView .r17-tagform legend{ font-weight:700; margin-bottom:6px; }
+#pView .r17-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+#pView .r17-chips label{ display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:0 12px; border:1px solid var(--p-line); border-radius:99px; cursor:pointer; font-size:14px; }
+#pView .r17-chips label:has(input:checked){ background:var(--p-dark); color:#fff; border-color:var(--p-dark); }
+#pView .r17-audio audio{ width:100%; margin-top:8px; }
+#pView .r17-audio:empty{ display:none; }
