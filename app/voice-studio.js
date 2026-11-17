@@ -202,20 +202,33 @@
         (names[clean] = names[clean] || { w:clean, n:0, acronym }).n++;
       });
     });
-    return { names:Object.values(names).sort((a, b) => b.n - a.n), ar:Object.values(ar).sort((a, b) => b.n - a.n) };
+    // 3. Short money and numbers the voice reads letter by letter ("$1.5M" → "one point five M")
+    const nums = {};
+    const unit = { k:'thousand', m:'million', b:'billion' };
+    String(text || '').replace(/(\$)?(\d+(?:[.,]\d+)?)\s?([kKmMbB])(?![A-Za-z])/g, (all, d, n, u) => {
+      const fix = n + ' ' + unit[u.toLowerCase()] + (d ? ' dollars' : '');
+      (nums[all] = nums[all] || { w:all, fix, n:0 }).n++; return all;
+    });
+    String(text || '').replace(/(\d+)\s?(sq\.?\s?ft|sqft|SF)\b/g, (all, n) => { (nums[all] = nums[all] || { w:all, fix:n + ' square feet', n:0 }).n++; return all; });
+    String(text || '').replace(/(\d+)\s?(bd|br|ba)\b/gi, (all, n, u) => { const f = n + (/ba/i.test(u) ? ' bath' : ' bedroom'); (nums[all] = nums[all] || { w:all, fix:f, n:0 }).n++; return all; });
+    return { names:Object.values(names).sort((a, b) => b.n - a.n), ar:Object.values(ar).sort((a, b) => b.n - a.n), nums:Object.values(nums) };
   }
   // The list of what was found, with "Add how to say it" for names and the فصحى word for Arabic
   function showChecks(el, res, opts){
     let dismissed = []; try { dismissed = JSON.parse(localStorage.getItem('vsWordsOk') || '[]'); } catch(e) {}
     const names = res.names.filter(x => !dismissed.includes(x.w));
-    if (!names.length && !res.ar.length) { el.innerHTML = '<p class="vs-note vs-okline">No unusual names and no colloquial Arabic found.</p>'; return 0; }
+    const nums = res.nums || [];
+    if (!names.length && !res.ar.length && !nums.length) { el.innerHTML = '<p class="vs-note vs-okline">No unusual names, short numbers or colloquial Arabic found.</p>'; return 0; }
     el.innerHTML = (names.length ? '<div class="vs-sub">Names and short forms to check (' + names.length + ')</div><p class="vs-note">The voice guesses these. Add how to say any it might get wrong; it’s used everywhere from then on.</p>' +
         names.slice(0, 40).map(x => '<div class="vs-word" data-w="' + esc(x.w) + '"><b>' + esc(x.w) + '</b><small>' + (x.acronym ? 'short form · ' : '') + x.n + '×' + (x.where ? ' · ' + esc(x.where) : '') + '</small>' +
           '<span class="vs-btns"><label class="vs-sr" for="vsSay_' + esc(x.w) + '">Say ' + esc(x.w) + ' as</label><input class="vs-input vs-say" id="vsSay_' + esc(x.w) + '" placeholder="' + (x.acronym ? esc(x.w.split('').join(' ')) : 'Say it as') + '">' +
           '<button type="button" class="vs-btn" data-add>Add</button><button type="button" class="vs-link" data-fine>It’s fine</button></span></div>').join('') : '') +
       (res.ar.length ? '<div class="vs-sub">Colloquial Arabic (' + res.ar.length + ')</div><p class="vs-note">The narration is فصحى. Use the word on the right instead.</p><div class="vs-arlist" dir="rtl" lang="ar">' +
         res.ar.map(x => '<div class="vs-word"><b>' + esc(x.w) + '</b><span>← ' + esc(x.fix) + '</span><small>' + x.n + '×' + (x.where ? ' · ' + esc(x.where) : '') + '</small>' +
-          (opts && opts.replace && x.fix.indexOf('/') < 0 ? '<button type="button" class="vs-link" data-fix="' + esc(x.w) + '">Replace</button>' : '') + '</div>').join('') + '</div>' : '');
+          (opts && opts.replace && x.fix.indexOf('/') < 0 ? '<button type="button" class="vs-link" data-fix="' + esc(x.w) + '">Replace</button>' : '') + '</div>').join('') + '</div>' : '') +
+      (nums.length ? '<div class="vs-sub">Numbers to check (' + nums.length + ')</div><p class="vs-note">Short forms like these are often read letter by letter.</p>' +
+        nums.map(x => '<div class="vs-word"><b>' + esc(x.w) + '</b><span>→ ' + esc(x.fix) + '</span><small>' + x.n + '×</small>' +
+          (opts && opts.replaceText ? '<button type="button" class="vs-link" data-num="' + esc(x.w) + '" data-to="' + esc(x.fix) + '">Replace</button>' : '') + '</div>').join('') : '');
     el.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', async () => {
       const row = b.closest('.vs-word'), w = row.dataset.w, said = row.querySelector('.vs-say').value.trim();
       if (!said) { row.querySelector('.vs-say').focus(); return; }
@@ -230,9 +243,10 @@
       row.remove();
     }));
     el.querySelectorAll('[data-fix]').forEach(b => b.addEventListener('click', () => { opts.replace(b.dataset.fix, AR_FIX[b.dataset.fix]); b.closest('.vs-word').remove(); }));
-    return names.length + res.ar.length;
+    el.querySelectorAll('[data-num]').forEach(b => b.addEventListener('click', () => { opts.replaceText(b.dataset.num, b.dataset.to); b.closest('.vs-word').remove(); }));
+    return names.length + res.ar.length + nums.length;
   }
-  const loadPron = async () => (await safe(db().from('voice_pronunciations').select('written,spoken,language'))).data || [];
+  const loadPron = async () => (await safe(db().from('voice_pronunciations').select('written,spoken,language').eq('owner', uid()).eq('status', 'approved'))).data || [];
 
   // ───── Versions of a lesson's narration ─────
   // The course plays content/<module>/narration/<lesson>.mp3 (+ .json captions). Before anything replaces them, they're
@@ -745,7 +759,45 @@
     const mine = (S.others || []).filter(j => j.status === 'done' && !j.parent_id && !isAB(j) && new Date(j.finished_at || j.created_at) >= since);
     const secs = mine.reduce((t, j) => t + (j.duration_s || 0), 0), clean = mine.filter(j => !(j.needs_review || []).length).length;
     return box('This month', '<div class="vs-chips">' + chip(mine.length + ' narration' + (mine.length === 1 ? '' : 's')) + chip(mmss(secs) + ' of audio') +
-      (mine.length ? chip(Math.round(100 * clean / mine.length) + '% passed the word check first time', clean === mine.length ? 'ok' : '') : '') + '</div>');
+      (mine.length ? chip(Math.round(100 * clean / mine.length) + '% passed the word check first time', clean === mine.length ? 'ok' : '') : '') + '</div>' +
+      (isAmr() ? '' : '<p class="vs-note" id="vsLimit"></p>'));
+  }
+  async function fillLimit(){
+    const el = document.getElementById('vsLimit'); if (!el) return;
+    const r = await safe(db().rpc('voice_my_usage')); const u = r.data && r.data[0]; if (!u || u.monthly_chars == null) return;
+    el.textContent = 'Monthly limit: ' + Number(u.chars).toLocaleString() + ' of ' + Number(u.monthly_chars).toLocaleString() + ' characters used.';
+  }
+
+  // ───── Team usage this month, with a monthly limit per person (Amr only) ─────
+  async function teamUsage(el){
+    const r = await safe(db().rpc('voice_usage'));
+    if (r.error) { el.innerHTML = '<p class="vs-note">' + esc(errText(r, 'Couldn’t load usage.')) + '</p>'; return; }
+    const rows = r.data || [];
+    el.innerHTML = '<h2 class="vs-cap">Team usage this month</h2>' + (rows.length ? '<div class="vs-tablewrap"><table class="vs-table"><thead><tr><th>Person</th><th>Narrations</th><th>Audio</th><th>Characters</th><th>Failed</th><th>Monthly limit (characters)</th></tr></thead><tbody>' +
+      rows.map(u => '<tr data-owner="' + esc(u.owner) + '"><td>' + esc(u.name) + '</td><td>' + u.jobs + '</td><td>' + mmss(+u.audio_s || 0) + '</td><td>' + Number(u.chars).toLocaleString() + '</td><td>' + u.failed + '</td><td>' +
+        (u.owner === uid() ? 'No limit' : '<label class="vs-sr" for="vsLim_' + esc(u.owner) + '">Limit for ' + esc(u.name) + '</label><input class="vs-input vs-lim" id="vsLim_' + esc(u.owner) + '" type="number" min="0" step="1000" placeholder="No limit" value="' + (u.monthly_chars == null ? '' : u.monthly_chars) + '"><button type="button" class="vs-link" data-lim>Save</button>') + '</td></tr>').join('') +
+      '</tbody></table></div><p class="vs-note">About 15 characters make a second of audio, so 100,000 characters is about 1 hour 50 minutes. Empty = no limit.</p>' : empty('Nobody else has Voice Studio switched on yet.'));
+    el.querySelectorAll('[data-lim]').forEach(b => b.addEventListener('click', async () => {
+      const tr = b.closest('tr'), v = tr.querySelector('.vs-lim').value.trim(); b.disabled = true;
+      const q = v === '' ? db().from('voice_limits').delete().eq('owner', tr.dataset.owner) : db().from('voice_limits').upsert({ owner:tr.dataset.owner, monthly_chars:Math.max(0, Math.round(+v)), updated_at:new Date().toISOString() });
+      const res = await safe(q); b.disabled = false; b.textContent = res.error ? 'Try again' : 'Saved';
+    }));
+  }
+
+  // ───── Listen: the whole narration with the script following along ─────
+  async function listenMode(j, el){
+    const m = await manifest(j), u = await signedUrl(j.output_mp3 || j.output_wav);
+    if (!m || !u) { el.innerHTML = '<p class="vs-note">Not available for this narration.</p>'; return; }
+    el.innerHTML = '<audio class="vs-player vs-listen" controls preload="metadata"></audio><div class="vs-follow">' +
+      m.pieces.map((p, k) => '<button type="button" class="vs-line" data-k="' + k + '" data-t="' + (p.start || 0) + '">' + esc(String(p.text || '').replace(/^\[[a-z_]+\]\s*/i, '')) + '</button>').join('') + '</div>';
+    const a = el.querySelector('audio'), lines = [...el.querySelectorAll('.vs-line')]; a.src = u;
+    let cur = -1;
+    a.addEventListener('timeupdate', () => {
+      let k = 0; for (let i = 0; i < m.pieces.length; i++) if ((m.pieces[i].start || 0) <= a.currentTime + 0.05) k = i;
+      if (k !== cur) { if (lines[cur]) lines[cur].classList.remove('is-on'); cur = k; lines[k].classList.add('is-on'); lines[k].scrollIntoView({ block:'nearest' }); }
+    });
+    lines.forEach(b => b.addEventListener('click', () => { a.currentTime = +b.dataset.t; a.play().catch(() => {}); }));
+    a.play().catch(() => {});
   }
 
   async function viewTts(main, S, reopen){
@@ -826,6 +878,15 @@
       say('vsEst', n ? words.toLocaleString() + ' words · ' + n.toLocaleString() + ' characters · about ' + mmss(secs) + ' of audio' + (S.ratio ? ' · about ' + hours(secs * S.ratio) + ' to make' : '') + ' · free, no credits' : 'Free, no credits');
       draftSet({ text:text.value, title:$('vsTitle').value }); };
     // a draft (typed earlier, or sent here by "Edit and make again") comes back after a refresh
+    fillLimit();
+    let termsOk = isAmr(); try { termsOk = termsOk || localStorage.getItem('vs-terms-ok') === '1'; } catch(e) {}
+    if (!termsOk) {
+      const t = document.createElement('div'); t.className = 'vs-card vs-terms'; t.setAttribute('role', 'region'); t.setAttribute('aria-label', 'Voice Studio rules');
+      t.innerHTML = '<b>Before you start</b><ul><li>Only clone your own voice, with your own consent line.</li><li>Never make audio that pretends to be someone else, or that misleads people about who is speaking.</li>' +
+        '<li>Your scripts, voices and audio are private to you; Amr can see usage numbers.</li></ul><button type="button" class="vs-go" id="vsTermsOk">I agree</button>';
+      main.prepend(t);
+      $('vsTermsOk').addEventListener('click', () => { try { localStorage.setItem('vs-terms-ok', '1'); } catch(e) {} t.remove(); });
+    }
     const dr = draftGet();
     if (dr && dr.text && !text.value) { text.value = dr.text; $('vsTitle').value = dr.title || ''; if (dr.lang) $('vsLang').value = dr.lang; say('vsMsg', dr.note || 'Your draft is back.'); }
     text.addEventListener('input', est); $('vsTitle').addEventListener('input', est); est();
@@ -892,7 +953,7 @@
       checkedText = text.value.trim();
       return showChecks(box2, checkWords(text.value, await loadPron()), { replace:(w, fix) => {
         text.value = text.value.replace(new RegExp('(^|[\\s،.؟!])([وف]?)' + w + '(?=$|[\\s،.؟!])', 'g'), '$1$2' + fix); est();
-      } });
+      }, replaceText:(a, b) => { text.value = text.value.split(a).join(b); est(); } });
     };
     $('vsCheck').addEventListener('click', () => { if (text.value.trim()) runCheck(); else say('vsMsg', 'Type or paste a script first.'); });
     $('vsForm').addEventListener('submit', async ev => {
@@ -1126,7 +1187,7 @@
         const full = await safe(db().from('voice_jobs').select('text,language,mood,settings,voice_id').eq('id', j.id).single());
         if (full.error) { b.disabled = false; return; }
         const d = full.data, row2 = { title:j.title.replace(/ \(again\)$/, '') + ' (again)', text:d.text, language:d.language, mood:d.mood,
-          settings:Object.assign({}, d.settings || {}, { seed:Math.floor(Math.random() * 1e9) }) };
+          settings:Object.assign({}, d.settings || {}, { seed:Math.floor(Math.random() * 1e9), approved:undefined }) };
         if (d.voice_id) row2.voice_id = d.voice_id;
         const r = await safe(db().from('voice_jobs').insert(row2));
         if (r.error) { b.disabled = false; b.textContent = 'Try again'; return; }
@@ -1279,14 +1340,19 @@
   // ───── History: every narration that isn't a course lesson ─────
   async function viewHistory(main, S, reopen){
     const jobs = S.others.filter(j => !isAB(j) && !(isTake(j) && j.settings.picked === false));   // takes you didn't pick are put away
-    main.innerHTML = head('History', 'Your narrations, newest first. Course lessons are in Projects.') +
+    const zipable = jobs.filter(j => j.status === 'done' && j.output_mp3);
+    main.innerHTML = head('History', 'Your narrations, newest first. Course lessons are in Projects.',
+        zipable.length > 1 ? '<button type="button" class="vs-btn" id="vsZipAll">Download all (' + Math.min(50, zipable.length) + ' MP3s)</button>' : '') +
       '<section class="vs-card">' + (jobs.length ? jobs.map(j => {
         const [label, kind] = STATUS[j.status] || [j.status, ''], live = j.status === 'queued' || j.status === 'running', checks = (j.needs_review || []).length;
-        return '<div class="vs-job" data-id="' + j.id + '"><span><b>' + esc(j.title) + '</b> ' + chip(label, kind) + (checks ? ' ' + chip(checks + ' to check', 'warn') : '') +
+        const approved = !!(j.settings && j.settings.approved);
+        return '<div class="vs-job" data-id="' + j.id + '"><span><b>' + esc(j.title) + '</b> ' + chip(label, kind) + (checks ? ' ' + chip(checks + ' to check', 'warn') : '') + (approved ? ' ' + chip('Approved', 'ok') : '') +
           '<small>' + esc(ago(j.created_at)) + (j.duration_s ? ' · ' + mmss(j.duration_s) : '') + (j.mood ? ' · ' + esc(MOOD_NAMES[j.mood] || j.mood) : '') + (j.redo_piece != null ? ' · piece ' + j.redo_piece + ' redone' : '') + (j.settings ? ' · own settings' : '') +
           (lineSpot(S, j) ? ' · ' + esc(lineSpot(S, j)) : '') + (j.message && j.status !== 'done' && j.status !== 'queued' ? ' · ' + esc(j.message) : '') + '</small>' +
           (j.status === 'running' ? bar(Math.round((j.progress || 0) * 100), 100) : '') + '</span><span class="vs-btns">' +
-          (j.status === 'done' ? '<button class="vs-btn" type="button" data-act="play" aria-label="Play ' + esc(j.title) + '">Play</button>' + (j.output_mp3 ? '<button class="vs-btn" type="button" data-act="mp3" aria-label="Download MP3 of ' + esc(j.title) + '">MP3</button>' : '') + (j.output_wav ? '<button class="vs-btn" type="button" data-act="wav" aria-label="Download WAV of ' + esc(j.title) + '">WAV</button>' : '') + '<button class="vs-btn" type="button" data-act="pieces" aria-expanded="false" aria-label="Lines of ' + esc(j.title) + '">Lines</button>' +
+          (j.status === 'done' ? '<button class="vs-btn" type="button" data-act="play" aria-label="Play ' + esc(j.title) + '">Play</button>' +
+            (j.output_json ? '<button class="vs-btn" type="button" data-act="listen" aria-label="Listen to ' + esc(j.title) + ' with the script">Listen</button>' : '') +
+            (j.parent_id ? '' : '<button class="vs-btn" type="button" data-act="approve" aria-pressed="' + approved + '">' + (approved ? 'Approved' : 'Approve') + '</button>') + (j.output_mp3 ? '<button class="vs-btn" type="button" data-act="mp3" aria-label="Download MP3 of ' + esc(j.title) + '">MP3</button>' : '') + (j.output_wav ? '<button class="vs-btn" type="button" data-act="wav" aria-label="Download WAV of ' + esc(j.title) + '">WAV</button>' : '') + '<button class="vs-btn" type="button" data-act="pieces" aria-expanded="false" aria-label="Lines of ' + esc(j.title) + '">Lines</button>' +
             '<button class="vs-btn" type="button" data-act="share" aria-label="Copy a share link for ' + esc(j.title) + '">Share</button>' +
             (j.parent_id ? '' : '<button class="vs-btn" type="button" data-act="again" aria-label="Make ' + esc(j.title) + ' again with a fresh take">Make again</button>' +
               '<button class="vs-btn" type="button" data-act="edit" aria-label="Edit the text of ' + esc(j.title) + ' and make it again">Edit</button>') +
@@ -1294,6 +1360,17 @@
           compareBtns(j) + (live ? '<button class="vs-btn" type="button" data-act="cancel" aria-label="Cancel ' + esc(j.title) + '">Cancel</button>' : '') + '</span><div class="vs-jobmore" hidden></div></div>';
       }).join('') : empty('Nothing yet. Make one in Text to Speech.')) + '</section>';
     widths(main);
+    if ($('vsZipAll')) $('vsZipAll').addEventListener('click', async ev => {
+      const b = ev.currentTarget, list = zipable.slice(0, 50), files = []; b.disabled = true;
+      for (const j of list) {
+        b.textContent = 'Getting ' + (files.length + 1) + ' of ' + list.length + '…';
+        const u = await signedUrl(j.output_mp3); const buf = u && await fetch(u).then(x => x.ok ? x.arrayBuffer() : null).catch(() => null);
+        if (buf) files.push({ name:String(files.length + 1).padStart(2, '0') + '_' + fileName(j.title, 'mp3'), data:new Uint8Array(buf) });
+      }
+      const a = document.createElement('a'); a.href = URL.createObjectURL(zip(files)); a.download = 'Voice_Studio_narrations.zip';
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+      b.disabled = false; b.textContent = 'Downloaded ' + files.length + ' MP3s';
+    });
     main.querySelectorAll('.vs-job').forEach(row => row.addEventListener('click', async ev => {
       const b = ev.target.closest('button[data-act], button[data-cmp]'); if (!b) return;
       const j = jobs.find(x => x.id === row.dataset.id); if (!j) return;
@@ -1301,6 +1378,14 @@
       if (b.dataset.cmp) { more.hidden = false; if (!more.querySelector('.vs-piece')) more.innerHTML = ''; compare(main, S, j, b.dataset.cmp, more); return; }
       if (b.dataset.act === 'play') { more.hidden = false; if (!more.querySelector('.vs-piece')) more.innerHTML = ''; play(main, j.output_mp3 || j.output_wav, null, more); }
       else if (b.dataset.act === 'share') share(j, b);
+      else if (b.dataset.act === 'listen') { more.hidden = false; more.innerHTML = '<p class="p-loading">Loading…</p>'; listenMode(j, more); }
+      else if (b.dataset.act === 'approve') {
+        // approved = you're happy with it; it stays as it is (a mark for you and your team)
+        b.disabled = true; const st = Object.assign({}, j.settings || {}); st.approved = !st.approved; if (!st.approved) delete st.approved;
+        const r = await safe(db().from('voice_jobs').update({ settings:Object.keys(st).length ? st : null }).eq('id', j.id).select('id'));
+        b.disabled = false; if (r.error || !(r.data || []).length) { b.textContent = 'Try again'; return; }
+        reopen();
+      }
       else if (b.dataset.act === 'srt' || b.dataset.act === 'vtt') {
         b.disabled = true; const m = await manifest(j); b.disabled = false;
         if (!m) { b.textContent = 'Not available'; return; }
@@ -1327,19 +1412,19 @@
 
   // ───── Pronunciations ─────
   async function viewPron(main, S, reopen){
-    const [pron, openR] = await Promise.all([safe(db().from('voice_pronunciations').select('id,written,spoken,language,status,source,heard,note').eq('owner', uid()).order('written')),
+    const [pron, openR] = await Promise.all([safe(db().from('voice_pronunciations').select('id,written,spoken,language,status,source,heard,note,sample_path').eq('owner', uid()).order('written')),
       isAmr() ? { data:true } : safe(db().rpc('voice_pron_open'))]);
     const canSave = isAmr() || openR.data === true;
     const all = pron.data || [], waiting = all.filter(p => p.status === 'pending'), mine = all.filter(p => p.status !== 'pending');
     const SRC = { auto:'found by the word check', dictionary:'from the dictionary' };
     main.innerHTML = head('Pronunciations', 'How names and words are said. Used for every narration' + (isAmr() ? ', lessons included.' : '.'),
         '<button type="button" class="vs-btn" id="vsPronOut"' + (mine.length ? '' : ' disabled') + '>Export list</button>' +
-        (canSave ? '<label class="vs-btn vs-file">Import list<input type="file" id="vsPronIn" accept=".csv,text/csv"></label>' : '')) +
+        (canSave ? '<label class="vs-btn vs-file">Import list<input type="file" id="vsPronIn" accept=".csv,text/csv"></label><button type="button" class="vs-btn" id="vsPronRe">Add real estate short forms</button>' : '')) +
       (waiting.length ? '<section class="vs-card" aria-labelledby="pwH"><div class="vs-cardhead"><h2 id="pwH">Waiting for you</h2><span class="vs-note">' + waiting.length + ' found by your computer</span></div>' +
         '<p class="vs-note">Your computer heard these words come out wrong and found a spelling that sounded right. Nothing changes until you approve it.</p>' +
         waiting.map(p => '<div class="vs-job" data-pid="' + p.id + '"><span><b>' + esc(p.written) + '</b> → ' + esc(p.spoken) + ' <small>' + (p.language === 'ar' ? 'Arabic' : 'English') +
           (p.heard ? ' · Whisper heard “' + esc(p.heard) + '”' : '') + (SRC[p.source] ? ' · ' + esc(SRC[p.source]) : '') + (p.note ? ' · ' + esc(p.note) : '') + '</small></span>' +
-          '<span class="vs-btns"><button class="vs-go" type="button" data-pa="ok">Approve</button><button class="vs-btn" type="button" data-pa="edit">Change</button><button class="vs-btn" type="button" data-pa="no">Reject</button></span></div>').join('') + '</section>' : '') +
+          '<span class="vs-btns">' + (p.sample_path ? '<button class="vs-btn" type="button" data-pa="hear" aria-label="Hear the fix for ' + esc(p.written) + '">Hear it</button>' : '') + '<button class="vs-go" type="button" data-pa="ok">Approve</button><button class="vs-btn" type="button" data-pa="edit">Change</button><button class="vs-btn" type="button" data-pa="no">Reject</button></span></div>').join('') + '</section>' : '') +
       '<section class="vs-card">' + (mine.length ? mine.map(p => '<div class="vs-job"><span><b>' + esc(p.written) + '</b> → ' + esc(p.spoken) + ' <small>' + (p.language === 'ar' ? 'Arabic' : 'English') + (SRC[p.source] ? ' · ' + esc(SRC[p.source]) : '') + '</small></span>' +
         '<button class="vs-btn" type="button" data-pron="' + p.id + '" aria-label="Remove ' + esc(p.written) + '">Remove</button></div>').join('') : empty('None yet.')) +
       (canSave ? '<form class="vs-form vs-row" id="vsPron" novalidate>' + f('Written', '<input class="vs-input" type="text" id="vsPw" maxlength="80" placeholder="Hillsborough">') +
@@ -1357,6 +1442,17 @@
     // a list to share with the team: a CSV of written, said as, language
     const csvCell = v => /[",\n]/.test(v) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
     $('vsPronOut').addEventListener('click', () => saveText('pronunciations.csv', 'written,say it as,language\n' + mine.map(p => [p.written, p.spoken, p.language].map(csvCell).join(',')).join('\n') + '\n', 'text/csv'));
+    // the short forms every real estate script uses, said the way investors say them
+    const RE_WORDS = [['FSBO', 'fizbo'], ['FSBOs', 'fizbos'], ['ARV', 'A R V'], ['MAO', 'M A O'], ['LLC', 'L L C'], ['REO', 'R E O'], ['HOA', 'H O A'], ['DOM', 'D O M'],
+      ['MLS', 'M L S'], ['CMA', 'C M A'], ['EMD', 'E M D'], ['JV', 'J V'], ['PITI', 'pitty'], ['DSCR', 'D S C R'], ['LTV', 'L T V'], ['ROI', 'R O I'], ['NOI', 'N O I'], ['HUD', 'hud'], ['FHA', 'F H A'], ['VA', 'V A']];
+    if ($('vsPronRe')) $('vsPronRe').addEventListener('click', async ev => {
+      const have = new Set(mine.concat(waiting).map(p => p.written + '|' + p.language)), add = RE_WORDS.filter(r => !have.has(r[0] + '|en')).map(r => ({ written:r[0], spoken:r[1], language:'en', status:'approved', source:'you' }));
+      if (!add.length) { ev.currentTarget.textContent = 'All added already'; return; }
+      ev.currentTarget.disabled = true;
+      const r = await safe(db().from('voice_pronunciations').upsert(add, { onConflict:'owner,written,language', ignoreDuplicates:true }));
+      if (r.error) { ev.currentTarget.disabled = false; return say('vsPmsg', errText(r, 'Couldn’t add them.')); }
+      reopen();
+    });
     if ($('vsPronIn')) $('vsPronIn').addEventListener('change', async ev => {
       const file = ev.target.files[0]; if (!file) return;
       const rows = (await file.text()).split(/\r?\n/).slice(1).map(l => { const out = []; let cur = '', q = false;
@@ -1373,6 +1469,7 @@
     }));
     main.querySelectorAll('[data-pid] [data-pa]').forEach(b => b.addEventListener('click', async () => {
       const p = waiting.find(x => x.id === b.closest('[data-pid]').dataset.pid); if (!p) return;
+      if (b.dataset.pa === 'hear') { play(main, p.sample_path, null, b.closest('[data-pid]')); return; }
       if (b.dataset.pa === 'edit') { if ($('vsPw')) { $('vsPw').value = p.written; $('vsPs').value = p.spoken; $('vsPl').value = p.language; $('vsPs').focus(); } return; }
       b.disabled = true;
       const r = b.dataset.pa === 'ok' ? await safe(db().from('voice_pronunciations').update({ status:'approved' }).eq('id', p.id).select('id'))
@@ -1485,6 +1582,7 @@
       '<tr><td>' + chip('Not recommended', 'bad') + '</td><td>Intel or AMD graphics only, under 8 GB memory, or 32-bit</td><td>Any</td><td>Roughly 10x to 15x real time</td></tr>' +
       '</tbody></table></div></section>';
     if ($('vsHrs')) viewHours($('vsHrs'), S, reopen);
+    if (isAmr()) { const tu = document.createElement('section'); tu.className = 'vs-card'; tu.innerHTML = '<p class="p-loading">Loading team usage…</p>'; main.appendChild(tu); teamUsage(tu); }
     $('vsLinkBtn').addEventListener('click', async ev => {
       const b = ev.currentTarget; b.disabled = true;
       const r = await safe(db().rpc('voice_link_create'));
