@@ -96,6 +96,24 @@ window.CashTeam = function(db){
     loadCodeStatus();
   }
   function showNotice(msg){ $('notice').textContent = msg; $('notice').hidden = false; }
+  // Hold the mouse on the history and drag to move left, right, up or down (a short click still works as a click)
+  (function dragScroll(box){
+    if (!box) return;
+    let start = null, moved = false;
+    box.addEventListener('pointerdown', e => {
+      if (e.pointerType !== 'mouse' || e.button !== 0 || e.target.closest('button, a, input, select, textarea, label')) return;
+      start = { x:e.clientX, y:e.clientY, l:box.scrollLeft, t:box.scrollTop }; moved = false;
+    });
+    window.addEventListener('pointermove', e => {
+      if (!start) return;
+      const dx = e.clientX - start.x, dy = e.clientY - start.y;
+      if (!moved && Math.abs(dx) + Math.abs(dy) < 5) return;
+      if (!moved) { moved = true; box.classList.add('dragging'); }
+      box.scrollLeft = start.l - dx; box.scrollTop = start.t - dy; e.preventDefault();
+    });
+    window.addEventListener('pointerup', () => { if (!start) return; start = null; setTimeout(() => box.classList.remove('dragging')); });
+    box.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+  })($('histScroll'));
   function clearNotice(){ $('notice').hidden = true; }
 
   // How many pounds $1 was for a payment. Starts at today's rate; resolves the typed rate, or null when backed out.
@@ -604,7 +622,7 @@ window.CashTeam = function(db){
         const b = document.createElement('button'); b.type = 'button'; b.className = 'note-btn';
         b.innerHTML = NOTE_ICON + '<span>View</span>'; b.setAttribute('aria-label', 'View ' + r.name + "'s note for " + fmtDate(r.date));
         b.addEventListener('click', () => openNote(r)); nc.appendChild(b);
-      } else nc.innerHTML = '<span class="no-note">No note</span>';
+      } else nc.innerHTML = '<span class="no-note" title="No note">—</span>';
       if (r.editedAt) { const e = document.createElement('span'); e.className = 'edited'; e.textContent = 'Edited'; e.title = 'Edited ' + new Date(r.editedAt).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }); tr.querySelector('.c-date').appendChild(e); }
 
       tr.querySelector('.del.edit').addEventListener('click', () => openEdit(r));
