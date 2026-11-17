@@ -46,6 +46,14 @@
     // Round 17: daily alerts email
     'Email me a daily list of new alerts':'أرسل لي بريدًا يوميًا بالتنبيهات الجديدة', 'Cairo time':'بتوقيت القاهرة', 'at':'في',
     'Saved. Only alerts you haven’t opened are sent, once a day.':'تم الحفظ. تُرسل التنبيهات التي لم تفتحها فقط، مرة واحدة يوميًا.', 'Daily email off.':'البريد اليومي متوقف.',
+    'Version history':'سجل النسخ', 'Put this version back':'أعد هذه النسخة', 'Sure? Click again':'متأكد؟ اضغط مرة أخرى', 'View':'عرض', 'Hide':'إخفاء',
+    'Putting a version back keeps the current words as a version too.':'عند إعادة نسخة، يُحفظ النص الحالي كنسخة أيضًا.',
+    'This week':'هذا الأسبوع', 'Streak':'أيام متتالية', 'Days worked':'أيام العمل', 'Weekly targets':'الأهداف الأسبوعية', 'Save weekly targets':'احفظ الأهداف الأسبوعية', 'Rep':'المندوب',
+    'Dials':'الاتصالات', 'Conversations':'المحادثات', 'Offers':'العروض', 'Appointments':'المواعيد', 'Monday to today, Cairo time':'من الإثنين حتى اليوم، بتوقيت القاهرة',
+    'Call library':'مكتبة المكالمات', 'Objection':'الاعتراض', 'Stage':'المرحلة', 'Any objection':'أي اعتراض', 'Any stage':'أي مرحلة', 'Not tagged yet':'غير مصنّفة بعد',
+    'Play':'تشغيل', 'Tag':'صنّف', 'Edit tags':'عدّل التصنيف', 'Save tags':'احفظ التصنيف', 'Stage of the call':'مرحلة المكالمة', 'Objections in this call':'الاعتراضات في هذه المكالمة', 'Note (optional)':'ملاحظة (اختياري)',
+    'Opening':'الافتتاح', 'Building rapport':'بناء العلاقة', 'Motivation':'الدافع', 'Timeline':'الجدول الزمني', 'Property condition':'حالة العقار', 'Price and numbers':'السعر والأرقام',
+    'Making the offer':'تقديم العرض', 'Handling objections':'التعامل مع الاعتراضات', 'Closing and next step':'الإغلاق والخطوة التالية', 'Follow-up call':'مكالمة متابعة',
   });
 })();
 
