@@ -217,9 +217,79 @@
     entries = en.data.map(toEntry);
     switchView(view);
     loadFx().then(render);
+    planLoad();
     checkBackup();
     renderFactors();
   }
+  // ---------- Round 17: monthly budgets and savings goals ----------
+  // Budgets: a monthly limit per expense category, in pounds, against what was spent in the month on screen
+  // (this month when "All time" or a custom range is picked). Spread expenses count only their days in the month.
+  // Goals: a target in pounds, filled by "Savings" entries from the start date on, plus what was saved before it.
+  let budgets = [], goals = [], planReady = false;
+  async function planLoad(){
+    const [b, g] = await Promise.all([db.from('cash_budgets').select('*').order('category'), db.from('cash_goals').select('*').order('done').order('created_at')]);
+    if (b.error || g.error) { $('planCard').hidden = true; return; }
+    budgets = b.data || []; goals = g.data || []; planReady = true; renderPlan();
+  }
+  const egpIn = (e, test) => { if (!(e.spread && e.periodStart)) return test(e.date) ? egpOf(e) : 0; const days = dayList(e); return days.length ? egpOf(e) * days.filter(test).length / days.length : 0; };
+  const pctW = (a, b) => b > 0 ? Math.max(2, Math.min(100, Math.round(a / b * 100))) : 0;
+  function renderPlan(){
+    if (!planReady || !$('planCard')) return;
+    const m = oneMonth() ? month : thisMonth(), inM = d => d.slice(0, 7) === m;
+    $('planLabel').textContent = monthLabel(m);
+    const spentBy = {};
+    entries.filter(e => e.kind === 'expense' && !isSavings(e)).forEach(e => { const k = (e.category || 'Other').trim(); spentBy[k] = (spentBy[k] || 0) + egpIn(e, inM); });
+    const cats = [...new Set(CATS.expense.filter(c => c !== 'Savings').concat(Object.keys(spentBy)))].sort();
+    $('bCats').innerHTML = cats.map(c => '<option value="' + escHtml(c) + '">').join('');
+    const totalB = budgets.reduce((a, b) => a + +b.monthly_egp, 0), totalS = budgets.reduce((a, b) => a + (spentBy[b.category] || 0), 0);
+    $('budgetList').innerHTML = budgets.length ? budgets.map(b => { const sp = spentBy[b.category] || 0, lim = +b.monthly_egp, over = sp > lim;
+      return '<div class="plan-row"><div class="plan-top"><b>' + escHtml(b.category) + '</b><span class="' + (over ? 'neg' : '') + '">' + egp(sp) + ' of ' + egp(lim) + '</span><button type="button" class="icon-btn" data-bdel="' + escHtml(b.category) + '" aria-label="Remove the ' + escHtml(b.category) + ' budget">' + TRASH + '</button></div>' +
+        '<div class="plan-bar' + (over ? ' over' : sp > lim * .8 ? ' near' : '') + '"><i data-pw="' + pctW(sp, lim) + '"></i></div><small>' + (over ? egp(sp - lim) + ' over' : egp(lim - sp) + ' left') + '</small></div>'; }).join('') +
+      '<div class="plan-row plan-total"><div class="plan-top"><b>All budgets</b><span>' + egp(totalS) + ' of ' + egp(totalB) + '</span></div></div>'
+      : '<p class="hint">No budgets yet. Add a monthly limit for a category below.</p>';
+    const savedFrom = d0 => entries.filter(isSavings).reduce((a, e) => a + egpIn(e, d => d >= d0), 0);
+    const savedThisMonth = entries.filter(isSavings).reduce((a, e) => a + egpIn(e, d => d.slice(0, 7) === thisMonth()), 0);
+    $('goalList').innerHTML = goals.length ? goals.map(g => { const got = +g.saved_before + savedFrom(g.start_on), tgt = +g.target_egp, left = Math.max(0, tgt - got);
+      let line = Math.round(got / tgt * 100) + '% · ' + (left ? egp(left) + ' to go' : 'reached');
+      if (g.due_on && left) { const now = new Date(), due = new Date(g.due_on + 'T00:00'), months = Math.max(1, (due.getFullYear() - now.getFullYear()) * 12 + due.getMonth() - now.getMonth() + (due.getDate() >= now.getDate() ? 0 : 0));
+        line += due < now ? ' · the date passed' : ' · ' + egp(left / months) + ' a month to reach it by ' + fmtDate(g.due_on); }
+      const monthly = g.monthly_egp ? '<small>This month: ' + egp(savedThisMonth) + ' of ' + egp(+g.monthly_egp) + ' saved' + (savedThisMonth >= +g.monthly_egp ? ' ✓' : '') + '</small>' : '';
+      return '<div class="plan-row' + (g.done ? ' done' : '') + '"><div class="plan-top"><b>' + escHtml(g.name) + '</b><span>' + egp(got) + ' of ' + egp(tgt) + '</span>' +
+        '<button type="button" class="icon-btn" data-gdone="' + g.id + '" aria-label="' + (g.done ? 'Mark ' + escHtml(g.name) + ' as open' : 'Mark ' + escHtml(g.name) + ' as done') + '">' + (g.done ? '↺' : '✓') + '</button>' +
+        '<button type="button" class="icon-btn" data-gdel="' + g.id + '" aria-label="Remove the ' + escHtml(g.name) + ' goal">' + TRASH + '</button></div>' +
+        '<div class="plan-bar goal"><i data-pw="' + pctW(got, tgt) + '"></i></div><small>' + line + ' · counting from ' + fmtDate(g.start_on) + '</small>' + monthly + '</div>'; }).join('')
+      : '<p class="hint">No goals yet. Savings you log with “+ Add savings” fill them.</p>';
+    if (!$('gStart').value) $('gStart').value = iso(new Date());
+    $('planCard').querySelectorAll('[data-pw]').forEach(i => { i.style.width = i.dataset.pw + '%'; });
+  }
+  const planSay = t => { $('planMsg').textContent = t; if (t) setTimeout(() => { if ($('planMsg').textContent === t) $('planMsg').textContent = ''; }, 5000); };
+  $('budgetForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const category = $('bCat').value.trim(), amt = +$('bAmt').value;
+    if (!category || !(amt >= 0) || $('bAmt').value === '') return planSay('Pick a category and a monthly limit.');
+    const r = await db.from('cash_budgets').upsert({ category, monthly_egp:amt, updated_at:new Date().toISOString() }, { onConflict:'category' });
+    if (r.error) return planSay('Couldn’t save the budget. Try again.');
+    budgets = budgets.filter(b => b.category !== category).concat([{ category, monthly_egp:amt }]).sort((a, b) => a.category.localeCompare(b.category));
+    $('bCat').value = ''; $('bAmt').value = ''; renderPlan(); planSay('Budget saved.');
+  });
+  $('goalForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = $('gName').value.trim(), target = +$('gTarget').value;
+    if (!name || !(target > 0)) return planSay('Name the goal and give it a target.');
+    const row = { name, target_egp:target, start_on:$('gStart').value || iso(new Date()), saved_before:+$('gBefore').value || 0, due_on:$('gDue').value || null, monthly_egp:$('gMonthly').value ? +$('gMonthly').value : null };
+    const r = await db.from('cash_goals').insert(row).select().single();
+    if (r.error) return planSay('Couldn’t add the goal. Try again.');
+    goals.push(r.data); ['gName', 'gTarget', 'gBefore', 'gDue', 'gMonthly'].forEach(id => $(id).value = ''); renderPlan(); planSay('Goal added.');
+  });
+  $('planCard').addEventListener('click', async e => {
+    const bd = e.target.closest('[data-bdel]'), gd = e.target.closest('[data-gdel]'), gk = e.target.closest('[data-gdone]');
+    if (bd) { if (bd.dataset.sure !== '1') { bd.dataset.sure = '1'; planSay('Click the bin again to remove the ' + bd.dataset.bdel + ' budget.'); setTimeout(() => { bd.dataset.sure = ''; }, 4000); return; }
+      const r = await db.from('cash_budgets').delete().eq('category', bd.dataset.bdel); if (r.error) return planSay('Couldn’t remove it.'); budgets = budgets.filter(b => b.category !== bd.dataset.bdel); renderPlan(); return; }
+    if (gd) { if (gd.dataset.sure !== '1') { gd.dataset.sure = '1'; planSay('Click the bin again to remove this goal. Your savings entries stay.'); setTimeout(() => { gd.dataset.sure = ''; }, 4000); return; }
+      const r = await db.from('cash_goals').delete().eq('id', +gd.dataset.gdel); if (r.error) return planSay('Couldn’t remove it.'); goals = goals.filter(g => g.id !== +gd.dataset.gdel); renderPlan(); return; }
+    if (gk) { const g = goals.find(x => x.id === +gk.dataset.gdone); const r = await db.from('cash_goals').update({ done:!g.done }).eq('id', g.id); if (!r.error) { g.done = !g.done; renderPlan(); } }
+  });
+
   function showNotice(msg){ $('notice').textContent = msg; $('notice').hidden = false; }
   function clearNotice(){ $('notice').hidden = true; }
 
@@ -388,6 +458,7 @@
     const allSaved = month === 'all' ? t.E.savings : totals(() => true).E.savings, savedE = t.E.savings;
     $('tSaved').textContent = savedE ? egp(savedE) + ' saved' + (allSaved > savedE + .004 ? ' · ' + egp(allSaved) + ' in total' : '') : allSaved ? egp(allSaved) + ' saved in total' : '';
     paintEgp();
+    renderPlan();
 
     renderSplit(t);
 

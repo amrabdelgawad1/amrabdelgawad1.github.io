@@ -300,3 +300,23 @@ html .hist-scroll.dragging{ cursor:grabbing; user-select:none; }
 html .hist-scroll.dragging *{ cursor:grabbing !important; }
 @media (min-width:641px){ html .team .hist-scroll thead th{ position:sticky; top:0; z-index:2; background:var(--bg2); padding-top:6px; } html .team .hist-scroll table.log thead th:last-child{ top:0; right:0; z-index:3; } }
 @media (max-width:640px){ html .hist-scroll{ max-height:72vh; cursor:auto; } }
+
+/* Round 17: budgets and savings goals */
+html .plan-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:22px; }
+html .plan-h{ margin:0 0 10px; font-size:15px; }
+html .plan-h small{ font-weight:500; color:var(--muted); }
+html .plan-row{ display:grid; gap:5px; padding:10px 0; border-bottom:1px solid var(--border); }
+html .plan-row.done{ opacity:.6; }
+html .plan-row small{ color:var(--muted); font-size:12.5px; }
+html .plan-top{ display:flex; align-items:center; gap:8px; }
+html .plan-top b{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+html .plan-top span{ font-variant-numeric:tabular-nums; font-size:13.5px; }
+html .plan-top span.neg{ color:var(--red, #b42318); font-weight:700; }
+html .plan-total{ border-bottom:0; }
+html .plan-bar{ height:9px; border-radius:99px; background:var(--bg3, #F1ECE2); overflow:hidden; }
+html .plan-bar i{ display:block; height:100%; width:0; border-radius:99px; background:var(--green, #067647); transition:width .4s; }
+html .plan-bar.near i{ background:#d97706; }
+html .plan-bar.over i{ background:var(--red, #b42318); }
+html .plan-bar.goal i{ background:var(--accent, #E07A5F); }
+html .plan-form{ display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; margin-top:12px; }
+html .plan-form .label{ flex:1 1 140px; }
