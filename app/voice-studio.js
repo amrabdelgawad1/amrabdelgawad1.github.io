@@ -682,6 +682,72 @@
   }
 
   // ───── Text to Speech ─────
+  // ───── Script tools (round: tools) ─────
+  const DRAFT_KEY = 'vs-draft-v1';
+  const draftGet = () => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch(e) { return null; } };
+  const draftSet = d => { try { if (d && (d.text || '').trim()) localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); else localStorage.removeItem(DRAFT_KEY); } catch(e) {} };
+  const TEMPLATES = {
+    intro:['Lesson intro', '[warm] Welcome back. In this lesson, we\'re going to cover [topic].\n\nBy the end, you\'ll know exactly how to [result]. Let\'s get into it.'],
+    recap:['Lesson recap', '[teaching] Let\'s recap what we covered.\n\nFirst, [point one]. Second, [point two]. And third, [point three].\n\n[warm] In the next lesson, we\'ll [next topic]. See you there.'],
+    outro:['Course outro', '[warm] That\'s the end of this module. Take a minute to practice what you learned before moving on.\n\nIf you have a question, send it in the portal and I\'ll answer it.'],
+    ad:['Short ad read', '[energetic] Want to [result] without [pain]?\n\n[teaching] [Product] helps you [benefit]. [Proof, one line].\n\n[warm] Go to [link] and start today.'],
+    vm:['Voicemail drop', '[warm] Hi, this is Amr. I\'m calling about the property on [street]. I had a quick question for you. Give me a call back when you get a minute at [number]. Thanks.']
+  };
+  // Pasted text from documents and web pages: drop what isn't meant to be read out loud
+  function cleanScript(t){
+    return t.replace(/\r\n/g, '\n')
+      .replace(/https?:\/\/\S+/g, '')                       // links
+      .replace(/^[ \t]*(page[ \t]*)?\d+[ \t]*(of[ \t]*\d+)?[ \t]*$/gim, '') // page numbers
+      .replace(/^#{1,6}\s*/gm, '').replace(/\*\*|__|`/g, '') // markdown marks
+      .replace(/^[ \t]*[-*•][ \t]+/gm, '')                         // bullet dots
+      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '') // emoji
+      .replace(/\(\s*\)|\[\s*\]/g, '')
+      .replace(/[ \t]+/g, ' ').replace(/ +\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  // [pause], [beat], [breath] in a script: a longer stop. The PC reads "..." as a pause, so they become that.
+  const marksToSpeech = t => t.replace(/\[(pause(?:\s+\d+(?:\.\d+)?\s*s)?|beat|breath)\]/gi, ' ... ');
+  // Text out of a Word file (.docx is a zip; word/document.xml holds the text), with the browser's own unzip
+  async function docxText(file){
+    const buf = new Uint8Array(await file.arrayBuffer()), dv = new DataView(buf.buffer);
+    let p = buf.length - 22; while (p > 0 && dv.getUint32(p, true) !== 0x06054b50) p--;
+    if (p <= 0) throw new Error('not a docx');
+    let at = dv.getUint32(p + 16, true); const n = dv.getUint16(p + 10, true);
+    for (let k = 0; k < n; k++) {
+      const method = dv.getUint16(at + 10, true), csize = dv.getUint32(at + 20, true), nlen = dv.getUint16(at + 28, true), xlen = dv.getUint16(at + 30, true), clen = dv.getUint16(at + 32, true), off = dv.getUint32(at + 42, true);
+      const name = new TextDecoder().decode(buf.subarray(at + 46, at + 46 + nlen));
+      if (name === 'word/document.xml') {
+        const ln = dv.getUint16(off + 26, true), lx = dv.getUint16(off + 28, true), data = buf.subarray(off + 30 + ln + lx, off + 30 + ln + lx + csize);
+        const raw = method === 0 ? data : new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+        const xml = new TextDecoder().decode(raw);
+        return xml.replace(/<w:tab\/>/g, ' ').replace(/<\/w:p>/g, '\n\n').replace(/<[^>]+>/g, '')
+          .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/\n{3,}/g, '\n\n').trim();
+      }
+      at += 46 + nlen + xlen + clen;
+    }
+    throw new Error('no text found');
+  }
+  // Captions: SRT and VTT from a narration's lines and times
+  function captionsFile(m, kind){
+    const t = s2 => { s2 = Math.max(0, s2 || 0); const h = Math.floor(s2 / 3600), mi = Math.floor(s2 % 3600 / 60), se = Math.floor(s2 % 60), ms = Math.round((s2 % 1) * 1000);
+      return String(h).padStart(2, '0') + ':' + String(mi).padStart(2, '0') + ':' + String(se).padStart(2, '0') + (kind === 'srt' ? ',' : '.') + String(ms).padStart(3, '0'); };
+    const ps = (m.pieces || []).filter(p => (p.text || '').trim());
+    const lines = ps.map((p, k) => { const end = p.end || (ps[k + 1] ? ps[k + 1].start : (p.start || 0) + 4);
+      return (kind === 'srt' ? (k + 1) + '\n' : '') + t(p.start) + ' --> ' + t(end) + '\n' + String(p.text).replace(/^\[[a-z_]+\]\s*/i, '').trim() + '\n'; });
+    return (kind === 'vtt' ? 'WEBVTT\n\n' : '') + lines.join('\n');
+  }
+  function saveText(name, text, type){
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type:type || 'text/plain' })); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+  }
+  // Your numbers this month, from your own narrations
+  function statsBox(S){
+    const since = new Date(); since.setDate(1); since.setHours(0, 0, 0, 0);
+    const mine = (S.others || []).filter(j => j.status === 'done' && !j.parent_id && !isAB(j) && new Date(j.finished_at || j.created_at) >= since);
+    const secs = mine.reduce((t, j) => t + (j.duration_s || 0), 0), clean = mine.filter(j => !(j.needs_review || []).length).length;
+    return box('This month', '<div class="vs-chips">' + chip(mine.length + ' narration' + (mine.length === 1 ? '' : 's')) + chip(mmss(secs) + ' of audio') +
+      (mine.length ? chip(Math.round(100 * clean / mine.length) + '% passed the word check first time', clean === mine.length ? 'ok' : '') : '') + '</div>');
+  }
+
   async function viewTts(main, S, reopen){
     const moods = ((S.wk && S.wk.moods) || ['teaching']).filter(m => !/_ar$/.test(m)).sort((a, b) => (a === 'teaching' ? -1 : b === 'teaching' ? 1 : 0));
     const hasAr = !!(S.wk && (S.wk.moods || []).includes('teaching_ar'));
@@ -695,14 +761,21 @@
 
     main.innerHTML = '<div class="vs-split"><section class="vs-col" aria-labelledby="ttsH">' +
       head('Text to Speech', 'Type or paste a script. It’s read in your cloned voice, on your own PC.',
-        (isAmr() ? '<a class="vs-btn" href="#voice/projects">Open a lesson</a>' : '') + '<label class="vs-btn vs-file">Upload .txt<input type="file" id="vsTxt" accept=".txt,text/plain"></label>').replace('<h1>', '<h1 id="ttsH">') +
+        (isAmr() ? '<a class="vs-btn" href="#voice/projects">Open a lesson</a>' : '') + '<label class="vs-btn vs-file">Open a file<input type="file" id="vsTxt" accept=".txt,.md,.srt,.vtt,.docx,text/plain"></label>').replace('<h1>', '<h1 id="ttsH">') +
       '<form class="vs-card vs-script" id="vsForm" novalidate><div class="vs-titlerow"><label for="vsTitle" class="vs-cap">Title</label><input type="text" id="vsTitle" class="vs-titlein" maxlength="120" placeholder="Optional, the first line is used if empty"></div><label for="vsText" class="vs-cap">Script</label>' +
       '<textarea id="vsText" rows="12" maxlength="200000" placeholder="Paste the script. A blank line starts a new paragraph. Start a paragraph with a mood tag like [warm] to change the mood. English and Arabic can be mixed."></textarea>' +
       '<div class="vs-bar"><span id="vsEst" class="vs-note" role="status">Free, no credits</span><span class="vs-btns">' +
       '<button type="button" class="vs-btn vs-sheetbtn" id="vsSheetBtn" aria-controls="vsSide" aria-expanded="false">' + icon('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>', 16) + '<span id="vsSheetSum">' + esc(MOOD_NAMES[mood]) + '</span></button>' +
       '<label class="vs-sr" for="vsTag">Insert mood tag</label><select id="vsTag" class="vs-btn vs-select"><option value="">Insert mood tag</option>' + moods.map(m => opt(m, MOOD_NAMES[m] || m)).join('') + '</select>' +
       '<button type="button" class="vs-btn" id="vsCheck">Check words</button><button class="vs-go" type="submit">' + PLAY + 'Generate</button></span></div><p class="vs-note vs-msg" id="vsMsg" role="status"></p>' +
-      '<div class="vs-checks" id="vsChecks" hidden></div></form>' +
+      '<div class="vs-checks" id="vsChecks" hidden></div>' +
+      '<div class="vs-tools"><label class="vs-sr" for="vsTpl">Start from a template</label><select id="vsTpl" class="vs-btn vs-select"><option value="">Templates</option>' + Object.keys(TEMPLATES).map(k => opt(k, TEMPLATES[k][0])).join('') + '</select>' +
+        '<button type="button" class="vs-btn" id="vsClean" title="Removes links, page numbers, bullets and emoji">Clean up text</button>' +
+        '<button type="button" class="vs-btn" id="vsFindBtn" aria-expanded="false" aria-controls="vsFind">Find and replace</button>' +
+        '<label class="vs-sr" for="vsMark">Insert a mark</label><select id="vsMark" class="vs-btn vs-select"><option value="">Insert a pause</option>' + opt('[pause]', 'Pause') + opt('[beat]', 'Short beat') + opt('[breath]', 'Breath') + '</select>' +
+        '<button type="button" class="vs-link" id="vsClear">Clear</button></div>' +
+      '<div class="vs-find" id="vsFind" hidden><label class="vs-sr" for="vsFindA">Find</label><input class="vs-input" id="vsFindA" placeholder="Find"><label class="vs-sr" for="vsFindB">Replace with</label><input class="vs-input" id="vsFindB" placeholder="Replace with">' +
+        '<button type="button" class="vs-btn" id="vsFindGo">Replace all</button><span class="vs-note" id="vsFindMsg" role="status"></span></div></form>' +
       '<section class="vs-card" aria-labelledby="takeH"><div class="vs-cardhead"><h2 id="takeH">Latest take</h2><span class="vs-links" id="vsDl"></span></div><div id="vsTake"></div></section>' +
       '</section><aside class="vs-side" id="vsSide" aria-label="Voice settings"><div class="vs-sheethead"><b>Voice and settings</b><button type="button" class="vs-btn" id="vsSheetClose">Done</button></div>' +
       box('Voice', (isAmr() ? '<div class="vs-voice"><span class="vs-avatar" aria-hidden="true">AA</span><span><b>Amr · cloned voice</b><small>English' + (hasAr ? ' and Arabic (فصحى)' : '') + '</small></span><a href="#voice/voices">Change</a></div>'
@@ -717,7 +790,7 @@
         '<button type="button" class="vs-link vs-reset" id="vsReset">Back to how your voice was tuned</button>' +
         (workerAtLeast(S.wk, SLIDER_VERSION) ? '' : '<p class="vs-note">The PC starts using these after its next restart. Until then, scripts use your voice as tuned.</p>') +
         '<p class="vs-note">Every line is checked with Whisper; up to 4 takes, the best one kept. Course lessons always use your voice as tuned.</p>') +
-      box('History', plain.slice(0, 3).map(j => '<div class="vs-hist"><button type="button" class="vs-round" data-play="' + j.id + '" aria-label="Play ' + esc(j.title) + '"' + (j.status === 'done' ? '' : ' disabled') + '>' + PLAY + '</button><span><b>' + esc(j.title) + '</b><small>' +
+      statsBox(S) + box('History', plain.slice(0, 3).map(j => '<div class="vs-hist"><button type="button" class="vs-round" data-play="' + j.id + '" aria-label="Play ' + esc(j.title) + '"' + (j.status === 'done' ? '' : ' disabled') + '>' + PLAY + '</button><span><b>' + esc(j.title) + '</b><small>' +
         (j.duration_s ? mmss(j.duration_s) + ' · ' : '') + esc(MOOD_NAMES[j.mood] || j.mood || '') + ' · ' + esc(ago(j.created_at)) + '</small></span></div>').join('') +
         (plain.length ? '<a class="vs-more" href="#voice/history">All narrations</a>' : empty('Nothing yet.'))) +
       '</aside></div>';
@@ -749,12 +822,45 @@
 
     const text = $('vsText');
     // rough time on the RTX 3050: about 15 characters a second of audio
-    const est = () => { const n = text.value.length, secs = n / 15; say('vsEst', n ? n.toLocaleString() + ' characters · about ' + mmss(secs) + ' of audio' + (S.ratio ? ' · about ' + hours(secs * S.ratio) + ' to make' : '') + ' · free, no credits' : 'Free, no credits'); };
-    text.addEventListener('input', est);
+    const est = () => { const n = text.value.length, words = (text.value.match(/\S+/g) || []).length, secs = n / 15;
+      say('vsEst', n ? words.toLocaleString() + ' words · ' + n.toLocaleString() + ' characters · about ' + mmss(secs) + ' of audio' + (S.ratio ? ' · about ' + hours(secs * S.ratio) + ' to make' : '') + ' · free, no credits' : 'Free, no credits');
+      draftSet({ text:text.value, title:$('vsTitle').value }); };
+    // a draft (typed earlier, or sent here by "Edit and make again") comes back after a refresh
+    const dr = draftGet();
+    if (dr && dr.text && !text.value) { text.value = dr.text; $('vsTitle').value = dr.title || ''; if (dr.lang) $('vsLang').value = dr.lang; say('vsMsg', dr.note || 'Your draft is back.'); }
+    text.addEventListener('input', est); $('vsTitle').addEventListener('input', est); est();
     $('vsTxt').addEventListener('change', async ev => {
       const file = ev.target.files[0]; if (!file) return;
-      if (file.size > 400000) return say('vsMsg', 'That file is too big for one narration. Split it into parts.');
-      text.value = (await file.text()).replace(/\r\n/g, '\n'); est(); text.focus();
+      if (file.size > 8000000) return say('vsMsg', 'That file is too big for one narration. Split it into parts.');
+      let t;
+      try {
+        if (/\.docx$/i.test(file.name)) t = await docxText(file);
+        else { t = await file.text(); if (/\.(srt|vtt)$/i.test(file.name)) t = t.replace(/^WEBVTT.*$/m, '').replace(/^\d+\s*$/gm, '').replace(/^[\d:.,]+\s*-->.*$/gm, '').replace(/\n{2,}/g, '\n').trim(); }
+      } catch(e) { return say('vsMsg', 'Couldn’t read that file. Copy the text and paste it instead.'); }
+      if (t.length > 200000) return say('vsMsg', 'That’s more than one narration can hold (200,000 characters). Split it into parts.');
+      text.value = t.replace(/\r\n/g, '\n'); if (!$('vsTitle').value) $('vsTitle').value = file.name.replace(/\.[^.]+$/, '').slice(0, 120);
+      est(); text.focus(); say('vsMsg', 'Loaded ' + file.name + '. Press Clean up text if it came from a document.');
+    });
+    $('vsTpl').addEventListener('change', ev => {
+      const k = ev.target.value; ev.target.value = ''; if (!k) return;
+      if (text.value.trim() && text.dataset.sure !== k) { text.dataset.sure = k; return say('vsMsg', 'Choose the template again to replace what you typed.'); }
+      text.dataset.sure = ''; text.value = TEMPLATES[k][1]; $('vsTitle').value = TEMPLATES[k][0]; est(); text.focus();
+      say('vsMsg', 'Replace the words in [brackets] with your own.');
+    });
+    $('vsClean').addEventListener('click', () => { const before = text.value.length; text.value = cleanScript(text.value); est(); say('vsMsg', 'Cleaned up: ' + Math.max(0, before - text.value.length).toLocaleString() + ' characters removed.'); });
+    $('vsClear').addEventListener('click', ev => {
+      const b = ev.currentTarget; if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Press again to clear'; return; }
+      b.dataset.sure = ''; b.textContent = 'Clear'; text.value = ''; $('vsTitle').value = ''; est(); text.focus();
+    });
+    $('vsFindBtn').addEventListener('click', ev => { const f = $('vsFind'); f.hidden = !f.hidden; ev.currentTarget.setAttribute('aria-expanded', String(!f.hidden)); if (!f.hidden) $('vsFindA').focus(); });
+    $('vsFindGo').addEventListener('click', () => {
+      const a = $('vsFindA').value; if (!a) return say('vsFindMsg', 'Type what to find.');
+      const n = text.value.split(a).length - 1; text.value = text.value.split(a).join($('vsFindB').value); est();
+      say('vsFindMsg', n ? 'Replaced ' + n + ' time' + (n === 1 ? '' : 's') + '.' : 'Not found.');
+    });
+    $('vsMark').addEventListener('change', ev => {
+      const m = ev.target.value; ev.target.value = ''; if (!m) return;
+      const at = text.selectionStart || text.value.length; text.value = text.value.slice(0, at) + ' ' + m + ' ' + text.value.slice(at); est(); text.focus();
     });
     $('vsTag').addEventListener('change', ev => {
       const m = ev.target.value; ev.target.value = ''; if (!m) return;
@@ -799,11 +905,11 @@
       ev.submitter && (ev.submitter.disabled = true);
       const custom = tune.pace !== 50 || tune.feel !== 50 || tune.pause !== 50;
       if (!isAmr() && !ready.length) { ev.submitter && (ev.submitter.disabled = false); return say('vsMsg', 'Add your voice in Voices first.'); }
-      const row = { title, text:t, language:$('vsLang').value, mood, settings:custom ? { pace:tune.pace, feel:tune.feel, pause:tune.pause } : null };
+      const row = { title, text:marksToSpeech(t), language:$('vsLang').value, mood, settings:custom ? { pace:tune.pace, feel:tune.feel, pause:tune.pause } : null };
       if (!isAmr() && $('vsVoice')) row.voice_id = $('vsVoice').value;
       const r = await safe(db().from('voice_jobs').insert(row));
       if (r.error) { ev.submitter && (ev.submitter.disabled = false); return say('vsMsg', errText(r, 'Couldn’t add it. Try again.')); }
-      reopen();
+      draftSet(null); reopen();
     });
     return { live:!!last && (last.status === 'queued' || last.status === 'running') };
   }
@@ -1182,7 +1288,9 @@
           (j.status === 'running' ? bar(Math.round((j.progress || 0) * 100), 100) : '') + '</span><span class="vs-btns">' +
           (j.status === 'done' ? '<button class="vs-btn" type="button" data-act="play" aria-label="Play ' + esc(j.title) + '">Play</button>' + (j.output_mp3 ? '<button class="vs-btn" type="button" data-act="mp3" aria-label="Download MP3 of ' + esc(j.title) + '">MP3</button>' : '') + (j.output_wav ? '<button class="vs-btn" type="button" data-act="wav" aria-label="Download WAV of ' + esc(j.title) + '">WAV</button>' : '') + '<button class="vs-btn" type="button" data-act="pieces" aria-expanded="false" aria-label="Lines of ' + esc(j.title) + '">Lines</button>' +
             '<button class="vs-btn" type="button" data-act="share" aria-label="Copy a share link for ' + esc(j.title) + '">Share</button>' +
-            (j.parent_id ? '' : '<button class="vs-btn" type="button" data-act="again" aria-label="Make ' + esc(j.title) + ' again with a fresh take">Make again</button>') : '') +
+            (j.parent_id ? '' : '<button class="vs-btn" type="button" data-act="again" aria-label="Make ' + esc(j.title) + ' again with a fresh take">Make again</button>' +
+              '<button class="vs-btn" type="button" data-act="edit" aria-label="Edit the text of ' + esc(j.title) + ' and make it again">Edit</button>') +
+            (j.output_json ? '<button class="vs-btn" type="button" data-act="srt" aria-label="Download SRT captions of ' + esc(j.title) + '">SRT</button><button class="vs-btn" type="button" data-act="vtt" aria-label="Download VTT captions of ' + esc(j.title) + '">VTT</button>' : '') : '') +
           compareBtns(j) + (live ? '<button class="vs-btn" type="button" data-act="cancel" aria-label="Cancel ' + esc(j.title) + '">Cancel</button>' : '') + '</span><div class="vs-jobmore" hidden></div></div>';
       }).join('') : empty('Nothing yet. Make one in Text to Speech.')) + '</section>';
     widths(main);
@@ -1193,6 +1301,20 @@
       if (b.dataset.cmp) { more.hidden = false; if (!more.querySelector('.vs-piece')) more.innerHTML = ''; compare(main, S, j, b.dataset.cmp, more); return; }
       if (b.dataset.act === 'play') { more.hidden = false; if (!more.querySelector('.vs-piece')) more.innerHTML = ''; play(main, j.output_mp3 || j.output_wav, null, more); }
       else if (b.dataset.act === 'share') share(j, b);
+      else if (b.dataset.act === 'srt' || b.dataset.act === 'vtt') {
+        b.disabled = true; const m = await manifest(j); b.disabled = false;
+        if (!m) { b.textContent = 'Not available'; return; }
+        saveText(fileName(j.title, b.dataset.act), captionsFile(m, b.dataset.act), b.dataset.act === 'vtt' ? 'text/vtt' : 'application/x-subrip');
+      }
+      else if (b.dataset.act === 'edit') {
+        // Same take numbers as the original, so every line you don't change comes back as it was and only edited lines are made again
+        b.disabled = true;
+        const full = await safe(db().from('voice_jobs').select('text,language,mood,settings').eq('id', j.id).single());
+        b.disabled = false; if (full.error) return;
+        draftSet({ text:full.data.text, title:j.title.replace(/ \((again|edited)\)$/, '') + ' (edited)', lang:full.data.language,
+          note:'Change any line and press Generate. Lines you don’t change stay exactly as they were, so it’s quick.' });
+        location.hash = '#voice/tts';
+      }
       else if (b.dataset.act === 'mp3' || b.dataset.act === 'wav') { const p = b.dataset.act === 'mp3' ? j.output_mp3 : j.output_wav; const u = await signedUrl(p, fileName(j.title, p.split('.').pop())); if (u) location.href = u; }
       else if (b.dataset.act === 'cancel') { b.disabled = true; if (await cancelJob(j.id, b)) reopen(); }
       else if (b.dataset.act === 'pieces') {
@@ -1210,7 +1332,9 @@
     const canSave = isAmr() || openR.data === true;
     const all = pron.data || [], waiting = all.filter(p => p.status === 'pending'), mine = all.filter(p => p.status !== 'pending');
     const SRC = { auto:'found by the word check', dictionary:'from the dictionary' };
-    main.innerHTML = head('Pronunciations', 'How names and words are said. Used for every narration' + (isAmr() ? ', lessons included.' : '.')) +
+    main.innerHTML = head('Pronunciations', 'How names and words are said. Used for every narration' + (isAmr() ? ', lessons included.' : '.'),
+        '<button type="button" class="vs-btn" id="vsPronOut"' + (mine.length ? '' : ' disabled') + '>Export list</button>' +
+        (canSave ? '<label class="vs-btn vs-file">Import list<input type="file" id="vsPronIn" accept=".csv,text/csv"></label>' : '')) +
       (waiting.length ? '<section class="vs-card" aria-labelledby="pwH"><div class="vs-cardhead"><h2 id="pwH">Waiting for you</h2><span class="vs-note">' + waiting.length + ' found by your computer</span></div>' +
         '<p class="vs-note">Your computer heard these words come out wrong and found a spelling that sounded right. Nothing changes until you approve it.</p>' +
         waiting.map(p => '<div class="vs-job" data-pid="' + p.id + '"><span><b>' + esc(p.written) + '</b> → ' + esc(p.spoken) + ' <small>' + (p.language === 'ar' ? 'Arabic' : 'English') +
@@ -1228,6 +1352,20 @@
       if (!w1 || !s1) return say('vsPmsg', 'Fill in both.');
       const r = await safe(db().from('voice_pronunciations').upsert({ written:w1, spoken:s1, language:$('vsPl').value, status:'approved', source:'you' }, { onConflict:'owner,written,language' }));
       if (r.error) return say('vsPmsg', errText(r, 'Couldn’t save it.'));
+      reopen();
+    });
+    // a list to share with the team: a CSV of written, said as, language
+    const csvCell = v => /[",\n]/.test(v) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
+    $('vsPronOut').addEventListener('click', () => saveText('pronunciations.csv', 'written,say it as,language\n' + mine.map(p => [p.written, p.spoken, p.language].map(csvCell).join(',')).join('\n') + '\n', 'text/csv'));
+    if ($('vsPronIn')) $('vsPronIn').addEventListener('change', async ev => {
+      const file = ev.target.files[0]; if (!file) return;
+      const rows = (await file.text()).split(/\r?\n/).slice(1).map(l => { const out = []; let cur = '', q = false;
+        for (let i = 0; i < l.length; i++) { const c = l[i]; if (q) { if (c === '"' && l[i + 1] === '"') { cur += '"'; i++; } else if (c === '"') q = false; else cur += c; } else if (c === '"') q = true; else if (c === ',') { out.push(cur); cur = ''; } else cur += c; }
+        out.push(cur); return out; }).filter(r => r.length >= 2 && r[0].trim() && r[1].trim())
+        .map(r => ({ written:r[0].trim().slice(0, 80), spoken:r[1].trim().slice(0, 120), language:(r[2] || 'en').trim() === 'ar' ? 'ar' : 'en', status:'approved', source:'you' }));
+      if (!rows.length) return say('vsPmsg', 'No rows found. The file needs: written, say it as, language.');
+      const r = await safe(db().from('voice_pronunciations').upsert(rows.slice(0, 500), { onConflict:'owner,written,language' }));
+      if (r.error) return say('vsPmsg', errText(r, 'Couldn’t import it.'));
       reopen();
     });
     main.querySelectorAll('[data-pron]').forEach(b => b.addEventListener('click', async () => {
