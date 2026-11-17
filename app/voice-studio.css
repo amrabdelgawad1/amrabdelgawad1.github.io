@@ -324,3 +324,14 @@ body.vs-noscroll{ overflow:hidden; }
 .vs-tools{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px; }
 .vs-find{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px; }
 .vs-find .vs-input{ flex:1 1 160px; min-width:0; }
+
+/* Team round: listen mode, team usage table, rules */
+.vs-follow{ max-height:320px; overflow:auto; display:flex; flex-direction:column; gap:2px; margin-top:8px; }
+.vs-line{ text-align:left; background:none; border:0; border-radius:8px; padding:6px 10px; font:inherit; color:inherit; cursor:pointer; }
+.vs-line:hover{ background:rgba(0,0,0,.05); }
+.vs-line.is-on{ background:rgba(214,120,80,.18); font-weight:600; }
+.vs-tablewrap{ overflow-x:auto; }
+.vs-table{ width:100%; border-collapse:collapse; font-size:14px; }
+.vs-table th, .vs-table td{ text-align:left; padding:8px; border-bottom:1px solid rgba(0,0,0,.08); white-space:nowrap; }
+.vs-lim{ width:120px; display:inline-block; margin-right:6px; }
+.vs-terms ul{ margin:6px 0 10px; padding-left:20px; }
