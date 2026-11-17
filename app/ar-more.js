@@ -131,7 +131,13 @@
     'Alerts are on for this phone.':'التنبيهات مفعّلة على هذا الهاتف.', 'Alerts are off for this phone.':'التنبيهات متوقفة على هذا الهاتف.',
     'Get a notification on this phone for each new bell: messages, tasks, callbacks, schedule changes, swaps and late starts.':'يصلك إشعار على هذا الهاتف مع كل تنبيه جديد: الرسائل والمهام ومعاودات الاتصال وتغييرات الجدول والتبديلات والتأخير.',
     'On iPhone, alerts work only from the app on your Home Screen (iOS 16.4 or later): open this site in Safari, tap Share › Add to Home Screen, open the portal from that icon, then come back here.':'على الآيفون، تعمل التنبيهات فقط من التطبيق على الشاشة الرئيسية (iOS 16.4 أو أحدث): افتح الموقع في Safari، ثم مشاركة › إضافة إلى الشاشة الرئيسية، وافتح البوابة من الأيقونة، ثم عد إلى هنا.',
-    'Sent. It should show in a few seconds, even with the app closed.':'تم الإرسال. سيظهر خلال ثوانٍ، حتى والتطبيق مغلق.', 'Contracts':'العقود'
+    'Sent. It should show in a few seconds, even with the app closed.':'تم الإرسال. سيظهر خلال ثوانٍ، حتى والتطبيق مغلق.', 'Contracts':'العقود',
+    // Round 15: command center and search
+    'Right now':'الآن', 'On shift':'في الوردية', 'Narration':'التعليق الصوتي', 'Cash this month':'المال هذا الشهر', 'Everything':'كل شيء',
+    'Narration PC':'جهاز التعليق الصوتي', 'Online':'متصل', 'Narrating now':'يسجّل الآن', 'In the queue':'في الانتظار', 'Finished today':'انتهى اليوم',
+    'Came in':'دخل', 'Spent':'صُرف', 'Profit so far':'الربح حتى الآن', 'Still expected':'ما زال متوقعًا', 'In pounds':'بالجنيه', 'Nothing':'لا شيء',
+    'Nobody is clocked in':'لا أحد يعمل الآن', 'Open the bell':'افتح التنبيهات', 'Give access':'امنح الصلاحية', 'Decide':'قرّر', 'Approve':'وافق', 'Read':'اقرأ',
+    'PC online':'الجهاز متصل', 'PC offline':'الجهاز غير متصل', 'Pages, people, tasks, handbook pages, scripts, deals, contracts, files, updates and lessons.':'الصفحات والأشخاص والمهام ودليل العمل والنصوص والصفقات والعقود والملفات والأخبار والدروس.'
   });
 })();
 (function(){ const L = window.AppLang; if (!L || !L.RULES) return;
