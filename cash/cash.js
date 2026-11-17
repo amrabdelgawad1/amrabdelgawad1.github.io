@@ -154,7 +154,12 @@
   const cash = n => egp(n * fx.rate);
   // A dollar entry shows in pounds at the rate saved with it (older ones have none: today's rate)
   const money = e => e.currency === 'EGP' ? egp(e.amount) + ' · ' + usd(usdOf(e)) : egp(e.amount * (e.fxRate || fx.rate)) + ' · ' + usd(e.amount);
-  // Team profit is never worked out from shifts: Amr adds it himself as income with this category
+  // Team profit: income entries with this category that Amr adds himself, plus (from AUTO_TEAM_FROM on)
+  // the profit worked out from team shifts: hours x (company rate - pay rate). Older shifts stay hand-added only.
+  const AUTO_TEAM_FROM = '2026-11-17';
+  // Commission-based shifts: the company pays the team member by commission, so Amr gets nothing for those hours
+  // and adds his commission to Cash himself
+  const isCommission = s => s.payType === 'commission';
   const isTeamProfit = e => e.kind === 'income' && key(e.category) === 'team profit';
   // Own work you add by hand (money for work outside your tracked hours) counts with your hours
   const isOwnWork = e => e.kind === 'income' && key(e.category) === 'own work';
@@ -181,7 +186,7 @@
   const toShift = x => ({
     id: x.id, name: x.name.trim(), date: x.shift_date, work: x.work_seconds, brk: x.break_seconds || 0,
     startedAt: x.started_at, endedAt: x.ended_at, companyId: x.company_id, source: x.source, createdAt: x.created_at,
-    owner: !!x.owner, paid: !!x.paid, paidAt: x.paid_at, paidFx: x.paid_fx != null ? Number(x.paid_fx) : null,
+    owner: !!x.owner, paid: !!x.paid, payType: x.pay_type === 'commission' ? 'commission' : 'hourly', paidAt: x.paid_at, paidFx: x.paid_fx != null ? Number(x.paid_fx) : null,
     // Team shifts: "paid" is you paying them; clientPaid is the company paying you for their hours
     clientPaid: !!x.client_paid, clientPaidAt: x.client_paid_at, clientFx: x.client_fx != null ? Number(x.client_fx) : null,
     // Your own hours never cost team pay
@@ -224,17 +229,28 @@
   const shiftValue = s => s.work / 3600 * s.billRate;
   // Your hours in pounds: at the rate the company paid you at, else the rate for the shift's date
   const shiftEgp = s => shiftValue(s) * (s.clientFx || rateOn(s.date));
+  // Profit from team hours worked on or after AUTO_TEAM_FROM, one line per person, company and status.
+  // It shows as expected until the company pays you for those hours, then as received.
+  function autoTeam(inP){
+    const m = new Map();
+    shifts.filter(s => !s.owner && !isCommission(s) && s.billRate != null && s.date >= AUTO_TEAM_FROM && inP(s.date)).forEach(s => {
+      const amt = s.work / 3600 * (s.billRate - s.payRate), k = key(s.name) + '|' + s.companyId + '|' + s.clientPaid;
+      if (!m.has(k)) m.set(k, { kind:'income', category:'Team profit', auto:true, name:s.name, party:companyName(s.companyId), amount:0, egpAmt:0, currency:'USD', settled:s.clientPaid, date:s.date, secs:0, n:0 });
+      const g = m.get(k); g.amount += amt; g.egpAmt += amt * (s.clientFx || rateOn(s.date)); g.secs += s.work; g.n++; if (s.date > g.date) g.date = s.date;
+    });
+    return [...m.values()].map(g => Object.assign(g, { title:g.name + ' · ' + hm(g.secs) + ' worked', fxRate: g.amount ? g.egpAmt / g.amount : null }));
+  }
   function totals(inP){
     const sh = shifts.filter(s => inP(s.date)), counted = sh.filter(s => s.billRate != null);
     const own = counted.filter(s => s.owner), crew = counted.filter(s => !s.owner);
     const en = partsIn(entries, inP);
-    const teamInc = en.filter(isTeamProfit), ownInc = en.filter(isOwnWork), saved = en.filter(isSavings), exp = en.filter(e => e.kind === 'expense' && !isSavings(e));
+    const teamInc = en.filter(isTeamProfit).concat(autoTeam(inP)), ownInc = en.filter(isOwnWork), saved = en.filter(isSavings), exp = en.filter(e => e.kind === 'expense' && !isSavings(e));
     const inc = en.filter(e => e.kind === 'income' && !isTeamProfit(e) && !isOwnWork(e));
     const sum = (l, f) => l.reduce((a, x) => a + f(x), 0);
     const ownAmt = sum(own, shiftValue) + sum(ownInc, usdOf), teamAmt = sum(teamInc, usdOf), income = sum(inc, usdOf), expense = sum(exp, usdOf);
     const ownDue = sum(own.filter(s => !s.paid), shiftValue);
     return {
-      own, crew, skipped: sh.filter(s => s.billRate == null), inc, teamInc, ownInc, exp, saved,
+      own, crew, skipped: sh.filter(s => s.billRate == null && !(isCommission(s) && !s.owner)), inc, teamInc, ownInc, exp, saved,
       ownAmt, team: teamAmt, income, expense, net: ownAmt + teamAmt + income - expense, savings: sum(saved, usdOf),
       ownSecs: sum(own, s => s.work), teamSecs: sum(crew, s => s.work), ownDue,
       toReceive: ownDue + sum(inc.concat(teamInc, ownInc).filter(e => !e.settled), usdOf), toPay: sum(exp.filter(e => !e.settled), usdOf),
@@ -358,7 +374,8 @@
     setUsd('tOwn', t.ownAmt, t.E.own);
     $('tOwnSub').textContent = hm(t.ownSecs) + ' worked' + (t.ownInc.length ? ' · ' + plural(t.ownInc.length, 'entry') : '');
     setUsd('tTeam', t.team, t.E.team);
-    $('tTeamSub').textContent = t.teamInc.length ? plural(t.teamInc.length, 'entry') : 'You add this yourself';
+    const autoN = t.teamInc.filter(e => e.auto).length, handN = t.teamInc.length - autoN, autoOpen = t.teamInc.filter(e => e.auto && !e.settled).reduce((a, e) => a + egpOf(e), 0);
+    $('tTeamSub').textContent = [autoN ? 'From hours' + (autoOpen ? ' · ' + egp(autoOpen) + ' expected' : '') : '', handN ? plural(handN, 'entry') + ' added' : ''].filter(Boolean).join(' · ') || 'Hours from Nov 17 on add here by themselves';
     setUsd('tIncome', t.income, t.E.income);
     $('tIncomeSub').textContent = plural(t.inc.length, 'entry');
     setUsd('tExpense', t.expense, t.E.expense);
@@ -394,10 +411,10 @@
       list.forEach(e => {
         const k = key(e.party || e.title);
         if (!src.has(k)) src.set(k, { label:e.party || e.title, titles:new Set(), amt:0, open:0 });
-        const g = src.get(k); g.amt += egpOf(e); g.titles.add(e.title); if (!e.settled) g.open += egpOf(e);
+        const g = src.get(k); g.amt += egpOf(e); g.titles.add(e.title); if (!e.settled) g.open += egpOf(e); if (e.auto) g.auto = true;
       });
       [...src.values()].sort((a, b) => b.amt - a.amt).forEach(g => inRows.push({
-        label:g.label, tag, sub:[...g.titles].slice(0, 3).join(', ') + (g.open ? ' · ' + egp(g.open) + ' not received' : ''), amt:g.amt, go:'income'
+        label:g.label, tag, sub:[...g.titles].slice(0, 3).join(', ') + (g.open ? ' · ' + egp(g.open) + (g.auto ? ' expected' : ' not received') : ''), amt:g.amt, go: g.auto ? 'team' : 'income'
       }));
     };
     sources(t.ownInc, 'You'); sources(t.teamInc, 'Team'); sources(t.inc.filter(e => !isDeal(e))); sources(t.inc.filter(isDeal), 'Deal');
@@ -1462,8 +1479,8 @@
         '<td>' + (g.due <= 0 ? '<span class="ok">Paid</span>' : g.due < g.amt ? '<span class="due">' + egp(g.dueEgp) + ' not paid</span>' : '<span class="due">Not paid</span>') + '</td><td class="r mono">' + egp(g.egp) + '</td></tr>';
     }).join('') + ownInc.map(e => '<tr><td><b>' + escHtml(e.title) + '</b>' + (e.party ? '<small>' + escHtml(e.party) + '</small>' : '') + '</td><td class="r mono"></td><td class="r mono"></td>' +
       '<td>' + status(e.settled, 'Received', 'Not received') + '</td><td class="r mono">' + money(e) + '</td></tr>').join('');
-    const teamRows = teamInc.map(e => '<tr><td>' + shortDay(e.date) + '</td><td><b>' + escHtml(e.title) + '</b>' + (e.party ? '<small>' + escHtml(e.party) + '</small>' : '') + '</td>' +
-      '<td>' + status(e.settled, 'Received', 'Not received') + '</td><td class="r mono">' + money(e) + '</td></tr>').join('');
+    const teamRows = teamInc.map(e => '<tr><td>' + shortDay(e.date) + '</td><td><b>' + escHtml(e.title) + '</b>' + (e.party || e.auto ? '<small>' + escHtml([e.party, e.auto ? 'from hours' : ''].filter(Boolean).join(' · ')) + '</small>' : '') + '</td>' +
+      '<td>' + status(e.settled, 'Received', e.auto ? 'Expected' : 'Not received') + '</td><td class="r mono">' + money(e) + '</td></tr>').join('');
     const incRows = inc.map(e => '<tr><td>' + shortDay(e.date) + '</td><td><b>' + escHtml(e.title) + '</b>' + (e.party || e.part ? '<small>' + escHtml([e.party, partNote(e)].filter(Boolean).join(' · ')) + '</small>' : '') + '</td>' +
       '<td class="r mono">' + detailText(e) + '</td>' +
       '<td>' + status(e.settled, 'Received', 'Not received') + '</td><td class="r mono">' + money(e) + '</td></tr>').join('');

@@ -32,7 +32,9 @@ window.CashTeam = function(db){
   const toRow = x => ({
     id: x.id, name: x.name.trim(), date: x.shift_date, work: x.work_seconds, brk: x.break_seconds,
     startedAt: x.started_at, endedAt: x.ended_at, companyId: x.company_id,
-    paid: x.paid, paidAt: x.paid_at, paidFx: x.paid_fx != null ? Number(x.paid_fx) : null, source: x.source, createdAt: x.created_at,
+    paid: x.paid, paidAt: x.paid_at,
+    // Commission based: the company pays them by commission, so you owe no hourly pay and get nothing for these hours
+    commission: x.pay_type === 'commission', paidFx: x.paid_fx != null ? Number(x.paid_fx) : null, source: x.source, createdAt: x.created_at,
     // Whether the company has paid you for these hours (separate from you paying the team member)
     clientPaid: !!x.client_paid, clientPaidAt: x.client_paid_at, clientFx: x.client_fx != null ? Number(x.client_fx) : null,
     // Rates are locked onto each shift when it's logged, so later rate changes don't rewrite history.
@@ -94,6 +96,24 @@ window.CashTeam = function(db){
     loadCodeStatus();
   }
   function showNotice(msg){ $('notice').textContent = msg; $('notice').hidden = false; }
+  // Hold the mouse on the history and drag to move left, right, up or down (a short click still works as a click)
+  (function dragScroll(box){
+    if (!box) return;
+    let start = null, moved = false;
+    box.addEventListener('pointerdown', e => {
+      if (e.pointerType !== 'mouse' || e.button !== 0 || e.target.closest('button, a, input, select, textarea, label')) return;
+      start = { x:e.clientX, y:e.clientY, l:box.scrollLeft, t:box.scrollTop }; moved = false;
+    });
+    window.addEventListener('pointermove', e => {
+      if (!start) return;
+      const dx = e.clientX - start.x, dy = e.clientY - start.y;
+      if (!moved && Math.abs(dx) + Math.abs(dy) < 5) return;
+      if (!moved) { moved = true; box.classList.add('dragging'); }
+      box.scrollLeft = start.l - dx; box.scrollTop = start.t - dy; e.preventDefault();
+    });
+    window.addEventListener('pointerup', () => { if (!start) return; start = null; setTimeout(() => box.classList.remove('dragging')); });
+    box.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+  })($('histScroll'));
   function clearNotice(){ $('notice').hidden = true; }
 
   // How many pounds $1 was for a payment. Starts at today's rate; resolves the typed rate, or null when backed out.
@@ -122,12 +142,16 @@ window.CashTeam = function(db){
         const c = companies.find(x => x.id === r.companyId); r.billRate = c && c.bill_rate != null ? Number(c.bill_rate) : null; // same as the database trigger
       }
       if ('pay_rate' in patch) r.payRate = patch.pay_rate;
+      if ('pay_type' in patch) r.commission = patch.pay_type === 'commission';
       if ('bill_rate' in patch) r.billRate = patch.bill_rate;
     }});
     return true;
   }
   // What the team earns for a set of shifts, each at its own locked rate
-  const earned = list => list.reduce((a, r) => a + r.work / 3600 * r.payRate, 0);
+  const earned = list => list.reduce((a, r) => a + (r.commission ? 0 : r.work / 3600 * r.payRate), 0);
+  // The three ways a shift can be settled with the team member
+  const payState = r => r.commission ? 'commission' : r.paid ? 'paid' : 'unpaid';
+  const PAY_LABEL = { paid:'Paid', unpaid:'Unpaid', commission:'Commission based' };
 
   // ---------- companies ----------
   function companyOptions(sel, { all, pick, add, current }){
@@ -282,7 +306,7 @@ window.CashTeam = function(db){
       inRange(r) &&
       (!p || nameKey(r.name) === p) &&
       (!c || (c === 'none' ? !r.companyId : r.companyId === Number(c))) &&
-      (!s || (s === 'paid') === r.paid)
+      (!s || s === payState(r))
     ).sort((a,b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
   }
 
@@ -484,8 +508,8 @@ window.CashTeam = function(db){
     const rows = visible();
     const sum = (list, f) => list.reduce((a,r) => a + f(r), 0);
     const tw = sum(rows, r => r.work), tb = sum(rows, r => r.brk);
-    const paidRows = rows.filter(r => r.paid), owedRows = rows.filter(r => !r.paid);
-    const pw = sum(paidRows, r => r.work), ow = sum(owedRows, r => r.work);
+    const paidRows = rows.filter(r => payState(r) === 'paid'), owedRows = rows.filter(r => payState(r) === 'unpaid'), comRows = rows.filter(r => r.commission);
+    const pw = sum(paidRows, r => r.work), ow = sum(owedRows, r => r.work), cw = sum(comRows, r => r.work);
 
     $('sN').textContent = rows.length;
     $('sW').textContent = hm(tw);
@@ -495,7 +519,7 @@ window.CashTeam = function(db){
     setUsd('mPaid', earned(paidRows)); $('hPaid').textContent = hm(pw);
     setUsd('mOwed', earned(owedRows)); $('hOwed').textContent = hm(ow);
     $('rangeLabel').textContent = rangeLabel();
-    $('payLabel').textContent = rangeLabel() + ' · worked hours × rate (breaks not paid)';
+    $('payLabel').textContent = rangeLabel() + ' · worked hours × rate (breaks not paid)' + (cw ? ' · ' + hm(cw) + ' commission based, not counted' : '');
     const found = searchText() ? historyRows().length : null;
     $('histCount').textContent = found === null ? rows.length + ' shift' + (rows.length === 1 ? '' : 's') : found + ' match' + (found === 1 ? '' : 'es') + ' in all shifts';
 
@@ -503,27 +527,28 @@ window.CashTeam = function(db){
     const per = new Map();
     rows.forEach(r => {
       const k = nameKey(r.name);
-      if (!per.has(k)) per.set(k, { name:r.name, p:0, u:0, n:0, owe:0 });
+      if (!per.has(k)) per.set(k, { name:r.name, p:0, u:0, n:0, owe:0, c:0 });
       const v = per.get(k); v.n++;
-      if (r.paid) v.p += r.work; else { v.u += r.work; v.owe += r.work / 3600 * r.payRate; }
+      if (r.commission) v.c += r.work; else if (r.paid) v.p += r.work; else { v.u += r.work; v.owe += r.work / 3600 * r.payRate; }
     });
-    const list = [...per.values()].sort((a,b) => (b.p + b.u) - (a.p + a.u));
-    const max = Math.max(1, ...list.map(v => v.p + v.u));
+    const list = [...per.values()].sort((a,b) => (b.p + b.u + b.c) - (a.p + a.u + a.c));
+    const max = Math.max(1, ...list.map(v => v.p + v.u + v.c));
     const pl = $('peopleList'); pl.innerHTML = '';
     if (!list.length) pl.innerHTML = '<p class="empty">No shifts match these filters.</p>';
     list.forEach(v => {
       const d = document.createElement('div'); d.className = 'person';
-      d.innerHTML = '<div class="pname"><span class="av"></span><span class="n"></span></div><div class="pbar"><i class="p"></i><i class="u"></i></div><div class="pnums"><span class="t"></span><small class="s"></small></div>';
+      d.innerHTML = '<div class="pname"><span class="av"></span><span class="n"></span></div><div class="pbar"><i class="p"></i><i class="u"></i><i class="c"></i></div><div class="pnums"><span class="t"></span><small class="s"></small></div>';
       d.querySelector('.av').textContent = initials(v.name);
       d.querySelector('.n').textContent = v.name;
       const t = d.querySelector('.t');
-      t.textContent = hm(v.p + v.u) + ' · ';
-      const owe = document.createElement('span'); owe.className = 'owe'; owe.textContent = usd(v.owe) + ' owed'; t.appendChild(owe);
-      d.querySelector('.s').textContent = v.n + ' shift' + (v.n === 1 ? '' : 's') + ' · ' + hm(v.p) + ' paid';
+      t.textContent = hm(v.p + v.u + v.c) + (v.owe || v.c < v.p + v.u + v.c ? ' · ' : '');
+      if (v.owe || v.c < v.p + v.u + v.c) { const owe = document.createElement('span'); owe.className = 'owe'; owe.textContent = usd(v.owe) + ' owed'; t.appendChild(owe); }
+      d.querySelector('.s').textContent = v.n + ' shift' + (v.n === 1 ? '' : 's') + ' · ' + hm(v.p) + ' paid' + (v.c ? ' · ' + hm(v.c) + ' commission' : '');
       pl.appendChild(d);
       requestAnimationFrame(() => requestAnimationFrame(() => {
         d.querySelector('.p').style.width = (v.p / max * 100) + '%';
         d.querySelector('.u').style.width = (v.u / max * 100) + '%';
+        d.querySelector('.c').style.width = (v.c / max * 100) + '%';
       }));
     });
 
@@ -556,8 +581,9 @@ window.CashTeam = function(db){
       tr.querySelector('.ck').textContent = r.clocked;
       tr.querySelector('.c-work').textContent = hm(r.work);
       tr.querySelector('.c-brk').textContent = hm(r.brk);
-      tr.querySelector('.c-amt').textContent = usd(earned([r]));
-      if (r.payRate !== rate) tr.querySelector('.c-amt').title = 'At ' + usd(r.payRate) + '/hour';
+      tr.querySelector('.c-amt').textContent = r.commission ? 'Commission' : usd(earned([r]));
+      if (r.commission) tr.querySelector('.c-amt').title = 'Paid by the company as commission, not by the hour';
+      else if (r.payRate !== rate) tr.querySelector('.c-amt').title = 'At ' + usd(r.payRate) + '/hour';
 
       const co = tr.querySelector('.co');
       companyOptions(co, { pick: r.companyId ? null : 'Pick a company', add:true, current: r.companyId ? String(r.companyId) : '' });
@@ -569,18 +595,17 @@ window.CashTeam = function(db){
         if (ok) render();
       });
 
-      const st = tr.querySelector('.status.team');
-      st.classList.add(r.paid ? 'paid' : 'unpaid');
-      st.querySelector('span').textContent = r.paid ? 'Paid' : 'Unpaid';
-      st.title = r.paid && r.paidAt ? 'Marked paid ' + new Date(r.paidAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + fxText(r.paidFx) : 'Click to mark as paid';
-      st.addEventListener('click', async () => {
-        let rate;
-        if (!r.paid && (rate = await askFx('Paying ' + r.name + ' for ' + fmtDate(r.date) + '?', 'What was $1 in pounds when you paid?')) === null) return;
-        const ok = await updateShifts([r.id], r.paid ? { paid:false, paid_at:null } : { paid:true, paid_at: new Date().toISOString(), paid_fx: rate });
-        if (ok) render();
-      });
+      // First pill: paid, unpaid or commission based. Clicking opens a small menu with the three choices.
+      const st = tr.querySelector('.status.team'), ps = payState(r);
+      st.classList.add(ps);
+      st.querySelector('span').textContent = PAY_LABEL[ps];
+      st.setAttribute('aria-haspopup', 'menu');
+      st.title = ps === 'paid' && r.paidAt ? 'Marked paid ' + new Date(r.paidAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + fxText(r.paidFx) : ps === 'commission' ? 'The company pays them by commission' : 'Click to change';
+      st.addEventListener('click', () => payMenu(st, ps, next => setPayState([r.id], next, r.name + ' for ' + fmtDate(r.date))));
       // Second pill: has the company paid you for these hours?
       const cp = tr.querySelector('.status.client');
+      if (r.commission) { cp.classList.add('none'); cp.disabled = true; cp.querySelector('span').textContent = 'No hourly bill'; cp.title = 'Commission based: add your commission in Income when it comes in'; }
+      else {
       cp.classList.add(r.clientPaid ? 'paid' : 'unpaid');
       cp.querySelector('span').textContent = r.clientPaid ? 'Company paid' : 'Company owes';
       cp.title = r.clientPaid && r.clientPaidAt ? 'The company paid you ' + new Date(r.clientPaidAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + fxText(r.clientFx) : 'Click when the company pays you for these hours';
@@ -590,13 +615,14 @@ window.CashTeam = function(db){
         const ok = await updateShifts([r.id], r.clientPaid ? { client_paid:false } : { client_paid:true, client_fx: rate });
         if (ok) render();
       });
+      }
 
       const nc = tr.querySelector('.c-note');
       if (r.brief) {
         const b = document.createElement('button'); b.type = 'button'; b.className = 'note-btn';
         b.innerHTML = NOTE_ICON + '<span>View</span>'; b.setAttribute('aria-label', 'View ' + r.name + "'s note for " + fmtDate(r.date));
         b.addEventListener('click', () => openNote(r)); nc.appendChild(b);
-      } else nc.innerHTML = '<span class="no-note">No note</span>';
+      } else nc.innerHTML = '<span class="no-note" title="No note">—</span>';
       if (r.editedAt) { const e = document.createElement('span'); e.className = 'edited'; e.textContent = 'Edited'; e.title = 'Edited ' + new Date(r.editedAt).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }); tr.querySelector('.c-date').appendChild(e); }
 
       tr.querySelector('.del.edit').addEventListener('click', () => openEdit(r));
@@ -744,9 +770,10 @@ window.CashTeam = function(db){
     const secs = rows.reduce((a,r) => a + r.work, 0);
     const cents = n => Math.round(n * 100) / 100;
     const total = cents(earned(rows)), paidAmt = cents(earned(rows.filter(r => r.paid))), due = cents(total - paidAmt);
-    const rates = [...new Set(rows.map(r => r.payRate))], oneRate = rates.length === 1;
-    const rateText = oneRate ? 'Rate ' + usd(rates[0]) + ' / hour' : 'Rates ' + usd(Math.min(...rates)) + '–' + usd(Math.max(...rates)) + ' / hour';
-    const allPaid = rows.every(r => r.paid), nonePaid = rows.every(r => !r.paid);
+    const rates = [...new Set(rows.filter(r => !r.commission).map(r => r.payRate))], oneRate = rates.length === 1;
+    const rateText = !rates.length ? 'Commission based' : (oneRate ? 'Rate ' + usd(rates[0]) + ' / hour' : 'Rates ' + usd(Math.min(...rates)) + '–' + usd(Math.max(...rates)) + ' / hour') + (rows.some(r => r.commission) ? ' · some commission' : '');
+    const hourly = rows.filter(r => !r.commission);
+    const allPaid = hourly.every(r => r.paid), nonePaid = hourly.every(r => !r.paid);
     // Each line rounds to the cent; the last line absorbs the leftover so lines add up to the total.
     const amts = rows.map(r => cents(earned([r])));
     amts[amts.length - 1] = Math.round((total - amts.slice(0, -1).reduce((a,b) => a + b, 0)) * 100) / 100;
@@ -776,7 +803,7 @@ window.CashTeam = function(db){
         '<div class="box"><p>Worked under</p><strong>Amr Abdelgawad Talents</strong><span>' + rateText + '</span></div>' +
       '</div>' +
       '<table><thead><tr><th>Date</th><th class="r">Hours</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>' +
-      rows.map((r, i) => '<tr><td>' + dayLine(r.date) + '</td><td class="r mono">' + hm(r.work) + '</td><td class="r mono">' + usd(r.payRate) + '</td><td class="r mono">' + usd(amts[i]) + '</td></tr>').join('') +
+      rows.map((r, i) => '<tr><td>' + dayLine(r.date) + '</td><td class="r mono">' + hm(r.work) + '</td><td class="r mono">' + (r.commission ? 'Commission' : usd(r.payRate)) + '</td><td class="r mono">' + usd(amts[i]) + '</td></tr>').join('') +
       '</tbody></table>' +
       '<div class="bottom"><div class="note"><b>Breaks aren’t paid.</b> Amounts are worked hours × hourly rate, rounded to the cent.<br>Questions about this payslip? Reach out to Amr directly.' +
         (note ? '<span class="custom"><b>Note:</b> ' + escHtml(note) + '</span>' : '') + stamp + '</div>' +
@@ -953,7 +980,7 @@ window.CashTeam = function(db){
     if (!on) return;
     const cents = n => Math.round(n * 100) / 100;
     const lines = new Map();
-    rep.rows.filter(r => r.billRate != null).forEach(r => {
+    rep.rows.filter(r => r.billRate != null && !r.commission).forEach(r => {
       const k = nameKey(r.name) + '|' + r.billRate;
       if (!lines.has(k)) lines.set(k, { name:r.name, rate:r.billRate, secs:0, n:0, rows:[] });
       const l = lines.get(k); l.secs += r.work; l.n++; l.rows.push(r);
@@ -1085,15 +1112,46 @@ window.CashTeam = function(db){
       if (ok) { selected.clear(); render(); toast((cpaid ? 'Company paid you for ' : 'Company still owes for ') + nShifts(ids.length) + (cpaid ? fxText(rate) : ''), false); }
       return;
     }
-    const paid = b.dataset.bulk === 'paid';
-    const todo = changing(r => r.paid !== paid);
-    let rate;
-    if (paid && todo.length && (rate = await askFx('Paying ' + nShifts(todo.length) + '?', 'What was $1 in pounds when you paid?')) === null) return;
     b.setAttribute('aria-busy', 'true');
-    const ok = !todo.length || await updateShifts(todo, paid ? { paid:true, paid_at: new Date().toISOString(), paid_fx: rate } : { paid:false, paid_at:null });
+    const ok = await setPayState(ids, b.dataset.bulk, nShifts(ids.length), true);
     b.removeAttribute('aria-busy');
-    if (ok) { selected.clear(); render(); toast((paid ? 'Marked ' : 'Unmarked ') + ids.length + ' shift' + (ids.length === 1 ? '' : 's') + (paid ? ' as paid' : ''), false); }
+    if (ok) selected.clear(), render();
   });
+  // Set shifts to paid, unpaid or commission based. Only shifts whose state changes are touched,
+  // so already-paid ones keep their paid date and rate. Commission based clears any hourly pay and company billing.
+  async function setPayState(ids, next, what, quiet){
+    const todo = ids.filter(id => { const r = log.find(x => x.id === id); return r && payState(r) !== next; });
+    if (!todo.length) { if (quiet) toast('Already ' + PAY_LABEL[next].toLowerCase() + '.', false); return true; }
+    let patch;
+    if (next === 'paid') {
+      const rate = await askFx('Paying ' + what + '?', 'What was $1 in pounds when you paid?');
+      if (rate === null) return false;
+      patch = { pay_type:'hourly', paid:true, paid_at: new Date().toISOString(), paid_fx: rate };
+    } else if (next === 'unpaid') patch = { pay_type:'hourly', paid:false, paid_at:null };
+    else patch = { pay_type:'commission', paid:false, paid_at:null, client_paid:false };
+    const ok = await updateShifts(todo, patch);
+    if (ok) { render(); toast(todo.length + ' shift' + (todo.length === 1 ? '' : 's') + ' set to ' + PAY_LABEL[next].toLowerCase(), false); }
+    return ok;
+  }
+  // The little menu under the first pill
+  function payMenu(anchor, current, pick){
+    document.querySelectorAll('.pay-menu').forEach(m => m.remove());
+    const m = document.createElement('div'); m.className = 'pay-menu'; m.setAttribute('role', 'menu');
+    ['paid', 'unpaid', 'commission'].forEach(k => {
+      const o = document.createElement('button'); o.type = 'button'; o.setAttribute('role', 'menuitemradio'); o.setAttribute('aria-checked', String(k === current));
+      o.className = 'pm-opt ' + k; o.innerHTML = '<i></i><span></span>'; o.querySelector('span').textContent = PAY_LABEL[k];
+      o.addEventListener('click', ev => { ev.stopPropagation(); m.remove(); if (k !== current) pick(k); });
+      m.appendChild(o);
+    });
+    document.body.appendChild(m);
+    const r = anchor.getBoundingClientRect();
+    m.style.top = (r.bottom + window.scrollY + 4) + 'px';
+    m.style.left = Math.max(8, Math.min(r.left + window.scrollX, window.scrollX + document.documentElement.clientWidth - m.offsetWidth - 8)) + 'px';
+    m.querySelector('[aria-checked="true"]').focus();
+    const close = ev => { if (!m.contains(ev.target) && ev.target !== anchor) { m.remove(); document.removeEventListener('click', close, true); document.removeEventListener('keydown', esc1, true); } };
+    const esc1 = ev => { if (ev.key === 'Escape') { m.remove(); anchor.focus(); document.removeEventListener('click', close, true); document.removeEventListener('keydown', esc1, true); } };
+    setTimeout(() => { document.addEventListener('click', close, true); document.addEventListener('keydown', esc1, true); });
+  }
   $('bulkCo').addEventListener('change', async () => {
     let v = $('bulkCo').value; if (!v) return;
     if (v === 'add') { const id = await addCompany(); if (!id) { $('bulkCo').value = ''; return; } v = String(id); }
@@ -1294,7 +1352,7 @@ window.CashTeam = function(db){
     const { data, error } = await db.from('shifts').insert({
       name: r.name, shift_date: r.date, work_seconds: r.work, break_seconds: r.brk,
       started_at: r.startedAt, ended_at: r.endedAt, company_id: r.companyId,
-      paid: r.paid, paid_at: r.paidAt, paid_fx: r.paidFx, client_paid: r.clientPaid, client_paid_at: r.clientPaidAt, client_fx: r.clientFx, source: r.source, created_at: r.createdAt,
+      paid: r.paid, paid_at: r.paidAt, paid_fx: r.paidFx, pay_type: r.commission ? 'commission' : 'hourly', client_paid: r.clientPaid, client_paid_at: r.clientPaidAt, client_fx: r.clientFx, source: r.source, created_at: r.createdAt,
       pay_rate: r.payRate, bill_rate: r.billRate, brief: r.brief || null, edited_at: r.editedAt, original: r.original, ai_note: r.aiNote || null,
       dials: r.dials, conversations: r.convos, appointments: r.appts
     }).select().single();
@@ -1309,7 +1367,7 @@ window.CashTeam = function(db){
     const blank = n => n == null ? '' : n;
     visible().forEach(r => lines.push([
       r.name, r.date, (r.work/3600).toFixed(2), (r.brk/3600).toFixed(2), companyName(r.companyId),
-      r.paid ? 'Paid' : 'Unpaid', r.clientPaid ? 'Yes' : 'No', earned([r]).toFixed(2),
+      PAY_LABEL[payState(r)], r.commission ? 'No hourly bill' : r.clientPaid ? 'Yes' : 'No', earned([r]).toFixed(2),
       r.startedAt ? hhmmIso(r.startedAt) : '', r.endedAt ? hhmmIso(r.endedAt) : '', blank(r.dials), blank(r.convos), blank(r.appts), r.brief
     ].map(esc).join(',')));
     const a = document.createElement('a');

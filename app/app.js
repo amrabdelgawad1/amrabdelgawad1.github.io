@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id);
   const cfg = window.TRACKER_CONFIG || {};
   // v changes with each release of the cash page, so the app never shows a stale copy
-  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=43';
+  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=44';
 
   // An invite or new sign-in link lands here with its type in the address; read it before supabase-js clears it
   const linkType = new URLSearchParams(location.hash.slice(1)).get('type');
@@ -551,7 +551,9 @@
     const mine = rows.filter(r => r.shift_date.slice(0, 7) === month);
     $('hMonth').textContent = hm(mine.reduce((a, r) => a + r.work_seconds, 0));
     $('hShifts').textContent = plural(mine.length, 'shift');
-    const due = rows.filter(r => !r.paid).reduce((a, r) => a + r.work_seconds / 3600 * Number(r.pay_rate || 0), 0);
+    // Commission-based shifts are paid by the company as commission, so they carry no hourly pay
+    const com = r => r.pay_type === 'commission', payOf = r => com(r) ? 0 : r.work_seconds / 3600 * Number(r.pay_rate || 0);
+    const due = rows.filter(r => !r.paid).reduce((a, r) => a + payOf(r), 0);
     setMoney($('hDue'), due);
     $('hDueEgp').textContent = fx.rate ? '= ' + egp(due * fx.rate) : '';
     const box = $('hList');
@@ -565,20 +567,21 @@
     let html = '';
     months.forEach((list, m) => {
       const secs = list.reduce((a, r) => a + r.work_seconds, 0);
-      const amt = list.reduce((a, r) => a + r.work_seconds / 3600 * Number(r.pay_rate || 0), 0);
+      const amt = list.reduce((a, r) => a + payOf(r), 0);
       const mOpen = openMonths.has(m) ? openMonths.get(m) : m === first;
       html += '<button type="button" class="hmonth" aria-expanded="' + mOpen + '" data-month="' + esc(m) + '"><b>' + esc(monthLabel(m)) + '</b><span>' + esc(plural(list.length, 'shift') + ' · ' + hm(secs) + ' · ' + usd(amt)) + '</span>' + chev + '</button><div class="srows"' + (mOpen ? '' : ' hidden') + '>';
       list.forEach(r => {
-        const id = String(r.id != null ? r.id : bkey(r)), open = openRows.has(id), a = r.work_seconds / 3600 * Number(r.pay_rate || 0), note = briefs.get(bkey(r));
-        const paid = r.paid ? '<span class="pill p-ok">Paid</span>' : '<span class="pill p-due">Unpaid</span>';
+        const id = String(r.id != null ? r.id : bkey(r)), open = openRows.has(id), a = payOf(r), note = briefs.get(bkey(r));
+        const paid = com(r) ? '<span class="pill p-com">Commission</span>' : r.paid ? '<span class="pill p-ok">Paid</span>' : '<span class="pill p-due">Unpaid</span>';
         const clocked = r.started_at && r.ended_at ? hhmm(new Date(r.started_at)) + ' – ' + hhmm(new Date(r.ended_at)) : 'Added by hand';
         html += '<div class="srow' + (open ? ' open' : '') + '"><button type="button" class="shead" aria-expanded="' + open + '" data-row="' + esc(id) + '">' +
           '<span class="sd"><b>' + esc(dayDate(r.shift_date)) + '</b>' + (note ? '<span class="has-note">Note</span>' : '') + '</span>' +
-          '<span class="sh num">' + hm(r.work_seconds) + '</span><span class="sp num">' + usd(a) + '</span>' + paid + chev + '</button>' +
+          '<span class="sh num">' + hm(r.work_seconds) + '</span><span class="sp num">' + (com(r) ? '—' : usd(a)) + '</span>' + paid + chev + '</button>' +
           '<div class="sbody"' + (open ? '' : ' hidden') + '>' +
             '<div class="kv"><span>Clocked</span><span class="num">' + esc(clocked) + '</span></div>' +
             (r.break_seconds >= 60 ? '<div class="kv"><span>Break</span><span class="num">' + hm(r.break_seconds) + '</span></div>' : '') +
-            '<div class="kv"><span>Pay</span><span class="num">' + hm(r.work_seconds) + ' × ' + usd(Number(r.pay_rate || 0)) + ' = ' + usd(a) + '</span></div>' +
+            (com(r) ? '<div class="kv"><span>Pay</span><span>Commission based, paid by the company</span></div>'
+              : '<div class="kv"><span>Pay</span><span class="num">' + hm(r.work_seconds) + ' × ' + usd(Number(r.pay_rate || 0)) + ' = ' + usd(a) + '</span></div>') +
             (r.company_name ? '<div class="kv"><span>Company</span><span>' + esc(r.company_name) + '</span></div>' : '') +
             (r.paid && r.paid_at ? '<div class="kv"><span>Paid on</span><span>' + esc(new Date(r.paid_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + (r.paid_fx ? ' at ' + Number(r.paid_fx).toFixed(2) + ' EGP per $1' : '')) + '</span></div>' : '') +
             '<div class="snote"><small>Your note for this day</small><p class="brief-text">' + (note ? esc(note) : '<span class="muted">No note for this day.</span>') + '</p></div>' +

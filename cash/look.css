@@ -104,7 +104,7 @@ html .status:hover{ transform:none; }
 html .team .c-status .status{ padding:4px 10px; font-size:12px; }
 html .team td.c-status .status{ display:flex; width:max-content; }
 html .team td.c-status .status.client{ margin-top:4px; }
-@media (min-width:641px) and (max-width:1180px){ html .team table.log th:nth-child(5), html .team table.log td.c-brk{ display:none; } }
+@media (min-width:641px) and (max-width:1400px){ html .team table.log th:nth-child(5), html .team table.log td.c-brk{ display:none; } }
 html .team .co{ max-width:150px; }
 html .team table.log td, html .team table.log th{ padding-left:8px; padding-right:8px; }
 /* History search sits at the right of the title; full width on phones */
@@ -256,3 +256,47 @@ html .slip.report .brand{ color:#14213D; }
 .slip-bar .rep-pay{ flex:1 1 260px; }
 .rep-warn{ flex-basis:100%; order:9; font-size:13px; color:var(--gold); }
 .slip.invoice .stamp{ display:flex; width:max-content; }
+
+/* Commission based: the company pays them by commission (no hourly pay, nothing billed) */
+html .status.commission{ color:#6d5bd0; border-color:color-mix(in srgb, #6d5bd0 35%, transparent); background:color-mix(in srgb, #6d5bd0 9%, transparent); }
+html .status.none, html .status.none:hover{ color:var(--muted, #8a8f98); border-color:color-mix(in srgb, currentColor 30%, transparent); background:transparent; cursor:default; }
+.pay-menu{ position:absolute; z-index:60; display:flex; flex-direction:column; gap:2px; padding:5px; min-width:190px; border-radius:12px; background:var(--bg2, #fff); border:1px solid var(--border2, #d8dce3); box-shadow:0 12px 32px rgba(15,23,42,.16); color:var(--text, inherit); }
+.pay-menu .pm-opt{ display:flex; align-items:center; gap:9px; padding:8px 10px; border:0; border-radius:8px; background:none; font:600 13px var(--font-body, inherit); color:inherit; cursor:pointer; text-align:left; }
+.pay-menu .pm-opt:hover, .pay-menu .pm-opt:focus-visible{ background:color-mix(in srgb, currentColor 7%, transparent); outline:none; }
+.pay-menu .pm-opt i{ width:8px; height:8px; border-radius:50%; }
+.pay-menu .pm-opt.paid i{ background:var(--green, #10b981); } .pay-menu .pm-opt.unpaid i{ background:var(--gold, #f59e0b); } .pay-menu .pm-opt.commission i{ background:#6d5bd0; }
+.pay-menu .pm-opt[aria-checked="true"]::after{ content:'✓'; margin-left:auto; opacity:.6; }
+
+/* Team history: a tighter table on wider screens */
+@media (min-width:641px){
+  html .team table.log{ font-size:13.5px; }
+  html .team table.log td{ padding-top:7px; padding-bottom:7px; }
+  html .team table.log th{ padding-bottom:9px; font-size:11px; }
+  html .team .who{ gap:8px; white-space:nowrap; }
+  html .team .who .av{ width:26px; height:26px; font-size:10.5px; flex:none; }
+  html .team .who .new{ padding:1px 6px; font-size:10px; }
+  html .team td.c-date{ white-space:nowrap; line-height:1.25; }
+  html .team td.c-date .sub-line{ font-size:11px; margin-top:1px; }
+  html .team td.c-work, html .team td.c-brk, html .team td.c-amt{ white-space:nowrap; }
+  html .team .co{ padding:4px 8px; font-size:12.5px; max-width:140px; }
+  html .team .c-status .status{ padding:2px 8px; font-size:11.5px; gap:5px; }
+  html .team td.c-status .status.client{ margin-top:3px; }
+  html .team td.c-note{ white-space:nowrap; }
+  html .team .note-btn{ padding:3px 8px; font-size:12px; }
+  html .team .co{ max-width:130px; }
+  html .team td.c-del .del{ width:28px; height:28px; }
+}
+@media (min-width:641px){ html .team table.log th:nth-child(9){ min-width:52px; letter-spacing:.06em; } }
+@media (max-width:640px){
+  html .team table.log tbody tr{ padding:10px 0; gap:6px 10px; }
+  html .team td.c-note:has(.no-note){ display:none; }
+  html .team .who .av{ width:28px; height:28px; font-size:11px; }
+  html .team .c-status .status{ padding:2px 8px; font-size:11.5px; }
+}
+
+/* History box: a set height you scroll inside, by wheel or by holding the mouse and dragging */
+html .hist-scroll{ overflow:auto; max-height:min(560px, 64vh); overscroll-behavior:contain; cursor:grab; border-radius:10px; }
+html .hist-scroll.dragging{ cursor:grabbing; user-select:none; }
+html .hist-scroll.dragging *{ cursor:grabbing !important; }
+@media (min-width:641px){ html .team .hist-scroll thead th{ position:sticky; top:0; z-index:2; background:var(--bg2); padding-top:6px; } html .team .hist-scroll table.log thead th:last-child{ top:0; right:0; z-index:3; } }
+@media (max-width:640px){ html .hist-scroll{ max-height:72vh; cursor:auto; } }
