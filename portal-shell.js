@@ -90,7 +90,7 @@
   trailNote();
   window.addEventListener('hashchange', () => { trailNote(); backDraw(); });
   window.addEventListener('pageshow', () => { trailNote(); backDraw(); });
-  let notes = [], unread = 0, notesTimer = null;
+  let notes = [], unread = 0, notesTimer = null, mail = null;   // mail: the daily alerts email choice (Round 17)
 
   function listed(a){
     if (!me) return false;
@@ -221,6 +221,7 @@
     if (o.me && o.me.parentNode) o.me.before(bw); else header.append(bw);
     b.bell = bw.querySelector('.p-bell'); b.notes = bw.querySelector('.p-notes'); b.bellWrap = bw;
     b.bell.addEventListener('click', () => bellOpen(b, b.notes.hidden));
+    b.notes.addEventListener('change', e => { if (e.target.closest('[data-mailme], [data-mailhour]')) saveMail(b); });
     b.notes.addEventListener('click', e => {
       if (e.target.closest('[data-allread]')) { markAll(); return; }
       const a = e.target.closest('a[data-nid]'); if (!a) return;
@@ -307,6 +308,21 @@
     ]);
     if (Array.isArray(l.data)) notes = l.data;
     if (typeof c.count === 'number') unread = c.count; else unread = notes.filter(n => !n.read_at).length;
+    if (!mail) { const m = await db.rpc('notify_email_pref').then(x => x, () => ({})); if (m && m.data) mail = m.data; }
+  }
+  // Round 17: a daily email of the alerts not opened yet (sent by the database at the hour picked, Cairo time)
+  const hourName = h => (h % 12 || 12) + ':00 ' + (h < 12 ? 'AM' : 'PM');
+  const mailHtml = () => !mail ? '' : '<div class="p-notes-foot"><label class="p-notes-mail"><input type="checkbox" data-mailme' + (mail.daily ? ' checked' : '') + '> Email me a daily list of new alerts</label>' +
+    '<label class="p-notes-hour"' + (mail.daily ? '' : ' hidden') + '>at <select data-mailhour aria-label="Email time, Cairo">' +
+    Array.from({ length:24 }, (_, h) => '<option value="' + h + '"' + (+mail.hour === h ? ' selected' : '') + '>' + hourName(h) + '</option>').join('') + '</select> Cairo time</label><small data-mailmsg role="status"></small></div>';
+  async function saveMail(b){
+    const box = b.notes, on = box.querySelector('[data-mailme]').checked, hr = +box.querySelector('[data-mailhour]').value;
+    mail = Object.assign({}, mail, { daily:on, hour:hr });
+    box.querySelector('.p-notes-hour').hidden = !on;
+    const msg = box.querySelector('[data-mailmsg]');
+    if (window.PORTAL_TEST || (opts && opts.test) || !opts || !opts.db) return;
+    const r = await opts.db.rpc('notify_email_set', { p_daily:on, p_hour:hr }).then(x => x, e => ({ error:e }));
+    if (msg) msg.textContent = r.error ? 'Couldn’t save. Try again.' : on ? 'Saved. Only alerts you haven’t opened are sent, once a day.' : 'Daily email off.';
   }
   function drawBell(b, keepList){
     if (!b.bell) return;
@@ -319,7 +335,7 @@
       (unread ? '<button type="button" data-allread>Mark all read</button>' : '') + '</div>' +
       (notes.length ? '<ul class="p-notes-list">' + notes.map(n => '<li><a href="' + esc(safeLink(n.link)) + '" data-nid="' + esc(n.id) + '"' + (n.read_at ? '' : ' class="is-new"') + '>' +
           '<b>' + esc(n.title) + '</b>' + (n.body ? '<span>' + esc(n.body) + '</span>' : '') + '<small>' + esc(ago(n.created_at)) + (n.read_at ? '' : ' · New') + '</small></a></li>').join('') + '</ul>'
-        : '<p class="p-notes-empty">Nothing new. Requests, reviews and deal changes show up here.</p>');
+        : '<p class="p-notes-empty">Nothing new. Requests, reviews and deal changes show up here.</p>') + mailHtml();
   }
   function bellOpen(b, open){
     if (open) closeAll();
