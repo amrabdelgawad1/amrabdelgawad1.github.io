@@ -70,6 +70,8 @@
     'More checks':'فحوصات أخرى', 'RentCast and narration':'RentCast والتعليق الصوتي', 'RentCast lookups':'عمليات بحث RentCast', 'Put back missing rows':'أعد الصفوف المفقودة',
     'Type the table name to confirm':'اكتب اسم الجدول للتأكيد', 'Daily alerts email':'بريد التنبيهات اليومي',
     'Budgets and savings goals':'الميزانيات وأهداف الادخار', 'Monthly budgets':'الميزانيات الشهرية', 'Savings goals':'أهداف الادخار', 'Save budget':'احفظ الميزانية', 'Add goal':'أضف هدفًا',
+    'Files':'الملفات', 'Upload':'رفع', 'Put it in':'ضعه في', 'Folder (optional)':'المجلد (اختياري)', 'My files':'ملفاتي', 'Team shared':'مشترك مع الفريق', 'Place':'المكان', 'Everywhere':'كل مكان',
+    'Type':'النوع', 'Any type':'أي نوع', 'File':'الملف', 'Size':'الحجم', 'Added':'أُضيف', 'Files Amr shares with the team.':'ملفات يشاركها عمرو مع الفريق.', 'Nothing shared yet.':'لا شيء مشترك بعد.',
   });
 })();
 
