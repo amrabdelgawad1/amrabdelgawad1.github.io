@@ -311,3 +311,11 @@ body.vs-noscroll{ overflow:hidden; }
 .vs-piece{ flex-wrap:wrap; }
 .vs-piece > span:first-child{ flex:1 1 300px; }
 .vs-piece > audio.vs-live{ flex:1 1 100%; width:100%; margin:4px 0 0; }
+
+/* Phases 4 to 6: connect a computer, voices with consent, approvals */
+.vs-quote{ margin:4px 0; padding:10px 14px; border-left:3px solid var(--vs-clay); background:rgba(0,0,0,.04); border-radius:6px; font-style:italic; }
+.vs-steps{ margin:6px 0 10px; padding-left:20px; display:grid; gap:4px; }
+.vs-code{ font-size:15px; }
+.vs-code b{ font:700 22px/1.2 ui-monospace, Consolas, monospace; letter-spacing:.12em; }
+.vs-code small{ display:block; color:var(--vs-mute); font-size:13px; }
+.vs-note.is-warn{ color:#9A5B00; font-weight:600; }

@@ -615,7 +615,7 @@
   // Which switch in Invite and access opens each page; "owner" pages are Amr's alone
   const SECTION = { live:'live', requests:'requests', team:'team', overview:'money', income:'money', expense:'money', mytime:'owner', emails:'owner', people:'owner', visits:'owner', logs:'owner', learn:'learn', review:'owner', track:'track',
     home:'home', portal:'owner', admin:'owner', progress:'progress', teamview:'teamview', scoring:'scoring', onboarding:'owner', library:'scoring' };
-  const SECTION_NAMES = { live:'Live now', requests:'Missed-shift requests', team:'Team', money:'Money', deals:'Deal tools', learn:'Learning Hub', mkt:'Marketing course', psy:'Psychology course', course:'Acquisitions course' };
+  const SECTION_NAMES = { live:'Live now', requests:'Missed-shift requests', team:'Team', money:'Money', deals:'Deal tools', learn:'Learning Hub', mkt:'Marketing course', psy:'Psychology course', course:'Acquisitions course', voice:'Amr Voice Studio' };
   // Course switches sit under Learning Hub: a course opens only when Learning Hub is on too.
   // New course? Add its switch here and in SECTION_NAMES, and give its track the same key in learn.js (TRACKS[].key).
   const COURSE_KEYS = ['mkt', 'psy', 'course'];
