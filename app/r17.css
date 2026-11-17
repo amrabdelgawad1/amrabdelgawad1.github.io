@@ -28,3 +28,20 @@
 #pView .r17-chips label:has(input:checked){ background:var(--p-dark); color:#fff; border-color:var(--p-dark); }
 #pView .r17-audio audio{ width:100%; margin-top:8px; }
 #pView .r17-audio:empty{ display:none; }
+/* Lead lists and calling hours */
+#pView .r17-list{ padding:4px 0 10px; border-bottom:1px solid var(--p-line); }
+#pView .r17-list:last-child{ border-bottom:0; }
+#pView .r17-manage{ display:grid; gap:12px; margin-top:8px; padding:14px; background:var(--p-soft); border-radius:12px; }
+#pView .r17-box{ margin:0; padding:12px; border:1px solid var(--p-line); border-radius:12px; background:var(--p-card); }
+#pView .r17-box legend{ padding:0 4px; font-weight:800; }
+#pView .r17-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
+#pView .r17-row .sc-f{ flex:1 1 160px; min-width:150px; }
+#pView .r17-filebtn{ position:relative; display:inline-flex; align-items:center; cursor:pointer; }
+#pView .r17-map{ display:grid; gap:10px; padding:12px; border:1px dashed var(--p-line); border-radius:12px; }
+#pView .r17-map p{ margin:0; }
+#pView .r17-checks{ grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); }
+#pView .r17-big{ display:grid; gap:4px; margin-bottom:14px; padding:16px 18px; border-radius:var(--p-r); border:1px solid var(--p-line); background:var(--p-card); }
+#pView .r17-big b{ font:800 20px/1.2 var(--p-display); }
+#pView .r17-big.is-ok{ border-left:6px solid var(--p-ok); }
+#pView .r17-big.is-no{ border-left:6px solid var(--p-no); }
+#pView .r17-big small{ color:var(--p-muted); }
