@@ -256,3 +256,13 @@ html .slip.report .brand{ color:#14213D; }
 .slip-bar .rep-pay{ flex:1 1 260px; }
 .rep-warn{ flex-basis:100%; order:9; font-size:13px; color:var(--gold); }
 .slip.invoice .stamp{ display:flex; width:max-content; }
+
+/* Commission based: the company pays them by commission (no hourly pay, nothing billed) */
+html .status.commission{ color:#6d5bd0; border-color:color-mix(in srgb, #6d5bd0 35%, transparent); background:color-mix(in srgb, #6d5bd0 9%, transparent); }
+html .status.none, html .status.none:hover{ color:var(--muted, #8a8f98); border-color:color-mix(in srgb, currentColor 30%, transparent); background:transparent; cursor:default; }
+.pay-menu{ position:absolute; z-index:60; display:flex; flex-direction:column; gap:2px; padding:5px; min-width:190px; border-radius:12px; background:var(--bg2, #fff); border:1px solid var(--border2, #d8dce3); box-shadow:0 12px 32px rgba(15,23,42,.16); color:var(--text, inherit); }
+.pay-menu .pm-opt{ display:flex; align-items:center; gap:9px; padding:8px 10px; border:0; border-radius:8px; background:none; font:600 13px var(--font-body, inherit); color:inherit; cursor:pointer; text-align:left; }
+.pay-menu .pm-opt:hover, .pay-menu .pm-opt:focus-visible{ background:color-mix(in srgb, currentColor 7%, transparent); outline:none; }
+.pay-menu .pm-opt i{ width:8px; height:8px; border-radius:50%; }
+.pay-menu .pm-opt.paid i{ background:var(--green, #10b981); } .pay-menu .pm-opt.unpaid i{ background:var(--gold, #f59e0b); } .pay-menu .pm-opt.commission i{ background:#6d5bd0; }
+.pay-menu .pm-opt[aria-checked="true"]::after{ content:'✓'; margin-left:auto; opacity:.6; }

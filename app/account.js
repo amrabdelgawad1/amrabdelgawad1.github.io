@@ -255,7 +255,7 @@
       const { data } = await db.rpc('my_shifts');
       const box = $('myStats'); if (!box || !data) return;
       const month = today().slice(0, 7), thisMonth = data.filter(r => r.shift_date.slice(0, 7) === month);
-      const val = r => r.work_seconds / 3600 * Number(r.pay_rate || 0);
+      const val = r => r.pay_type === 'commission' ? 0 : r.work_seconds / 3600 * Number(r.pay_rate || 0);
       const last = data.find(r => r.pay_rate != null);
       const v = box.querySelectorAll('strong');
       v[0].textContent = last ? usd(Number(last.pay_rate)) + '/h' : '—';
@@ -403,16 +403,16 @@
         '<p class="err" id="psErr"></p><div><button class="btn small" type="submit">Upload payslip</button></div></form></div>' +
       '<div class="acts"><a class="btn ghost small" href="#team/' + encodeURIComponent(a.name) + '" data-close>Open all their hours</a></div>';
     drawAgentSlips(a);
-    const { data } = await db.from('shifts').select('name,shift_date,work_seconds,pay_rate,paid').eq('owner', false).order('shift_date', { ascending:false }).limit(1000);
+    const { data } = await db.from('shifts').select('name,shift_date,work_seconds,pay_rate,paid,pay_type').eq('owner', false).order('shift_date', { ascending:false }).limit(1000);
     if (agentView !== a.id || !data) return;
     const list = data.filter(s => key(s.name) === key(a.name)), month = today().slice(0, 7), now = list.filter(s => s.shift_date.slice(0, 7) === month);
-    const val = s => s.work_seconds / 3600 * Number(s.pay_rate || 0), v = $('agStats').querySelectorAll('strong');
+    const val = s => s.pay_type === 'commission' ? 0 : s.work_seconds / 3600 * Number(s.pay_rate || 0), v = $('agStats').querySelectorAll('strong');
     v[0].textContent = list[0] && list[0].pay_rate != null ? usd(Number(list[0].pay_rate)) + '/h' : '—';
     v[1].textContent = hm(now.reduce((x, s) => x + s.work_seconds, 0));
     v[2].textContent = usd(now.reduce((x, s) => x + val(s), 0));
     v[3].textContent = usd(list.filter(s => !s.paid).reduce((x, s) => x + val(s), 0));
     $('agCount').textContent = now.length;
-    $('agRecent').innerHTML = '<p class="note">Recent shifts</p>' + (list.length ? list.slice(0, 4).map(s => '<div class="kv"><span>' + day(s.shift_date) + '</span><span>' + hm(s.work_seconds) + (s.paid ? '' : ' · unpaid') + '</span></div>').join('') : '<p class="empty">No shifts yet.</p>');
+    $('agRecent').innerHTML = '<p class="note">Recent shifts</p>' + (list.length ? list.slice(0, 4).map(s => '<div class="kv"><span>' + day(s.shift_date) + '</span><span>' + hm(s.work_seconds) + (s.pay_type === 'commission' ? ' · commission' : s.paid ? '' : ' · unpaid') + '</span></div>').join('') : '<p class="empty">No shifts yet.</p>');
   }
   // An agent's payslips in their profile: Cycle 1 is the oldest; open or delete each
   let agentSlips = [], slipDel = null;
