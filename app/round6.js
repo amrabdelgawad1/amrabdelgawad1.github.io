@@ -17,7 +17,7 @@
   const LIGHT = { ok:['All good', 'ok'], warn:['Check', ''], bad:['Problem', 'no'] };
   const JOBS = {
     'talents-nightly-backup':'Nightly backup', 'talents-shift-reminders':'Shift reminders', 'talents-forgotten-shifts':'Forgotten clock-outs', 'talents-late-starts':'Late-start alerts', 'talents-monday-summary':'Monday summary email',
-    'deal-alerts':'Deal alerts', 'deal-daily-summary':'Deal daily summary', 'deal-followup-emails':'Deal follow-up emails', 'deal-weekly':'Deal weekly email', 'deal-access-ending':'Deal access ending emails'
+    'talents-daily-alerts':'Daily alerts email', 'deal-alerts':'Deal alerts', 'deal-daily-summary':'Deal daily summary', 'deal-followup-emails':'Deal follow-up emails', 'deal-weekly':'Deal weekly email', 'deal-access-ending':'Deal access ending emails'
   };
 
   // ======================================================================

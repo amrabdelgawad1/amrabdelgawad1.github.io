@@ -67,6 +67,8 @@
     'Learner':'المتعلم', 'Last step':'آخر خطوة', 'Module':'الوحدة', 'When':'متى', 'Quiz':'الاختبار', 'Tries':'المحاولات', 'Failed':'رسب', 'Fail rate':'نسبة الرسوب', 'People':'الأشخاص', 'Avg score':'متوسط الدرجة', 'Left midway':'تركوا في المنتصف',
     'Video':'الفيديو', 'Viewers':'المشاهدون', 'Watched on average':'متوسط المشاهدة', 'Got to on average':'متوسط أبعد نقطة', 'Finished':'أنهوا', 'Total watched':'إجمالي المشاهدة', 'Length':'المدة', 'Videos opened':'فيديوهات مفتوحة', 'Time watched':'وقت المشاهدة', 'Last watched':'آخر مشاهدة',
     'Most stop after this':'يتوقف معظمهم بعد هذه', 'Quiet a week+':'غائب أسبوعًا أو أكثر',
+    'More checks':'فحوصات أخرى', 'RentCast and narration':'RentCast والتعليق الصوتي', 'RentCast lookups':'عمليات بحث RentCast', 'Put back missing rows':'أعد الصفوف المفقودة',
+    'Type the table name to confirm':'اكتب اسم الجدول للتأكيد', 'Daily alerts email':'بريد التنبيهات اليومي',
   });
 })();
 
