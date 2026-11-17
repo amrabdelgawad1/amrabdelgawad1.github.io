@@ -62,6 +62,11 @@
     'No answer':'لا رد', 'Left voicemail':'ترك رسالة صوتية', 'Callback':'معاودة الاتصال', 'Not interested':'غير مهتم', 'Interested':'مهتم', 'Appointment set':'تم تحديد موعد', 'Wrong number':'رقم خاطئ', 'Do not call':'عدم الاتصال',
     'All states':'كل الولايات', 'Only states open now':'الولايات المفتوحة الآن فقط', 'Every state':'كل الولايات', 'Open now':'مفتوح الآن', 'Closed':'مغلق', 'Rule':'القاعدة', 'Add rule':'أضف قاعدة', 'Edit':'تعديل',
     'Back to federal only':'عودة للقاعدة الفيدرالية فقط', 'Sundays allowed':'الأحد مسموح', 'Holidays allowed':'العطلات مسموحة', 'Note or law':'ملاحظة أو قانون',
+    'Learner analytics':'تحليلات المتعلمين', 'Where people drop off':'أين يتوقف المتعلمون', 'Where each learner stopped':'أين توقف كل متعلم', 'Quizzes failed most':'أكثر الاختبارات رسوبًا',
+    'Video watch time':'وقت مشاهدة الفيديو', 'per lesson':'لكل درس', 'per person':'لكل شخص', 'learners':'متعلمون', 'biggest drop':'أكبر انخفاض', 'quiz tries failed':'محاولات اختبار فاشلة', 'video watched':'فيديو تمت مشاهدته',
+    'Learner':'المتعلم', 'Last step':'آخر خطوة', 'Module':'الوحدة', 'When':'متى', 'Quiz':'الاختبار', 'Tries':'المحاولات', 'Failed':'رسب', 'Fail rate':'نسبة الرسوب', 'People':'الأشخاص', 'Avg score':'متوسط الدرجة', 'Left midway':'تركوا في المنتصف',
+    'Video':'الفيديو', 'Viewers':'المشاهدون', 'Watched on average':'متوسط المشاهدة', 'Got to on average':'متوسط أبعد نقطة', 'Finished':'أنهوا', 'Total watched':'إجمالي المشاهدة', 'Length':'المدة', 'Videos opened':'فيديوهات مفتوحة', 'Time watched':'وقت المشاهدة', 'Last watched':'آخر مشاهدة',
+    'Most stop after this':'يتوقف معظمهم بعد هذه', 'Quiet a week+':'غائب أسبوعًا أو أكثر',
   });
 })();
 
