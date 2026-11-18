@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://ztlpgyomjuzmjmuifbbd.supabase.co https://api.country.is; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://amrabdelgawad.site/terms/">
+<title>Terms of use · Amr Abdelgawad</title>
+<meta name="description" content="The rules for using amrabdelgawad.site, its portal and its courses.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Amr Abdelgawad">
+<meta property="og:url" content="https://amrabdelgawad.site/terms/">
+<meta property="og:title" content="Terms of use">
+<meta property="og:description" content="The rules for using amrabdelgawad.site, its portal and its courses.">
+<meta property="og:image" content="https://amrabdelgawad.site/assets/share-card.png?v=1">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF7F1; --card:#FFFFFF; --ink:#14213D; --text:#1F2733; --light:#5B6472; --border:#E4DCCB;
+  --accent:#E3AA35; --accent2:#94650C; --on-accent:#14213D; --ok:#2F7D4F; --err:#B4372A; --field:#FFFFFF;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0E1626; --card:#16213A; --ink:#F5EFE3; --text:#E7E2D8; --light:#A8B0BE; --border:#2A3756; --accent2:#E3AA35; --field:#101A2E; --ok:#5FBF86; --err:#E57A6C; }
+}
+*{ box-sizing:border-box; } [hidden]{ display:none !important; }
+html,body{ margin:0; background:var(--bg); color:var(--text); font:16px/1.55 Inter, system-ui, sans-serif; }
+a{ color:var(--accent2); }
+.wrap{ max-width:760px; margin:0 auto; padding:40px 16px 64px; }
+.top{ display:flex; align-items:center; gap:10px; font-weight:700; color:var(--ink); text-decoration:none; font-size:15px; }
+.top svg{ width:26px; height:26px; color:var(--ink); }
+.eyebrow{ margin:36px 0 8px; font-size:12px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--accent2); }
+h1{ font-family:"DM Serif Display", Georgia, serif; font-weight:400; color:var(--ink); font-size:clamp(34px, 6vw, 48px); line-height:1.05; margin:0; }
+.lede{ font-size:17px; color:var(--light); margin:14px 0 0; max-width:60ch; }
+.points{ display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin:26px 0 30px; padding:0; list-style:none; }
+.points li{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px; font-size:14.5px; }
+.points b{ display:block; color:var(--ink); margin-bottom:2px; }
+form{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px 20px; }
+fieldset{ border:0; margin:0 0 22px; padding:0; }
+legend{ font-family:"DM Serif Display", Georgia, serif; color:var(--ink); font-size:22px; margin-bottom:12px; padding:0; }
+.grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.grid .full{ grid-column:1 / -1; }
+@media (max-width:560px){ .grid{ grid-template-columns:1fr; } }
+label{ display:block; font-size:14px; font-weight:600; color:var(--ink); }
+label small{ font-weight:400; color:var(--light); }
+input[type=text], input[type=email], input[type=tel], input[type=number], select, textarea{
+  display:block; width:100%; margin-top:6px; padding:11px 12px; font:inherit; color:var(--text);
+  background:var(--field); border:1px solid var(--border); border-radius:10px;
+}
+textarea{ min-height:84px; resize:vertical; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, .chip input:focus-visible + span{ outline:2px solid var(--accent); outline-offset:2px; }
+.chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.chip{ position:relative; font-weight:500; }
+.chip input{ position:absolute; opacity:0; inset:0; cursor:pointer; }
+.chip span{ display:inline-block; padding:8px 14px; border:1px solid var(--border); border-radius:999px; background:var(--field); font-size:14px; }
+.chip input:checked + span{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:600; }
+.check{ display:flex; gap:10px; align-items:flex-start; font-weight:400; font-size:13.5px; color:var(--light); }
+.check input{ margin-top:4px; width:18px; height:18px; flex:none; accent-color:var(--accent2); }
+.hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+.btn{ display:inline-block; border:0; cursor:pointer; font:700 15px Inter, sans-serif; background:var(--accent); color:var(--on-accent); padding:14px 24px; border-radius:999px; }
+.btn[disabled]{ opacity:.6; cursor:wait; }
+.msg{ margin:14px 0 0; font-size:14.5px; }
+.msg.err{ color:var(--err); }
+.done{ text-align:center; padding:36px 20px; }
+.done h2{ font-family:"DM Serif Display", Georgia, serif; font-weight:400; color:var(--ink); font-size:30px; margin:0 0 8px; }
+.done svg{ width:48px; height:48px; color:var(--ok); }
+.steps{ margin:26px 0 30px; padding:0; list-style:none; display:grid; gap:10px; counter-reset:s; }
+.steps li{ display:grid; grid-template-columns:34px 1fr; gap:12px; align-items:start; font-size:15px; }
+.steps li::before{ counter-increment:s; content:counter(s); display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--accent); color:var(--on-accent); font-weight:700; }
+.steps b{ color:var(--ink); }
+h2.sub{ font-family:"DM Serif Display", Georgia, serif; font-weight:400; color:var(--ink); font-size:26px; margin:34px 0 10px; }
+.legal ul{ padding-left:20px; } .legal li{ margin:8px 0; } .legal p, .legal li{ max-width:68ch; }
+.foot{ margin-top:28px; font-size:13px; color:var(--light); }
+</style>
+</head>
+<body>
+<div class="wrap legal">
+  <a class="top" href="/"><svg viewBox="-4 6 96 96" aria-hidden="true"><g transform="translate(13 0) skewX(-12)"><rect x="6" y="68" width="82" height="18" rx="4" fill="currentColor"/><rect x="20" y="45" width="56" height="18" rx="4" fill="currentColor"/><rect x="34" y="22" width="28" height="18" rx="4" fill="#E3AA35"/></g></svg>Amr Abdelgawad</a>
+  <p class="eyebrow">Terms</p>
+  <h1>Terms of use</h1>
+  <p class="lede">Last updated November 18, 2026. The rules for using this website, the portal and the courses. Plain words, no tricks.</p>
+
+  <h2 class="sub">Who you are dealing with</h2>
+  <p>This website, amrabdelgawad.site, its portal at /app and its courses are run by Amr Abdelgawad, based in Egypt. Questions about these terms: <a href="mailto:amr@amrabdelgawad.site">amr@amrabdelgawad.site</a>.</p>
+
+  <h2 class="sub">Using the website</h2>
+  <ul>
+    <li>You may read the public pages, book a call, apply to the team or join the cash buyers list.</li>
+    <li>Please give true details in any form. Forms that look automated are ignored.</li>
+    <li>Do not try to break into the portal, copy it in bulk, or use it to send spam.</li>
+  </ul>
+
+  <h2 class="sub">Portal accounts</h2>
+  <ul>
+    <li>The portal is invite-only. Your login is for you alone. Keep your password private and turn on the authenticator code when asked.</li>
+    <li>Amr can pause or close an account that breaks these terms, the work agreement, or calling rules.</li>
+    <li>Team members and clients also have their own work agreement. If that agreement and these terms disagree, the work agreement wins.</li>
+  </ul>
+
+  <h2 class="sub">Courses</h2>
+  <ul>
+    <li>Buying or being given a course gives you a personal right to watch and use it while your access lasts. It is not a license to share, resell, record or post the lessons, scripts, quizzes or templates.</li>
+    <li>Course content teaches skills and examples. It is not legal, tax or financial advice, and results depend on your own work. No income or deal results are promised.</li>
+    <li>Certificates show you finished the course and passed its checks. Each final certificate has a link anyone can open to check it is real.</li>
+    <li>Refunds follow the <a href="/refunds/">refund policy</a>.</li>
+  </ul>
+
+  <h2 class="sub">Calling, texting and do-not-call</h2>
+  <ul>
+    <li>People who call or text for the team follow the calling hours shown in the portal, the do-not-call list, and every request to stop.</li>
+    <li>Text templates in the portal carry opt-out wording. Do not remove it.</li>
+    <li>Each rep is responsible for following the rules where they call. If you are unsure, ask Amr before you dial.</li>
+  </ul>
+
+  <h2 class="sub">Your content</h2>
+  <ul>
+    <li>Things you upload to the portal (recordings, notes, deal files, photos) stay yours. You allow the portal to store and show them to the people your role says should see them, so the work can be done.</li>
+    <li>Only upload a call recording if everyone on the call agreed to be recorded.</li>
+    <li>Deal CRM data is encrypted in your browser with your team passphrase. It cannot be recovered if the passphrase is lost.</li>
+  </ul>
+
+  <h2 class="sub">What the website owes you</h2>
+  <p>The website and portal are offered as they are. Amr works to keep them running, backed up nightly and safe, but cannot promise they will never be down or never lose data. As far as the law allows, Amr is not responsible for indirect losses, such as lost deals or lost profit, that come from using or not being able to use the website. Nothing here limits rights you have by law that cannot be limited.</p>
+
+  <h2 class="sub">Changes</h2>
+  <p>If these terms change, the date at the top changes too. Portal users are asked to agree again the next time they sign in.</p>
+
+  <p class="foot"><a href="/">Home</a> · <a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a> · <a href="/refunds/">Refunds</a> · <a href="/team/">Hire a calling team</a> · <a href="/join/">Join the team</a> · <a href="/buyers/">Cash buyers list</a></p>
+</div>
+<script src="/tracker/config.js?v=3"></script>
+<script src="/stats.js?v=3"></script>
+</body>
+</html>

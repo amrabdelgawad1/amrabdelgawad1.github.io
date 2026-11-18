@@ -103,7 +103,7 @@
     { lead:'#review', label:'Reviews and scoring', tabs:[['#review','To score'], ['#scoring','Call scoring'], ['#progress','Learner progress'], ['#cotw','Call of the week'], ['#builder','Course builder'], ['#voice','Voice Studio']] },
     { lead:'#announcements', label:'Team updates', tabs:[['#announcements','Announcements'], ['#coaching','Coaching'], ['#sendmail','Send an email']] },
     { lead:'#overview', label:'Cash', tabs:[['#overview','Overview'], ['#income','Income'], ['#expense','Expenses'], ['#invoices','Invoices'], ['#receipts','Receipts'], ['#forecast','Forecast']] },
-    { lead:'#visits', label:'Site and logs', tabs:[['#visits','Visits'], ['#emails','Team emails'], ['#whatsnew','What’s new'], ['#status','Status'], ['#logs','Logs']] }
+    { lead:'#visits', label:'Site and logs', tabs:[['#visits','Visits'], ['#emails','Team emails'], ['#whatsnew','What’s new'], ['#status','Status'], ['#cleanup','Data cleanup'], ['#consents','Agreements'], ['#logs','Logs']] }
   ];
   const link = h => drawer.querySelector('.mi[href="' + h + '"]');
   const row = a => a && (a.closest('.mi-row') || a);
