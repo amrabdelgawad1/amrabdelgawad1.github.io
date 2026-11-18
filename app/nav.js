@@ -96,7 +96,7 @@
   const drawer = document.getElementById('drawer');
   if (!drawer) return;
   const GROUPS = [
-    { lead:'#team', label:'Team and shifts', tabs:[['#team','Team hours'], ['#mytime','My time'], ['#requests','Requests'], ['#schedule','Schedule and time off']] },
+    { lead:'#team', label:'Team and shifts', tabs:[['#team','Team hours'], ['#mytime','My time'], ['#requests','Requests'], ['#schedule','Schedule and time off'], ['#payroll','Payroll'], ['#commissions','Commissions'], ['#billing','Hours vs billing']] },
     { lead:'#weekly', label:'Numbers', tabs:[['#weekly','Weekly summary'], ['#leaderboard','Leaderboard'], ['#funnel','Calls to deals'], ['#scripttest','Script testing'], ['#lists','Lead lists'], ['#profit','Profit per client'], ['#clientreport','Client report']] },
     { lead:'#people', label:'People and access', tabs:[['#people','People and access'], ['#person','Person files'], ['#applications','Applicants'], ['#onboarding','Onboarding'], ['#offboarding','Offboarding'], ['#referrals','Refer a friend']] },
     { lead:'#tasks', label:'Work', owner:true, tabs:[['#tasks','Tasks'], ['#messages','Messages'], ['#handbook','Handbook']] },

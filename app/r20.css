@@ -58,3 +58,16 @@
   body.r20-printing #pView .r20-noprint{ display:none !important; }
   body.r20-printing #pView .p-btn{ display:none !important; }
 }
+
+/* Round 19 of the plan (payroll, commissions, hours vs billing): r19-pay.js */
+#pView .r19-note{ padding:12px 16px; margin:0 0 14px; color:var(--p-ink2); font-size:14px; }
+#pView .r19-warn{ padding:12px 16px; margin:0 0 14px; border-color:var(--p-accent); color:var(--p-ink2); font-size:14px; }
+#pView .r19-status{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+#pView .r20-tiles .p-tile.r19-hot b{ color:var(--p-accent); }
+#pView .r19-sub{ display:block; margin-top:2px; color:var(--p-muted); font-size:12px; font-weight:500; }
+#pView .r19-table td{ vertical-align:top; }
+#pView .r19-table .r17-acts{ display:flex; flex-wrap:wrap; gap:6px; }
+#pView .r19-detail > td{ background:var(--p-soft); padding:10px 12px; }
+#pView .r19-detail .p-tablewrap{ margin:0; }
+#pView .r19-table td:nth-last-child(2) .p-pill{ white-space:normal; display:inline-block; margin:0 4px 4px 0; }
+#pView .r19-table td:nth-last-child(2){ min-width:150px; }

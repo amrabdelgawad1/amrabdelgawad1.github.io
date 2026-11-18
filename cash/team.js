@@ -94,6 +94,7 @@ window.CashTeam = function(db){
     fillCompanySelects();
     render();
     loadCodeStatus();
+    payrollHandoff();
   }
   function showNotice(msg){ $('notice').textContent = msg; $('notice').hidden = false; }
   // Hold the mouse on the history and drag to move left, right, up or down (a short click still works as a click)
@@ -758,12 +759,35 @@ window.CashTeam = function(db){
     // Picked from a pay cycle: the payslip covers that whole cycle, not just the first to last shift
     const c = range === 'cycle' ? cycleOf($('cycle').value || iso(new Date())) : null;
     const inCycle = c && rows.every(r => r.date >= c.from && r.date <= c.to);
-    slip = { rows, cycle: inCycle ? c : null, number: 'PS-' + new Date().getFullYear() + '-' + String(payslipCounter + 1).padStart(4, '0'), counted:false };
+    slip = { rows, cycle: inCycle ? c : null, number: 'PS-' + new Date().getFullYear() + '-' + String(payslipCounter + 1).padStart(4, '0'), counted:false, extras:[] };
     $('slipNote').value = '';
     $('slipSend').textContent = 'Send to ' + rows[0].name.trim().split(/\s+/)[0]; $('slipSend').disabled = false;
     drawPayslip();
     $('slipOverlay').hidden = false; document.body.style.overflow = 'hidden';
     fitPayslip();
+    // Round 19: a cycle's payslip also lists that cycle's bonuses, commissions and deductions from Payroll
+    if (slip.cycle) {
+      const mine = slip;
+      db.rpc('payroll_slip_extras', { p_name: rows[0].name, p_from: slip.cycle.from }).then(({ data, error }) => {
+        if (error || !data || slip !== mine) return;
+        mine.extras = data.extras || []; mine.extrasPaid = data.status === 'paid';
+        if (mine.extras.length) { drawPayslip(); fitPayslip(); }
+      });
+    }
+  }
+  // Payroll's "Payslip" button: open this person's payslip for that cycle (a note left within the last 5 minutes)
+  function payrollHandoff(){
+    let h = null; try { h = JSON.parse(localStorage.getItem('r19-slip') || 'null'); } catch(e) {}
+    if (!h || !h.name || !h.from || Date.now() - h.at > 5 * 60e3 || !log.length) return;
+    try { localStorage.removeItem('r19-slip'); } catch(e) {}
+    const btn = document.querySelector('#tm-range button[data-r="cycle"]');
+    if (btn) btn.click();
+    fillCycles();
+    if (![...$('cycle').options].some(o => o.value === h.from)) { toast('That pay cycle isn’t in the list.', false); return; }
+    $('cycle').value = h.from; render();
+    const c = cycleOf(h.from), ids = log.filter(r => nameKey(r.name) === nameKey(h.name) && r.date >= c.from && r.date <= c.to).map(r => r.id);
+    if (!ids.length) { toast(h.name + ' has no shifts in that cycle. Bonuses and commissions alone show in Payroll.', false); return; }
+    openPayslip(ids);
   }
   function drawPayslip(){
     const { rows, number } = slip;
@@ -778,10 +802,16 @@ window.CashTeam = function(db){
     const amts = rows.map(r => cents(earned([r])));
     amts[amts.length - 1] = Math.round((total - amts.slice(0, -1).reduce((a,b) => a + b, 0)) * 100) / 100;
     const lastPaid = rows.filter(r => r.paidAt).map(r => r.paidAt).sort().pop();
-    const stamp = allPaid ? '<div class="stamp"><i></i>Paid on ' + longDate(lastPaid || new Date()) + '</div>'
+    let stamp = allPaid ? '<div class="stamp"><i></i>Paid on ' + longDate(lastPaid || new Date()) + '</div>'
       : nonePaid ? '<div class="stamp due"><i></i>Amount due</div>'
       : '<div class="stamp due"><i></i>Partly paid</div>';
-    const grand = allPaid ? ['Total paid', total] : ['Amount due', nonePaid ? total : due];
+    // Round 19: bonuses and commissions add to the pay, deductions take away; each line keeps its reason
+    const extras = slip.extras || [];
+    const extraAmt = cents(extras.reduce((a, x) => a + (x.t === 'deduction' ? -1 : 1) * Number(x.amt), 0));
+    const EXTRA_KIND = { award:'Bonus', bonus:'Bonus', commission:'Commission', deduction:'Deduction' };
+    const extrasDue = extras.length && !slip.extrasPaid ? extraAmt : 0;
+    const grand = allPaid && !extrasDue ? ['Total paid', cents(total + extraAmt)] : ['Amount due', cents((allPaid ? 0 : nonePaid ? total : due) + extrasDue)];
+    if (allPaid && extrasDue) stamp = '<div class="stamp due"><i></i>Partly paid</div>';
     const note = $('slipNote').value.trim();
     // Paid shifts use the rate saved when they were marked paid; anything still due uses today's rate
     const paidRows = rows.filter(r => r.paid);
@@ -789,7 +819,7 @@ window.CashTeam = function(db){
     const fxRates = [...new Set(paidRows.map(r => r.paidFx))];
     const fxDay = lastPaid ? longDate(lastPaid) : longDate(new Date());
     let egpRow = '';
-    if (allPaid && fxPaid != null) egpRow = '<div class="in-egp"><span>' + usd(total) + ' = ' + egp(fxPaid) + '</span><span>' + (fxRates.length === 1 ? 'at ' + fxRates[0].toFixed(2) + ' per $1, ' + fxDay : 'at the rate on each payment day') + '</span></div>';
+    if (allPaid && fxPaid != null && !extras.length) egpRow = '<div class="in-egp"><span>' + usd(total) + ' = ' + egp(fxPaid) + '</span><span>' + (fxRates.length === 1 ? 'at ' + fxRates[0].toFixed(2) + ' per $1, ' + fxDay : 'at the rate on each payment day') + '</span></div>';
     else if (fxNow()) egpRow = '<div class="in-egp"><span>' + usd(grand[1]) + ' = ' + egp(grand[1] * fxNow()) + '</span><span>at ' + fxNow().toFixed(2) + ' per $1, ' + longDate(new Date()) + '</span></div>';
     $('slip').innerHTML =
       '<div class="band"></div>' +
@@ -804,12 +834,15 @@ window.CashTeam = function(db){
       '</div>' +
       '<table><thead><tr><th>Date</th><th class="r">Hours</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>' +
       rows.map((r, i) => '<tr><td>' + dayLine(r.date) + '</td><td class="r mono">' + hm(r.work) + '</td><td class="r mono">' + (r.commission ? 'Commission' : usd(r.payRate)) + '</td><td class="r mono">' + usd(amts[i]) + '</td></tr>').join('') +
+      extras.map(x => '<tr class="extra"><td><b>' + EXTRA_KIND[x.t] + '</b> · ' + escHtml(x.label || '') + '</td><td class="r mono"></td><td class="r mono"></td><td class="r mono">' + (x.t === 'deduction' ? '−' : '+') + usd(Number(x.amt)) + '</td></tr>').join('') +
       '</tbody></table>' +
-      '<div class="bottom"><div class="note"><b>Breaks aren’t paid.</b> Amounts are worked hours × hourly rate, rounded to the cent.<br>Questions about this payslip? Reach out to Amr directly.' +
+      '<div class="bottom"><div class="note"><b>Breaks aren’t paid.</b> Amounts are worked hours × hourly rate, rounded to the cent.' + (extras.length ? ' Bonuses, commissions and deductions are listed with their reasons.' : '') + '<br>Questions about this payslip? Reach out to Amr directly.' +
         (note ? '<span class="custom"><b>Note:</b> ' + escHtml(note) + '</span>' : '') + stamp + '</div>' +
         '<div class="totals"><div><span>Total hours</span><span class="mono">' + hm(secs) + '</span></div>' +
         (oneRate ? '<div><span>Hourly rate</span><span class="mono">' + usd(rates[0]) + '</span></div>' : '') +
         (!allPaid && !nonePaid ? '<div><span>Already paid</span><span class="mono">' + usd(paidAmt) + '</span></div>' : '') +
+        (extras.length ? '<div><span>Pay for hours</span><span class="mono">' + usd(total) + '</span></div>' +
+          ['award', 'commission', 'deduction'].map(k => { const l = extras.filter(x => (k === 'award' ? ['award', 'bonus'].includes(x.t) : x.t === k)); return l.length ? '<div><span>' + (k === 'award' ? 'Bonuses' : k === 'commission' ? 'Commissions' : 'Deductions') + '</span><span class="mono">' + (k === 'deduction' ? '−' : '+') + usd(l.reduce((a, x) => a + Number(x.amt), 0)) + '</span></div>' : ''; }).join('') : '') +
         '<div class="grand"><span>' + grand[0] + '</span><span class="mono">' + usd(grand[1]) + '</span></div>' + egpRow + '</div></div>' +
       '<div class="foot"><div><span>Amr Abdelgawad Talents · amrabdelgawad.site</span><span>' + number + '</span></div></div>';
   }
@@ -1379,7 +1412,7 @@ window.CashTeam = function(db){
   // The app's menu opens one person's hours (#team/<name>); applied on the next render
   function pick(name, now){
     picked = name || '';
-    if (now && log.length) render();
+    if (now && log.length) { render(); payrollHandoff(); }
   }
 
   return { load, pick };
