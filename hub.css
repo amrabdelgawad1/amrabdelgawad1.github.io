@@ -192,6 +192,10 @@ html body :is(.cnum.in, .num.in, .mrow .in, .num.w, .brow .bnums){ color:var(--a
 html body .money.net .team-add{ color:#fff; border-color:rgba(255,255,255,.35); }
 html body .money.net.neg{ background:color-mix(in srgb, var(--red) 10%, var(--panel)); border-color:color-mix(in srgb, var(--red) 40%, transparent); }
 html body .money.net.neg :is(strong, p, small){ color:var(--red) !important; }
+/* On the red card the white text and button outline vanish: switch them to red on the light surface */
+html body .money.net.neg :is(.egp, .saved, .c){ color:color-mix(in srgb, var(--red) 75%, var(--ink, #1a1a1a)) !important; }
+html body .money.net.neg .team-add{ color:var(--red); background:var(--panel, #fff); border-color:color-mix(in srgb, var(--red) 45%, transparent); }
+html body .money.net.neg .team-add:hover{ background:color-mix(in srgb, var(--red) 8%, var(--panel, #fff)); }
 html body .seg{ background:transparent; border:1px solid var(--border2); padding:3px; }
 html body .seg button{ min-height:40px; font-weight:600; font-size:14px; letter-spacing:0; text-transform:none; color:var(--p-ink2); }
 html body .seg button.on{ background:var(--p-dark); color:#fff; box-shadow:none !important; }

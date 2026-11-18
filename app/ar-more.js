@@ -192,6 +192,8 @@
     'So callbacks, tasks, messages and bonuses reach you even when the portal is closed.':'حتى تصلك المعاودات والمهام والرسائل والمكافآت حتى والبوابة مغلقة.',
     'Rules':'القواعد', 'Run it now':'شغّله الآن', 'Run cleanup now':'شغّل التنظيف الآن', 'Recent runs':'آخر مرات التشغيل', 'Keep for':'الاحتفاظ لمدة', 'Keep forever':'احتفظ دائماً', 'Delete on its own':'احذف تلقائياً',
     'Email, spam and phone alerts':'البريد والرسائل المزعجة وتنبيهات الهاتف', 'Email delivery':'وصول البريد', 'Phone alerts':'تنبيهات الهاتف',
-    'Pages and versions':'الصفحات والإصدارات', 'Records':'السجلات', 'Download CSV':'تنزيل CSV', 'Ask everyone again':'اطلب الموافقة من الجميع مجدداً'
+    'Pages and versions':'الصفحات والإصدارات', 'Records':'السجلات', 'Download CSV':'تنزيل CSV', 'Ask everyone again':'اطلب الموافقة من الجميع مجدداً',
+    // Round 21
+    'A streak counts the working days in a row that hit your daily targets. A weekend doesn’t break it; more than 3 days without a shift, or a worked day under target, starts it again. With no daily targets set, every worked day counts.':'تحسب الأيام المتتالية أيام العمل المتتالية التي حققت فيها أهدافك اليومية. عطلة نهاية الأسبوع لا تقطعها، لكن أكثر من 3 أيام بدون وردية أو يوم عمل تحت الهدف يبدأها من جديد. إذا لم تُحدَّد أهداف يومية، يُحسب كل يوم عمل.'
   });
 })();

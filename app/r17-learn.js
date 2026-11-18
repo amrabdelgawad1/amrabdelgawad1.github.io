@@ -33,15 +33,15 @@
 
     body.innerHTML = '<div class="px-tiles">' +
         tile(num(d.learners || 0), 'learners', 'have opened at least one lesson') +
-        tile(drop ? '−' + drop.lost : '–', 'biggest drop', drop ? 'after M' + drop.m.number + ' ' + drop.m.title : 'no drop yet') +
+        tile(drop ? num(drop.lost) : '–', 'biggest drop', drop ? plural(drop.lost, 'learner') + ' stopped after M' + drop.m.number + ' ' + drop.m.title : 'no drop yet') +
         tile(attTotal ? Math.round(failTotal / attTotal * 100) + '%' : '–', 'quiz tries failed', plural(attTotal, 'finished try', 'finished tries')) +
         tile(mins(totalWatch), 'video watched', plural(vids.length, 'video') + ' with views') + '</div>' +
       card('Where people drop off', 'started vs finished, module by module', mods.length ? '<div class="r17-funnel">' + mods.map(m =>
         '<div class="r17-frow"><span class="r17-fname"><b>M' + m.number + '</b> ' + esc(m.title) + '</span>' + bar(+m.started, firstStart) +
         '<span class="r17-fnum">' + num(m.started) + ' started · ' + num(m.finished) + ' finished' + (drop && drop.m.id === m.id ? ' ' + pill('Most stop after this', 'no') : '') + '</span></div>').join('') + '</div>'
         : empty('No modules yet.')) +
-      card('Where each learner stopped', 'their last finished step', (d.stuck || []).length ? table(['Learner', 'Last step', 'Module', 'When'], d.stuck.map(s =>
-        tr([esc(s.user || 'A learner'), esc(s.item), esc(modName(s.module)), esc(ago(s.at)) + (Date.now() - new Date(s.at) > 7 * 864e5 ? ' ' + pill('Quiet a week+', 'warn') : '')]))) : empty('Nobody has finished a step yet.')) +
+      card('Where each learner stopped', 'their latest step: a lesson finished, a quiz or a video', (d.stuck || []).length ? table(['Learner', 'Last step', 'Module', 'When'], d.stuck.map(s =>
+        tr([esc(s.user || 'A learner'), esc(s.item) + (s.what ? ' <small>' + esc(s.what) + '</small>' : ''), esc(modName(s.module)), esc(ago(s.at)) + (Date.now() - new Date(s.at) > 7 * 864e5 ? ' ' + pill('Quiet a week+', 'warn') : '')]))) : empty('Nobody has started a lesson yet.')) +
       card('Quizzes failed most', 'by failed tries', quizzes.length ? table(['Quiz', 'Module', 'Tries', 'Failed', 'Fail rate', 'People', 'Avg score', 'Left midway'], quizzes.slice(0, 30).map(q =>
         tr([esc(q.title), 'M' + esc(q.number), num(q.attempts), num(q.fails), '<span class="r17-goal"><b>' + Math.round(q.fails / q.attempts * 100) + '%</b>' + bar(+q.fails, +q.attempts) + '</span>', num(q.people), q.avg == null ? '–' : esc(q.avg) + '%', num(q.abandoned)]))) : empty('No quiz tries yet.')) +
       card('Video watch time', 'per lesson', vids.length ? table(['Video', 'Module', 'Viewers', 'Watched on average', 'Got to on average', 'Finished', 'Total watched', 'Length'], vids.map(x =>

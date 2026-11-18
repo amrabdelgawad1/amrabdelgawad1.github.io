@@ -74,6 +74,11 @@
   const lessonTitle = j => String(j.title || '').replace(/^Lesson\s+/, '').replace(/^(\S+)\s+\1\s+/, '$1 ');
   const lessonKey = j => String((j.target && j.target.lesson) || '').split('.').map(n => +n || 0);
   const byLesson = (a, b) => { const x = lessonKey(a), y = lessonKey(b); return (x[0] - y[0]) || ((x[1] || 0) - (y[1] || 0)); };
+  // Course folders (m1, m2…) don't match the module numbers learners see (the course was reordered: lesson 5.1 lives in m6).
+  // Show the number from the lessons inside the folder; fall back to the folder number.
+  const MOD_SHOWN = {};
+  const modShown = m => MOD_SHOWN[m] || String(m || '').replace(/^m/, '');
+  const modOfJob = j => { const n = String((j && j.target && j.target.lesson) || '').split('.')[0]; return /^\d+$/.test(n) ? n : modShown(j && j.target && j.target.module); };
 
   // ───── How long the course queue will take ─────
   // done:    finished lesson jobs, each { audio: seconds of audio made, work: seconds the PC spent }
@@ -107,6 +112,7 @@
     // one row per lesson: the newest finished narration, plus a newer retake that's waiting, running or failed
     const latest = {};
     (lessons.data || []).forEach(j => {
+      const ln = String(j.target.lesson || '').split('.')[0]; if (/^\d+$/.test(ln)) MOD_SHOWN[j.target.module] = ln;
       const k = j.target.module + '/' + j.target.lesson, row = latest[k] || (latest[k] = { job:null, extra:null });
       if (j.status === 'done') { row.job = j; row.extra = null; } else if (j.status !== 'cancelled' || !row.job) row.extra = j;
     });
@@ -329,7 +335,7 @@
       const u = await signedUrl(j.output_mp3); const buf = u && await fetch(u).then(x => x.ok ? x.arrayBuffer() : null).catch(() => null);
       if (buf) files.push({ name:fileName(lessonTitle(j), 'mp3'), data:new Uint8Array(buf) });
     }
-    const a = document.createElement('a'); a.href = URL.createObjectURL(zip(files)); a.download = 'Module_' + String(m).replace(/^m/, '') + '_narration.zip';
+    const a = document.createElement('a'); a.href = URL.createObjectURL(zip(files)); a.download = 'Module_' + modShown(m) + '_narration.zip';
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
     b.disabled = false; b.textContent = files.length === done.length ? 'Downloaded ' + files.length + ' MP3s' : 'Downloaded ' + files.length + ' of ' + done.length + ' (try again for the rest)';
   }
@@ -569,7 +575,7 @@
       (open.length ? '<section class="vs-card"><div class="vs-cardhead"><h2>Takes to pick</h2><span class="vs-note">Learners keep hearing the original until you pick a take</span></div>' + open.map(takeCard).join('') +
         (workerAtLeast(S.wk, SLIDER_VERSION) ? '' : '<p class="vs-note">The PC needs worker 0.4 or newer for the takes to sound different. Restart it after the current lesson.</p>') + '</section>' : '') +
       (R.length ? '<section class="vs-card">' + R.map(j => '<div class="vs-job" data-id="' + j.id + '"><span><b>' + esc(name(j)) + '</b> ' + chip(j.needs_review.length + ' to check', 'warn') +
-        '<small>' + (j.target && j.target.module ? 'Module ' + esc(String(j.target.module).replace(/^m/, '')) + ' · ' : '') + esc(ago(j.finished_at || j.created_at)) + (j.duration_s ? ' · ' + mmss(j.duration_s) : '') + '</small></span>' +
+        '<small>' + (j.target && j.target.module ? 'Module ' + esc(modOfJob(j)) + ' · ' : '') + esc(ago(j.finished_at || j.created_at)) + (j.duration_s ? ' · ' + mmss(j.duration_s) : '') + '</small></span>' +
         '<span class="vs-btns"><button type="button" class="vs-btn" data-act="lines" aria-expanded="false">Listen to the lines</button></span><div class="vs-jobmore" hidden></div></div>').join('') + '</section>' : '') +
       (retakes.length ? '<section class="vs-card"><div class="vs-cardhead"><h2>Recent retakes</h2><span class="vs-note">Hear the line before and after</span></div>' + retakes.map(j =>
         '<div class="vs-job" data-id="' + j.id + '"><span><b>' + esc(name(j)) + '</b><small>Line ' + (+j.redo_piece) + ' · ' + esc(ago(j.finished_at || j.created_at)) + '</small></span><span class="vs-btns">' + compareBtns(j) + '</span><div class="vs-jobmore" hidden></div></div>').join('') + '</section>' : '');
@@ -1022,9 +1028,9 @@
           for (const [from, to] of done.reverse()) await safe(st.move(to, from));   // put everything back as it was
           bad.push(id);
         }
-        report('Putting ' + 'Module ' + m.replace(/^m/, '') + ' live · ' + (ok + bad.length + skipped.length) + ' of ' + lessons.length);
+        report('Putting ' + 'Module ' + modShown(m) + ' live · ' + (ok + bad.length + skipped.length) + ' of ' + lessons.length);
       }
-      report(ok + ' video' + (ok === 1 ? '' : 's') + ' live in Module ' + m.replace(/^m/, '') +
+      report(ok + ' video' + (ok === 1 ? '' : 's') + ' live in Module ' + modShown(m) +
         (bad.length ? ' · ' + bad.join(', ') + ' didn’t work and were left as they were, try again' : '') +
         (skipped.length ? ' · ' + skipped.join(', ') + ' skipped (captions not saved yet)' : '') +
         (ok ? '. The old ones are kept in videos/_old/' + stamp + '.' : '.'));
@@ -1054,8 +1060,8 @@
     const live = j => j.status === 'queued' || j.status === 'running';
     const name = j => esc('lesson ' + lessonTitle(j));
 
-    const modName = m => 'Module ' + String(m).replace(/^m/, '');
-    const modNum = m => +String(m).replace(/\D/g, '') || 0;
+    const modName = m => 'Module ' + modShown(m);
+    const modNum = m => +modShown(m) || 0;
     const queuedMods = [...new Set(S.waitingLessons.map(j => j.target.module))].sort((a, b) => modNum(a) - modNum(b));
     const firstUp = S.lessons.filter(j => j.retake && j.retake.status === 'queued').map(j => j.retake).concat(S.waitingLessons).sort((a, b) => (quick(b) - quick(a)) || ((b.priority || 0) - (a.priority || 0)) || (a.created_at < b.created_at ? -1 : 1))[0];
     const fullSet = j => { const f = staged.files[j.target.module + '/' + j.target.lesson] || []; return f.includes(j.target.lesson + '.mp4') && f.includes(j.target.lesson + '.json'); };
