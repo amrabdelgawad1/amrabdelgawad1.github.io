@@ -197,3 +197,59 @@
     'A streak counts the working days in a row that hit your daily targets. A weekend doesn’t break it; more than 3 days without a shift, or a worked day under target, starts it again. With no daily targets set, every worked day counts.':'تحسب الأيام المتتالية أيام العمل المتتالية التي حققت فيها أهدافك اليومية. عطلة نهاية الأسبوع لا تقطعها، لكن أكثر من 3 أيام بدون وردية أو يوم عمل تحت الهدف يبدأها من جديد. إذا لم تُحدَّد أهداف يومية، يُحسب كل يوم عمل.'
   });
 })();
+
+// Round 19 of the plan: payroll, bonuses and deductions, commission ledger, hours vs billing
+(function(){
+  'use strict';
+  const L = window.AppLang;
+  if (!L || !L.AR) return;
+  Object.assign(L.AR, {
+    'Payroll':'الرواتب', 'Commissions':'العمولات', 'Hours vs billing':'الساعات مقابل الفواتير',
+    'Every other Friday: who is owed what for the pay cycle, approve it, mark each person paid, and make their payslip. This page prepares and tracks pay only; you send the money yourself.':'كل جمعتين: من له كم في دورة الدفع، اعتمدها، علّم كل شخص كمدفوع، واصنع قسيمة راتبه. هذه الصفحة تجهّز الأجور وتتابعها فقط؛ أنت من يرسل المال بنفسك.',
+    'Pay cycle':'دورة الدفع', 'Not approved yet':'لم تُعتمد بعد', 'Approved':'معتمدة', 'All paid':'دُفعت كلها', 'To pay':'للدفع',
+    'Payroll here only prepares and records pay. Send the money yourself (Remitly, bank, InstaPay), then press':'الرواتب هنا تجهّز الأجور وتسجّلها فقط. أرسل المال بنفسك (Remitly أو البنك أو InstaPay)، ثم اضغط',
+    'for that person.':'لهذا الشخص.', 'Mark paid':'علّم كمدفوع', 'Undo paid':'تراجع عن الدفع', 'Sure? Back to owed':'متأكد؟ سيعود مستحقاً',
+    'in this run':'في هذه الدفعة', 'owed for this cycle':'مستحق لهذه الدورة', 'hours to pay':'ساعات للدفع', 'Commission-based hours aren’t paid by the hour':'ساعات العمولة لا تُدفع بالساعة',
+    'bonuses and commissions':'المكافآت والعمولات', 'deductions':'الخصومات', 'marked paid':'مُعلَّم كمدفوع',
+    'This run':'هذه الدفعة', 'Who is owed what':'من له كم', 'Person':'الشخص', 'Hours':'الساعات', 'Pay':'الأجر', 'Bonuses':'المكافآت', 'Deductions':'الخصومات', 'Status':'الحالة',
+    'Details':'التفاصيل', 'Hide':'إخفاء', 'Payslip':'قسيمة الراتب', 'from earlier cycles':'من دورات سابقة', 'commission based':'بالعمولة',
+    'What':'البند', 'Date':'التاريخ', 'Detail':'التفصيل', 'Amount':'المبلغ', 'Bonus (rule)':'مكافأة (قاعدة)', 'Bonus':'مكافأة', 'Commission':'عمولة', 'Deduction':'خصم', 'earlier cycle':'دورة سابقة', 'Nothing owed.':'لا شيء مستحق.',
+    'Nobody is owed anything for this cycle.':'لا أحد له مستحقات في هذه الدورة.',
+    'Note on this run (optional)':'ملاحظة على هذه الدفعة (اختياري)', 'Approve this run':'اعتمد هذه الدفعة',
+    'Approving saves exactly what each person is owed now. Nothing is paid or sent.':'الاعتماد يحفظ ما يستحقه كل شخص الآن بالضبط. لا يُدفع ولا يُرسل شيء.',
+    'Reopen this run':'أعد فتح هذه الدفعة', 'Sure? You approve it again after':'متأكد؟ ستعتمدها مرة أخرى بعدها',
+    'Paid on':'تاريخ الدفع', '$1 in pounds that day':'سعر الدولار بالجنيه ذلك اليوم', 'How':'الطريقة', 'Reference (optional)':'المرجع (اختياري)', 'Cancel':'إلغاء',
+    'Bank transfer':'تحويل بنكي', 'Other':'أخرى',
+    'Bonuses and deductions':'المكافآت والخصومات', 'this cycle':'هذه الدورة', 'None for this cycle yet.':'لا شيء لهذه الدورة بعد.', 'Type':'النوع', 'Reason':'السبب', 'Remove':'إزالة',
+    'Amount (USD)':'المبلغ (دولار)', 'Reason (shown on the payslip)':'السبب (يظهر في قسيمة الراتب)', 'Add to this cycle':'أضف لهذه الدورة',
+    'Open ones carry into the next run until they are paid.':'المفتوحة تنتقل للدفعة التالية حتى تُدفع.',
+    'Past runs':'الدفعات السابقة', 'Cycle':'الدورة', 'Pay day':'يوم الدفع', 'People':'الأشخاص', 'Total':'الإجمالي', 'Paid':'مدفوع', 'No runs approved yet.':'لم تُعتمد أي دفعة بعد.',
+    'Every commission in one place: from closed deals, per appointment from saved shifts, or added by hand. Owed or paid, per person. Owed ones are paid with the next payroll run.':'كل العمولات في مكان واحد: من الصفقات المغلقة، أو لكل موعد من الورديات المحفوظة، أو مضافة يدوياً. مستحقة أو مدفوعة، لكل شخص. المستحقة تُدفع مع دفعة الرواتب التالية.',
+    'owed':'مستحق', 'paid this month':'مدفوع هذا الشهر', 'all time':'كل الوقت', 'By person':'حسب الشخص', 'Owed':'مستحق', 'No commissions yet.':'لا عمولات بعد.',
+    'Ledger':'السجل', 'Everyone':'الجميع', 'Owed and paid':'المستحق والمدفوع', 'From':'من', 'To':'إلى', 'All':'الكل', 'For':'عن', 'Deal':'صفقة', 'Appointments':'مواعيد', 'Added by you':'أضفتها أنت',
+    'Back to owed':'أرجعها مستحقة', 'Delete':'حذف', 'Sure?':'متأكد؟', 'Nothing matches.':'لا نتائج.',
+    'Paying through Payroll marks these paid for you. Mark paid here only for one you paid on its own. Each commission is also a line in Cash › Expenses (category Commissions).':'الدفع من صفحة الرواتب يعلّمها مدفوعة تلقائياً. علّمها هنا فقط إن دفعتها وحدها. كل عمولة تظهر أيضاً في Cash › المصروفات (فئة العمولات).',
+    'Per-appointment rates':'أسعار لكل موعد', 'On':'مفعّل', 'Off':'متوقف', 'Turn off':'أوقف', 'Turn on':'فعّل', 'Sure? Added ones stay':'متأكد؟ المضافة تبقى',
+    'No rates yet. Add one to pay a person per appointment they set.':'لا أسعار بعد. أضف سعراً لتدفع للشخص عن كل موعد يحجزه.',
+    'Per appointment (USD)':'لكل موعد (دولار)', 'Count from':'احسب من', 'Also count commission-based shifts (normally the client pays those)':'احسب أيضاً ورديات العمولة (عادةً يدفعها العميل)', 'Save rate':'احفظ السعر',
+    'Appointments come from what reps type when they clock out. A shift’s commission is added when you open this page or Payroll.':'المواعيد تأتي مما يكتبه المندوبون عند تسجيل الخروج. عمولة الوردية تُضاف عند فتح هذه الصفحة أو صفحة الرواتب.',
+    'Add a commission by hand':'أضف عمولة يدوياً', 'Add commission':'أضف العمولة', 'They get a bell in the portal when it is added.':'يصله تنبيه في البوابة عند إضافتها.',
+    'For each client: the hours your team worked, what that should bill at the client’s rate, what is on invoices, what is not on any invoice yet, and what the client has paid.':'لكل عميل: ساعات عمل فريقك، وكم يجب أن تُفوتر بسعر العميل، وما في الفواتير، وما لم يدخل أي فاتورة بعد، وما دفعه العميل.',
+    'Dates':'التواريخ', 'This month':'هذا الشهر', 'Last month':'الشهر الماضي', 'This pay cycle':'دورة الدفع الحالية', 'Last pay cycle':'دورة الدفع السابقة', 'Pick dates':'اختر التواريخ', 'Make an invoice':'أنشئ فاتورة',
+    'team hours':'ساعات الفريق', 'should bill':'يجب فوترته', 'hours × each shift’s client rate':'الساعات × سعر العميل لكل وردية', 'on invoices':'في الفواتير', 'invoices inside these dates':'فواتير داخل هذه التواريخ',
+    'not on any invoice':'خارج أي فاتورة', 'paid by clients':'دفعه العملاء', 'shifts marked paid by the client':'ورديات علّمها العميل كمدفوعة', 'By client':'حسب العميل',
+    'Client':'العميل', 'Rate':'السعر', 'Should bill':'يجب فوترته', 'On invoices':'في الفواتير', 'Not invoiced':'غير مفوتر', 'Client paid':'دفع العميل', 'Team pay':'أجر الفريق', 'Margin':'الهامش', 'Check':'المراجعة',
+    'Matches':'مطابق', 'An invoice crosses these dates':'فاتورة تتجاوز هذه التواريخ', 'Invoices':'الفواتير', 'No invoice touches these dates.':'لا فاتورة في هذه التواريخ.', 'Shifts with no rate':'ورديات بلا سعر', 'No hourly shifts.':'لا ورديات بالساعة.',
+    'No team hours or invoices in these dates.':'لا ساعات فريق أو فواتير في هذه التواريخ.', 'No client set':'بدون عميل', 'Draft':'مسودة', 'Sent':'مرسلة', 'Next pay day':'يوم الدفع القادم',
+    'Should bill uses the rate saved on each shift when it was logged. A shift counts as invoiced when an invoice for that client covers its date. Set a missing rate in Cash › Team hours › Clients.':'«يجب فوترته» يستخدم السعر المحفوظ مع كل وردية عند تسجيلها. تُحسب الوردية مفوترة إذا غطت تاريخها فاتورة لذلك العميل. أضف السعر الناقص من Cash › ساعات الفريق › العملاء.'
+  });
+  if (L.RULES) L.RULES.push(
+    [/^Pay day (.+)$/, (m, d) => 'يوم الدفع ' + d],
+    [/^(\d+) (?:person|people)$/, (m, n) => n + ' ' + (n === '1' ? 'شخص' : 'أشخاص')],
+    [/^(\d+) commissions?$/, (m, n) => n + ' عمولة'],
+    [/^(\d+) runs?$/, (m, n) => n + ' دفعة'],
+    [/^(\d+(?:\.\d+)?) h$/, (m, n) => n + ' س'],
+    [/^Mark (.+) paid$/, (m, n) => 'علّم ' + n + ' كمدفوع'],
+    [/^Paid (.+)$/, (m, d) => 'مدفوع ' + d]
+  );
+})();

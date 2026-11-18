@@ -59,10 +59,12 @@
       body.innerHTML = PX.loading;
       const calls = [safe(db().rpc('portal_earnings', { p_month:S.month, p_user:owner ? S.who : null }))];
       if (owner) calls.push(safe(db().from('bonus_rules').select('*').order('created_at', { ascending:false })), safe(db().rpc('bonus_awards_all')));
+      else calls.push(safe(db().rpc('my_pay_adjustments')));
       const [e, rules, awards] = await Promise.all(calls);
       if (!ok()) return;
       if (e.error) { body.innerHTML = failed(e.error); return; }
-      draw(e.data || {}, rules && rules.data, awards && awards.data);
+      S.adj = owner ? [] : ((rules && rules.data) || []);   // round 19: the rep's own bonuses and deductions from Payroll
+      draw(e.data || {}, owner && rules && rules.data, owner && awards && awards.data);
     }
     function draw(d, rules, awards){
       const comm = d.commissions || [], bon = d.bonuses || [], refs = d.referrals || [], prog = d.progress || [];
@@ -87,6 +89,7 @@
         (prog.length ? card('Bonuses you can earn', '', prog.map(p => { const pc = Math.min(100, Math.round(+p.value / +p.target * 100)); return '<div class="r20-prog"><div><b>' + esc(p.rule) + '</b> · ' + usd(p.amount) + '<br><small>' + num(Math.round(+p.value * 10) / 10) + ' of ' + num(+p.target) + ' ' + esc(METRIC[p.metric]) + ' ' + esc(PERIOD_NOW[p.period]) + (pc >= 100 ? ' · earned, added tonight' : '') + '</small></div>' + PX.bar(Math.min(+p.value, +p.target), +p.target) + '</div>'; }).join('')) : '') +
         card('Commissions', plural(comm.length, 'deal'), comm.length ? table(['Deal', 'Closed', 'Profit', 'Your share', 'Status'], comm.map(c => tr([esc(c.deal || '–'), esc(c.closed_on ? day(c.closed_on) : '–'), c.profit != null ? usd(c.profit) : '–', '<b>' + usd(c.amount) + '</b>' + (c.percent ? ' <small>(' + (+c.percent) + '%)</small>' : ''), c.status === 'paid' ? pill('Paid ' + (c.paid_on ? day(c.paid_on) : ''), 'ok') : pill('Owed', '')]))) : empty('No commissions yet. When a deal you worked closes, Amr adds your share here.')) +
         card('Bonuses', plural(bon.length, 'bonus', 'bonuses'), bon.length ? table(['Bonus', 'For', 'Result', 'Amount', 'Status'].concat(owner ? [''] : []), bon.map(b => tr([esc(b.rule), esc((b.period === 'day' ? '' : b.period === 'week' ? 'Week of ' : '') + (b.period === 'month' ? fmtDay(b.period_start, { month:'long', year:'numeric' }) : day(b.period_start))), num(Math.round(+b.value * 10) / 10) + ' ' + esc(METRIC[b.metric]), '<b>' + usd(b.amount) + '</b>', b.status === 'paid' ? pill('Paid ' + (b.paid_on ? day(b.paid_on) : ''), 'ok') : pill('Earned', '')].concat(owner ? [b.status === 'paid' ? '' : '<button type="button" class="p-btn is-ghost" data-r20paid="' + b.id + '">Mark paid</button>'] : [])))) : empty(prog.length ? 'No bonuses yet. Hit a target above and it shows up here the next morning.' : 'No bonuses yet.')) +
+        ((S.adj || []).length ? card('Bonuses and deductions', plural(S.adj.length, 'line'), table(['Type', 'Reason', 'Pay cycle', 'Amount', 'Status'], S.adj.map(a => tr([a.kind === 'bonus' ? pill('Bonus', 'ok') : pill('Deduction', ''), esc(a.reason), esc(day(a.cycle_from)), (a.kind === 'deduction' ? '−' : '+') + usd(a.amount), a.status === 'paid' ? pill('Paid ' + (a.paid_on ? day(a.paid_on) : ''), 'ok') : pill('Next pay day', 'plain')])))) : '') +
         (refs.length ? card('Referral bonuses', '', table(['Who', 'Hired', 'Bonus', 'Status'], refs.map(x => tr([esc(x.name), esc(x.hired_on ? day(x.hired_on) : '–'), usd(x.bonus), x.status === 'paid' ? pill('Paid', 'ok') : pill('Owed', '')])))) : '') +
         '</section>' +
         '<p class="p-hint r20-noprint">' + (d.pay_days ? 'Pay day: ' + esc(payText(d.pay_days)) + '. ' : '') + (+d.payslips ? 'Signed payslips are in your account menu › Payslips.' : '') + ' Pay counts hours from saved shifts at your rate (' + usd(d.rate) + ' an hour). Commission-based shifts aren’t paid by the hour.</p>' +
