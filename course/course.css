@@ -530,3 +530,12 @@ html.vfill-lock, html.vfill-lock body{ overflow:hidden; }
 
 .item .mini{ display:block; height:6px; border-radius:3px; background:var(--track); overflow:hidden; margin-top:4px; }
 .item .mini i{ display:block; height:100%; background:var(--orange); }
+
+/* Module 13 state sheets (read from the Contracts page) */
+.ss{ margin-top:22px; padding-top:16px; border-top:1px solid var(--line, #e5e5e5); }
+.ss-card{ border:1px solid var(--line, #e5e5e5); border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:8px; }
+.ss-row{ display:grid; grid-template-columns:150px 1fr; gap:10px; font-size:14px; line-height:1.45; }
+.ss-row .k, .ss-pick .k{ color:var(--muted); font-size:12.5px; }
+.ss-pick select{ font:inherit; padding:6px 8px; border-radius:8px; border:1px solid var(--line, #ddd); }
+@media (max-width:560px){ .ss-row{ grid-template-columns:1fr; gap:2px; } }
+@media print{ .ss-pick{ display:none; } }
