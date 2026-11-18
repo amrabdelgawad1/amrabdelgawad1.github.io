@@ -171,3 +171,27 @@
 })();
 (function(){ const L = window.AppLang; if (!L || !L.RULES) return;
   L.RULES.push([/^(\d+) of (\d+) lessons(?: · (\d+) quiz(?:zes)? passed)?$/, (m, a, b, q) => a + ' من ' + b + ' دروس' + (q ? ' · اجتاز ' + q + ' اختبار' : '')]); })();
+
+// Round 20: agreements, data cleanup, status checks, earnings, bonus rules, templates, phone-alert card, callbacks
+(function(){
+  'use strict';
+  const L = window.AppLang;
+  if (!L || !L.AR) return;
+  Object.assign(L.AR, {
+    'Earnings':'الأرباح', 'Templates':'القوالب', 'Data cleanup':'تنظيف البيانات', 'Agreements':'الموافقات',
+    'Please read and agree':'يرجى القراءة والموافقة', 'Agree and continue':'موافق ومتابعة', 'Sign out':'تسجيل الخروج',
+    'Terms of use':'شروط الاستخدام', 'Privacy policy':'سياسة الخصوصية', 'Refund policy':'سياسة الاسترداد',
+    'pay from hours':'الأجر من الساعات', 'paid so far':'المدفوع حتى الآن', 'commissions and bonuses':'العمولات والمكافآت', 'still coming (all time)':'المتبقي لك (كل الوقت)',
+    'Bonuses you can earn':'مكافآت يمكنك كسبها', 'Commissions':'العمولات', 'Bonuses':'المكافآت', 'Referral bonuses':'مكافآت الترشيح', 'Print statement':'اطبع الكشف',
+    'Person':'الشخص', 'Month':'الشهر', 'Paid':'مدفوع', 'Owed':'مستحق', 'Earned':'مكتسب', 'Mark paid':'علّم كمدفوع',
+    'Pay days':'أيام الدفع', 'Bonus rules':'قواعد المكافآت', 'Add rule':'أضف قاعدة', 'Bonuses to pay':'مكافآت للدفع',
+    'Texts and emails':'رسائل نصية وبريد', 'Texts':'رسائل نصية', 'Emails':'بريد إلكتروني', 'New template':'قالب جديد', 'Pick a template':'اختر قالباً',
+    'Copy':'نسخ', 'Copied.':'تم النسخ.', 'Open in Messages':'افتح في الرسائل', 'Open in email':'افتح في البريد', 'Edit':'تعديل', 'Make my own copy':'أنشئ نسختي',
+    'Sellers':'البائعون', 'Buyers':'المشترون', 'Agents':'الوكلاء', 'Other':'أخرى', 'Share with the team':'شاركه مع الفريق', 'Save':'حفظ', 'Cancel':'إلغاء',
+    'Call back':'معاودة الاتصال', 'Save callback':'حفظ المعاودة', 'Turn on phone alerts':'فعّل تنبيهات الهاتف', 'Not now':'ليس الآن',
+    'So callbacks, tasks, messages and bonuses reach you even when the portal is closed.':'حتى تصلك المعاودات والمهام والرسائل والمكافآت حتى والبوابة مغلقة.',
+    'Rules':'القواعد', 'Run it now':'شغّله الآن', 'Run cleanup now':'شغّل التنظيف الآن', 'Recent runs':'آخر مرات التشغيل', 'Keep for':'الاحتفاظ لمدة', 'Keep forever':'احتفظ دائماً', 'Delete on its own':'احذف تلقائياً',
+    'Email, spam and phone alerts':'البريد والرسائل المزعجة وتنبيهات الهاتف', 'Email delivery':'وصول البريد', 'Phone alerts':'تنبيهات الهاتف',
+    'Pages and versions':'الصفحات والإصدارات', 'Records':'السجلات', 'Download CSV':'تنزيل CSV', 'Ask everyone again':'اطلب الموافقة من الجميع مجدداً'
+  });
+})();
