@@ -396,7 +396,7 @@
     view = v;
     document.querySelectorAll('#view button').forEach(x => x.classList.toggle('on', x.dataset.v === v));
     const person = v === 'team' ? hashPerson() : '';
-    history.replaceState(null, '', v === 'overview' ? location.pathname : '#' + v + (person ? '/' + encodeURIComponent(person) : ''));
+    history.replaceState(null, '', location.pathname + location.search + (v === 'overview' ? '' : '#' + v + (person ? '/' + encodeURIComponent(person) : '')));
     $('teamView').hidden = v !== 'team';
     $('cashTools').hidden = v === 'team';
     $('addToggle').hidden = v === 'team' || v === 'mytime';

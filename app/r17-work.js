@@ -77,12 +77,12 @@
       if (r.error) { box.innerHTML = failed(r.error); return; }
       const rows = r.data || [];
       const cell = (got, goal) => goal ? '<span class="r17-goal"><b>' + got + '</b> / ' + goal + '<span class="px-bar"><i data-w="' + Math.min(100, Math.max(2, Math.round(got / goal * 100))) + '"' + (got >= goal ? ' class="ok"' : '') + '></i></span></span>' : '<b>' + got + '</b>';
-      const flame = x => x.streak ? '<span class="r17-streak" title="Best: ' + x.best + '">' + plural(x.streak, 'day') + '</span>' + (x.best > x.streak ? '<br><small>best ' + x.best + '</small>' : '') : '<small>–</small>';
+      const flame = x => (x.streak ? '<span class="r17-streak" title="Best: ' + x.best + '">' + plural(x.streak, 'day') + '</span>' : '<small>–</small>') + (x.best > x.streak ? '<br><small>best ' + x.best + '</small>' : '');
       let html = rows.length ? table(['Rep', 'Streak'].concat(KEYS.map(k => k[1])).concat(['Days worked']),
         rows.map(x => '<tr' + (x.me ? ' class="np-me"' : '') + '><td>' + esc(x.name) + (x.me ? ' ' + pill('You', 'ok') : '') + '</td><td>' + flame(x) + '</td>' +
           KEYS.map(k => '<td>' + cell(+x.week[k[0]] || 0, +x.target[k[0]] || 0) + '</td>').join('') + '<td>' + (x.week.days || 0) + '</td></tr>'))
         : empty('No team members yet.');
-      html += '<p class="p-hint">A streak counts the days in a row you worked and hit your daily targets. Days off don’t break it; a worked day under target starts it again. With no daily targets set, every worked day counts.</p>';
+      html += '<p class="p-hint">A streak counts the working days in a row that hit your daily targets. A weekend doesn’t break it; more than 3 days without a shift, or a worked day under target, starts it again. With no daily targets set, every worked day counts.</p>';
       if (owner) {
         html += '<h3 class="r17-h">Weekly targets</h3><form class="px-form r17-wt" id="lbWt" novalidate>' + table(['Rep'].concat(KEYS.map(k => k[1])),
           rows.filter(x => x.user_id).map(x => '<tr><td>' + esc(x.name) + '</td>' + KEYS.map(k => '<td><input class="np-num" type="number" min="0" step="1" inputmode="numeric" aria-label="' + esc(x.name + ' weekly ' + k[1]) + '" data-u="' + x.user_id + '" data-k="weekly_' + k[0] + '" value="' + (x.target[k[0]] == null ? '' : x.target[k[0]]) + '"></td>').join('') + '</tr>')) +
@@ -115,6 +115,10 @@
     if (!ok()) return;
     if (c.error) { body.innerHTML = failed(c.error); return; }
     const calls = c.data || [], objs = e.data || [], objName = id => (objs.find(o => o.id === id) || {}).title || 'Objection';
+    // Several recordings of the same lesson read share a title: number them Take 1, 2, 3 (oldest first) and show the time
+    const sameTitle = {}; calls.slice().sort((a, b) => a.created_at < b.created_at ? -1 : 1).forEach(x => { const k = x.rep + '|' + x.title; (sameTitle[k] = sameTitle[k] || []).push(x); });
+    Object.values(sameTitle).forEach(g => { if (g.length > 1) g.forEach((x, i) => { x.take = i + 1; }); });
+    const clock = d => new Date(d).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true });
     const urls = new Map();
     const S = { obj:'', stage:'', q:'', untagged:false, edit:null };
     function draw(){
@@ -127,7 +131,7 @@
         f('Search', '<input type="search" id="clQ" value="' + esc(S.q) + '" placeholder="Title, rep or note">') +
         (owner ? '<label class="r17-check"><input type="checkbox" id="clUn"' + (S.untagged ? ' checked' : '') + '> Not tagged yet</label>' : '') + '</div>' +
         card(plural(list.length, 'call'), calls.length !== list.length ? 'of ' + calls.length : '', list.length ? list.map(x =>
-          '<div class="r17-call" data-id="' + x.upload_id + '"><div class="p-row"><span><b>' + esc(x.title) + '</b><br><small>' + esc([x.rep, fmtDay(x.created_at, { month:'short', day:'numeric', year:'numeric' }), x.total != null ? 'score ' + x.total : ''].filter(Boolean).join(' · ')) + '</small></span>' +
+          '<div class="r17-call" data-id="' + x.upload_id + '"><div class="p-row"><span><b>' + esc(x.title) + (x.take ? ' · Take ' + x.take : '') + '</b><br><small>' + esc([x.rep, fmtDay(x.created_at, { month:'short', day:'numeric', year:'numeric' }) + ', ' + clock(x.created_at), x.total != null ? 'score ' + x.total : ''].filter(Boolean).join(' · ')) + '</small></span>' +
           '<span class="r17-acts"><button type="button" class="p-btn is-ghost" data-play="' + x.upload_id + '">Play</button>' + (owner ? '<button type="button" class="p-btn is-ghost" data-tag="' + x.upload_id + '">' + (x.objections.length || x.stages.length ? 'Edit tags' : 'Tag') + '</button>' : '') + '</span></div>' +
           '<div class="r17-tags">' + x.stages.map(s => pill(s)).join('') + x.objections.map(o => pill(objName(o), 'warn')).join('') + (x.note ? '<small>' + esc(x.note) + '</small>' : '') + '</div>' +
           (S.edit === x.upload_id ? tagForm(x) : '') + '<div class="r17-audio" id="au' + x.upload_id + '"></div></div>').join('')
