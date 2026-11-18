@@ -640,6 +640,7 @@
         '<div id="videoBox"></div>' +
         (S.isAdmin ? '<div id="narrBox"></div>' : '') +
         '<div class="prose" id="lessonText">' + MD.render(it.bodyMarkdown) + '</div>' +
+        '<div id="stateBox"></div>' +
         '<p class="endmark" aria-hidden="true">End of lesson</p>' +
         '<div id="renewBox"></div>' +
         '<div id="practiceBox"></div>' +
@@ -666,7 +667,43 @@
     if (window.CoursePractice && user) CoursePractice.mount($('practiceBox'), { db, user, mod, it, title:it.shortTitle || heading(it), toast }).then(f => { leaving = f; }).catch(() => {});
     if (mod.number === S.totalModules && /staying certified/i.test(it.title || '')) renewCard(it);
     lessonVideo(mod, it);
+    stateSheets(mod, it);
     if (S.isAdmin && window.CourseNarrate) CourseNarrate.lesson(db, mod, it, $('narrBox'));
+  }
+
+  // ---------- Module 13: live state sheets ----------
+  // Lessons 13.2 (Ohio), 13.2b (Michigan) and 13.3 (state map) show the state sheets kept on the portal's
+  // Contracts page, so the course and the CRM never disagree. Read only, through course_state_sheets().
+  const STATE_LESSONS = { '13.2':'OH', '13.2b':'MI', '13.3':'*' };
+  let stateCache = null;
+  async function stateSheets(mod, it){
+    const box = $('stateBox'), want = STATE_LESSONS[it.id];
+    if (!box || mod.number !== 13 || !want) return;
+    let rows;
+    try { rows = stateCache || (stateCache = await rpc('course_state_sheets', {})); } catch(e){ return; }
+    if (!Array.isArray(rows) || !rows.length || !document.body.contains(box)) return;
+    const day = d => { const t = new Date(String(d).slice(0, 10) + 'T12:00:00'); return isNaN(t) ? '' : t.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }); };
+    const line = (k, v) => v ? '<div class="ss-row"><span class="k">' + k + '</span><span class="v">' + MD.inline(String(v)) + '</span></div>' : '';
+    const card = r => '<div class="ss-card">' +
+      '<div class="between"><b>' + esc(r.name || r.state) + '</b>' + (r.checked_on ? '<span class="note">Checked ' + esc(day(r.checked_on)) + '</span>' : '') + '</div>' +
+      (line('Wholesaling rule', r.wholesaling) + line('Disclosure state?', r.disclosure) + line('Who closes', r.closing) + line('Usual deed', r.deed) ||
+        '<p class="note">No details on this sheet yet.</p>') +
+      ((r.sources || []).length ? '<p class="note">Sources: ' + r.sources.map((u, i) => { const url = typeof u === 'string' ? u : (u && u.url); return /^https:\/\//.test(url || '') ? '<a href="' + esc(url) + '" target="_blank" rel="noopener">' + (i + 1) + '</a>' : ''; }).filter(Boolean).join(', ') + '</p>' : '') +
+      '</div>';
+    const head = '<h2 class="sub" data-s="fs16">State sheet from the Contracts page</h2>' +
+      '<p class="note">This is the same sheet the team uses in the Deal CRM. When a law changes, the sheet is updated there and shows here. Laws change fast: confirm with compliance before you work a new state.</p>';
+    if (want !== '*'){
+      const r = rows.find(x => x.state === want);
+      if (!r) return;
+      box.innerHTML = '<section class="stack ss" aria-label="State sheet">' + head + card(r) + '</section>';
+      return;
+    }
+    box.innerHTML = '<section class="stack ss" aria-label="State sheets">' + head.replace('State sheet from', 'State sheets from') +
+      '<label class="ss-pick"><span class="k">State</span> <select id="ssSel">' + rows.map(r => '<option value="' + esc(r.state) + '">' + esc(r.name || r.state) + '</option>').join('') + '</select></label>' +
+      '<div id="ssOne"></div></section>';
+    const sel = $('ssSel'), one = $('ssOne');
+    const show = () => { const r = rows.find(x => x.state === sel.value); one.innerHTML = r ? card(r) : ''; };
+    sel.onchange = show; show();
   }
 
   // ---------- Lesson video ----------
