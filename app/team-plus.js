@@ -152,6 +152,12 @@
     const names = {}; ppl.forEach(p => names[p.user_id] = p.name);
     (pd.data || []).forEach(d => out.push({ kind:'File', title:d.title, sub:[names[d.user_id], d.kind].filter(Boolean).join(' · '), href:'#person/' + d.user_id }));
     (an.data || []).forEach(a => out.push({ kind:'Update', title:a.title || 'Announcement', sub:(a.body || '').split('\n')[0], text:a.body, href:'#announcements' }));
+    // Round 21: the Me area (Amr only): goals and Upwork/LinkedIn entries
+    if (owner) {
+      const [mg, mj] = await Promise.all([safe(db().from('me_goals').select('id,title,area,status')), safe(db().from('me_job_apps').select('id,title,client,platform,status').order('sent_on', { ascending:false }).limit(300))]);
+      (mg.data || []).forEach(g => out.push({ kind:'Goal', title:g.title, sub:g.area + (g.status !== 'active' ? ' · ' + g.status : ''), href:'#goals' }));
+      (mj.data || []).forEach(j => out.push({ kind:'Proposal', title:j.title, sub:[j.platform, j.client].filter(Boolean).join(' · '), href:'#jobhunt' }));
+    }
     const mods = cst.data && Array.isArray(cst.data.modules) ? cst.data.modules : [];
     mods.forEach(m => (m.items || []).forEach(it => (it.type === 'group' ? (it.items || []) : [it]).forEach(c => {
       if (c && c.type === 'lesson' && c.title) out.push({ kind:'Lesson', title:c.title, sub:'Acquisitions · Module ' + m.number + (m.open === false ? ' · locked' : ''), href:'/course/#/m/' + m.id + '/l/' + c.id });

@@ -381,9 +381,12 @@
     access.slice(0, 5).forEach(n => waits.push({ tag:'Access', text:n.title, href:String(n.link || '#people').replace(/^\/app\//, ''), act:'Give access' }));
     if ((fb.data || []).length) waits.push({ tag:'Feedback', text:plural(fb.data.length, 'problem or idea', 'problems or ideas') + ' not marked done', href:'#logs/feedback', act:'Read' });
     if (other.length) waits.push({ tag:'Alerts', text:plural(other.length, 'unread alert') + ': ' + other.slice(0, 2).map(n => n.title).join(' · '), href:'#', act:'Open the bell', bell:true });
+    // Round 21: Me today (routine, study, work log, follow-ups, goal steps), from r21-me.js
+    const meRows = window.R21Me ? await window.R21Me.summary(db).catch(() => null) : null;
+    const meBox = meRows ? box5('Me today', 'Only you see this', meRows.map(m => row(m[0], m[3] ? pillR(m[1]) : muted(m[1]), m[2]))) : '';
     const html = '<section aria-labelledby="pvNow"><h2 class="p-h2" id="pvNow">Right now</h2><div class="p-grid p-boxes">' +
       box5('On shift', plural(onShift.length, 'person', 'people'), shiftRows) + box5('Narration', online ? 'PC online' : 'PC offline', voiceRows) +
-      box5('Cash this month', cashOk ? 'In pounds' : '', cashRows) + '</div></section>';
+      box5('Cash this month', cashOk ? 'In pounds' : '', cashRows) + meBox + '</div></section>';
     return { html, waits };
   }
 

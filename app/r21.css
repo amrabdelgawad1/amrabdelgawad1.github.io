@@ -1,0 +1,67 @@
+/* Round 21 (Nov 19 2026): Me area (routine, goals, Upwork and LinkedIn, study planner, work log) and
+   Settings › Devices. Scoped to #pView like r17.css and r20.css. No inline styles. */
+#pView .r21-hide{ display:none !important; }
+#pView .r21-checks{ display:grid; gap:8px; }
+#pView .r21-check{ display:flex; gap:12px; align-items:flex-start; width:100%; padding:12px 14px; text-align:left; border:1px solid var(--p-line); border-radius:12px; background:var(--p-card); color:var(--p-ink); font:inherit; cursor:pointer; }
+#pView .r21-check:hover, #pView .r21-check:focus-visible{ border-color:var(--p-accent); }
+#pView .r21-check small{ display:block; color:var(--p-muted); font-size:13px; margin-top:2px; }
+#pView .r21-check .r21-streak:empty{ display:none; }
+#pView .r21-check .r21-streak{ color:var(--p-ok, #1a7f4b); font-weight:600; }
+#pView .r21-box{ flex:none; display:grid; place-items:center; width:26px; height:26px; border:2px solid var(--p-line2, #c9ced8); border-radius:8px; font-weight:800; }
+#pView .r21-check.on .r21-box{ background:var(--p-ok, #1a7f4b); border-color:var(--p-ok, #1a7f4b); color:#fff; }
+#pView .r21-check.on b{ text-decoration:line-through; color:var(--p-muted); }
+#pView .r21-grid th, #pView .r21-grid td{ text-align:center; padding:4px 2px; white-space:nowrap; }
+#pView .r21-grid th[scope=row]{ text-align:left; padding-right:10px; font-weight:600; }
+#pView .r21-grid th small{ display:block; font-weight:500; color:var(--p-muted); font-size:11px; }
+#pView .r21-grid .r21-today{ color:var(--p-accent); }
+#pView .r21-cell{ width:32px; height:32px; border:1px solid var(--p-line2, #c9ced8); border-radius:8px; background:var(--p-card); color:var(--p-ink); font:700 14px/1 var(--p-body); cursor:pointer; }
+#pView .r21-cell.on{ background:var(--p-ok, #1a7f4b); border-color:var(--p-ok, #1a7f4b); color:#fff; }
+#pView .r21-cell.miss{ border-color:var(--p-accent); }
+#pView .r21-cell.off{ border-style:dashed; color:var(--p-muted); }
+#pView .r21-days{ display:flex; flex-wrap:wrap; gap:6px 14px; border:0; padding:0; margin:0; }
+#pView .r21-days legend{ font-size:14px; font-weight:600; color:var(--p-ink2); margin-bottom:6px; }
+#pView .r21-days label{ display:inline-flex; align-items:center; gap:6px; min-height:36px; font-size:14px; color:var(--p-ink2); }
+#pView .r21-days input{ width:18px; height:18px; }
+#pView .r21-tabs{ margin:0 0 14px; }
+#pView .r21-why{ margin:0 0 8px; color:var(--p-ink2); }
+#pView .r21-steps{ list-style:none; margin:8px 0; padding:0; }
+#pView .r21-steps li{ display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--p-line); }
+#pView .r21-steps li:last-child{ border-bottom:0; }
+#pView .r21-steps label{ flex:1; display:flex; gap:8px; align-items:center; min-height:36px; cursor:pointer; }
+#pView .r21-steps input{ width:18px; height:18px; flex:none; }
+#pView .r21-steps li.is-done span{ text-decoration:line-through; color:var(--p-muted); }
+#pView .r21-steps small{ color:var(--p-muted); }
+#pView .r21-late{ color:var(--p-accent) !important; font-weight:700; }
+#pView .r21-x{ min-width:32px; min-height:32px; border:0; background:transparent; color:var(--p-muted); font-size:20px; cursor:pointer; border-radius:8px; }
+#pView .r21-x:hover{ color:var(--p-accent); background:var(--p-soft); }
+#pView .r21-addstep{ display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 10px; }
+#pView .r21-addstep input{ min-height:40px; padding:6px 10px; border:1px solid var(--p-line2); border-radius:var(--p-r-sm, 8px); background:var(--p-card); color:var(--p-ink); font:400 15px/1.3 var(--p-body); }
+#pView .r21-addstep input[type=text]{ flex:1 1 220px; }
+#pView .r21-gacts{ margin-top:6px; }
+#pView .r21-week{ margin:0 0 14px; }
+#pView .r21-week b{ font-size:16px; }
+#pView .r21-link{ border:0; background:none; padding:0; color:var(--p-accent); font:600 13px/1.3 var(--p-body); cursor:pointer; text-decoration:underline; }
+#pView .r21-days7{ display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:10px; margin:0 0 16px; }
+@media (max-width:1100px){ #pView .r21-days7{ grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); } }
+#pView .r21-dcol{ padding:12px; margin:0; }
+#pView .r21-dcol h3{ margin:0 0 8px; font:800 14px/1.2 var(--p-body); }
+#pView .r21-dcol.r21-on{ border-color:var(--p-accent); }
+#pView .r21-blk{ display:grid; gap:2px; padding:8px 0; border-top:1px solid var(--p-line); font-size:14px; }
+#pView .r21-blk label{ display:flex; gap:8px; align-items:center; cursor:pointer; }
+#pView .r21-blk input[type=checkbox]{ width:18px; height:18px; }
+#pView .r21-blk small{ color:var(--p-muted); }
+#pView .r21-blk.is-done b{ text-decoration:line-through; color:var(--p-muted); }
+#pView .r21-bacts{ display:flex; justify-content:space-between; align-items:center; }
+#pView .r21-minf{ display:flex; gap:6px; margin-top:4px; }
+#pView .r21-minf input{ width:80px; min-height:36px; padding:4px 8px; border:1px solid var(--p-line2); border-radius:8px; }
+#pView .r21-tgedit{ margin-top:12px; padding-top:12px; border-top:1px solid var(--p-line); }
+#pView .r21-inline{ min-height:38px; padding:4px 8px; border:1px solid var(--p-line2); border-radius:8px; background:var(--p-card); color:var(--p-ink); font:400 14px/1.3 var(--p-body); }
+#pView .r21-draft textarea{ font:14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space:pre-wrap; }
+
+/* Settings › Devices (the Settings window, not #pView) */
+.r21-dev{ list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+.r21-dev li{ display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center; padding:12px 14px; border:1px solid var(--line, #e3e6ec); border-radius:12px; }
+.r21-dev li.is-here{ border-color:var(--accent, #b4372a); }
+.r21-dev li > div{ flex:1 1 240px; }
+.r21-dev small{ display:block; margin-top:3px; color:var(--muted, #6b7280); font-size:13px; }
+.r21-here{ display:inline-block; margin-left:6px; padding:1px 8px; border-radius:99px; background:var(--accent, #b4372a); color:#fff; font-size:12px; font-weight:700; }

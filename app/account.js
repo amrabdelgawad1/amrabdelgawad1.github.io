@@ -157,8 +157,8 @@
   document.body.appendChild(sheet);
   let tab = 'profile', agentOpen = new Set(), agentView = null, lastFocus = null;
   const TABS = () => isOwner()
-    ? [['profile','My profile'], ['agents','Agents'], ['rates','Dollar rates'], ['password','Sign-in'], ['alerts','Phone alerts'], ['backup','Backup']]
-    : [['profile','My profile'], ['password','Sign-in'], ['alerts','Phone alerts']];   // Phone alerts: round6.js   // round 6: light only, so no Appearance tab
+    ? [['profile','My profile'], ['agents','Agents'], ['rates','Dollar rates'], ['password','Sign-in'], ['devices','Devices'], ['alerts','Phone alerts'], ['backup','Backup']]
+    : [['profile','My profile'], ['password','Sign-in'], ['devices','Devices'], ['alerts','Phone alerts']];   // Devices: r21-me.js (round 21, P1)   // Phone alerts: round6.js   // round 6: light only, so no Appearance tab
   function openSettings(t){
     lastFocus = document.activeElement;
     tab = t; agentView = null;
@@ -198,6 +198,7 @@
     const B = $('setBody');
     B.scrollTop = 0;
     if (tab === 'profile') return drawProfile();
+    if (tab === 'devices') return window.PortalDevices ? window.PortalDevices.draw(B) : (B.innerHTML = '<p class="note">Refresh the app to see your devices.</p>');
     if (tab === 'alerts') return window.PortalPush ? window.PortalPush.draw(B) : (B.innerHTML = '<p class="note">Refresh the app to set up phone alerts.</p>');
     if (tab === 'agents') return agentView ? drawAgentProfile() : drawAgents();
     if (tab === 'rates') return drawRates();
@@ -209,14 +210,15 @@
         head('Password', 'At least 8 characters. You stay signed in on this device.') +
         '<form class="form narrow" id="pwChange" novalidate><label class="label">New password<input class="field" type="password" id="npw1" autocomplete="new-password" /></label>' +
         '<label class="label">Type it again<input class="field" type="password" id="npw2" autocomplete="new-password" /></label><p class="err" id="npwErr"></p><button class="btn" type="submit">Change password</button></form>' +
-        head('Other devices', 'Lost a phone, or signed in on someone else’s computer? This signs you out everywhere except here.') +
-        '<div class="form narrow"><button class="btn ghost" type="button" id="signOutOthers">Sign out of all other devices</button></div>';
+        head('Other devices', 'Lost a phone, or signed in on someone else’s computer? This signs you out everywhere except here. To see each device and sign out just one, open Devices.') +
+        '<div class="form narrow"><button class="btn ghost" type="button" id="signOutOthers">Sign out of all other devices</button> <button class="btn ghost" type="button" id="toDevices">See every device</button></div>';
       $('signOutOthers').addEventListener('click', async e => {
         const b = e.currentTarget; b.setAttribute('aria-busy', 'true');
         const { error } = await db.auth.signOut({ scope: 'others' });
         b.removeAttribute('aria-busy');
         toast(error ? 'Couldn’t do that. Check your connection and try again.' : 'Signed out everywhere else. Other devices stop working within the hour.');
       });
+      $('toDevices').addEventListener('click', () => { tab = 'devices'; drawTabs(); drawBody(); });
       const uid = T.user && T.user.id;
       if (uid) db.from('usernames').select('username').eq('user_id', uid).maybeSingle().then(({ data }) => {
         const f = $('unNew'); if (!f) return;
