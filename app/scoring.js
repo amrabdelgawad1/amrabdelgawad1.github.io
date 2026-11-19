@@ -4,6 +4,11 @@
 // hub_uploads row (course "calls"); Amr scores it in the Review center on the 50-point scorecard. Each rep sees
 // their own scores over time and which parts to work on; Amr also sees the whole team and writes the scenarios.
 // Everything goes through the page's Supabase client and the database's rules (see 20261101010000_call_scoring.sql).
+// Round 29 (plan E8, practice calls for learners): learners with the Acquisitions course can open this page too. Before
+// sending, the person scores the call themselves on the same 10 parts (hub_uploads.self_score) and ticks a consent box
+// for every recording (up to 50 MB, private bucket "hub-uploads"). After Amr scores it in the Review center, each call
+// shows his score, his notes (score.note and time-stamped comments) and "Listen again" for every part where his score and
+// theirs are 2 or more apart, the same rule as the Deal CRM's call scoring.
 (function(){
   'use strict';
   const $ = id => document.getElementById(id);
@@ -39,13 +44,21 @@
       '<audio id="scPlay" controls hidden></audio>' +
       '<label class="sc-f">Which deal is this call about? (optional)<select id="scDeal"><option value="">Not about a deal</option></select></label>' +
       '<label class="sc-f">Note for Amr (optional)<textarea id="scNote" maxlength="600" rows="2"></textarea></label>' +
+      selfHtml() +
       '<button type="button" class="p-btn" id="scSend">Send for scoring</button><p class="p-empty" id="scMsg" role="status"></p></section>';
+  }
+  // Round 29: score your own call first (1 = weak, 5 = strong), so Amr's score can show where you saw it differently
+  function selfHtml(){
+    return '<fieldset class="sc-self"><legend>Score yourself first</legend><p class="sc-how">Listen back and score each part from 1 (weak) to 5 (strong). Where your score and Amr’s are 2 or more apart, you’ll see “Listen again”.</p>' +
+      CATS.map((c, i) => '<label class="sc-self-r"><span>' + (i + 1) + '. ' + esc(c) + '</span><select data-self="' + i + '" aria-label="' + esc(c) + '"><option value="">Score</option>' + [1, 2, 3, 4, 5].map(n => '<option value="' + n + '">' + n + '</option>').join('') + '</select></label>').join('') +
+      '<p class="sc-self-t" id="scSelfT" aria-live="polite">0 of 10 scored</p></fieldset>';
   }
   function kindBox(){
     if (S.kind === 'real') return '<label class="sc-tick"><input type="checkbox" id="scConsent"><span>Everyone on this call agreed to be recorded</span></label>';
     const list = S.scen.filter(x => x.active);
-    return list.length ? '<label class="sc-f">Scenario<select id="scScen"><option value="">Pick a scenario</option>' + list.map(x => '<option value="' + x.id + '"' + (x.id === S.scenario ? ' selected' : '') + '>' + esc(x.title) + ' · ' + esc(LEVEL[x.level] || '') + '</option>').join('') + '</select></label>'
-      : '<p class="p-empty">No scenarios yet. You can still send a roleplay; say in the note what you practiced.</p>';
+    const consent = '<label class="sc-tick"><input type="checkbox" id="scConsent"><span>Everyone on this recording agreed to be recorded and for Amr to review it</span></label>';
+    return (list.length ? '<label class="sc-f">Scenario<select id="scScen"><option value="">Pick a scenario</option>' + list.map(x => '<option value="' + x.id + '"' + (x.id === S.scenario ? ' selected' : '') + '>' + esc(x.title) + ' · ' + esc(LEVEL[x.level] || '') + '</option>').join('') + '</select></label>'
+      : '<p class="p-empty">No scenarios yet. You can still send a roleplay; say in the note what you practiced.</p>') + consent;
   }
 
   function scoresHtml(rows, comments){
@@ -65,10 +78,13 @@
         '<h3 class="sc-h3">Each part, average of your last ' + last5.length + '</h3><div class="sc-cats">' + cat.map((x, i) => '<div class="sc-cat' + (weak.includes(x.c) ? ' is-weak' : '') + '"><span>' + esc(x.c) + (weak.includes(x.c) ? ' <b>Work on this</b> <a href="#library/part-' + (i + 1) + '">Read the library</a>' : '') + '</span><span class="sc-meter" data-w="' + Math.round(x.v * 20) + '"><i></i></span><em>' + x.v.toFixed(1) + '</em></div>').join('') + '</div>';
     }
     return top + '<h3 class="sc-h3">Your calls</h3><div class="p-card sc-list">' + rows.slice(0, 20).map(r => {
-      const notes = comments.filter(c => c.upload_id === r.id);
-      return '<div class="sc-row"><div><b>' + esc(r.title || (r.real_call ? 'Real call' : 'Roleplay')) + '</b><small>' + esc(day(r.created_at)) + ' · ' + (r.real_call ? 'Real call' : 'Roleplay') + '</small>' +
+      const notes = comments.filter(c => c.upload_id === r.id), sc = r.score && Array.isArray(r.score.cats) ? r.score : null, me = r.self_score && Array.isArray(r.self_score.cats) ? r.self_score : null;
+      const again = sc && me ? CATS.map((c, i) => ({ c, a:+sc.cats[i], m:+me.cats[i] })).filter(x => Math.abs(x.a - x.m) >= 2) : [];
+      return '<div class="sc-row"><div><b>' + esc(r.title || (r.real_call ? 'Real call' : 'Roleplay')) + '</b><small>' + esc(day(r.created_at)) + ' · ' + (r.real_call ? 'Real call' : 'Roleplay') + (me ? ' · your score ' + me.total + ' of 50' : '') + '</small>' +
+        (r.score && r.score.note ? '<p class="sc-amr"><b>Amr’s notes:</b> ' + esc(r.score.note) + '</p>' : '') +
+        (again.length ? '<div class="sc-again"><b>Listen again</b><ul>' + again.map(x => '<li>' + esc(x.c) + ': you gave ' + x.m + ', Amr gave ' + x.a + '</li>').join('') + '</ul></div>' : '') +
         (notes.length ? '<ul class="sc-notes">' + notes.map(c => '<li>' + (c.at_s != null ? '<b>' + clock(c.at_s) + '</b> ' : '') + esc(c.body) + '</li>').join('') + '</ul>' : '') + '</div>' +
-        '<span class="p-pill' + (r.status === 'redo' ? ' is-no' : r.score ? ' is-ok' : ' is-plain') + '">' + esc(r.score ? r.score.total + ' of 50' : r.status === 'redo' ? 'Send it again' : r.status === 'approved' ? 'Reviewed' : 'Waiting for Amr') + '</span></div>';
+        '<span class="p-pill' + (r.status === 'redo' ? ' is-no' : sc ? ' is-ok' : ' is-plain') + '">' + esc(sc ? sc.total + ' of 50' : r.status === 'redo' ? 'Send it again' : r.status === 'approved' ? 'Reviewed' : 'Waiting for Amr') + '</span></div>';
     }).join('') + '</div>';
   }
 
@@ -104,9 +120,9 @@
   async function open(el, isCurrent){
     const T = window.TalentsApp || {}, db = T.db, owner = T.role === 'owner';
     stopRec(); clearTake();
-    el.innerHTML = '<div class="p-wrap"><section class="p-hero"><div><span class="p-hero-bar"></span><span class="p-hero-kick">Calls</span><h1>Call scoring</h1><p>Send a real call or a roleplay. Amr scores it on the 50-point scorecard, and your scores show here over time.</p></div></section><p class="p-loading">Loading…</p></div>';
+    el.innerHTML = '<div class="p-wrap"><section class="p-hero"><div><span class="p-hero-bar"></span><span class="p-hero-kick">Calls</span><h1>Call scoring</h1><p>Send a real call or a practice roleplay, up to 50 MB. Score yourself first, then Amr scores it on the 50-point scorecard (Lesson 1.8). His scores and notes show here over time.</p></div></section><p class="p-loading">Loading…</p></div>';
     const [sc, up, cm, nm] = await Promise.all([safe(db.from('roleplay_scenarios').select('*').order('created_at')),
-      safe(db.from('hub_uploads').select('id,user_id,title,status,score,real_call,scenario_id,created_at').eq('course', 'calls').order('created_at', { ascending:false })),
+      safe(db.from('hub_uploads').select('id,user_id,title,status,score,self_score,real_call,scenario_id,created_at').eq('course', 'calls').order('created_at', { ascending:false })),
       safe(db.from('hub_upload_comments').select('upload_id,at_s,body,created_at').order('created_at')),
       owner ? safe(db.from('members').select('user_id,name')) : Promise.resolve({})]);
     if (!isCurrent()) return;
@@ -138,6 +154,7 @@
     }
   }
 
+  const selfVals = () => Array.from(document.querySelectorAll('[data-self]')).sort((a, b) => a.dataset.self - b.dataset.self).map(x => +x.value || 0);
   function say(m, bad){ const n = $('scMsg'); if (n) { n.textContent = m; n.classList.toggle('is-bad', !!bad); } }
   function showTake(){
     const p = $('scPlay'); if (!p) return;
@@ -175,6 +192,7 @@
     });
     el.querySelector('.p-wrap').addEventListener('change', e => {
       if (e.target.id === 'scScen') S.scenario = +e.target.value || null;
+      if (e.target.dataset && e.target.dataset.self != null) { const v = selfVals(), n = v.filter(Boolean).length; $('scSelfT').textContent = n === 10 ? 'Your total: ' + v.reduce((a, b) => a + b, 0) + ' of 50' : n + ' of 10 scored'; }
       if (e.target.id === 'scFile' && e.target.files && e.target.files[0]) {
         const f = e.target.files[0]; e.target.value = '';
         if (!/^audio\//.test(f.type || '')) { say('Choose an audio recording (for example .m4a, .mp3 or .wav).', true); return; }
@@ -189,7 +207,9 @@
   async function send(db, T, isCurrent, el){
     const b = $('scSend');
     if (!S.blob) { say('Record the call or choose a recording first.', true); return; }
-    if (S.kind === 'real' && !($('scConsent') || {}).checked) { say('Tick that everyone on the call agreed to be recorded. Without that, send it as a roleplay instead.', true); return; }
+    if (!($('scConsent') || {}).checked) { say(S.kind === 'real' ? 'Tick that everyone on the call agreed to be recorded. Without that, send it as a roleplay instead.' : 'Tick that everyone on the recording agreed to it first.', true); return; }
+    const self = selfVals();
+    if (self.some(v => !v)) { say('Score yourself on all 10 parts first.', true); const f = document.querySelector('[data-self] option:checked[value=""]'); if (f) f.parentElement.focus(); return; }
     if (S.secs > MAX_S + 5) { say('That recording is over 30 minutes. Send a shorter one.', true); return; }
     const sc = S.kind === 'roleplay' ? S.scen.find(x => x.id === S.scenario) : null;
     const title = ($('scTitle').value || '').trim() || (S.kind === 'real' ? 'Real call' : 'Roleplay' + (sc ? ': ' + sc.title : ''));
@@ -199,7 +219,7 @@
     if (!isCurrent()) return;
     if (up.error) { b.disabled = false; say('Couldn’t upload it. Check your connection and try again.', true); return; }
     const ins = await safe(db.from('hub_uploads').insert({ user_id:T.user.id, course:'calls', title:title.slice(0, 200), kind:'recording', path, file_name:(S.blob.name || 'call.' + extOf(mime)).slice(0, 200), mime,
-      size_bytes:S.blob.size, duration_s:S.secs ? Math.round(S.secs) : null, note:($('scNote').value || '').trim().slice(0, 2000) || null, real_call:S.kind === 'real', consent:S.kind === 'real', scenario_id:sc ? sc.id : null, deal_id:($('scDeal') && $('scDeal').value) || null }));
+      size_bytes:S.blob.size, duration_s:S.secs ? Math.round(S.secs) : null, note:($('scNote').value || '').trim().slice(0, 2000) || null, real_call:S.kind === 'real', consent:true, self_score:{ cats:self }, scenario_id:sc ? sc.id : null, deal_id:($('scDeal') && $('scDeal').value) || null }));
     if (!isCurrent()) return;
     if (ins.error) { await safe(db.storage.from('hub-uploads').remove([path])); b.disabled = false; say('Couldn’t send it. Try again.', true); return; }
     clearTake(); S.scenario = null;

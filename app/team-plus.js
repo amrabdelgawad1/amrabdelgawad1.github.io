@@ -166,6 +166,8 @@
       (cp.data || []).forEach(x => out.push({ kind:'Proposal', title:'P-' + x.number + ' ' + x.title, sub:[x.client_name, x.status].join(' · '), href:'#proposals/' + x.id }));
       (iv.data || []).forEach(i => out.push({ kind:'Invoice', title:'Invoice #' + i.number + ' · ' + (coN[i.company_id] || 'Client'), sub:'$' + (+i.amount).toFixed(2) + ' · ' + (i.status === 'part' ? 'part paid' : i.status), text:String(i.number), href:'#invoices/' + i.id }));
     }
+    // Round 29 (E1): lesson questions (answered ones for everyone who can read them; waiting ones too for Amr)
+    if (window.R29Learn) (await window.R29Learn.search(db()).catch(() => [])).forEach(x => out.push(x));
     const mods = cst.data && Array.isArray(cst.data.modules) ? cst.data.modules : [];
     mods.forEach(m => (m.items || []).forEach(it => (it.type === 'group' ? (it.items || []) : [it]).forEach(c => {
       if (c && c.type === 'lesson' && c.title) out.push({ kind:'Lesson', title:c.title, sub:'Acquisitions · Module ' + m.number + (m.open === false ? ' · locked' : ''), href:'/course/#/m/' + m.id + '/l/' + c.id });

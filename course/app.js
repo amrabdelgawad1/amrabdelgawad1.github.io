@@ -644,6 +644,7 @@
         '<p class="endmark" aria-hidden="true">End of lesson</p>' +
         '<div id="renewBox"></div>' +
         '<div id="practiceBox"></div>' +
+        '<div id="qaBox"></div>' +
         (files.length ? '<section class="stack" aria-labelledby="filesH"><h2 class="sub" id="filesH" data-s="fs16">Files</h2><p class="note">Original guide page. Where it differs from the lesson, the lesson is correct.</p><div class="files">' + files.join('') + '</div></section>' : '') +
       '</article></main>' +
       '<div class="bar-foot lesson-foot"><div class="col">' +
@@ -668,6 +669,8 @@
     if (mod.number === S.totalModules && /staying certified/i.test(it.title || '')) renewCard(it);
     lessonVideo(mod, it);
     stateSheets(mod, it);
+    // Round 29: questions under the lesson (E1), and this lesson saved as the learner's place in the course (I16)
+    if (window.LessonQA && user) LessonQA.mount($('qaBox'), { db, course:'acq', module:mod.id, item:it.id, title:'Lesson ' + it.id + ' · ' + heading(it), sub:'Module ' + mod.number, link:'/course/#/m/' + mod.id + '/l/' + it.id, owner:!!S.isAdmin, lang:'en' });
     if (S.isAdmin && window.CourseNarrate) CourseNarrate.lesson(db, mod, it, $('narrBox'));
   }
 

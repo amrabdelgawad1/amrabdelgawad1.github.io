@@ -104,7 +104,7 @@
     if (learnOn) areas.push({ href:'/app/learn/', icon:'book', name:'Learning Hub', sub:'Your courses and progress.' });
     areas.push({ href:'#track', icon:'clock', name:'My hours', sub:'Shifts, hours and requests.' });
     if (has('deals')) areas.push({ href:'/land-calculator/', icon:'calc', name:'Calculators', sub:'Land and house deal tools.' });
-    if (has('deals')) areas.push({ href:'#scoring', icon:'mic', name:'Call scoring', sub:'Send a call or a roleplay; see your scores.' });
+    if (has('deals') || has('course')) areas.push({ href:'#scoring', icon:'mic', name:'Call scoring', sub:'Send a call or a practice roleplay; see your scores.' });   // round 29: learners too
     if (has('deals')) areas.push({ href:'#library', icon:'book', name:'Scripts and objections', sub:'What to say, and why. Search it mid-call.' });
     if (has('live') || has('requests')) areas.push({ href:has('live') ? '#live' : '#requests', icon:'people', name:'Team and shifts', sub:'Live now, hours and requests.', id:'team' });
     if (me.role === 'manager') areas.push({ href:'#progress', icon:'chart', name:'Learner progress', sub:'How the team is doing in each course.' });
@@ -380,6 +380,7 @@
     if ((ja.data || []).length) waits.push({ tag:'Hiring', text:plural(ja.data.length, 'new applicant') + (ja.data[0] ? ', latest ' + first(ja.data[0].name) : ''), href:'#applications', act:'Open' });
     access.slice(0, 5).forEach(n => waits.push({ tag:'Access', text:n.title, href:String(n.link || '#people').replace(/^\/app\//, ''), act:'Give access' }));
     if ((fb.data || []).length) waits.push({ tag:'Feedback', text:plural(fb.data.length, 'problem or idea', 'problems or ideas') + ' not marked done', href:'#logs/feedback', act:'Read' });
+    if (window.R29Learn) (await window.R29Learn.waits(db).catch(() => [])).forEach(w => waits.push(w));   // round 29 (E1): lesson questions
     if (other.length) waits.push({ tag:'Alerts', text:plural(other.length, 'unread alert') + ': ' + other.slice(0, 2).map(n => n.title).join(' · '), href:'#', act:'Open the bell', bell:true });
     // Round 21: Me today (routine, study, work log, follow-ups, goal steps), from r21-me.js
     const meRows = window.R21Me ? await window.R21Me.summary(db).catch(() => null) : null;

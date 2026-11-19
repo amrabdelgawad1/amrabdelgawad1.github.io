@@ -617,7 +617,7 @@
     home:'Portal', portal:'Portal', admin:'Admin', progress:'Learner progress', teamview:'Team overview', scoring:'Call scoring', onboarding:'Onboarding', library:'Scripts and objections' };   // the last four: portal-home.js
   // Which switch in Invite and access opens each page; "owner" pages are Amr's alone
   const SECTION = { live:'live', requests:'requests', team:'team', overview:'money', income:'money', expense:'money', mytime:'owner', emails:'owner', people:'owner', visits:'owner', logs:'owner', learn:'learn', review:'owner', track:'track',
-    home:'home', portal:'owner', admin:'owner', progress:'progress', teamview:'teamview', scoring:'scoring', onboarding:'owner', library:'scoring' };
+    home:'home', portal:'owner', admin:'owner', progress:'progress', teamview:'teamview', scoring:'practice', onboarding:'owner', library:'scoring' };
   const SECTION_NAMES = { live:'Live now', requests:'Missed-shift requests', team:'Team', money:'Money', deals:'Deal tools', learn:'Learning Hub', mkt:'Marketing course', psy:'Psychology course', course:'Acquisitions course', voice:'Amr Voice Studio' };
   // Course switches sit under Learning Hub: a course opens only when Learning Hub is on too.
   // New course? Add its switch here and in SECTION_NAMES, and give its track the same key in learn.js (TRACKS[].key).
@@ -628,6 +628,7 @@
     : sec === 'home' ? role === 'member'
     : sec === 'progress' ? role === 'owner' || (role === 'member' && !!me && me.role === 'manager')
     : sec === 'scoring' ? role === 'owner' || (role === 'member' && access.includes('deals'))
+    : sec === 'practice' ? role === 'owner' || (role === 'member' && (access.includes('deals') || access.includes('course')))   // round 29 (E8): practice calls
     : sec === 'teamview' ? role === 'owner' || (role === 'member' && !!me && me.role === 'manager' && access.includes('team'))
     : sec === 'everyone' ? role === 'owner' || role === 'member'
     : sec === 'member' ? role === 'member'

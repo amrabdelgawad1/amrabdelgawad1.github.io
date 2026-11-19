@@ -1,0 +1,41 @@
+/* Round 29 (E1): questions under a lesson, shared by the three course players. Colors fall back when a player has no such variable. */
+.lqa{margin:28px 0 8px;padding:18px 18px 16px;border:1px solid var(--line,#DCE2DD);border-radius:14px;background:var(--card,#fff);color:var(--ink,#1b1f24)}
+.lqa-h{margin:0 0 4px;font-size:18px;line-height:1.3;display:flex;align-items:center;gap:8px}
+.lqa-count{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--chip,#EEF1EE);color:var(--chip-text,#4E5A53)}
+.lqa-note,.lqa-empty{margin:0 0 12px;font-size:14px;color:var(--muted,#56635B)}
+.lqa-list{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:10px}
+.lqa-q{padding:12px 14px;border:1px solid var(--line,#DCE2DD);border-radius:12px}
+.lqa-q.is-open{border-style:dashed}
+.lqa-q.is-hidden{opacity:.6}
+.lqa-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--muted,#56635B)}
+.lqa-meta b{color:inherit;color:var(--ink,#1b1f24)}
+.lqa-pill{font-size:11.5px;padding:1px 8px;border-radius:999px;background:var(--err-fill,#FBEAE4);color:var(--err-text,#9C2C17)}
+.lqa-body{margin:6px 0 0;font-size:15px;line-height:1.55;white-space:normal;overflow-wrap:anywhere}
+.lqa-ans{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--ok-soft,#E6F2EE)}
+.lqa-ans.is-edit{background:transparent;padding:0}
+.lqa-ans p{margin:4px 0 0;font-size:15px;line-height:1.55;overflow-wrap:anywhere}
+.lqa-k{font-size:12.5px;font-weight:700;color:var(--ok-text,#1F5F54)}
+.lqa-wait{margin:8px 0 0;font-size:13px;font-style:italic;color:var(--muted,#56635B)}
+.lqa-in{display:block;width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--line,#C9D1CB);border-radius:10px;background:var(--card,#fff);color:inherit;resize:vertical}
+.lqa-in:focus{outline:2px solid var(--orange,#E2602A);outline-offset:1px}
+.lqa-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px}
+.lqa-btn{font:inherit;font-size:14px;font-weight:700;padding:9px 16px;border-radius:10px;border:0;cursor:pointer;background:var(--orange-btn,#C24E1C);color:#fff}
+.lqa-btn.is-ghost{background:transparent;color:inherit;border:1px solid var(--line,#C9D1CB)}
+.lqa-btn:disabled{opacity:.6;cursor:default}
+.lqa-acts{margin-top:6px}
+.lqa-link{font:inherit;font-size:13px;font-weight:600;background:none;border:0;padding:4px 2px;cursor:pointer;color:var(--orange-text,#B8461A);text-decoration:underline;text-underline-offset:2px}
+.lqa-link.is-no{color:var(--err-text,#9C2C17)}
+.lqa-msg{font-size:13px;color:var(--muted,#56635B)}
+[dir="rtl"] .lqa,[lang="ar"] .lqa{text-align:right}
+@media print{.lqa{display:none}}
+
+/* Round 29 (I16, E2, E8): Learning Hub home */
+.lh-resume{display:grid;gap:10px}
+.lh-res{display:flex;gap:14px;align-items:center;padding:14px 16px;border:1px solid var(--line,#E4E0D6);border-radius:14px;background:var(--card,#fff);color:inherit;text-decoration:none}
+.lh-res:hover{border-color:currentColor}
+.lh-res-l{width:40px;height:40px;flex:0 0 40px;border-radius:10px;display:grid;place-items:center;font-weight:800;background:#14161B;color:#FF5A1F}
+.lh-res-t{flex:1;min-width:0}
+.lh-res-t small{display:block;font-size:12.5px;opacity:.75}
+.lh-res-t b{display:block;font-size:15.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lh-res-v{font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:#FFF1E8;color:#9A3A12;white-space:nowrap}
+.lh-asked{font-size:12.5px;opacity:.8}

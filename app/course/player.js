@@ -373,6 +373,12 @@
     const same = location.hash === lastHash, y = window.scrollY; lastHash = location.hash;
     const main = $('cpMain'); main.lang = PL; main.dir = PL === 'ar' ? 'rtl' : 'ltr';
     main.innerHTML = html; side([mid, k]); bar(); wire(m, k); if (!same) menu(false);
+    // Round 29: questions under each part (E1), and the part saved as this person's place in the course (I16)
+    if (m && /^\d+$/.test(k || '') && m.parts[+k - 1] && db && window.LessonQA && isOpen(m)) {
+      const qa = document.createElement('div'); (main.querySelector('.cp-wrap') || main).appendChild(qa);
+      window.LessonQA.mount(qa, { db, course:C.access || 'mkt', module:m.id, item:k, title:m.n + '.' + k + ' · ' + loc(m).parts[+k - 1].t, sub:t('module', m.n),
+        link:'/app/course/#/' + m.id + '/' + k, owner:owner && !asLearner, lang:PL });
+    }
     window.scrollTo(0, same ? y : 0); Pen.mount(pageKey());
     document.title = (m ? t('module', m.n) + ' · ' : '') + t('docTitle');
     if (jump) { const j = jump; jump = null; requestAnimationFrame(() => land(j)); }
