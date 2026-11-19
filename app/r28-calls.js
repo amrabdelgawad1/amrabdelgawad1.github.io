@@ -293,7 +293,7 @@
     function draw(){
       if (!S.list) return listPicker();
       const r = S.cur;
-      const main = r ? leadHtml(r) : card('Nothing to call right now', '', (left().filter(x => x.phone).length ? '<p>Every lead left is outside legal calling hours right now.</p>' + nextOpen() + '<button type="button" class="p-btn is-ghost" data-r28recheck>Check again</button>' : empty('You’ve worked every lead on this list.')) +
+      const main = r ? leadHtml(r) : card('Nothing to call right now', '', (S.msg ? '<p class="p-hint" role="status">' + esc(S.msg) + '</p>' : '') + (left().filter(x => x.phone).length ? '<p>Every lead left is outside legal calling hours right now.</p>' + nextOpen() + '<button type="button" class="p-btn is-ghost" data-r28recheck>Check again</button>' : empty('You’ve worked every lead on this list.')) +
         (S.skip.size ? '<button type="button" class="p-btn is-ghost" data-r28unskip>Bring back ' + plural(S.skip.size, 'skipped lead') + '</button>' : ''));
       body.innerHTML = head() + cbsHtml() + '<div class="r28-wrap' + (S.panel ? ' has-panel' : '') + '"><div class="r28-main">' + main + '</div>' +
         (S.panel ? '<aside class="p-card r28-panel" aria-label="Script and objection answers">' + panelHtml(S.list.kind) + '</aside>' : '') + '</div>';
