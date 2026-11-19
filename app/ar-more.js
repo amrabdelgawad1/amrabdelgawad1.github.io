@@ -243,6 +243,84 @@
     'No team hours or invoices in these dates.':'لا ساعات فريق أو فواتير في هذه التواريخ.', 'No client set':'بدون عميل', 'Draft':'مسودة', 'Sent':'مرسلة', 'Next pay day':'يوم الدفع القادم',
     'Should bill uses the rate saved on each shift when it was logged. A shift counts as invoiced when an invoice for that client covers its date. Set a missing rate in Cash › Team hours › Clients.':'«يجب فوترته» يستخدم السعر المحفوظ مع كل وردية عند تسجيلها. تُحسب الوردية مفوترة إذا غطت تاريخها فاتورة لذلك العميل. أضف السعر الناقص من Cash › ساعات الفريق › العملاء.'
   });
+  // Round 21: Me area (routine, goals, Upwork and LinkedIn, study planner, work log) and Settings › Devices
+  Object.assign(L.AR, {
+    'Me':'أنا', 'Routine':'الروتين', 'Goals':'الأهداف', 'Study planner':'مخطط المذاكرة', 'Work log':'سجل العمل', 'Upwork and LinkedIn':'أب وورك ولينكدإن',
+    'Me today':'يومي', 'Only you see this':'تراه أنت فقط', 'Routine today':'روتين اليوم', 'Study':'المذاكرة', 'Goal steps':'خطوات الأهداف', 'Nothing planned':'لا شيء مخطط',
+    'Nothing logged yet':'لم يُسجَّل شيء بعد', 'No follow-ups due':'لا متابعات مستحقة', 'None due':'لا شيء مستحق', 'This page is only for Amr.':'هذه الصفحة لعمرو فقط.',
+    // Routine
+    'Sleep, gym and study, ticked off each day. Days follow Cairo time. A habit is due on the days you pick, or a number of times a week.':'النوم والجيم والمذاكرة، تُعلَّم كل يوم. الأيام بتوقيت القاهرة. العادة مطلوبة في الأيام التي تختارها، أو عدد مرات في الأسبوع.',
+    'done today':'تم اليوم', 'daily habits kept':'العادات اليومية المنجزة', 'last 7 days':'آخر 7 أيام', 'Week starts Monday':'الأسبوع يبدأ الاثنين',
+    'Nothing due today. Add a habit below.':'لا شيء مطلوب اليوم. أضف عادة بالأسفل.', 'Last 14 days':'آخر 14 يوماً', 'tap a day to tick or untick it':'اضغط على اليوم لتعليمه أو إلغائه',
+    'Habit':'العادة', 'Habits':'العادات', 'No habits yet.':'لا عادات بعد.', '✓ done · empty box = due and not done · dot = not due that day.':'✓ تم · مربع فارغ = مطلوب ولم يتم · نقطة = غير مطلوب ذلك اليوم.',
+    'Edit':'تعديل', 'Pause':'إيقاف مؤقت', 'Turn on':'فعّل', 'Paused':'متوقف مؤقتاً', 'Every day':'كل يوم', '+ Add a habit':'+ أضف عادة', 'How often':'كم مرة',
+    'On these days':'في هذه الأيام', 'Times a week':'مرات في الأسبوع', 'Days':'الأيام', 'Note (optional)':'ملاحظة (اختياري)', 'Save habit':'احفظ العادة',
+    'Name the habit.':'اكتب اسم العادة.', 'Pick at least one day.':'اختر يوماً واحداً على الأقل.', 'Sure? Its ticks go too':'متأكد؟ ستُحذف علاماتها أيضاً',
+    'Slept on plan':'نمت حسب الخطة', 'Gym':'الجيم', 'Study block':'فترة مذاكرة', 'Sun':'الأحد', 'Mon':'الاثنين', 'Tue':'الثلاثاء', 'Wed':'الأربعاء', 'Thu':'الخميس', 'Fri':'الجمعة', 'Sat':'السبت',
+    // Goals
+    'Big goals broken into small steps. Progress is the share of steps done.':'أهداف كبيرة مقسّمة إلى خطوات صغيرة. التقدّم هو نسبة الخطوات المنجزة.',
+    'active goals':'أهداف نشطة', 'steps done this week':'خطوات أُنجزت هذا الأسبوع', 'next step due':'الخطوة التالية', 'No dates set':'لا مواعيد محددة', 'steps past their date':'خطوات تجاوزت موعدها',
+    'Active':'نشطة', 'Done':'تم', 'Paused or dropped':'متوقفة أو متروكة', '+ New goal':'+ هدف جديد', 'New goal':'هدف جديد', 'Goal':'الهدف', 'Area':'المجال', 'By (optional)':'بحلول (اختياري)',
+    'Why it matters (optional)':'لماذا يهم (اختياري)', 'Add goal':'أضف الهدف', 'Save goal':'احفظ الهدف', 'Write the goal first.':'اكتب الهدف أولاً.', 'Add a step':'أضف خطوة', 'Add':'أضف',
+    'Mark goal done':'علّم الهدف كمنجز', 'Drop':'اترك', 'Make active again':'أعده نشطاً', 'Close edit':'أغلق التعديل', 'Sure? Its steps go too':'متأكد؟ ستُحذف خطواته أيضاً', 'Dropped':'متروك',
+    'No active goals yet. Add one, then break it into steps you can finish in a day or two.':'لا أهداف نشطة بعد. أضف هدفاً، ثم قسّمه إلى خطوات تنهيها في يوم أو يومين.',
+    'Career':'المهنة', 'Money':'المال', 'Learning':'التعلّم', 'Health':'الصحة', 'Family':'العائلة', 'Faith':'الدين', 'Business':'العمل الخاص', 'Other':'أخرى',
+    // Upwork and LinkedIn
+    'Every proposal, application and outreach message, the Connects it cost, and what came back. This is only a log: nothing here sends anything on Upwork or LinkedIn.':'كل عرض وطلب ورسالة تواصل، وكم كلّف من Connects، وما الرد. هذا سجل فقط: لا شيء هنا يرسل أي شيء على أب وورك أو لينكدإن.',
+    '+ Log a proposal or message':'+ سجّل عرضاً أو رسالة', 'sent':'أُرسل', 'Connects spent':'Connects مستخدمة', 'replies':'ردود', 'interviews':'مقابلات', 'wins':'فوز',
+    'Log one':'سجّل واحداً', 'Follow up today':'تابع اليوم', 'Follow up':'المتابعة', 'Platform':'المنصة', 'What':'ماذا', 'Update':'حدّث', 'By platform':'حسب المنصة',
+    'Sent':'أُرسل', 'Connects':'Connects', 'Replies':'الردود', 'Reply rate':'نسبة الرد', 'Interviews':'المقابلات', 'Wins':'الفوز', 'Log':'السجل', 'Still open':'ما زال مفتوحاً',
+    'Proposal':'عرض', 'Application':'طلب توظيف', 'Message':'رسالة', 'Connection request':'طلب تواصل', 'Invite from client':'دعوة من عميل', 'Viewed':'شوهد', 'Replied':'ردّ', 'Interview':'مقابلة',
+    'Offer':'عرض عمل', 'Hired':'تم التعيين', 'Not chosen':'لم يُختر', 'No reply':'لا رد', 'Withdrawn':'مسحوب', 'Type':'النوع', 'Sent on':'أُرسل في', 'Job or person':'الوظيفة أو الشخص',
+    'Client or company (optional)':'العميل أو الشركة (اختياري)', 'Link (optional)':'الرابط (اختياري)', 'Rate asked (optional)':'السعر المطلوب (اختياري)', 'Follow up on (optional)':'تابع في (اختياري)',
+    'Notes (optional)':'ملاحظات (اختياري)', 'Log it':'سجّله', 'Save':'احفظ', 'Write the job or the person first.':'اكتب الوظيفة أو الشخص أولاً.', 'The link should start with https://':'يجب أن يبدأ الرابط بـ https://',
+    'Nothing logged yet. Log each proposal when you send it, with the Connects it cost.':'لم يُسجَّل شيء بعد. سجّل كل عرض عند إرساله، مع عدد الـ Connects.',
+    'Last 30 days':'آخر 30 يوماً', 'Last 90 days':'آخر 90 يوماً', 'All time':'كل الوقت', 'This week':'هذا الأسبوع',
+    // Study planner
+    'Plan your study blocks for the week, tick them when done, and see how close you are to each weekly target. Days and times follow Cairo time.':'خطّط فترات مذاكرتك للأسبوع، وعلّمها عند الانتهاء، وشاهد قربك من هدف كل أسبوع. الأيام والأوقات بتوقيت القاهرة.',
+    '+ Add study blocks':'+ أضف فترات مذاكرة', 'Copy last week’s plan':'انسخ خطة الأسبوع الماضي', 'studied this week':'ذاكرت هذا الأسبوع', 'blocks today':'فترات اليوم',
+    'Acquisitions items done':'عناصر الاستحواذ المنجزة', 'Psychology parts done':'أجزاء علم النفس المنجزة', 'Not started in the course app':'لم تبدأ في تطبيق الكورس',
+    'Add study blocks':'أضف فترات مذاكرة', 'Weekly targets':'أهداف الأسبوع', 'Edit targets':'عدّل الأهداف', 'Done editing':'انتهيت من التعديل', 'No subjects yet.':'لا مواد بعد.', 'Free':'فارغ',
+    'Change minutes':'غيّر الدقائق', 'Your courses':'كورساتك', 'Acquisitions Playbook':'دليل الاستحواذ', 'Psychology and coaching':'علم النفس والكوتشينج', 'Marketing A to Z':'التسويق من الألف إلى الياء',
+    'Open the Learning Hub':'افتح مركز التعلّم', 'Learner analytics':'تحليلات المتعلّمين', 'Subject':'المادة', 'Starts (optional)':'يبدأ (اختياري)', 'Minutes':'الدقائق',
+    'What to study (optional)':'ماذا تذاكر (اختياري)', 'Days this week':'أيام هذا الأسبوع', 'Add blocks':'أضف الفترات', 'Pick a subject.':'اختر مادة.', 'At least 5 minutes.':'5 دقائق على الأقل.',
+    'New subject':'مادة جديدة', 'Minutes a week':'دقائق في الأسبوع', 'Add subject':'أضف المادة', 'Remove':'إزالة', 'Already copied.':'نُسخت بالفعل.', 'Last week has no blocks.':'الأسبوع الماضي بلا فترات.',
+    'Acquisitions':'الاستحواذ', 'Psychology':'علم النفس', 'This week':'هذا الأسبوع',
+    // Work log
+    'Jot each task as you go. Get morning, midday and end-of-day drafts in your Slack format. Drafts only: copy one and post it yourself. Nothing is posted or sent from here.':'سجّل كل مهمة أثناء العمل. احصل على مسودات الصباح ومنتصف اليوم ونهاية اليوم بصيغة سلاك. مسودات فقط: انسخها وانشرها بنفسك. لا يُنشر أو يُرسل أي شيء من هنا.',
+    'Work day (New York date)':'يوم العمل (تاريخ نيويورك)', 'done':'تم', 'in progress':'قيد التنفيذ', 'planned':'مخطط', 'pending':'معلّق', 'Add a task':'أضف مهمة', 'press Enter to add':'اضغط Enter للإضافة',
+    'Vendor or property (optional)':'المورّد أو العقار (اختياري)', 'Vendor or property':'المورّد أو العقار', 'Status':'الحالة', 'Planned':'مخطط', 'In progress':'قيد التنفيذ', 'Pending':'معلّق',
+    'Still open from earlier days':'ما زال مفتوحاً من أيام سابقة', 'Bring to today':'انقلها لليوم', 'It’s done':'تمّت', 'Bring all to today':'انقل الكل لليوم', 'Today’s log':'سجل اليوم',
+    'Nothing logged for this day yet.':'لم يُسجَّل شيء لهذا اليوم بعد.', 'Report drafts':'مسودات التقارير', 'for Slack, nothing is sent':'لسلاك، لا يُرسل شيء', 'Morning plan':'خطة الصباح', 'Midday':'منتصف اليوم',
+    'End of day':'نهاية اليوم', 'Opening line':'سطر البداية', 'Draft':'المسودة', 'Copy':'نسخ', 'Save this draft':'احفظ هذه المسودة', 'Rebuild from the log':'أعد البناء من السجل',
+    'Built from the log. Edit it here, then copy it into Slack yourself.':'مبنية من السجل. عدّلها هنا، ثم انسخها إلى سلاك بنفسك.', 'Copied. Paste it into Slack and post it yourself.':'تم النسخ. الصقها في سلاك وانشرها بنفسك.',
+    'Selected. Press Ctrl+C (or Copy) to copy it.':'تم التحديد. اضغط Ctrl+C للنسخ.', 'Sure? Your edits go':'متأكد؟ ستضيع تعديلاتك', 'Write the task first.':'اكتب المهمة أولاً.',
+    'Same vendor or property is grouped into one bullet. Dashes are turned into commas. Starts with your opening line and ends with “Thank you!”.':'نفس المورّد أو العقار يُجمع في نقطة واحدة. الشرطات تتحول إلى فواصل. تبدأ بسطر البداية وتنتهي بـ «Thank you!».',
+    // Settings › Devices
+    'Devices':'الأجهزة', 'Devices and sessions':'الأجهزة والجلسات', 'This device':'هذا الجهاز', 'No other devices are signed in.':'لا أجهزة أخرى مسجّلة الدخول.', 'See every device':'اعرض كل الأجهزة',
+    'Every phone, computer and browser signed in to your account. If one isn’t yours, sign it out and change your password.':'كل هاتف وكمبيوتر ومتصفح مسجّل الدخول إلى حسابك. إن لم يكن أحدها لك، سجّل خروجه وغيّر كلمة المرور.',
+    'A device you sign out stops working within the hour, as soon as its sign-in needs renewing. Times are your device’s time.':'الجهاز الذي تسجّل خروجه يتوقف خلال ساعة، عند تجديد تسجيل دخوله. الأوقات بتوقيت جهازك.',
+    'Refresh the app to see your devices.':'حدّث التطبيق لترى أجهزتك.', 'Couldn’t load your devices. Check your connection and try again.':'تعذّر تحميل أجهزتك. تحقق من الاتصال وحاول مجدداً.'
+  });
+  if (L.RULES) L.RULES.push(
+    [/^(\d+) days? in a row$/, (m, n) => n + ' يوم متتالي'],
+    [/^(\d+) weeks? in a row$/, (m, n) => n + ' أسبوع متتالي'],
+    [/^(\d+) of (\d+)$/, (m, a, b) => a + ' من ' + b],
+    [/^(\d+) active habits?$/, (m, n) => n + ' عادة نشطة'],
+    [/^(\d+) a week$/, (m, n) => n + ' في الأسبوع'],
+    [/^(\d+) times a week, any day$/, (m, n) => n + ' مرات في الأسبوع، أي يوم'],
+    [/^(.+) this week$/, (m, n) => n + ' هذا الأسبوع'],
+    [/^Due (.+)$/, (m, d) => 'مستحق ' + d],
+    [/^(\d+)% reply rate$/, (m, n) => 'نسبة الرد ' + n + '%'],
+    [/^(\d+) Connects per win$/, (m, n) => n + ' Connects لكل فوز'],
+    [/^(\d+) (?:entry|entries)$/, (m, n) => n + ' إدخال'],
+    [/^(\d+) tasks?$/, (m, n) => n + ' مهمة'],
+    [/^(\d+) follow-ups? due$/, (m, n) => n + ' متابعة مستحقة'],
+    [/^(\d+) steps? due$/, (m, n) => n + ' خطوة مستحقة'],
+    [/^(\d+) tasks? done$/, (m, n) => n + ' مهمة منجزة'],
+    [/^Last active (.+)$/, (m, t) => 'آخر نشاط ' + t],
+    [/^Sign out of all other devices \((\d+)\)$/, (m, n) => 'سجّل الخروج من كل الأجهزة الأخرى (' + n + ')']
+  );
   if (L.RULES) L.RULES.push(
     [/^Pay day (.+)$/, (m, d) => 'يوم الدفع ' + d],
     [/^(\d+) (?:person|people)$/, (m, n) => n + ' ' + (n === '1' ? 'شخص' : 'أشخاص')],
