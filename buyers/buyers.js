@@ -1,6 +1,7 @@
 // "Join the cash buyers list" form at /buyers/. Anyone can fill it in; it can only call buyer_signup()
 // (supabase/migrations/20261105010000_buyer_signups.sql), which checks the fields, stops spam and saves one row.
-// Amr reads sign-ups in Admin > Logs > Buyer sign-ups.
+// Amr reads sign-ups in the Deal CRM's Cash buyers page (New sign-ups) and in Admin > Logs > Buyer sign-ups.
+// Round 24: also property types and rehab level (supabase/migrations/20261119040000_round24_buyer_signup_buybox.sql).
 (function(){
   'use strict';
   const $ = id => document.getElementById(id);
@@ -15,6 +16,8 @@
     e.preventDefault();
     say('');
     const kinds = [...document.querySelectorAll('input[name=kind]:checked')].map(x => x.value);
+    const types = [...document.querySelectorAll('input[name=ptype]:checked')].map(x => x.value);
+    const rehab = [...document.querySelectorAll('input[name=rehab]:checked')].map(x => x.value);
     const states = $('bStates').value.split(/[\s,;/]+/).map(s => s.trim().toUpperCase()).filter(Boolean);
     const badState = states.find(s => !/^[A-Z]{2}$/.test(s));
     const digits = $('bPhone').value.replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '');
@@ -33,7 +36,8 @@
       p_name: $('bName').value, p_company: $('bCompany').value, p_phone: digits, p_email: $('bEmail').value,
       p_kinds: kinds, p_states: states, p_areas: $('bAreas').value, p_price_min: min, p_price_max: max,
       p_funding: $('bFunding').value || null, p_close_days: num($('bClose').value), p_per_year: $('bYear').value || null,
-      p_notes: $('bNotes').value, p_texts_ok: $('bTexts').checked, p_started_at: startedAt, p_website: $('bWebsite').value
+      p_notes: $('bNotes').value, p_texts_ok: $('bTexts').checked, p_started_at: startedAt, p_website: $('bWebsite').value,
+      p_types: types, p_rehab: rehab
     });
     $('bGo').disabled = false; $('bGo').textContent = 'Join the buyers list';
     if (error) return say(error.code === '22023' ? error.message : 'Something went wrong sending this. Please try again in a minute.');

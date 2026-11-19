@@ -41,7 +41,7 @@
   const kindText = k => !k || !k.length ? 'Any' : k.map(v => v === 'land' ? 'Land' : 'Houses').join(', ');
   const buyerText = x => [
     'Name: ' + x.name + (x.company ? ' (' + x.company + ')' : ''), 'Phone: ' + fmt(x.phone), 'Email: ' + x.email,
-    'Buys: ' + kindText(x.kinds), 'States: ' + ((x.states || []).join(', ') || 'Any'), x.areas ? 'Areas: ' + x.areas : '',
+    'Buys: ' + kindText(x.kinds), (x.types || []).length ? 'Types: ' + x.types.join(', ') : '', (x.rehab || []).length ? 'Rehab: ' + x.rehab.join(', ') : '', 'States: ' + ((x.states || []).join(', ') || 'Any'), x.areas ? 'Areas: ' + x.areas : '',
     'Price: ' + priceText(x), x.funding ? 'Funding: ' + FUND[x.funding] : '', x.close_days ? 'Closes in: ' + x.close_days + ' days' : '',
     x.per_year ? 'Deals a year: ' + x.per_year : '', 'Texts OK: ' + (x.texts_ok ? 'yes' : 'no'), x.notes ? 'Notes: ' + x.notes : '',
     'Signed up: ' + String(x.created_at).slice(0, 10)
@@ -119,7 +119,7 @@
     else if (tab === 'buyers') {
       buyerRows = rows;
       const btn = (x, st, label) => '<button type="button" class="p-btn is-ghost lg-bs" data-id="' + x.id + '" data-st="' + st + '">' + label + '</button>';
-      box.innerHTML = '<p class="lg-note">From the public form at <a href="/buyers/" target="_blank" rel="noopener">amrabdelgawad.site/buyers</a>. Copy a buyer into the Deal CRM’s buyers (where it’s encrypted), then mark it added and remove it here.</p>' +
+      box.innerHTML = '<p class="lg-note">From the public form at <a href="/buyers/" target="_blank" rel="noopener">amrabdelgawad.site/buyers</a>. New sign-ups also show in the Deal CRM’s Cash buyers page, where “Add to my buyers” saves them encrypted and removes them here.</p>' +
         (rows.length ? table(['When', 'Buyer', 'Buy box', ''], rows.map(x => '<tr' + (x.status !== 'new' ? ' class="lg-done"' : '') + '><td class="lg-when">' + esc(when(x.created_at)) +
           '<small><span class="p-pill' + (x.status === 'new' ? '' : ' is-plain') + '">' + esc(BSTATUS[x.status] || x.status) + '</span></small></td><td><b>' + esc(x.name) + '</b>' + (x.company ? '<small>' + esc(x.company) + '</small>' : '') +
           '<small>' + esc(fmt(x.phone)) + ' · ' + esc(x.email) + (x.texts_ok ? ' · texts OK' : '') + '</small></td><td class="lg-detail"><b>' + esc(kindText(x.kinds)) + ' · ' + esc((x.states || []).join(', ') || 'any state') + ' · ' + esc(priceText(x)) + '</b>' +
