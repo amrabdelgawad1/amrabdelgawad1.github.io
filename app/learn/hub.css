@@ -70,3 +70,7 @@ a.lh-course:hover .lh-go{ filter:brightness(1.08); }
 /* Phase 1: "Ask Amr for access" on a locked course */
 .lh-lockmsg{ flex-wrap:wrap; }
 .lh-ask{ min-height:44px; margin-inline-start:auto; }
+
+/* Round 29 fix: size the arrow in "Continue where you left off" rows (it had no size and filled the card) */
+.lh-res > svg{ width:18px; height:18px; flex:0 0 18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.lh-res-t small, .lh-res-t b{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
