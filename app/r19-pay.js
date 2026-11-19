@@ -251,6 +251,7 @@
       if (pd || ow) { const b = pd || ow; b.disabled = true; const x = await safe(db().from('commissions').update(pd ? { status:'paid', paid_on:today() } : { status:'owed', paid_on:null }).eq('id', +(b.dataset.r19cpaid || b.dataset.r19cowed))); if (x.error) { b.disabled = false; b.textContent = errText(x, 'Couldn’t change it.'); return; } load(); return; }
       const dl = e.target.closest('[data-r19cdel]');
       if (dl) {
+        if (window.PortalUI && PortalUI.del) { PortalUI.del(dl, { text:'Commission deleted.', label:'Delete', sel:'tr', run:() => safe(db().from('commissions').delete().eq('id', +dl.dataset.r19cdel).eq('status', 'owed')), after:() => load() }); return; }
         if (dl.dataset.sure !== '1') { dl.dataset.sure = '1'; dl.textContent = 'Sure?'; setTimeout(() => { if (dl.isConnected) { dl.dataset.sure = ''; dl.textContent = 'Delete'; } }, 4000); return; }
         dl.disabled = true; const x = await safe(db().from('commissions').delete().eq('id', +dl.dataset.r19cdel).eq('status', 'owed')); if (x.error) { dl.disabled = false; return; } load(); return;
       }
@@ -258,6 +259,7 @@
       if (tg) { tg.disabled = true; const x = await safe(db().from('commission_rates').update({ active:tg.textContent === 'Turn on' }).eq('id', +tg.dataset.r19rtog)); if (x.error) { tg.disabled = false; return; } load(); return; }
       const rd = e.target.closest('[data-r19rdel]');
       if (rd) {
+        if (window.PortalUI && PortalUI.del) { PortalUI.del(rd, { text:'Rate deleted. Commissions already added stay.', label:'Delete', sel:'.p-row', run:() => safe(db().from('commission_rates').delete().eq('id', +rd.dataset.r19rdel)), after:() => load() }); return; }
         if (rd.dataset.sure !== '1') { rd.dataset.sure = '1'; rd.textContent = 'Sure? Added ones stay'; setTimeout(() => { if (rd.isConnected) { rd.dataset.sure = ''; rd.textContent = 'Delete'; } }, 4000); return; }
         rd.disabled = true; const x = await safe(db().from('commission_rates').delete().eq('id', +rd.dataset.r19rdel)); if (x.error) { rd.disabled = false; return; } load();
       }

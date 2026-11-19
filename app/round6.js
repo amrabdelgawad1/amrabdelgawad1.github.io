@@ -23,6 +23,25 @@
   // ======================================================================
   // Status
   // ======================================================================
+  // plan Round 23 (P5): the off-site copy (GitHub, private repo portal-backups, every night) and its monthly restore test
+  const jsonOf = v => { try { return v ? JSON.parse(v) : null; } catch (e) { return null; } };
+  const runLink = o => o && /^https:\/\/github\.com\//.test(o.run || '') ? ' <a href="' + esc(o.run) + '" target="_blank" rel="noopener">Open the run</a>' : '';
+  function offsiteCheck(v){
+    const o = jsonOf(v);
+    if (!o) return ['Off-site copy', 'warn', 'No off-site copy reported yet. It runs every night at about 3:17 AM Cairo time.'];
+    const h = (Date.now() - new Date(o.at)) / 36e5, st = o.storage || {}, good = o.ok && /^RESTORE OK/.test(o.check || '');
+    return ['Off-site copy', good && h < 26 ? 'ok' : (o.ok && h < 50) ? 'warn' : 'bad',
+      'Last one ' + ago(o.at) + (o.db_bytes ? ' · database ' + mb(o.db_bytes) : '') +
+      (st.files ? ' · ' + plural(st.files, 'storage file') + ' (' + mb(st.bytes) + '), ' + plural(st.new_files || 0, 'new or changed file') + ' copied' : '') +
+      '<br><small>' + esc(o.ok ? (o.check || '') : 'The last run stopped: ' + (o.check || 'see the run')) + (o.encrypted ? '' : ' · Not encrypted yet (add BACKUP_PASSPHRASE in portal-backups)') + '.' + runLink(o) + '</small>'];
+  }
+  function restoreCheck(v){
+    const o = jsonOf(v);
+    if (!o) return ['Monthly restore test', 'warn', 'Not run yet. It puts the off-site copy back on a test machine on the 2nd of each month and checks every table and file.'];
+    const days = (Date.now() - new Date(o.at)) / 864e5;
+    return ['Monthly restore test', o.ok && days < 35 ? 'ok' : o.ok ? 'warn' : 'bad',
+      'Last one ' + ago(o.at) + '<br><small>' + esc(o.db || '') + ' · ' + esc(o.storage || '') + '.' + runLink(o) + '</small>'];
+  }
   V.status = { title:'Status', sec:'owner', async open(el, ok){
     const body = PX.page(el, 'Site', 'Status', 'Is everything working? Green is fine, amber needs a look, red needs fixing.');
     const t0 = performance.now();
@@ -44,6 +63,7 @@
       ['Database', 'ok', 'Reachable (' + ms + ' ms). Size ' + esc(d.db_size_mb) + ' MB of the free 500 MB.'],
       ['Nightly backup', hrs < 26 ? 'ok' : hrs < 50 ? 'warn' : 'bad', 'Last one ' + ago(lastB) + (info.bytes ? ' · ' + mb(info.bytes) + ', ' + plural(info.tables || 0, 'table') + ', ' + plural(info.rows || 0, 'row') : '') +
         (d.backup_error && (!lastB || d.backup_error.slice(0, 24) > lastB) ? '<br><small>Last error: ' + esc(d.backup_error) + '</small>' : '')],
+      offsiteCheck(d.offsite), restoreCheck(d.offsite_test),
       ['Scheduled jobs', jobs.some(j => j.light === 'bad') ? 'bad' : jobs.some(j => j.light === 'warn') ? 'warn' : 'ok', plural(jobs.filter(j => j.light === 'ok').length, 'job') + ' of ' + jobs.length + ' ran fine last time.'],
       ['Errors today', !d.errors_today ? 'ok' : d.errors_today < 6 ? 'warn' : 'bad', d.errors_today ? plural(d.errors_today, 'error') + ' seen by people using the app today.' : 'No errors today.']
     ];
@@ -54,7 +74,7 @@
       card('Scheduled jobs', 'Last run', '<div class="p-tablewrap"><table class="p-table px-table"><thead><tr><th>Job</th><th>Last run</th><th>Result</th><th>Fails (24h)</th></tr></thead><tbody>' +
         jobs.map(j => '<tr><td><b>' + esc(JOBS[j.name] || j.name) + '</b></td><td>' + esc(at(j.last_at)) + '</td><td>' + pill(j.last_status === 'succeeded' ? 'Fine' : j.last_status === 'failed' ? 'Failed' : j.last_status ? 'Running' : 'Not yet', j.last_status === 'succeeded' ? 'ok' : j.last_status === 'failed' ? 'no' : 'plain') + '</td><td>' + (j.fails_24h || 0) + '</td></tr>').join('') + '</tbody></table></div>') +
       card('Today’s errors', plural(d.errors_today || 0, 'error'), (d.errors || []).length ? (d.errors || []).map(e => '<div class="p-row"><span><b>' + esc(e.who) + '</b> · ' + esc(e.page || '') + '<br><small>' + esc(e.message || '') + '</small></span><small>' + esc(fmtTime(e.at, 'Africa/Cairo')) + '</small></div>').join('') : empty('Nothing went wrong for anyone today.')) +
-      card('Backups', plural((d.backups || []).length, 'nightly backup'), '<p class="tp-note">Every night at about 3 AM Cairo time the database saves every table to a private folder. The last 30 nights are kept. Your manual download was last made ' + esc(ago(d.backup_manual)) + '. Files people uploaded (receipts, recordings, documents) stay in their own private folders and are not in these backups.</p>' +
+      card('Backups', plural((d.backups || []).length, 'nightly backup'), '<p class="tp-note">Every night at about 3 AM Cairo time the database saves every table to a private folder. The last 30 nights are kept. Your manual download was last made ' + esc(ago(d.backup_manual)) + '. Files people uploaded (receipts, recordings, documents) stay in their own private folders and are not in these backups.</p><p class="tp-note">A second copy lives outside Supabase: every night GitHub copies the whole database and every new or changed file (course videos, recordings, uploads) into your private portal-backups repo (Releases), and on the 2nd of each month it puts that copy back on a test machine to prove it restores. See Off-site copy and Monthly restore test above.</p>' +
         '<div class="wk-row"><button type="button" class="p-btn" id="r6Now">Back up now</button><span class="p-empty" id="r6NowMsg" role="status"></span></div>' +
         ((d.backups || []).length ? (d.backups || []).slice(0, 30).map(b => '<div class="p-row"><span><b>' + esc(fmtDay(b.name.slice(8, 18), { weekday:'short', month:'short', day:'numeric' })) + '</b><br><small>' + mb(b.size) + '</small></span><button type="button" class="p-btn is-ghost" data-bk="' + esc(b.name) + '">Open</button></div>').join('') : empty('No nightly backups yet.')) +
         '<div id="r6Bk"></div>') +
