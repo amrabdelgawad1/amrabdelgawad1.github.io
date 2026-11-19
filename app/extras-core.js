@@ -295,7 +295,10 @@
     const form = $('cbForm'), when = () => {
       const day = $('cbDay').value, t = $('cbTime').value, tz = $('cbTz').value; if (!day || !t) return say('cbWhen', '');
       const at = zonedToUtc(day, t, tz);
-      say('cbWhen', 'That is ' + fmtTime(at, 'Africa/Cairo') + ' on ' + fmtDay(at, { weekday:'short', month:'short', day:'numeric', timeZone:'Africa/Cairo' }) + ' Cairo time.' + (callable(tz, at) ? '' : ' Careful: outside 8 am to 9 pm where they are.'));
+      // Round 28 (L5): their time and Cairo time side by side, checked against the state's calling rules (window.CallHours)
+      const st = $('cbState').value, ch = st && window.CallHours ? window.CallHours.check(st, at) : null;
+      say('cbWhen', 'Their time: ' + fmtDay(at, { weekday:'short', month:'short', day:'numeric', timeZone:tz }) + ', ' + fmtTime(at, tz) + '. Your time: ' + fmtDay(at, { weekday:'short', month:'short', day:'numeric', timeZone:'Africa/Cairo' }) + ', ' + fmtTime(at, 'Africa/Cairo') + ' Cairo.' +
+        (ch ? (ch.ok ? '' : ' Careful: not a legal hour to call ' + st + ' (' + ch.why + ').') : callable(tz, at) ? '' : ' Careful: outside 8 AM to 9 PM where they are.'));
     };
     $('cbAdd').addEventListener('click', () => { form.hidden = false; $('cbAdd').hidden = true; when(); $('cbLabel').focus(); });
     $('cbCancel').addEventListener('click', () => { form.hidden = true; $('cbAdd').hidden = false; });
