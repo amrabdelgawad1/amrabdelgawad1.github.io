@@ -365,7 +365,11 @@
     'Found in Cash':'وُجد في الكاش', 'Renews today':'يتجدد اليوم', 'all active subscriptions':'كل الاشتراكات النشطة', 'at today’s prices':'بأسعار اليوم',
     'These aren’t on your list yet. Add one and check its amount and next renewal date.':'هذه ليست في قائمتك بعد. أضف واحداً وتأكد من مبلغه وموعد تجديده.',
     'No subscriptions yet. Add the first one below, or pick one found in Cash.':'لا اشتراكات بعد. أضف أول اشتراك بالأسفل، أو اختر واحداً وُجد في الكاش.',
-    'Every tool you pay for regularly, when it renews, and what it costs a month. The bell reminds you before each renewal. “Log payment” adds the expense to Cash and moves the date on; it doesn’t pay anything.':'كل أداة تدفع لها بانتظام، ومتى تتجدد، وكم تكلف في الشهر. الجرس يذكّرك قبل كل تجديد. «سجّل الدفع» يضيف المصروف إلى الكاش وينقل الموعد؛ لا يدفع أي شيء.'
+    'Every tool you pay for regularly, when it renews, and what it costs a month. The bell reminds you before each renewal. “Log payment” adds the expense to Cash and moves the date on; it doesn’t pay anything.':'كل أداة تدفع لها بانتظام، ومتى تتجدد، وكم تكلف في الشهر. الجرس يذكّرك قبل كل تجديد. «سجّل الدفع» يضيف المصروف إلى الكاش وينقل الموعد؛ لا يدفع أي شيء.',
+    // Round 26: seller leads and follow-up cadences from the Deal CRM (bell and Tasks page)
+    'New seller lead':'عميل بائع جديد',
+    'Someone sent the seller form. Open the Deal CRM inbox to add it to the board.':'أرسل شخص نموذج البائع. افتح صندوق الوارد في نظام الصفقات لإضافته إلى اللوحة.',
+    'From the Deal CRM follow-up cadence. Open the deal for the seller and the notes.':'من خطة المتابعة في نظام الصفقات. افتح الصفقة لترى البائع والملاحظات.',
   });
   if (L.RULES) L.RULES.push(
     [/^Renews (.+) · in (\d+) days?$/, (m, d, n) => 'يتجدد ' + d + ' · خلال ' + n + ' يوم'],
@@ -375,6 +379,7 @@
     [/^Please read: (.+)$/, (m, t) => 'يرجى القراءة: ' + t],
     [/^(\d+) comments?$/, (m, n) => n + ' تعليق'],
     [/^Late · (.+)$/, (m, d) => 'متأخرة · ' + d],
-    [/^Notes: (.+)$/, (m, t) => 'ملاحظات: ' + t]
+    [/^Notes: (.+)$/, (m, t) => 'ملاحظات: ' + t],
+    [/^Seller follow-up: day (\d+)$/, (m, n) => 'متابعة البائع: اليوم ' + n]
   );
 })();
