@@ -370,6 +370,7 @@
     'New seller lead':'عميل بائع جديد',
     'Someone sent the seller form. Open the Deal CRM inbox to add it to the board.':'أرسل شخص نموذج البائع. افتح صندوق الوارد في نظام الصفقات لإضافته إلى اللوحة.',
     'From the Deal CRM follow-up cadence. Open the deal for the seller and the notes.':'من خطة المتابعة في نظام الصفقات. افتح الصفقة لترى البائع والملاحظات.',
+'This page is only for Amr.':'هذه الصفحة لعمرو فقط.'
   });
   if (L.RULES) L.RULES.push(
     [/^Renews (.+) · in (\d+) days?$/, (m, d, n) => 'يتجدد ' + d + ' · خلال ' + n + ' يوم'],
@@ -381,5 +382,12 @@
     [/^Late · (.+)$/, (m, d) => 'متأخرة · ' + d],
     [/^Notes: (.+)$/, (m, t) => 'ملاحظات: ' + t],
     [/^Seller follow-up: day (\d+)$/, (m, n) => 'متابعة البائع: اليوم ' + n]
+,
+    [/^Follow up (.+)$/, (m, d) => 'المتابعة ' + d],
+    [/^(\d+) clients?$/, (m, n) => n + ' عميل'],
+    [/^(\d+) proposals?$/, (m, n) => n + ' عرض'],
+    [/^(\d+) (touch|touches)$/, (m, n) => n + ' تواصل'],
+    [/^Proposal P-(\d+)$/, (m, n) => 'العرض P-' + n],
+    [/^About (\$[\d,.]+) a month \(rate × hours × 52 ÷ 12\)\.$/, (m, v) => 'حوالي ' + v + ' في الشهر (السعر × الساعات × 52 ÷ 12).']
   );
 })();

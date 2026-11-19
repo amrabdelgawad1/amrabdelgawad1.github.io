@@ -1,0 +1,63 @@
+/* Plan Round 20 (Nov 19 2026): clients, pipeline board, outreach log, proposals, invoices, profit, weekly report drafts.
+   Scoped to #pView like r20.css. No inline styles. */
+#pView .p20-due{ color:var(--p-accent, #b4372a); font-weight:800; }
+#pView .p20-chk{ display:inline-flex; align-items:center; gap:8px; min-height:44px; font-weight:600; color:var(--p-ink2); cursor:pointer; }
+#pView .p20-chk input{ width:18px; height:18px; }
+#pView .p20-dl{ display:grid; grid-template-columns:minmax(120px, max-content) 1fr; gap:8px 18px; margin:0; }
+#pView .p20-dl dt{ color:var(--p-muted); font-weight:600; }
+#pView .p20-dl dd{ margin:0; min-width:0; overflow-wrap:anywhere; }
+#pView .p20-notes{ margin:14px 0 0; padding:12px 14px; border-radius:12px; background:var(--p-soft, rgba(20,33,61,.04)); }
+#pView .p20-won{ padding:12px 16px; border-color:var(--p-accent); font-weight:600; }
+
+/* O2 board: columns side by side, scroll sideways (drag the background with a mouse, swipe on a phone) */
+#pView .p20-board{ display:flex; gap:12px; overflow-x:auto; padding:4px 2px 14px; margin:0 0 18px; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; cursor:grab; overscroll-behavior-x:contain; }
+#pView .p20-board.grab{ cursor:grabbing; user-select:none; }
+#pView .p20-col{ flex:0 0 260px; min-height:220px; display:flex; flex-direction:column; border:1px solid var(--p-line); border-radius:16px; background:var(--p-soft, rgba(20,33,61,.03)); scroll-snap-align:start; transition:border-color .15s, background .15s; }
+#pView .p20-col.over{ border-color:var(--p-accent); background:rgba(180,55,42,.06); }
+#pView .p20-col header{ display:flex; justify-content:space-between; align-items:center; padding:12px 14px 8px; }
+#pView .p20-col header span{ min-width:26px; padding:1px 8px; border-radius:99px; background:var(--p-card, #fff); border:1px solid var(--p-line); text-align:center; font-size:12px; font-weight:700; }
+#pView .p20-cards{ display:flex; flex-direction:column; gap:8px; padding:0 10px 12px; flex:1; }
+#pView .p20-drop{ margin:6px 0 0; padding:18px 10px; border:1px dashed var(--p-line); border-radius:12px; text-align:center; color:var(--p-muted); font-size:13px; }
+#pView .p20-lead{ position:relative; padding:12px 12px 10px; border:1px solid var(--p-line); border-radius:12px; background:var(--p-card, #fff); cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+#pView .p20-lead:hover, #pView .p20-lead:focus-visible{ border-color:var(--p-accent); outline:none; }
+#pView .p20-lead.on{ border-color:var(--p-accent); box-shadow:0 0 0 2px rgba(180,55,42,.18); }
+#pView .p20-lead.drag{ opacity:.45; }
+#pView .p20-lead b{ display:block; padding-right:56px; overflow-wrap:anywhere; }
+#pView .p20-lead small{ display:block; margin-top:3px; color:var(--p-muted); font-size:12.5px; }
+#pView .p20-lead small.p20-due{ color:var(--p-accent); font-weight:700; }
+#pView .p20-lead .p20-last{ color:var(--p-ink2); }
+#pView .p20-move{ position:absolute; top:8px; right:8px; display:flex; gap:4px; }
+#pView .p20-arrow{ width:26px; height:26px; border:1px solid var(--p-line); border-radius:8px; background:var(--p-card, #fff); color:var(--p-ink); font:700 16px/1 var(--p-body); cursor:pointer; }
+#pView .p20-arrow:hover{ border-color:var(--p-accent); color:var(--p-accent); }
+@media (max-width:640px){ #pView .p20-col{ flex-basis:82vw; } #pView .p20-arrow{ width:34px; height:34px; } #pView .p20-lead b{ padding-right:76px; } }
+
+/* O3 */
+#pView .p20-quick > span:last-child{ display:flex; flex-wrap:wrap; gap:6px; }
+#pView .p20-quick .p-btn{ min-height:36px; padding:6px 10px; }
+#pView .p20-msg{ padding:12px 14px; border:1px solid var(--p-line); border-radius:12px; background:var(--p-soft, rgba(20,33,61,.03)); }
+#pView .p20-msg p{ margin:0 0 6px; }
+#pView .p20-msg pre{ margin:0 0 8px; white-space:pre-wrap; font:14px/1.5 var(--p-body); }
+
+/* O4 and F1 papers */
+#pView .p20-paper{ max-width:760px; padding:28px 30px; }
+#pView .p20-paper h2{ margin:4px 0 10px; font:800 26px/1.2 var(--p-display, inherit); }
+#pView .p20-paper h3{ margin:20px 0 6px; font:800 15px/1.2 var(--p-body); }
+#pView .p20-paper hr{ border:0; border-top:1px solid var(--p-line); margin:12px 0; }
+#pView .p20-paper p{ margin:0 0 8px; }
+#pView .p20-small{ color:var(--p-muted); font-size:12.5px; }
+#pView .p20-row{ display:flex; justify-content:space-between; gap:16px; padding:3px 0; }
+#pView .p20-row.three span:nth-child(2){ margin-left:auto; min-width:80px; text-align:right; }
+#pView .p20-row.three span:nth-child(3){ min-width:110px; text-align:right; }
+#pView .p20-row.b{ font-weight:800; }
+#pView .p20-acts{ margin-top:18px; padding-top:12px; border-top:1px solid var(--p-line); }
+#pView .p20-exp .tp-doc select{ min-height:40px; max-width:220px; }
+
+/* O6 */
+#pView .p20-report{ width:100%; font:14px/1.55 var(--p-body); }
+
+@media print{
+  body.p20-printing *{ visibility:hidden; }
+  body.p20-printing .p20-paper, body.p20-printing .p20-paper *{ visibility:visible; }
+  body.p20-printing .p20-paper{ position:absolute; inset:0 auto auto 0; width:100%; max-width:none; border:0; box-shadow:none; }
+  body.p20-printing .px-noprint{ display:none; }
+}

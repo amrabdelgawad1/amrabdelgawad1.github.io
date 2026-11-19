@@ -230,6 +230,28 @@
     const [b, g] = await Promise.all([db.from('cash_budgets').select('*').order('category'), db.from('cash_goals').select('*').order('done').order('created_at')]);
     if (b.error || g.error) { $('planCard').hidden = true; return; }
     budgets = b.data || []; goals = g.data || []; planReady = true; renderPlan();
+    cpLoad();
+  }
+  // ---------- plan Round 20 (F5): profit per client, summary card (owner only; hidden when the database says no) ----------
+  // Profit = what the client paid − team pay (hourly shifts and commissions on that client's shifts) − client costs.
+  let cpData = null;
+  async function cpLoad(){
+    const card = $('cpCard'); if (!card) return;
+    const r = await db.rpc('client_profit', { p_months:12 });
+    if (r.error || !r.data) { card.hidden = true; return; }
+    cpData = r.data; card.hidden = false; renderCp();
+  }
+  function renderCp(){
+    if (!cpData || !$('cpCard')) return;
+    const m = oneMonth() ? month : thisMonth(), list = (cpData.clients || []).filter(c => +c.all.paid || +c.all.team || +c.all.expenses);
+    const inM = c => ((c.months || []).find(x => String(x.month).slice(0, 7) === m) || {});
+    $('cpLabel').textContent = monthLabel(m) + ' and all time';
+    const both = n => '<b class="' + (n < 0 ? 'neg' : '') + '">' + usd(n) + '</b><small>' + egp(n * fx.rate) + '</small>';
+    const tot = (f) => list.reduce((a, c) => a + (+f(c) || 0), 0);
+    $('cpList').innerHTML = list.length ? '<div class="cp-row cp-head"><span>Client</span><span>' + escHtml(monthLabel(m)) + '</span><span>All time</span></div>' +
+      list.map(c => '<div class="cp-row"><span>' + escHtml(c.name) + (c.status === 'past' ? ' <small>past</small>' : '') + '</span><span>' + both(+inM(c).profit || 0) + '</span><span>' + both(+c.all.profit) + '</span></div>').join('') +
+      '<div class="cp-row cp-total"><span>All clients</span><span>' + both(tot(c => inM(c).profit)) + '</span><span>' + both(tot(c => c.all.profit)) + '</span></div>'
+      : '<p class="hint">No client payments, team pay or client costs yet.</p>';
   }
   const egpIn = (e, test) => { if (!(e.spread && e.periodStart)) return test(e.date) ? egpOf(e) : 0; const days = dayList(e); return days.length ? egpOf(e) * days.filter(test).length / days.length : 0; };
   const pctW = (a, b) => b > 0 ? Math.max(2, Math.min(100, Math.round(a / b * 100))) : 0;
@@ -261,6 +283,7 @@
       : '<p class="hint">No goals yet. Savings you log with “+ Add savings” fill them.</p>';
     if (!$('gStart').value) $('gStart').value = iso(new Date());
     $('planCard').querySelectorAll('[data-pw]').forEach(i => { i.style.width = i.dataset.pw + '%'; });
+    renderCp();
   }
   const planSay = t => { $('planMsg').textContent = t; if (t) setTimeout(() => { if ($('planMsg').textContent === t) $('planMsg').textContent = ''; }, 5000); };
   $('budgetForm').addEventListener('submit', async e => {

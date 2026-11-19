@@ -33,6 +33,7 @@
 <link rel="stylesheet" href="r21.css?v=1">
 <link rel="stylesheet" href="r23.css?v=1">
 <link rel="stylesheet" href="r22.css?v=1">
+<link rel="stylesheet" href="p20.css?v=1">
 <link rel="stylesheet" href="signin.css?v=1">
 </head>
 <body>
@@ -339,6 +340,13 @@
     <a class="mi" href="#study" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M3 8l9-4 9 4-9 4z"/><path d="M7 10v5c0 1.5 2.2 3 5 3s5-1.5 5-3v-5"/></svg>Study planner</a>
     <a class="mi" href="#worklog" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7M9 7h3"/></svg>Work log</a>
     <a class="mi" href="#jobhunt" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 13h18"/></svg>Upwork and LinkedIn</a>
+    <p class="sec" data-nav="clients">Clients</p>
+    <a class="mi" href="#clients" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 12h18M11 12v2h2v-2"/></svg>Clients</a>
+    <a class="mi" href="#pipeline" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg>Client pipeline</a>
+    <a class="mi" href="#outreach" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M6 4h3l1.5 4-2 1.5a10 10 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2 2A15 15 0 0 1 4 6a2 2 0 0 1 2-2z"/><path d="M15 3h6v6"/></svg>Outreach log</a>
+    <a class="mi" href="#proposals" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h6"/></svg>Proposals</a>
+    <a class="mi" href="#clientreport" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h7M9 8h4"/></svg>Weekly reports</a>
+    <a class="mi" href="#profit" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5-1.5 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1 2-2.5 2c-1 0-2-.5-2.5-1.5M12 6.5V8M12 16v1.5"/></svg>Profit per client</a>
     <p class="sec" data-nav="people">People</p>
     <a class="mi" href="#teamview" data-sec="teamview"><svg class="i" viewBox="0 0 24 24"><path d="M5 19V11M12 19V5M19 19v-6"/><path d="M3 19.5h18"/></svg>Team overview</a>
     <a class="mi" href="#live" data-sec="live"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>Live now<span class="cnt" id="liveCnt" hidden></span></a>
@@ -377,8 +385,6 @@
     <a class="mi" href="#leaderboard" data-sec="everyone"><svg class="i" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg>Leaderboard</a>
     <a class="mi" href="#scripttest" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/></svg>Script testing</a>
     <a class="mi" href="#funnel" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16l-6 7v6l-4 2v-8z"/></svg>Calls to deals</a>
-    <a class="mi" href="#profit" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5-1.5 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1 2-2.5 2c-1 0-2-.5-2.5-1.5M12 6.5V8M12 16v1.5"/></svg>Profit per client</a>
-    <a class="mi" href="#clientreport" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h7M9 8h4"/></svg>Client report</a>
     <a class="mi" href="#forecast" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M4 18l5-6 4 3 7-8"/><path d="M15 7h5v5"/></svg>Cash forecast</a>
     <a class="mi" href="#lists" data-sec="owner"><svg class="i" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="5" cy="6" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="5" cy="18" r="1"/></svg>Lead lists</a>
     <p class="sec" data-nav="learning">Learning</p>
@@ -431,7 +437,7 @@
 <script src="../ask.js?v=5"></script>
 <script src="/portal-shell.js?v=14"></script>
 <script src="/portal-ui.js?v=1"></script>
-<script src="app.js?v=77"></script>
+<script src="app.js?v=78"></script>
 <script src="portal-home.js?v=28"></script>
 <script src="people.js?v=8"></script>
 <script src="tool-files.js?v=3"></script>
@@ -449,10 +455,10 @@
 <script src="extras-admin.js?v=4"></script>
 <script src="voice-studio.js?v=22"></script>
 <script src="work.js?v=4"></script>
-<script src="team-plus.js?v=3"></script>
+<script src="team-plus.js?v=4"></script>
 <script src="numbers-plus.js?v=4"></script>
 <script src="learn-plus.js?v=6"></script>
-<script src="nav.js?v=10"></script>
+<script src="nav.js?v=11"></script>
 <script src="i18n.js?v=5"></script>
 <script src="docx-fill.js?v=1"></script>
 <script src="round5.js?v=3"></script>
@@ -464,12 +470,13 @@
 <script src="r17-status.js?v=1"></script>
 <script src="r17-files.js?v=2"></script>
 <script src="r20-safety.js?v=1"></script>
-<script src="r20-reps.js?v=3"></script>
-<script src="r19-pay.js?v=1"></script>
+<script src="r20-reps.js?v=4"></script>
+<script src="r19-pay.js?v=2"></script>
 <script src="r21-me.js?v=2"></script>
 <script src="r23-settings.js?v=1"></script>
-<script src="r22-alerts.js?v=1"></script>
-<script src="ar-more.js?v=17"></script>
+<script src="r22-alerts.js?v=2"></script>
+<script src="p20-clients.js?v=1"></script>
+<script src="ar-more.js?v=18"></script>
 <script src="r23-ar.js?v=1"></script>
 <script src="signin.js?v=1"></script>
 </body>

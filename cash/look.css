@@ -320,3 +320,12 @@ html .plan-bar.over i{ background:var(--red, #b42318); }
 html .plan-bar.goal i{ background:var(--accent, #E07A5F); }
 html .plan-form{ display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; margin-top:12px; }
 html .plan-form .label{ flex:1 1 140px; }
+
+/* plan Round 20 (F5): profit per client card */
+.cp-row{ display:grid; grid-template-columns:minmax(0, 1.4fr) 1fr 1fr; gap:10px; align-items:baseline; padding:8px 0; border-bottom:1px solid var(--line, rgba(0,0,0,.08)); }
+.cp-row span:not(:first-child){ text-align:right; }
+.cp-row small{ display:block; color:var(--muted, #6b7280); font-size:12px; }
+.cp-row span:first-child small{ display:inline; }
+.cp-row .neg{ color:var(--bad, #b4372a); }
+.cp-head{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--muted, #6b7280); }
+.cp-total{ border-bottom:0; font-weight:700; }
