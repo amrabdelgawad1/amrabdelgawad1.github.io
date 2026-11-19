@@ -106,6 +106,26 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
             <label class="chip"><input type="checkbox" name="kind" value="house"><span>Houses</span></label>
           </div>
         </div>
+        <div class="full">
+          <label id="typesL">Property types <small>(optional, pick any)</small></label>
+          <div class="chips" role="group" aria-labelledby="typesL">
+            <label class="chip"><input type="checkbox" name="ptype" value="Single family"><span>Single family</span></label>
+            <label class="chip"><input type="checkbox" name="ptype" value="Multifamily 2–4"><span>Multifamily 2–4</span></label>
+            <label class="chip"><input type="checkbox" name="ptype" value="Mobile home"><span>Mobile home</span></label>
+            <label class="chip"><input type="checkbox" name="ptype" value="Mobile home + land"><span>Mobile home + land</span></label>
+            <label class="chip"><input type="checkbox" name="ptype" value="Land"><span>Land</span></label>
+            <label class="chip"><input type="checkbox" name="ptype" value="Commercial"><span>Commercial</span></label>
+          </div>
+        </div>
+        <div class="full">
+          <label id="rehabL">Rehab you're fine with <small>(optional, pick any)</small></label>
+          <div class="chips" role="group" aria-labelledby="rehabL">
+            <label class="chip"><input type="checkbox" name="rehab" value="Turnkey"><span>Turnkey</span></label>
+            <label class="chip"><input type="checkbox" name="rehab" value="Light rehab"><span>Light rehab</span></label>
+            <label class="chip"><input type="checkbox" name="rehab" value="Full gut"><span>Full gut</span></label>
+            <label class="chip"><input type="checkbox" name="rehab" value="Teardown"><span>Teardown</span></label>
+          </div>
+        </div>
         <label class="full">States <small>(two-letter codes, separated by commas, like OH, NC, TX)</small><input type="text" id="bStates" placeholder="OH, NC" autocomplete="off"></label>
         <label class="full">Counties or cities <small>(optional)</small><input type="text" id="bAreas" maxlength="300" placeholder="Cuyahoga County, Summit County"></label>
         <label>Lowest price <small>($)</small><input type="number" id="bMin" min="0" step="1000" inputmode="numeric"></label>
@@ -140,6 +160,6 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="/tracker/config.js?v=3"></script>
-<script src="buyers.js?v=1"></script>
+<script src="buyers.js?v=2"></script>
 </body>
 </html>
