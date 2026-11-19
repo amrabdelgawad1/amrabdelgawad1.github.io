@@ -1,0 +1,27 @@
+/* Round 29 (plan): learners. Lesson questions page (#questions), practice-call self-score (#scoring), Review center notes. */
+#pView .r29-seg{margin:0 0 14px}
+#pView .r29-seg b{font-weight:700;opacity:.75;margin-left:4px}
+#pView .r29-qs{display:grid;gap:12px}
+#pView .r29-q.is-hot{outline:2px solid var(--p-accent,#E2602A);outline-offset:2px}
+#pView .r29-q.is-hidden{opacity:.7}
+#pView .r29-q-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px}
+#pView .r29-q-top a{font-weight:600}
+#pView .r29-q-who{margin:8px 0 0;font-size:13.5px;color:var(--p-ink2,#5b6168)}
+#pView .r29-q-body{margin:6px 0 0;font-size:15.5px;line-height:1.55;overflow-wrap:anywhere}
+#pView .r29-ans{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--p-soft,#F3F6F4)}
+#pView .r29-ans span{font-size:12.5px;font-weight:700;color:var(--p-ink2,#5b6168)}
+#pView .r29-ans p{margin:4px 0 0;line-height:1.55;overflow-wrap:anywhere}
+#pView .r29-in{display:block;width:100%;box-sizing:border-box;margin-top:10px;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--p-line,#d9dcd8);border-radius:10px;resize:vertical}
+#pView .r29-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+#pView .r29-no{color:var(--p-no,#9C2C17)}
+.r29-vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#pView .sc-self{margin:12px 0;padding:12px 14px;border:1px solid var(--p-line,#d9dcd8);border-radius:12px}
+#pView .sc-self legend{font-weight:700;padding:0 4px}
+#pView .sc-self-r{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:5px 0;font-size:14px;border-top:1px solid var(--p-line,#ecefeb)}
+#pView .sc-self-r select{min-width:84px;min-height:36px}
+#pView .sc-self-t{margin:8px 0 0;font-weight:700;font-size:14px}
+#pView .sc-amr{margin:6px 0 0;font-size:14px;line-height:1.5}
+#pView .sc-again{margin:6px 0 0;padding:8px 10px;border-radius:10px;background:#FFF4E5;font-size:13.5px}
+#pView .sc-again ul{margin:4px 0 0;padding-left:18px}
+.rv-self{display:block;font-size:12.5px;opacity:.8}
+.rv-snote{display:block;width:100%;box-sizing:border-box;margin-top:8px;resize:vertical}

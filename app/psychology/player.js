@@ -287,6 +287,12 @@ function renderItem(m, it) {
   // Lesson video (only when one has been uploaded for this section; see video.js)
   var V = window.LH_DB;
   if (it.type === 'section' && window.PsyVideo && V && V.db) window.PsyVideo.mount(document.getElementById('lvideo'), { db: V.db, uid: V.uid, course: (window.PSY_COURSE && window.PSY_COURSE.access) || 'psy', moduleId: m.id, itemId: it.id, isAdmin: OWNER && !asLearner, lang: lang });
+  // Round 29: questions under each section (E1), and the section saved as this person's place in the course (I16)
+  if (!isQ && window.LessonQA && V && V.db) {
+    var qa = document.createElement('div'); (app.querySelector('.cp-lesson') || app).appendChild(qa);
+    window.LessonQA.mount(qa, { db: V.db, course: (window.PSY_COURSE && window.PSY_COURSE.access) || 'psy', module: m.id, item: it.id, title: (it.label ? it.label + ' · ' : '') + L(it.title), sub: fmt(t('moduleN'), { n: m.num }),
+      link: '/app/psychology/#/' + m.id + '/' + it.id, owner: OWNER && !asLearner, lang: lang });
+  }
   Find.highlight();
   if (tools) {
     document.getElementById('fab').onclick = function () { Ink.stop(); Pad.open(m, it); };

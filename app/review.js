@@ -112,14 +112,18 @@
     const cs = (comments[u.id] || []).map(c => '<li><span class="rv-cm-who">' + esc(c.author === u.user_id ? who : 'Amr') + '</span>' +
       (c.at_s != null ? '<button class="rv-at" type="button" data-seek="' + esc(c.at_s) + '" data-id="' + esc(u.id) + '">' + clock(c.at_s) + '</button>' : '') + esc(c.body) + '</li>').join('');
     const sc = u.score && u.score.cats ? u.score.cats : null;
-    const scoreRows = CATS.map((c, i) => '<div class="rv-cat"><span>' + esc(c) + '</span><div class="rv-dots" role="radiogroup" aria-label="' + esc(c) + '">' +
+    // Round 29 (E8): the learner's own score per part, and "Listen again" where yours and theirs are 2 or more apart
+    const me = u.self_score && Array.isArray(u.self_score.cats) ? u.self_score.cats : null;
+    const scoreRows = CATS.map((c, i) => '<div class="rv-cat"><span>' + esc(c) + (me ? ' <small class="rv-self" data-self="' + me[i] + '">Their score ' + me[i] + (sc && Math.abs(sc[i] - me[i]) >= 2 ? ' · Listen again' : '') + '</small>' : '') + '</span><div class="rv-dots" role="radiogroup" aria-label="' + esc(c) + '">' +
       [1, 2, 3, 4, 5].map(v => '<button type="button" role="radio" aria-checked="' + !!(sc && sc[i] === v) + '" tabindex="' + ((sc ? sc[i] === v : v === 1) ? 0 : -1) + '" data-cat="' + i + '" data-v="' + v + '">' + v + '</button>').join('') + '</div></div>').join('');
     const total = sc ? sc.reduce((a, b) => a + b, 0) : null;
     return '<article class="card rv-card" data-id="' + esc(u.id) + '">' + head +
       '<h3 class="rv-t">' + esc(u.title || (u.kind === 'recording' ? 'Recording' : 'File')) + (u.real_call ? ' <span class="pill">Real call, consent given</span>' : '') + '</h3>' +
       (u.note ? '<p class="rv-note">' + esc(u.note) + '</p>' : '') + media +
       '<details class="rv-score"' + (sc ? ' open' : '') + '><summary>50-point call scorecard' + (total != null ? ' · <b>' + total + ' of 50</b> · ' + esc(band(total)) : '') + '</summary>' + scoreRows +
-        '<p class="rv-total" aria-live="polite">' + (total != null ? 'Total ' + total + ' of 50 · ' + esc(band(total)) : 'Score all 10 to see the total.') + '</p></details>' +
+        '<p class="rv-total" aria-live="polite">' + (total != null ? 'Total ' + total + ' of 50 · ' + esc(band(total)) : 'Score all 10 to see the total.') + (me ? ' Their own score: ' + u.self_score.total + ' of 50.' : '') + '</p>' +
+        (u.course === 'calls' ? '<label class="rv-vh" for="sn-' + esc(u.id) + '">Notes for ' + esc(who.split(' ')[0]) + '</label><textarea class="field rv-snote" id="sn-' + esc(u.id) + '" rows="3" maxlength="2000" placeholder="Notes for ' + esc(who.split(' ')[0]) + ': what to keep, what to change (saved with Approve or Send back)">' + esc((u.score && u.score.note) || '') + '</textarea>' : '') +
+        '</details>' +
       '<ul class="rv-cms">' + cs + '</ul>' +
       '<form class="rv-form" data-id="' + esc(u.id) + '"><label class="rv-vh" for="cm-' + esc(u.id) + '">Comment</label><textarea class="field" id="cm-' + esc(u.id) + '" rows="2" maxlength="2000" placeholder="Leave a comment for ' + esc(who.split(' ')[0]) + '"></textarea>' +
         '<div class="rv-actions">' + (u.kind === 'recording' ? '<label class="rv-pin"><input type="checkbox" checked> Pin to where the recording is</label>' : '<span></span>') +
@@ -208,6 +212,9 @@
         const cardEl = dot.closest('.rv-card'), vals = [...cardEl.querySelectorAll('.rv-dots')].map(d => { const on = d.querySelector('[aria-checked="true"]'); return on ? +on.dataset.v : null; });
         const tot = cardEl.querySelector('.rv-total');
         tot.textContent = vals.every(v => v) ? 'Total ' + vals.reduce((a, b) => a + b, 0) + ' of 50 · ' + band(vals.reduce((a, b) => a + b, 0)) + '. Approve or send back to save it.' : vals.filter(v => v).length + ' of 10 scored.';
+        // Round 29: mark "Listen again" as soon as a part is 2 or more away from the learner's own score
+        const sf = dot.closest('.rv-cat').querySelector('.rv-self');
+        if (sf) sf.textContent = 'Their score ' + sf.dataset.self + (Math.abs(+dot.dataset.v - +sf.dataset.self) >= 2 ? ' · Listen again' : '');
         return;
       }
       const rv = t.closest('[data-review]');
@@ -217,7 +224,9 @@
         const scored = vals.filter(v => v).length;
         if (scored && scored < 10) { A().toast('Score all 10 parts of the scorecard, or none.'); return; }
         rv.setAttribute('aria-busy', 'true');
-        const { error } = await A().db.rpc('hub_review', { p_id:id, p_status:rv.dataset.review, p_score:scored === 10 ? { cats:vals } : null });
+        const note = ((cardEl.querySelector('.rv-snote') || {}).value || '').trim();
+        const score = scored === 10 ? Object.assign({ cats:vals }, note ? { note } : {}) : note ? { note } : null;
+        const { error } = await A().db.rpc('hub_review', { p_id:id, p_status:rv.dataset.review, p_score:score });
         rv.removeAttribute('aria-busy');
         if (error) { A().toast('Couldn’t save that. Try again.'); return; }
         A().toast(rv.dataset.review === 'approved' ? 'Approved' : rv.dataset.review === 'redo' ? 'Sent back to redo' : 'Marked as waiting');

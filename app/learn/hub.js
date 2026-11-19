@@ -1,6 +1,7 @@
 // Learning Hub home (/app/learn/): every course on one page, in the same look as the course players.
 // Each card opens its course for Amr and for people who have that course switched on in /app > Invite and access
-// (plus Learning Hub). Everyone else sees the card locked. Amr also gets the Review center and access counts.
+// (plus Learning Hub). Everyone else sees the card locked, with "Request access" (round 29, E2).
+// Round 29 also adds "Continue where you left off" (I16) and the Practice call scoring link (E8). Amr also gets the Review center and access counts.
 // New course? Add it to COURSES below, give it an access switch in app.js (SECTION_NAMES) and its own player.
 // Later, a locked card can show a price and a Buy button: see lockedFoot().
 (function(){
@@ -85,18 +86,50 @@
       ${locked ? `<span class="lh-art-lock">${lockIc}</span>` : ''}</span>`;
   }
   // When a price is added later, this is where the price and a Buy button go
-  // Phase 1: "Ask for access" sends Amr a notification (request_course_access, once a day per course)
-  const ASK = { acq:'course', mkt:'mkt', psy:'psy' };
+  // Round 29 (E2): "Request access" sends Amr the same bell alert as before (request_course_access, once a day per course;
+  // it also shows on his command center under Waiting for you). The card then shows when this person last asked
+  // (my_course_requests). Nothing here changes who can open what: Amr still switches courses on in Invite and access.
+  const LABEL = { course:'Real Estate Acquisitions', mkt:'Marketing', psy:'Psychology and Therapy' };
+  const labelOf = key => LABEL[key] || key.replace(/_/g, ' ').replace(/\b\w/g, x => x.toUpperCase());
+  const asked = {};   // label -> last time this person asked
+  const fmtWhen = at => { if (window.PortalUI && window.PortalUI.when) return window.PortalUI.when(at, { zone:false });
+    try { return new Date(at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit', hour12:true }); } catch (e) { return ''; } };
   function lockedFoot(c){
-    return `<p class="lh-lockmsg">${lockIc}<span>Locked.</span>${c && ASK[c.id] && !owner ? `<button type="button" class="btn lh-ask" data-ask="${ASK[c.id]}">Ask Amr for access</button>` : '<span>Ask Amr to open this course for you.</span>'}</p>`;
+    const at = c && asked[labelOf(c.key)], recent = at && Date.now() - new Date(at).getTime() < 864e5;
+    return `<p class="lh-lockmsg">${lockIc}<span>Locked.</span>${c && c.key && !owner
+      ? `<button type="button" class="btn lh-ask" data-ask="${esc(c.key)}"${recent ? ' disabled' : ''}>${recent ? 'Requested' : at ? 'Ask again' : 'Request access'}</button>`
+      : '<span>Ask Amr to open this course for you.</span>'}</p>${at ? `<span class="lh-asked">You asked Amr on ${esc(fmtWhen(at))}. He opens courses in Invite and access.</span>` : ''}`;
   }
   document.addEventListener('click', async e => {
     const b = e.target.closest('[data-ask]'); if (!b || !db || b.disabled) return;
     e.preventDefault(); b.disabled = true; b.textContent = 'Sending…';
     const r = await db.rpc('request_course_access', { p_course:b.dataset.ask }).then(x => x, () => ({ error:{} }));
-    b.textContent = r.error ? 'Couldn’t send. Try again' : r.data === 'already' ? 'Already asked today' : 'Sent to Amr';
-    b.disabled = !r.error;
+    if (r.error) { b.textContent = 'Couldn’t send. Try again'; b.disabled = false; return; }
+    const k = labelOf(b.dataset.ask);
+    if (!(asked[k] && r.data === 'already')) asked[k] = new Date().toISOString();
+    draw();
   });
+  function loadAsked(){
+    if (!db || owner || window.HUB_TEST) return Promise.resolve();
+    return db.rpc('my_course_requests').then(r => { (r.data || []).forEach(x => asked[x.label] = x.asked_at); }, () => {});
+  }
+
+  // Round 29 (I16): "Continue where you left off", one row per course in progress (my_resume). Each row opens the exact
+  // lesson; the course's own video player then picks up at the saved time, shown here as "Video at 4:12".
+  let resume = [];
+  function loadResume(){
+    if (!db || window.HUB_TEST) { resume = (window.HUB_TEST && window.HUB_TEST.resume) || []; return Promise.resolve(); }
+    return db.rpc('my_resume').then(r => { resume = Array.isArray(r.data) ? r.data : []; }, () => {});
+  }
+  const clock = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+  function resumeHtml(){
+    const list = resume.map(r => [r, COURSES.find(c => c.id === r.course)]).filter(([r, c]) => c && canOpen(c) && /^\/[^\/\\]/.test(r.href || ''));
+    if (!list.length) return '';
+    return `<section aria-labelledby="lhResH"><h2 class="lh-h2" id="lhResH">Continue where you left off</h2><div class="lh-resume">${list.map(([r, c]) =>
+      `<a class="lh-res" href="${esc(r.href)}"><span class="lh-res-l" aria-hidden="true">${c.letter}</span>
+        <span class="lh-res-t"><small>${esc(c.title)}${r.sub ? ' · ' + esc(r.sub) : ''}${r.at ? ' · ' + esc(fmtWhen(r.at)) : ''}</small><b>${esc(r.title || 'Your last lesson')}</b></span>
+        ${r.pos ? `<span class="lh-res-v">Video at ${clock(r.pos)}</span>` : ''}${arrowIc}</a>`).join('')}</div></section>`;
+  }
   function card(c){
     const ok = canOpen(c), p = prog[c.id], mods = (p && p.total) || c.modules;
     const pct = p && p.total ? Math.round(p.done / p.total * 100) : 0;
@@ -137,10 +170,13 @@
         <h1>Your courses</h1>
         <p>${COURSES.length} courses · ${owner && !asLearner ? 'you can open all of them' : mine ? (mine === COURSES.length ? 'all open for you' : mine + ' open for you') : 'none open for you yet'}</p>
       </section>
+      ${resumeHtml()}
       <section class="lh-grid" aria-label="Courses">${COURSES.map(card).join('')}</section>
       ${mine ? `<section aria-label="Daily review"><div class="lh-tools">
           <a class="lh-tool" href="/app/#daily"><span class="lh-ic"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="14" rx="2"/><path d="M8 3h11a2 2 0 0 1 2 2v12"/></svg></span>
             <span><b>Daily review</b><small>${review == null ? 'Questions you missed come back until they stick' : review ? review + ' card' + (review === 1 ? '' : 's') + ' today · about ' + Math.max(1, Math.round(review / 2)) + ' min' : 'Nothing due today'}</small></span>${review ? `<span class="lh-count">${review} today</span>` : ''}</a>
+          ${canOpen(COURSES[0]) ? `<a class="lh-tool" href="/app/#scoring"><span class="lh-ic"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
+            <span><b>Practice call scoring</b><small>Upload a practice call, score yourself on the 50-point scorecard, then see Amr’s score and notes</small></span></a>` : ''}
         </div></section>` : ''}
       ${owner && !asLearner ? `
       <section aria-label="For Amr"><h2 class="lh-h2">For you</h2>
@@ -178,7 +214,7 @@
       owner = res[0].data === true;
       // A course with team:false in its course.js is Amr-only for now (its player refuses everyone else)
       COURSES.forEach((c, i) => open[c.id] = owner || (c.team !== false && res[i + 2].data === true));
-      if (!owner && res[1].data !== true && !COURSES.some(c => open[c.id])) return msg('The Learning Hub isn’t switched on for you yet. Ask Amr to open it.', ['/app/', 'Back to app']);
+      // Round 29 (E2): with nothing open yet, people still see every course, locked, each with its Request access button
     }
     if (owner) { $('lhView').hidden = false; $('lhAsLearner').addEventListener('change', e => { asLearner = e.target.checked; draw(); }); }
     // The shared top bar (portal-shell.js): Apps menu and the person's name. "Back to app" moves into the Apps menu.
@@ -187,7 +223,7 @@
       test:window.HUB_TEST ? { role:owner ? 'owner' : 'agent', keys:[].concat(open.acq ? ['course'] : [], open.mkt ? ['learn', 'mkt'] : [], open.psy ? ['learn', 'psy'] : []) } : null });
     draw();                                         // show the cards at once, then fill in progress
     loadReview();
-    await Promise.all([loadProgress(), owner ? loadOwner() : null]).catch(() => {});
+    await Promise.all([loadProgress(), owner ? loadOwner() : null, loadResume(), loadAsked()]).catch(() => {});
     draw();
   }
   start();
