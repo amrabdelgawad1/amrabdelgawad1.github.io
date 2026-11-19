@@ -161,6 +161,8 @@
   // ======================================================================
   const STOP_SMS = 'Reply STOP to opt out';
   const AUD = { seller:'Sellers', buyer:'Buyers', agent:'Agents', other:'Other' };
+  // plan Round 20: client outreach templates (Amr only; the database keeps his own templates private)
+  const audFor = () => isOwner() ? Object.assign({}, AUD, { client:'Clients' }) : AUD;
   const blanks = s => [...new Set((String(s || '').match(/\{([a-z_]+)\}/g) || []).map(x => x.slice(1, -1)))];
   const LABEL = { first_name:'Their first name', property:'Property (address or parcel)', my_name:'Your name', my_phone:'Your phone', offer:'Price or offer', day:'Day', company:'Company' };
   function finalText(t, vals){
@@ -185,17 +187,17 @@
       const rows = list.filter(t => (!S.ch || t.channel === S.ch) && (!S.aud || t.audience === S.aud) && (!S.q || (t.title + ' ' + t.body).toLowerCase().includes(S.q)));
       const t = list.find(x => x.id === S.open);
       body.innerHTML = '<div class="px-form r20-row">' + f('Type', '<select id="r20tCh">' + opt('', 'Texts and emails') + opt('sms', 'Texts', S.ch === 'sms') + opt('email', 'Emails', S.ch === 'email') + '</select>') +
-          f('For', '<select id="r20tAud">' + opt('', 'Everyone') + Object.keys(AUD).map(k => opt(k, AUD[k], S.aud === k)).join('') + '</select>') +
+          f('For', '<select id="r20tAud">' + opt('', 'Everyone') + Object.keys(audFor()).map(k => opt(k, audFor()[k], S.aud === k)).join('') + '</select>') +
           f('Search', '<input type="search" id="r20tQ" value="' + esc(S.q) + '" placeholder="Search templates">') +
           '<div class="px-tools"><button type="button" class="p-btn is-ghost" id="r20tNew">New template</button></div></div>' +
         (S.edit ? editor(S.edit) : '') +
-        '<div class="r20-tgrid"><div>' + card('Templates', plural(rows.length, 'template'), rows.length ? rows.map(x => '<button type="button" class="r20-titem' + (x.id === S.open ? ' on' : '') + '" data-r20t="' + x.id + '"><b>' + esc(x.title) + '</b><small>' + (x.channel === 'sms' ? 'Text' : 'Email') + ' · ' + esc(AUD[x.audience]) + (x.shared ? ' · Team' : ' · Mine') + (x.uses ? ' · used ' + x.uses + '×' : '') + '</small></button>').join('') : empty('No templates match.')) + '</div>' +
+        '<div class="r20-tgrid"><div>' + card('Templates', plural(rows.length, 'template'), rows.length ? rows.map(x => '<button type="button" class="r20-titem' + (x.id === S.open ? ' on' : '') + '" data-r20t="' + x.id + '"><b>' + esc(x.title) + '</b><small>' + (x.channel === 'sms' ? 'Text' : 'Email') + ' · ' + esc(audFor()[x.audience] || '') + (x.shared ? ' · Team' : ' · Mine') + (x.uses ? ' · used ' + x.uses + '×' : '') + '</small></button>').join('') : empty('No templates match.')) + '</div>' +
         '<div>' + (t ? filler(t) : card('Pick a template', '', empty('Pick one on the left to fill it in.'))) + '</div></div>';
     }
     function filler(t){
       const keys = blanks(t.subject + ' ' + t.body), out = finalText(t, S.vals), len = out.body.length, segs = Math.ceil(len / 153);
       const can = t.owner === me;
-      return card(t.title, (t.channel === 'sms' ? 'Text' : 'Email') + ' · ' + esc(AUD[t.audience]),
+      return card(t.title, (t.channel === 'sms' ? 'Text' : 'Email') + ' · ' + esc(audFor()[t.audience] || ''),
         (keys.length ? '<div class="px-form r20-row">' + keys.map(k => f(LABEL[k] || k.replace(/_/g, ' '), '<input type="text" data-r20v="' + esc(k) + '" value="' + esc(S.vals[k] || '') + '" maxlength="120">')).join('') + '</div>' : '') +
         (t.channel === 'email' ? '<p class="r20-subj"><b>Subject:</b> <span id="r20tSubj">' + esc(out.subject) + '</span></p>' : '') +
         '<pre class="r20-pre" id="r20tOut">' + esc(out.body) + '</pre>' +
@@ -210,7 +212,7 @@
       return card(t.id ? 'Edit template' : 'New template', '', '<form class="px-form r20-row" id="r20tForm" novalidate>' +
         f('Name', '<input type="text" id="r20eT" maxlength="80" value="' + esc(t.title || '') + '">', 'px-wide') +
         f('Type', '<select id="r20eC">' + opt('sms', 'Text', t.channel !== 'email') + opt('email', 'Email', t.channel === 'email') + '</select>') +
-        f('For', '<select id="r20eA">' + Object.keys(AUD).map(k => opt(k, AUD[k], (t.audience || 'seller') === k)).join('') + '</select>') +
+        f('For', '<select id="r20eA">' + Object.keys(audFor()).map(k => opt(k, audFor()[k], (t.audience || 'seller') === k)).join('') + '</select>') +
         f('Subject (emails)', '<input type="text" id="r20eS" maxlength="150" value="' + esc(t.subject || '') + '">', 'px-wide') +
         f('Words', '<textarea id="r20eB" rows="6" maxlength="3000">' + esc(t.body || '') + '</textarea>', 'px-wide') +
         '<p class="p-hint px-wide">Blanks: {first_name} {property} {offer} {day} {my_name} {my_phone} {company}. Opt-out wording is added when you copy, so you don’t need to type it.</p>' +

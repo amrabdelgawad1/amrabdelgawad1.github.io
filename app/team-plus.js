@@ -157,6 +157,14 @@
       const [mg, mj] = await Promise.all([safe(db().from('me_goals').select('id,title,area,status')), safe(db().from('me_job_apps').select('id,title,client,platform,status').order('sent_on', { ascending:false }).limit(300))]);
       (mg.data || []).forEach(g => out.push({ kind:'Goal', title:g.title, sub:g.area + (g.status !== 'active' ? ' · ' + g.status : ''), href:'#goals' }));
       (mj.data || []).forEach(j => out.push({ kind:'Proposal', title:j.title, sub:[j.platform, j.client].filter(Boolean).join(' · '), href:'#jobhunt' }));
+      // plan Round 20: clients, client leads, client proposals and invoices
+      const [co, cd, cl, cp, iv] = await Promise.all([safe(db().from('companies').select('id,name')), safe(db().from('client_details').select('company_id,status,contact_name,email,notes')),
+        safe(db().from('client_leads').select('id,name,contact_name,stage,notes')), safe(db().from('client_proposals').select('id,number,title,client_name,status')), safe(db().from('invoices').select('id,number,company_id,amount,status'))]);
+      const det = {}, coN = {}; (cd.data || []).forEach(d => det[d.company_id] = d); (co.data || []).forEach(c => coN[c.id] = c.name);
+      (co.data || []).forEach(c => { const d = det[c.id] || {}; out.push({ kind:'Client', title:c.name, sub:[d.status === 'past' ? 'Past client' : d.status === 'paused' ? 'Paused' : 'Client', d.contact_name, d.email].filter(Boolean).join(' · '), text:d.notes, href:'#clients/' + c.id }); });
+      (cl.data || []).forEach(l => out.push({ kind:'Lead', title:l.name, sub:['Client pipeline', l.stage, l.contact_name].filter(Boolean).join(' · '), text:l.notes, href:'#pipeline/' + l.id }));
+      (cp.data || []).forEach(x => out.push({ kind:'Proposal', title:'P-' + x.number + ' ' + x.title, sub:[x.client_name, x.status].join(' · '), href:'#proposals/' + x.id }));
+      (iv.data || []).forEach(i => out.push({ kind:'Invoice', title:'Invoice #' + i.number + ' · ' + (coN[i.company_id] || 'Client'), sub:'$' + (+i.amount).toFixed(2) + ' · ' + (i.status === 'part' ? 'part paid' : i.status), text:String(i.number), href:'#invoices/' + i.id }));
     }
     const mods = cst.data && Array.isArray(cst.data.modules) ? cst.data.modules : [];
     mods.forEach(m => (m.items || []).forEach(it => (it.type === 'group' ? (it.items || []) : [it]).forEach(c => {

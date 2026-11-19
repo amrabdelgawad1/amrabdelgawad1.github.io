@@ -341,6 +341,7 @@
     ['deals', 'Deals', 'Deal changes, comments, follow-ups, callbacks and proof of funds'],
     ['learning', 'Learning and reviews', 'Reviews of your work, course access and coaching tips'],
     ['money', 'Money', 'Budget alerts and subscription renewals', true],
+    ['clients', 'Clients', 'Follow-ups due on client leads and clients', true],
     ['team', 'Team and site', 'Job applications and feedback from the team', true],
     ['other', 'Everything else', 'Anything not listed above']
   ];

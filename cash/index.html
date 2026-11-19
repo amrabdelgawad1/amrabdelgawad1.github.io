@@ -597,7 +597,7 @@
     table.log.mylist td.c-hrs{ grid-row:3; }
   }
 </style>
-<link rel="stylesheet" href="look.css?v=19">
+<link rel="stylesheet" href="look.css?v=20">
 <link rel="stylesheet" href="../ask.css?v=3">
 <link rel="stylesheet" href="/portal-ui.css?v=1">
 <link rel="stylesheet" href="../hub.css?v=8">
@@ -809,6 +809,13 @@
           </div>
         </div>
         <p class="hint" id="planMsg" role="status"></p>
+      </section>
+
+      <!-- plan Round 20 (F5): profit per client, filled by cash.js from client_profit() -->
+      <section class="t-card block" id="cpCard" hidden>
+        <div class="card-title"><h2>Profit per client</h2><span id="cpLabel"></span></div>
+        <div id="cpList"></div>
+        <small class="hint">What each client paid, minus team pay and that client’s costs. <a href="/app/#profit" target="_top">Details and client costs</a></small>
       </section>
 
       <section class="t-card block">
@@ -1214,6 +1221,6 @@
 <script src="../ask.js?v=5"></script>
 <script src="/portal-ui.js?v=1"></script>
 <script src="team.js?v=22"></script>
-<script src="cash.js?v=34"></script>
+<script src="cash.js?v=35"></script>
 </body>
 </html>
