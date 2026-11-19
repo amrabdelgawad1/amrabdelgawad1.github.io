@@ -394,6 +394,24 @@
     goToStep("pick");
   });
 
+  // Round 23 (P11): spam traps. A hidden "website" box people never see, and the time since the form first got
+  // focus. The database checks both (form_check, logged in spam_blocks for the Status page) before anything is booked.
+  let formStarted = null;
+  els.form.addEventListener("focusin", () => { if (!formStarted) formStarted = new Date(); });
+  async function spamReason(website) {
+    if (website) return "hidden field filled";
+    const cfg = window.TRACKER_CONFIG || {};
+    if (!cfg.supabaseUrl || !cfg.supabaseKey) return null;
+    try {
+      const r = await fetch(cfg.supabaseUrl + "/rest/v1/rpc/form_check", {
+        method: "POST", headers: { "Content-Type": "application/json", apikey: cfg.supabaseKey },
+        body: JSON.stringify({ p_form: "booking", p_website: website || null, p_started_at: (formStarted || new Date()).toISOString() })
+      });
+      if (!r.ok) return null;          // the check being down never blocks a real person
+      return await r.json();
+    } catch (er) { return null; }
+  }
+
   els.form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const data = new FormData(els.form);
@@ -406,6 +424,9 @@
 
     if (!name) return showError("Please enter your name.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showError("Please enter a valid email address.");
+    const spam = await spamReason((data.get("website") || "").trim());
+    if (spam === "sent too fast") return showError("Please check your details, then press Confirm Booking again.");
+    if (spam) return showError("Couldn’t book that right now. Please try again in a few minutes.");
 
     goToStep("loading");
     const loadingSteps = ["Checking availability…", "Booking your meeting…", "Creating your Google Meet…"];

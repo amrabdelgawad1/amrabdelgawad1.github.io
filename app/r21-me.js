@@ -33,6 +33,12 @@
   const tiles = list => '<div class="p-tiles r20-tiles">' + list.join('') + '</div>';
   const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const sure = (b, text, back) => { if (b.dataset.sure === '1') return true; b.dataset.sure = '1'; b.textContent = text; setTimeout(() => { if (b.isConnected) { b.dataset.sure = ''; b.textContent = back; } }, 4000); return false; };
+  // Round 23 (I5): deletes take the row off the screen with a 10-second Undo bar; the delete runs only after the bar ends
+  const undoDel = (b, text, run, after) => {
+    const row = b.closest('.r21-goal, li, tr, .r20-rule, .r21-blk, form') || b;
+    if (!window.PortalUI) { b.disabled = true; return Promise.resolve(run()).then(after); }
+    window.PortalUI.undo({ text, hide:() => { row.hidden = true; }, restore:() => { row.hidden = false; b.disabled = false; }, commit:run, done:after });
+  };
   const ownerOnly = (el) => { if (isOwner()) return false; el.innerHTML = '<div class="p-wrap px"><p class="p-card p-empty">This page is only for Amr.</p></div>'; return true; };
   const safeUrl = u => /^https?:\/\//i.test(u || '') ? u : '';
 
@@ -117,7 +123,7 @@
       const ac = e.target.closest('[data-r21hact]');
       if (ac) { const h = H.find(x => x.id === ac.dataset.r21hact); ac.disabled = true; await safe(db().from('me_habits').update({ active:!h.active }).eq('id', h.id)); load(); return; }
       const dl = e.target.closest('[data-r21hdel]');
-      if (dl) { if (!sure(dl, 'Sure? Its ticks go too', 'Delete')) return; dl.disabled = true; await safe(db().from('me_habits').delete().eq('id', dl.dataset.r21hdel)); load(); }
+      if (dl) { const id = dl.dataset.r21hdel; undoDel(dl, 'Habit deleted, with its ticks.', () => safe(db().from('me_habits').delete().eq('id', id)), load); }
     });
     body.addEventListener('submit', async e => {
       if (e.target.id !== 'r21HForm') return;
@@ -206,8 +212,8 @@
       const ge = e.target.closest('[data-r21gedit]'); if (ge) { const k = 'e' + ge.dataset.r21gedit; S.open.has(k) ? S.open.delete(k) : S.open.add(k); draw(); return; }
       const gs = e.target.closest('[data-r21gst]');
       if (gs) { gs.disabled = true; const st = gs.dataset.r21gst; await safe(db().from('me_goals').update({ status:st, done_at:st === 'done' ? new Date().toISOString() : null }).eq('id', gs.dataset.id)); load(); return; }
-      const gd = e.target.closest('[data-r21gdel]'); if (gd) { if (!sure(gd, 'Sure? Its steps go too', 'Delete')) return; gd.disabled = true; await safe(db().from('me_goals').delete().eq('id', gd.dataset.r21gdel)); load(); return; }
-      const sd = e.target.closest('[data-r21sdel]'); if (sd) { sd.disabled = true; await safe(db().from('me_goal_steps').delete().eq('id', sd.dataset.r21sdel)); load(); }
+      const gd = e.target.closest('[data-r21gdel]'); if (gd) { const id = gd.dataset.r21gdel; undoDel(gd, 'Goal deleted, with its steps.', () => safe(db().from('me_goals').delete().eq('id', id)), load); return; }
+      const sd = e.target.closest('[data-r21sdel]'); if (sd) { const id = sd.dataset.r21sdel; undoDel(sd, 'Step deleted.', () => safe(db().from('me_goal_steps').delete().eq('id', id)), load); }
     });
     body.addEventListener('submit', async e => {
       e.preventDefault();
@@ -309,7 +315,7 @@
       if (e.target.closest('[data-r21jnew]')) { S.adding = true; S.edit = null; draw(); const i = body.querySelector('[data-r21jform=""] [name=title]'); if (i) i.focus(); return; }
       if (e.target.closest('[data-r21jx]')) { S.adding = false; S.edit = null; draw(); return; }
       const ed = e.target.closest('[data-r21jedit]'); if (ed) { S.edit = ed.dataset.r21jedit; S.adding = false; if (S.st && S.st !== 'open') S.st = ''; draw(); const fm = body.querySelector('[data-r21jform="' + S.edit + '"]'); if (fm) fm.scrollIntoView({ block:'center' }); return; }
-      const dl = e.target.closest('[data-r21jdel]'); if (dl) { if (!sure(dl, 'Sure?', 'Delete')) return; dl.disabled = true; await safe(db().from('me_job_apps').delete().eq('id', dl.dataset.r21jdel)); load(); }
+      const dl = e.target.closest('[data-r21jdel]'); if (dl) { const id = dl.dataset.r21jdel; undoDel(dl, 'Entry deleted.', () => safe(db().from('me_job_apps').delete().eq('id', id)), load); }
     });
     body.addEventListener('submit', async e => {
       const fm = e.target; if (!fm.hasAttribute('data-r21jform')) return;
@@ -397,7 +403,7 @@
       if (e.target.closest('[data-r21bnew]')) { S.adding = true; draw(); return; }
       if (e.target.closest('[data-r21bx]')) { S.adding = false; draw(); return; }
       if (e.target.closest('[data-r21tg]')) { S.targets = !S.targets; draw(); return; }
-      const bd = e.target.closest('[data-r21bdel]'); if (bd) { bd.disabled = true; await safe(db().from('me_study_blocks').delete().eq('id', bd.dataset.r21bdel)); load(); return; }
+      const bd = e.target.closest('[data-r21bdel]'); if (bd) { const id = bd.dataset.r21bdel; undoDel(bd, 'Study block deleted.', () => safe(db().from('me_study_blocks').delete().eq('id', id)), load); return; }
       const bm = e.target.closest('[data-r21bmin]');
       if (bm) {
         const b = B.find(x => x.id === bm.dataset.r21bmin), wrap = bm.closest('.r21-blk');
@@ -405,7 +411,7 @@
         wrap.insertAdjacentHTML('beforeend', '<form class="r21-minf" novalidate><input type="number" min="0" max="600" step="5" value="' + (b.done_minutes != null ? b.done_minutes : b.minutes) + '" aria-label="Minutes you actually studied"><button type="submit" class="p-btn is-ghost">Save</button></form>');
         wrap.querySelector('.r21-minf input').focus(); wrap.querySelector('.r21-minf').dataset.id = b.id; return;
       }
-      const td = e.target.closest('[data-r21tdel]'); if (td) { if (!sure(td, 'Sure?', 'Remove')) return; await safe(db().from('me_study_targets').delete().eq('subject', td.dataset.r21tdel)); load(); return; }
+      const td = e.target.closest('[data-r21tdel]'); if (td) { const id = td.dataset.r21tdel; undoDel(td, 'Target removed.', () => safe(db().from('me_study_targets').delete().eq('subject', id)), load); return; }
       if (e.target.closest('[data-r21copy]')) {
         const prev = await safe(db().from('me_study_blocks').select('subject,day,starts,minutes,topic').gte('day', addDays(S.wk, -7)).lte('day', addDays(S.wk, -1)));
         const rows = (prev.data || []).map(b => ({ subject:b.subject, day:addDays(b.day, 7), starts:b.starts, minutes:b.minutes, topic:b.topic }))
@@ -547,7 +553,7 @@
       }
       const ed = e.target.closest('[data-r21wedit]'); if (ed) { S.edit = ed.dataset.r21wedit; draw(); return; }
       if (e.target.closest('[data-r21wx]')) { S.edit = null; draw(); return; }
-      const dl = e.target.closest('[data-r21wdel]'); if (dl) { if (!sure(dl, 'Sure?', 'Delete')) return; await safe(db().from('me_work_log').delete().eq('id', dl.dataset.r21wdel)); load(); return; }
+      const dl = e.target.closest('[data-r21wdel]'); if (dl) { const id = dl.dataset.r21wdel; undoDel(dl, 'Task deleted.', () => safe(db().from('me_work_log').delete().eq('id', id)), load); return; }
       const ca = e.target.closest('[data-r21carry]'); if (ca) { ca.disabled = true; await carry(C.find(c => c.id === ca.dataset.r21carry)); load(); return; }
       if (e.target.closest('[data-r21carryall]')) { for (const c of C) await carry(c); load(); return; }
       const cd = e.target.closest('[data-r21cdone]'); if (cd) { const c = C.find(x => x.id === cd.dataset.r21cdone); await safe(db().from('me_work_log').insert({ day:S.d, text:c.text, grp:c.grp, status:'done', sort:W.length })); await safe(db().from('me_work_log').update({ carried_on:S.d }).eq('id', c.id)); load(); return; }

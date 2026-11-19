@@ -76,7 +76,7 @@
     if (r.error) { rm.disabled = false; rm.textContent = 'Couldn’t remove'; return; }
     load();
   });
-  const when = d => { try { return new Date(d).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }); } catch(e) { return ''; } };
+  const when = d => { if (window.PortalUI) return window.PortalUI.when(d); try { return new Date(d).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }); } catch(e) { return ''; } };   // round 23 (I6): with the zone
   let tab = 'activity', days = 7, run = 0;
 
   function frame(){

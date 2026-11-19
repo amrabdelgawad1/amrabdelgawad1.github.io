@@ -1,0 +1,27 @@
+# Smoke tests on every round (plan P8): JavaScript parses, every linked file exists, /app's offline list matches
+# index.html, changed /app files got a new ?v= and sw.js VERSION was raised, JSON parses, times use AM/PM.
+# Script: .github/smoke.mjs (run by hand with: node .github/smoke.mjs)
+name: Smoke tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Fetch main to compare with
+        run: git fetch --depth=50 origin main:refs/remotes/origin/main || true
+      - name: Run the smoke tests
+        run: node .github/smoke.mjs

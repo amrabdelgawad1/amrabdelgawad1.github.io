@@ -134,7 +134,7 @@
       if (a === 'liveSave' || a === 'liveSign') run(b, () => rpc('certificate_live_sign', { p_user:uid, p_disclosure:val('lcDisc'), p_call:val('lcCall'), p_crm:val('lcCrm'), p_note:$('lcNote').value, p_sign:a === 'liveSign' }), a === 'liveSign' ? 'Checklist signed.' : 'Checklist saved.');
       else if (a === 'issue') run(b, () => rpc('certificate_issue', { p_user:uid, p_name:$('certName').value }), 'Certificate issued.');
       else if (a === 'renew') run(b, () => rpc('certificate_renew', { p_id:ren.id }), 'Certificate renewed.');
-      else if (a === 'unlock' && confirm('Allow one more final exam try for ' + L.name + '?')) run(b, () => rpc('course_exam_unlock', { p_user:uid }), 'Unlocked. They can take the final exam again.');
+      else if (a === 'unlock') { const m = 'Allow one more final exam try for ' + L.name + '?'; (window.PortalUI ? PortalUI.confirm({ msg:m, ok:'Allow', danger:false }) : Promise.resolve(confirm(m))).then(y => { if (y) run(b, () => rpc('course_exam_unlock', { p_user:uid }), 'Unlocked. They can take the final exam again.'); }); }
     };
   }
   const statusChip = s => s === 'approved' ? chip('Approved', 'ok') : s === 'submitted' ? chip('Waiting for you', 'warm') : s === 'needs_changes' ? chip('Returned') : chip('Draft');

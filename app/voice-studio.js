@@ -307,7 +307,7 @@
     const u = r.data && r.data.signedUrl, was = b.textContent;
     if (!u) { b.textContent = 'Couldn’t make a link'; return; }
     let copied = false; try { await navigator.clipboard.writeText(u); copied = true; } catch(e) {}
-    if (!copied) { window.prompt('Copy this link (works for 7 days):', u); return; }
+    if (!copied) { window.ask ? window.ask({ title:'Copy this link', msg:'It works for 7 days.', input:{ value:u }, ok:'Done' }) : window.prompt('Copy this link (works for 7 days):', u); return; }
     b.textContent = 'Link copied · 7 days'; setTimeout(() => { b.textContent = was; }, 4000);
   }
 

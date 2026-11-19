@@ -15,7 +15,11 @@
   const pad = n => String(n).padStart(2, '0');
   const isoDay = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
   const fmtDay = (d, o) => { try { return new Date(String(d).length === 10 ? d + 'T12:00' : d).toLocaleDateString('en-US', o || { weekday:'short', month:'short', day:'numeric' }); } catch(e) { return ''; } };
-  const fmtTime = (d, tz) => { try { return new Date(d).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', timeZone:tz || undefined }); } catch(e) { return ''; } };
+  // Round 23 (I6): every time shows AM/PM and its zone ("2:40 PM EST"); without tz, the person's own zone (Settings › Language and time) with its name
+  const fmtTime = (d, tz) => {
+    if (window.PortalUI && !tz) return window.PortalUI.when(d, { date:false });   // a caller passing tz already names that zone next to it
+    try { return new Date(d).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', timeZone:tz || undefined }); } catch(e) { return ''; }
+  };
   const usd = n => '$' + (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
   const num = n => (Number(n) || 0).toLocaleString('en-US');
   const pct = (a, b) => b ? Math.round(a / b * 1000) / 10 + '%' : '–';

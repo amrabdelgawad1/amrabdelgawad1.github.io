@@ -319,7 +319,7 @@
   // ======================================================================
   const AUTO_TEAM_FROM = '2026-11-17';   // same date as cash.js: team profit from hours counts from here on
   const egpTxt = n => 'EGP ' + Math.round(n).toLocaleString('en-US');
-  const since = t => { try { return new Date(t).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', timeZone:'Africa/Cairo' }); } catch(e) { return ''; } };
+  const since = t => { if (window.PortalUI) return window.PortalUI.when(t, { date:false, tz:'Africa/Cairo' }); try { return new Date(t).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', timeZone:'Africa/Cairo' }) + ' Cairo'; } catch(e) { return ''; } };   // round 23 (I6): zone shown
   async function command(db, names){
     const now = new Date(), mStart = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
     const ymd = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');

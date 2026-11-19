@@ -1,0 +1,21 @@
+/* Round 23: Settings › Notifications and Language and time (r23-settings.js, I29); access templates in Invite and access (people.js, I30) */
+.set-body .r23-set{ border-top:1px solid var(--border, #e7e9ee); padding:16px 0 4px; margin-top:12px; }
+.set-body .r23-set:first-of-type{ border-top:0; margin-top:4px; }
+.set-body .r23-set h4{ margin:0 0 8px; font:600 15px/1.35 "Inter", system-ui, sans-serif; }
+.set-body .r23-set .set-head h3{ font-size:15px; }
+.set-body .r23-row{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:8px 0; font-size:14.5px; }
+.set-body .r23-row[hidden], .set-body .r23-sub[hidden]{ display:none; }
+.set-body .r23-row select{ font:inherit; min-height:38px; padding:0 10px; border:1px solid var(--border2, #d8dce3); border-radius:10px; background:var(--panel, #fff); color:inherit; max-width:100%; }
+.set-body .r23-row input[type=checkbox]{ width:18px; height:18px; flex:none; }
+.set-body .r23-sub{ padding-left:26px; }
+html[dir="rtl"] .set-body .r23-sub{ padding-left:0; padding-right:26px; }
+
+#pView .pp-tpls .pp-tplrow{ display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:8px; }
+#pView .pp-tpl{ display:flex; flex-direction:column; align-items:flex-start; gap:3px; height:auto; min-height:58px; padding:10px 12px; text-align:left; white-space:normal; line-height:1.3; }
+html[dir="rtl"] #pView .pp-tpl{ align-items:flex-end; text-align:right; }
+#pView .pp-tpl small{ font-weight:400; font-size:12.5px; opacity:.8; }
+#pView .pp-tpl.is-on{ border-color:var(--p-ink, #101828); box-shadow:inset 0 0 0 1px var(--p-ink, #101828); }
+#pView .pp-tpl[disabled]{ opacity:.5; cursor:not-allowed; }
+#pView .pp-invtpl{ display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
+#pView .pp-invtpl label small{ color:var(--p-muted, #6b7280); font-size:12.5px; }
+#pView .pp-invtpl label.is-disabled{ opacity:.55; }
