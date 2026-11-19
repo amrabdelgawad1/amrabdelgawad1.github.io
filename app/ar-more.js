@@ -412,3 +412,45 @@
     [/^About (\$[\d,.]+) a month \(rate × hours × 52 ÷ 12\)\.$/, (m, v) => 'حوالي ' + v + ' في الشهر (السعر × الساعات × 52 ÷ 12).']
   );
 })();
+// Arabic for round 28 of the plan: calling queue, script panel, recording consent, dial goals, creative finance and cost per deal
+(function(){
+  'use strict';
+  const L = window.AppLang;
+  if (!L || !L.AR) return;
+  Object.assign(L.AR, {
+    'Calling queue':'طابور الاتصال', 'Creative finance calculator':'حاسبة التمويل الإبداعي', 'Cost per deal':'تكلفة الصفقة',
+    'One lead at a time from your lead lists: their local time, the script, and one tap for the outcome. Call only when the time shows green.':'عميل واحد في كل مرة من قوائمك: وقته المحلي والسكريبت ونقرة واحدة للنتيجة. اتصل فقط عندما يظهر الوقت باللون الأخضر.',
+    'Pick a list':'اختر قائمة', 'Start calling':'ابدأ الاتصال', 'All my lists':'كل قوائمي', 'Only leads I can call now':'فقط العملاء الذين يمكنني الاتصال بهم الآن',
+    'Call no-answers again':'أعد الاتصال بمن لم يرد', 'Show script':'أظهر السكريبت', 'I record my calls':'أنا أسجّل مكالماتي',
+    'OK to call':'يمكنك الاتصال', 'Don’t call now':'لا تتصل الآن', 'No state on this lead':'لا توجد ولاية لهذا العميل',
+    'Call':'اتصل', 'Call phone 2':'اتصل بالرقم 2', 'Log outcome':'سجّل النتيجة', 'Skip':'تخطَّ', 'How did the call go?':'كيف كانت المكالمة؟',
+    'I made an offer on this call':'قدّمت عرضاً في هذه المكالمة', 'Do not call and Wrong number also add the number to the team’s do-not-call list.':'"لا تتصل" و"رقم خاطئ" يضيفان الرقم أيضاً إلى قائمة عدم الاتصال للفريق.',
+    'No answer':'لم يرد', 'Left voicemail':'تركت رسالة صوتية', 'Callback':'معاودة اتصال', 'Not interested':'غير مهتم', 'Interested':'مهتم', 'Appointment set':'تم تحديد موعد', 'Wrong number':'رقم خاطئ', 'Do not call':'لا تتصل',
+    'Callbacks due':'معاودات مستحقة', 'Open lead':'افتح العميل', 'Due now':'مستحقة الآن', 'Soon':'قريباً',
+    'Nothing to call right now':'لا أحد للاتصال به الآن', 'Every lead left is outside legal calling hours right now.':'كل العملاء المتبقين خارج ساعات الاتصال القانونية الآن.', 'Check again':'تحقق مرة أخرى',
+    'You’ve worked every lead on this list.':'أنهيت كل العملاء في هذه القائمة.',
+    'Their time':'وقتهم', 'Your time':'وقتك', 'Their time zone':'منطقتهم الزمنية', 'Time, their time':'الوقت، بتوقيتهم', 'Day':'اليوم', 'Note (optional)':'ملاحظة (اختياري)', 'Save callback':'حفظ المعاودة', 'Cancel':'إلغاء',
+    'Script':'السكريبت', 'Objection answers':'ردود الاعتراضات', 'What did the seller say?':'ماذا قال البائع؟',
+    'Say this first, before anything else:':'قل هذا أولاً، قبل أي شيء:', 'Recording consent':'موافقة التسجيل', 'Save the line':'احفظ الجملة', 'Line to say':'الجملة التي تقولها', 'Add a state':'أضف ولاية', 'Note or law':'ملاحظة أو قانون', 'Add':'أضف', 'Remove':'إزالة',
+    'If you record calls, these states need every person on the call to agree. Before a call to one of them, the portal shows this line to say first:':'إن كنت تسجّل المكالمات، فهذه الولايات تشترط موافقة كل من في المكالمة. قبل الاتصال بإحداها تعرض البوابة هذه الجملة لتقولها أولاً:',
+    'All-party consent':'موافقة كل الأطراف', 'Tap the number again to call.':'اضغط الرقم مرة أخرى للاتصال.',
+    'Your targets':'أهدافك', 'Dials today':'اتصالات اليوم', 'Conversations today':'محادثات اليوم', 'Offers today':'عروض اليوم', 'Appointments today':'مواعيد اليوم',
+    'Count my dials and conversations from the queue':'احسب اتصالاتي ومحادثاتي من الطابور',
+    'You still type your numbers in the end-of-day report when you clock out. The counter only fills boxes you left empty.':'ما زلت تكتب أرقامك في تقرير نهاية اليوم عند الخروج. العدّاد يملأ فقط الخانات التي تركتها فارغة.',
+    'Seller finance':'تمويل البائع', 'Subject-to':'الاستحواذ على القرض (Subject-to)', 'Show the schedule by year':'اعرض الجدول بالسنة', 'Print the table':'اطبع الجدول', 'Start over':'ابدأ من جديد',
+    'Purchase price ($)':'سعر الشراء ($)', 'Down payment ($)':'الدفعة المقدمة ($)', 'Interest rate (% a year)':'نسبة الفائدة (% سنوياً)', 'Amortized over (years)':'مدة السداد (سنوات)', 'Balloon after (years, blank = none)':'الدفعة الكبيرة بعد (سنوات، فارغ = لا يوجد)', 'First payment':'أول دفعة',
+    'Loan balance you take over ($)':'رصيد القرض الذي تتولاه ($)', 'Loan rate (% a year)':'فائدة القرض (% سنوياً)', 'Months left on the loan':'الأشهر المتبقية على القرض', 'Taxes and insurance a month ($)':'الضرائب والتأمين شهرياً ($)',
+    'Cash to seller at closing ($)':'نقد للبائع عند الإغلاق ($)', 'Missed payments to catch up ($)':'أقساط متأخرة للسداد ($)', 'Closing costs ($)':'تكاليف الإغلاق ($)', 'Seller carry on the rest: rate (%, 0 = none)':'تمويل البائع للباقي: الفائدة (%، 0 = لا يوجد)', 'Seller carry: years':'تمويل البائع: سنوات', 'Rent a month (optional, $)':'الإيجار الشهري (اختياري، $)',
+    'Monthly payment':'القسط الشهري', 'Seller carries':'يموّله البائع', 'Balloon':'الدفعة الكبيرة', 'Interest to the seller':'الفائدة للبائع', 'Seller gets in all':'يحصل البائع إجمالاً على', 'Loan payment':'قسط القرض', 'With taxes and insurance':'مع الضرائب والتأمين',
+    'Cash you need at closing':'النقد المطلوب عند الإغلاق', 'Seller’s equity':'حقوق البائع', 'Seller carry payment':'قسط تمويل البائع', 'All payments a month':'كل الأقساط شهرياً', 'Cash flow a month':'التدفق النقدي الشهري',
+    'Year':'السنة', 'Ends':'تنتهي', 'Paid':'المدفوع', 'Interest':'الفائدة', 'Principal':'أصل القرض', 'Balance after':'الرصيد بعدها', 'Month':'الشهر', 'Payment':'الدفعة',
+    'Marketing spend':'إنفاق التسويق', 'Deals closed':'صفقات مغلقة', 'Profit per deal':'الربح لكل صفقة', 'Profit for each $1 spent':'الربح لكل 1$ منفق', 'Where the spend comes from':'من أين يأتي الإنفاق',
+    'From':'من', 'To':'إلى', 'Cash expense categories that count as marketing':'فئات مصروفات الكاش التي تُحسب تسويقاً',
+    'Marketing spend ($, blank = from Cash and lists)':'إنفاق التسويق ($، فارغ = من الكاش والقوائم)', 'Deals closed (blank = from the Deal CRM)':'الصفقات المغلقة (فارغ = من نظام الصفقات)'
+  });
+  if (L.RULES) L.RULES.push(
+    [/^(\d+) leads? left$/, (m, n) => 'متبقٍ ' + n + ' عميل'],
+    [/^Recording\? ([A-Z]{2}) needs everyone’s consent\.$/, (m, s) => 'تسجيل؟ ولاية ' + s + ' تشترط موافقة الجميع.'],
+    [/^Call back (.+)$/, (m, w) => 'معاودة الاتصال بـ ' + w]
+  );
+})();
