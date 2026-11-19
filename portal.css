@@ -298,3 +298,7 @@ a.p-cont:hover{ border-color:var(--p-accent); }
 .p-tab[aria-current="page"]{ color:var(--p-accent); }
 .p-tab:focus-visible{ outline:2px solid var(--p-accent); outline-offset:-2px; }
 @media (max-width:640px){ .p-stats{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; } .p-stat{ min-width:0; padding:12px; } .p-stat b{ font-size:26px; } }
+
+/* Round 22 (N4): link to the per-kind alert settings, under the bell's list */
+.p-notes-set{ display:block; padding:10px 16px 14px; border-top:1px solid var(--p-line); font-size:13.5px; font-weight:600; color:var(--p-accent, #14213D); text-decoration:underline; text-underline-offset:3px; }
+.p-notes-set:hover, .p-notes-set:focus-visible{ color:var(--p-ink); }

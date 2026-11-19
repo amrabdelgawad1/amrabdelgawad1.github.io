@@ -1,0 +1,107 @@
+/* Round 22 (Nov 19 2026): tasks and alerts. Task board and list, comments, the @ picker, notification settings,
+   must-read box, subscriptions. Page parts are scoped to #pView; the picker, dialogs and the settings table are
+   global because they open over the page or inside Settings. No inline styles. */
+
+/* ---------- @ picker ---------- */
+.r22-pick{ position:absolute; z-index:2000; min-width:220px; max-width:260px; max-height:220px; overflow:auto; margin:0; padding:6px; list-style:none; background:var(--p-card, #fff); color:var(--p-ink, #14213D); border:1px solid var(--p-line, #e3e0d8); border-radius:12px; box-shadow:0 10px 28px rgba(20,33,61,.18); }
+.r22-pick li{ padding:9px 10px; border-radius:8px; cursor:pointer; font-size:14px; min-height:36px; }
+.r22-pick li.on, .r22-pick li:hover{ background:var(--p-soft, #f3efe6); }
+.r22-at{ color:var(--p-accent, #14213D); font-weight:700; }
+.r22-sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+.r22-link{ background:none; border:0; padding:0 4px; color:var(--p-muted, #6b7280); font:inherit; font-size:12.5px; text-decoration:underline; cursor:pointer; }
+
+/* ---------- comments ---------- */
+.r22-comments{ display:grid; gap:8px; margin:6px 0 10px; }
+.r22-c{ padding:10px 12px; border:1px solid var(--p-line, #e3e0d8); border-radius:12px; background:var(--p-card, #fff); }
+.r22-c.is-me{ background:var(--p-soft, #f7f4ec); }
+.r22-c-head{ display:flex; flex-wrap:wrap; align-items:baseline; gap:8px; font-size:13.5px; }
+.r22-c-head time{ color:var(--p-muted, #6b7280); font-size:12.5px; }
+.r22-c-head .r22-link{ margin-left:auto; }
+.r22-c p{ margin:4px 0 0; white-space:pre-wrap; overflow-wrap:anywhere; font-size:14.5px; }
+.r22-cform{ display:grid; gap:8px; }
+.r22-cform textarea{ width:100%; min-height:64px; padding:10px 12px; border:1px solid var(--p-line, #d9d5cc); border-radius:10px; font:inherit; background:var(--p-card, #fff); color:inherit; resize:vertical; }
+.r22-cform .p-btn{ justify-self:start; }
+
+/* ---------- dialogs (file notes, must-read) ---------- */
+.r22-dlg{ width:min(620px, calc(100vw - 24px)); max-height:calc(100vh - 40px); padding:0; border:0; border-radius:16px; background:var(--p-card, #fff); color:var(--p-ink, #14213D); box-shadow:0 24px 60px rgba(20,33,61,.3); }
+.r22-dlg::backdrop{ background:rgba(20,33,61,.45); }
+.r22-dlg-in{ display:flex; flex-direction:column; max-height:calc(100vh - 40px); }
+.r22-dlg-head{ display:flex; align-items:center; gap:12px; padding:16px 18px; border-bottom:1px solid var(--p-line, #e3e0d8); }
+.r22-dlg-head h2{ margin:0; font-size:18px; line-height:1.3; flex:1; }
+.r22-x{ width:40px; height:40px; border:0; border-radius:10px; background:transparent; font-size:24px; line-height:1; cursor:pointer; color:inherit; }
+.r22-x:hover, .r22-x:focus-visible{ background:var(--p-soft, #f3efe6); }
+.r22-dlg-body{ padding:14px 18px 18px; overflow:auto; }
+.r22-dlg .p-hint{ color:var(--p-muted, #6b7280); font-size:13.5px; margin:0 0 10px; }
+.r22-dlg .p-btn{ min-height:42px; }
+.r22-must .r22-mbody{ white-space:pre-wrap; font-size:15.5px; line-height:1.55; margin:0 0 16px; }
+.r22-must .px-tools{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+
+/* ---------- notification settings (Settings › Notifications and #notify) ---------- */
+.r22-np{ overflow-x:auto; }
+.r22-nptable{ width:100%; border-collapse:collapse; font-size:14px; }
+.r22-nptable th, .r22-nptable td{ padding:10px 8px; border-bottom:1px solid var(--p-line, var(--line, #e3e0d8)); text-align:center; vertical-align:middle; }
+.r22-nptable thead th{ font-size:12.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--p-muted, var(--muted, #6b7280)); }
+.r22-nptable th[scope=row], .r22-nptable thead th:first-child{ text-align:left; }
+.r22-nptable th[scope=row] small{ display:block; font-weight:400; color:var(--p-muted, var(--muted, #6b7280)); font-size:12.5px; margin-top:2px; }
+.r22-nptable input{ width:22px; height:22px; cursor:pointer; }
+.r22-nptable input:disabled{ cursor:not-allowed; opacity:.45; }
+.r22-npmail{ display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center; margin:14px 0 6px; }
+.r22-npline{ display:inline-flex; align-items:center; gap:8px; min-height:40px; font-size:14px; }
+.r22-npline input{ width:20px; height:20px; }
+.r22-npline select{ min-height:38px; padding:0 8px; border:1px solid var(--p-line, var(--line, #d9d5cc)); border-radius:8px; font:inherit; background:var(--p-card, #fff); color:inherit; }
+#pView .r22-npcard{ padding:16px 18px; }
+#pView .r22-npcard .note{ color:var(--p-muted); font-size:13.5px; }
+
+/* ---------- tasks ---------- */
+#pView .r22-ttools{ display:flex; flex-wrap:wrap; gap:10px 14px; align-items:flex-end; margin:0 0 14px; }
+#pView .r22-ttools [data-r22add]{ margin-left:auto; }
+#pView .r22-seg{ display:inline-flex; gap:4px; }
+#pView .r22-task{ align-items:flex-start; }
+#pView .r22-tt{ flex:1; display:block; min-width:0; padding:2px 0; text-align:left; border:0; background:none; color:inherit; font:inherit; cursor:pointer; }
+#pView .r22-tt b{ display:block; overflow-wrap:anywhere; }
+#pView .r22-tt:hover b, #pView .r22-tt:focus-visible b{ text-decoration:underline; text-underline-offset:3px; }
+#pView .r22-task.is-done .r22-tt b{ text-decoration:line-through; color:var(--p-muted); }
+#pView .r22-task.is-open{ background:var(--p-soft); border-radius:12px; }
+#pView .r22-cn{ font-size:12.5px; color:var(--p-muted); }
+#pView .r22-detail{ margin:4px 0 14px 38px; padding:12px 14px; border-left:3px solid var(--p-accent); background:var(--p-card); }
+#pView .r22-dhead{ display:flex; flex-wrap:wrap; gap:12px 20px; justify-content:space-between; }
+#pView .r22-dhead > div:first-child{ flex:1 1 280px; }
+#pView .r22-dhead .px-pre{ white-space:pre-wrap; margin:0 0 6px; }
+#pView .r22-dacts{ display:flex; flex-wrap:wrap; gap:6px; align-items:flex-start; }
+#pView .r22-h{ margin:14px 0 6px; font-size:15px; }
+#pView .r22-board{ display:grid; grid-template-columns:repeat(3, minmax(240px, 1fr)); gap:14px; overflow-x:auto; padding-bottom:6px; margin-bottom:14px; }
+#pView .r22-col{ background:var(--p-soft, #f5f2ea); border:1px solid var(--p-line); border-radius:14px; padding:10px; min-height:180px; transition:border-color .15s; }
+#pView .r22-col.is-over{ border-color:var(--p-accent); border-style:dashed; }
+#pView .r22-col h3{ display:flex; justify-content:space-between; margin:2px 4px 10px; font-size:14px; text-transform:uppercase; letter-spacing:.04em; color:var(--p-ink2); }
+#pView .r22-col h3 span{ color:var(--p-muted); }
+#pView .r22-cards{ list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+#pView .r22-card{ background:var(--p-card); border:1px solid var(--p-line); border-radius:12px; padding:10px 12px; cursor:grab; box-shadow:0 1px 2px rgba(20,33,61,.05); }
+#pView .r22-card.is-drag{ opacity:.5; }
+#pView .r22-card.is-high{ border-left:4px solid #c2410c; }
+#pView .r22-card.is-late{ border-color:#c2410c; }
+#pView .r22-card .wk-meta{ display:flex; flex-wrap:wrap; gap:4px 6px; margin-top:6px; }
+#pView .r22-none{ padding:14px 8px; color:var(--p-muted); font-size:13.5px; text-align:center; }
+#pView .r22-moves{ display:flex; justify-content:space-between; gap:6px; margin-top:8px; }
+#pView .r22-mv{ min-height:34px; padding:0 10px; border:1px solid var(--p-line); border-radius:8px; background:transparent; color:var(--p-ink2); font:600 12.5px/1 var(--p-body); cursor:pointer; }
+#pView .r22-mv:hover, #pView .r22-mv:focus-visible{ border-color:var(--p-accent); color:var(--p-ink); }
+@media (max-width:760px){
+  #pView .r22-board{ grid-template-columns:repeat(3, 82vw); scroll-snap-type:x mandatory; }
+  #pView .r22-col{ scroll-snap-align:start; }
+  #pView .r22-detail{ margin-left:0; }
+  #pView .r22-ttools [data-r22add]{ margin-left:0; }
+}
+
+/* ---------- must-read on Amr's Announcements ---------- */
+#pView .r22-mustart{ border-left:4px solid #c2410c; }
+#pView .r22-mstat{ display:grid; gap:4px; margin-top:10px; padding:10px 12px; background:var(--p-soft); border-radius:10px; font-size:14px; }
+#pView .r22-mstat small{ color:var(--p-ink2); }
+#pView .r22-mstat details{ font-size:13.5px; }
+#pView .r22-mstat ul{ margin:6px 0 0; padding-left:18px; }
+#pView .r22-mstat .p-btn{ justify-self:start; margin-top:4px; }
+
+/* ---------- subscriptions ---------- */
+#pView .r22-subs, #pView .r22-found{ display:grid; gap:2px; }
+#pView .r22-sub.is-off{ opacity:.65; }
+#pView .r22-sub small{ display:block; }
+#pView .r22-inl{ display:inline !important; color:var(--p-muted); }
+#pView .r22-pform{ margin-top:10px; padding:10px 12px; background:var(--p-soft); border-radius:10px; }

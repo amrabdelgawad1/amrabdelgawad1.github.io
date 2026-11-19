@@ -242,9 +242,9 @@
     const cats = [...new Set(CATS.expense.filter(c => c !== 'Savings').concat(Object.keys(spentBy)))].sort();
     $('bCats').innerHTML = cats.map(c => '<option value="' + escHtml(c) + '">').join('');
     const totalB = budgets.reduce((a, b) => a + +b.monthly_egp, 0), totalS = budgets.reduce((a, b) => a + (spentBy[b.category] || 0), 0);
-    $('budgetList').innerHTML = budgets.length ? budgets.map(b => { const sp = spentBy[b.category] || 0, lim = +b.monthly_egp, over = sp > lim;
+    $('budgetList').innerHTML = budgets.length ? budgets.map(b => { const sp = spentBy[b.category] || 0, lim = +b.monthly_egp, over = sp > lim, at = +b.alert_pct || 80;
       return '<div class="plan-row"><div class="plan-top"><b>' + escHtml(b.category) + '</b><span class="' + (over ? 'neg' : '') + '">' + egp(sp) + ' of ' + egp(lim) + '</span><button type="button" class="icon-btn" data-bdel="' + escHtml(b.category) + '" aria-label="Remove the ' + escHtml(b.category) + ' budget">' + TRASH + '</button></div>' +
-        '<div class="plan-bar' + (over ? ' over' : sp > lim * .8 ? ' near' : '') + '"><i data-pw="' + pctW(sp, lim) + '"></i></div><small>' + (over ? egp(sp - lim) + ' over' : egp(lim - sp) + ' left') + '</small></div>'; }).join('') +
+        '<div class="plan-bar' + (over ? ' over' : sp >= lim * at / 100 ? ' near' : '') + '"><i data-pw="' + pctW(sp, lim) + '"></i></div><small>' + (over ? egp(sp - lim) + ' over' : egp(lim - sp) + ' left') + ' · bell at ' + at + '% and 100%</small></div>'; }).join('') +
       '<div class="plan-row plan-total"><div class="plan-top"><b>All budgets</b><span>' + egp(totalS) + ' of ' + egp(totalB) + '</span></div></div>'
       : '<p class="hint">No budgets yet. Add a monthly limit for a category below.</p>';
     const savedFrom = d0 => entries.filter(isSavings).reduce((a, e) => a + egpIn(e, d => d >= d0), 0);
@@ -265,12 +265,14 @@
   const planSay = t => { $('planMsg').textContent = t; if (t) setTimeout(() => { if ($('planMsg').textContent === t) $('planMsg').textContent = ''; }, 5000); };
   $('budgetForm').addEventListener('submit', async e => {
     e.preventDefault();
-    const category = $('bCat').value.trim(), amt = +$('bAmt').value;
+    const category = $('bCat').value.trim(), amt = +$('bAmt').value, at = Math.min(100, Math.max(1, Math.round(+$('bAlert').value || 80)));
     if (!category || !(amt >= 0) || $('bAmt').value === '') return planSay('Pick a category and a monthly limit.');
-    const r = await db.from('cash_budgets').upsert({ category, monthly_egp:amt, updated_at:new Date().toISOString() }, { onConflict:'category' });
+    // Round 22 (F8): the bell rings when this category reaches the alert % of its limit, and again at 100%
+    let r = await db.from('cash_budgets').upsert({ category, monthly_egp:amt, alert_pct:at, updated_at:new Date().toISOString() }, { onConflict:'category' });
+    if (r.error && /alert_pct/.test(r.error.message || '')) r = await db.from('cash_budgets').upsert({ category, monthly_egp:amt, updated_at:new Date().toISOString() }, { onConflict:'category' });
     if (r.error) return planSay('Couldn’t save the budget. Try again.');
-    budgets = budgets.filter(b => b.category !== category).concat([{ category, monthly_egp:amt }]).sort((a, b) => a.category.localeCompare(b.category));
-    $('bCat').value = ''; $('bAmt').value = ''; renderPlan(); planSay('Budget saved.');
+    budgets = budgets.filter(b => b.category !== category).concat([{ category, monthly_egp:amt, alert_pct:at }]).sort((a, b) => a.category.localeCompare(b.category));
+    $('bCat').value = ''; $('bAmt').value = ''; $('bAlert').value = '80'; renderPlan(); planSay('Budget saved. The bell rings at ' + at + '% and at 100% of it.');
   });
   $('goalForm').addEventListener('submit', async e => {
     e.preventDefault();

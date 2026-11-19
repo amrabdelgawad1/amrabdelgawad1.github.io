@@ -335,7 +335,8 @@
       (unread ? '<button type="button" data-allread>Mark all read</button>' : '') + '</div>' +
       (notes.length ? '<ul class="p-notes-list">' + notes.map(n => '<li><a href="' + esc(safeLink(n.link)) + '" data-nid="' + esc(n.id) + '"' + (n.read_at ? '' : ' class="is-new"') + '>' +
           '<b>' + esc(n.title) + '</b>' + (n.body ? '<span>' + esc(n.body) + '</span>' : '') + '<small>' + esc(ago(n.created_at)) + (n.read_at ? '' : ' · New') + '</small></a></li>').join('') + '</ul>'
-        : '<p class="p-notes-empty">Nothing new. Requests, reviews and deal changes show up here.</p>') + mailHtml();
+        : '<p class="p-notes-empty">Nothing new. Requests, reviews and deal changes show up here.</p>') + mailHtml() +
+      '<a class="p-notes-set" href="/app/#notify">Choose which alerts you get</a>';   // round 22 (N4): bell, phone or email per kind
   }
   function bellOpen(b, open){
     if (open) closeAll();

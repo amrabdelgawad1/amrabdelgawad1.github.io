@@ -330,4 +330,51 @@
     [/^Mark (.+) paid$/, (m, n) => 'علّم ' + n + ' كمدفوع'],
     [/^Paid (.+)$/, (m, d) => 'مدفوع ' + d]
   );
+  // Round 22: tasks (list and board, comments), @mentions, notification settings, must-read announcements, subscriptions
+  Object.assign(L.AR, {
+    'List':'قائمة', 'Board':'لوحة', 'Show':'عرض', 'Everyone':'الجميع', 'Mine':'مهامي', 'Show done':'اعرض المنجز', '+ New task':'+ مهمة جديدة', 'Save task':'احفظ المهمة',
+    'To do':'للتنفيذ', 'Doing':'قيد التنفيذ', 'late':'متأخرة', 'due today':'مطلوبة اليوم', 'done this week':'أُنجزت هذا الأسبوع', 'past their due date':'تجاوزت موعدها', 'nothing late':'لا شيء متأخر',
+    'Weekdays':'أيام العمل', 'Priority':'الأولوية', 'High':'عالية', 'Normal':'عادية', 'Low':'منخفضة', 'High priority':'أولوية عالية', 'Low priority':'أولوية منخفضة',
+    'Link (optional)':'الرابط (اختياري)', 'A deal, lesson or page address':'عنوان صفقة أو درس أو صفحة', 'Comments':'التعليقات', 'Comment':'علّق', 'Write a comment':'اكتب تعليقاً',
+    'No comments yet.':'لا تعليقات بعد.', 'No notes.':'لا ملاحظات.', 'Open the deal':'افتح الصفقة', 'Open the lesson':'افتح الدرس', 'Open the file':'افتح الملف', 'Open the link':'افتح الرابط',
+    'Done tasks from the last 14 days show here.':'المهام المنجزة في آخر 14 يوماً تظهر هنا.', 'Nothing here. Drag a card here.':'لا شيء هنا. اسحب بطاقة إلى هنا.', 'Write something first.':'اكتب شيئاً أولاً.',
+    'A link starts with #, /app/ or https://':'الرابط يبدأ بـ # أو /app/ أو https://', 'Sure? Delete':'متأكد؟ احذف', 'Notes':'ملاحظات',
+    'What you need to do, from Amr or from you. Move it to Doing, tick it when it’s done, and comment if you need something. Type @ to mention someone.':'ما عليك فعله، من عمرو أو منك. انقلها إلى «قيد التنفيذ»، وعلّم عليها عند الانتهاء، وعلّق إن احتجت شيئاً. اكتب @ لذكر شخص.',
+    'Give anyone a task with a due date, see it as a list or a board, and talk about it in its comments. Repeating tasks come back on their own when done.':'أعطِ أي شخص مهمة بموعد، واعرضها كقائمة أو لوحة، وناقشها في التعليقات. المهام المتكررة تعود وحدها عند إنجازها.',
+    'type @ to mention someone':'اكتب @ لذكر شخص', 'Details. Type @ to mention someone':'التفاصيل. اكتب @ لذكر شخص',
+    // Notification settings
+    'Notifications':'الإشعارات', 'Notification settings':'إعدادات الإشعارات', 'Kind of alert':'نوع التنبيه', 'Bell':'الجرس', 'Phone':'الهاتف', 'Daily email':'البريد اليومي',
+    'Mentions':'الإشارات', 'Announcements':'الإعلانات', 'Pay':'الأجر', 'Shifts and schedule':'الورديات والجدول', 'Deals':'الصفقات', 'Learning and reviews':'التعلّم والمراجعات',
+    'Team and site':'الفريق والموقع', 'Everything else':'كل ما عدا ذلك', 'Send me the daily email':'أرسل لي البريد اليومي', 'Saved.':'تم الحفظ.', 'Daily email off.':'البريد اليومي متوقف.',
+    'Choose which alerts you get':'اختر التنبيهات التي تصلك', 'Pick how each kind of alert reaches you.':'اختر كيف يصلك كل نوع من التنبيهات.',
+    'Pick how each kind of alert reaches you. Off means it isn’t saved at all.':'اختر كيف يصلك كل نوع من التنبيهات. الإيقاف يعني أنه لا يُحفظ أصلاً.',
+    'Pick how each kind of alert reaches you: the bell, your phone, the daily email, or not at all.':'اختر كيف يصلك كل نوع من التنبيهات: الجرس أو الهاتف أو البريد اليومي أو لا شيء.',
+    'Someone wrote @ your name':'شخص كتب @ اسمك', 'New messages to you or the whole team':'رسائل جديدة لك أو لكل الفريق', 'Anything not listed above':'أي شيء غير مذكور أعلاه',
+    'New tasks for you, comments on your tasks, due today and late':'مهام جديدة لك، وتعليقات على مهامك، والمطلوب اليوم والمتأخر', 'News from Amr (must-read ones always come through)':'أخبار من عمرو (الإعلانات الإلزامية تصل دائماً)',
+    'Pay extras, commissions, bonuses and referrals':'إضافات الأجر والعمولات والمكافآت والإحالات', 'Shift reminders, requests, swaps, time off and late starts':'تذكيرات الورديات والطلبات والتبديل والإجازات والتأخير',
+    'Deal changes, comments, follow-ups, callbacks and proof of funds':'تغييرات الصفقات والتعليقات والمتابعات ومعاودات الاتصال وإثبات الأموال', 'Reviews of your work, course access and coaching tips':'مراجعات عملك وصلاحيات الكورسات ونصائح الكوتشينج',
+    'Budget alerts and subscription renewals':'تنبيهات الميزانية وتجديد الاشتراكات', 'Job applications and feedback from the team':'طلبات التوظيف وملاحظات الفريق',
+    // Must-read
+    'I read and understand this':'قرأت هذا وفهمته', 'Must read':'قراءة إلزامية', 'Remind them (bell only)':'ذكّرهم (بالجرس فقط)', 'Everyone confirmed.':'الجميع أكّد.', 'Who confirmed, and when':'من أكّد ومتى',
+    'Must read: each person confirms they read it, and you see who hasn’t':'قراءة إلزامية: كل شخص يؤكد أنه قرأه، وترى من لم يؤكد',
+    // Subscriptions
+    'Subscriptions':'الاشتراكات', 'Your subscriptions':'اشتراكاتك', 'Add a subscription':'أضف اشتراكاً', '+ Add a subscription':'+ أضف اشتراكاً', 'New subscription':'اشتراك جديد', 'Add subscription':'أضف الاشتراك',
+    'a month':'في الشهر', 'a year':'في السنة', 'renew in the next 7 days':'تتجدد في الأيام السبعة القادمة', 'active':'نشطة', 'Log payment':'سجّل الدفع', 'Undo last':'تراجع عن الأخير', 'Manage':'إدارة',
+    'Add to Cash':'أضف إلى الكاش', 'Paid on':'دُفع في', 'Name':'الاسم', 'Company (optional)':'الشركة (اختياري)', 'Amount':'المبلغ', 'Currency':'العملة', 'Renews':'يتجدد', 'Next renewal':'التجديد القادم',
+    'Remind me':'ذكّرني', 'Cash category':'فئة الكاش', 'Where to manage or cancel it (optional)':'أين تديره أو تلغيه (اختياري)', 'Every 3 months':'كل 3 أشهر', 'Every year':'كل سنة', 'On the day':'في نفس اليوم',
+    'Found in Cash':'وُجد في الكاش', 'Renews today':'يتجدد اليوم', 'all active subscriptions':'كل الاشتراكات النشطة', 'at today’s prices':'بأسعار اليوم',
+    'These aren’t on your list yet. Add one and check its amount and next renewal date.':'هذه ليست في قائمتك بعد. أضف واحداً وتأكد من مبلغه وموعد تجديده.',
+    'No subscriptions yet. Add the first one below, or pick one found in Cash.':'لا اشتراكات بعد. أضف أول اشتراك بالأسفل، أو اختر واحداً وُجد في الكاش.',
+    'Every tool you pay for regularly, when it renews, and what it costs a month. The bell reminds you before each renewal. “Log payment” adds the expense to Cash and moves the date on; it doesn’t pay anything.':'كل أداة تدفع لها بانتظام، ومتى تتجدد، وكم تكلف في الشهر. الجرس يذكّرك قبل كل تجديد. «سجّل الدفع» يضيف المصروف إلى الكاش وينقل الموعد؛ لا يدفع أي شيء.'
+  });
+  if (L.RULES) L.RULES.push(
+    [/^Renews (.+) · in (\d+) days?$/, (m, d, n) => 'يتجدد ' + d + ' · خلال ' + n + ' يوم'],
+    [/^Renewal date passed · (.+)$/, (m, d) => 'فات موعد التجديد · ' + d],
+    [/^Confirmed by (\d+) of (\d+)$/, (m, a, b) => 'أكّد ' + a + ' من ' + b],
+    [/^Not yet: (.+)$/, (m, n) => 'لم يؤكد بعد: ' + n],
+    [/^Please read: (.+)$/, (m, t) => 'يرجى القراءة: ' + t],
+    [/^(\d+) comments?$/, (m, n) => n + ' تعليق'],
+    [/^Late · (.+)$/, (m, d) => 'متأخرة · ' + d],
+    [/^Notes: (.+)$/, (m, t) => 'ملاحظات: ' + t]
+  );
 })();
