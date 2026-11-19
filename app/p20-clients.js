@@ -554,7 +554,7 @@
       package_id:+val('p20pPkg') || null });
     function paper(p){
       return '<article class="p-card p20-paper" id="p20Paper">' + propBlocks(p).map(b => b.small ? '<p class="p20-small">' + esc(b.small) + '</p>' : b.h1 ? '<h2>' + esc(b.h1) + '</h2>' : b.h2 ? '<h3>' + esc(b.h2) + '</h3>' :
-        b.rule ? '<hr>' : b.row ? '<p class="p20-row' + (b.bold ? ' b' : '') + '"><span>' + esc(b.row[0]) + '</span><span>' + esc(b.row[1]) + '</span></p>' : b.gap ? '' : '<p>' + esc(b.p) + '</p>').join('') +
+        b.rule ? '<hr>' : b.row ? '<p class="p20-row' + (b.bold ? ' b' : '') + '"><span>' + esc(b.row[0]) + '</span><span>' + esc(b.row[1]) + '</span></p>' : b.gap ? '' : String(b.p).split(/\n+/).map(x => '<p>' + esc(x) + '</p>').join('')).join('') +
         '<div class="px-tools px-noprint"><button type="button" class="p-btn" data-p20ppdf="save">Save PDF to Files</button><button type="button" class="p-btn is-ghost" data-p20ppdf="dl">Download PDF</button>' +
         '<button type="button" class="p-btn is-ghost" id="p20pPrint">Print</button><button type="button" class="p-btn is-ghost" id="p20pCopy">Copy as text</button>' +
         (p.pdf_path ? '<span class="p-hint">Saved in Files › mine/clients/proposals</span>' : '') + '<span class="p-hint" id="p20pDoc" role="status"></span></div></article>';
@@ -799,8 +799,7 @@
       if (+t.offers) out.push('- Offers made: ' + num(t.offers));
       if (d.reps.length > 1) out.push('', 'By caller:', ...d.reps.map(r => '- ' + first(r.name) + ': ' + r.hours + ' hours, ' + num(r.dials) + ' dials, ' + num(r.appointments) + ' appointments'));
     } else out.push('There were no calling hours for ' + d.client + ' in the week of ' + from + ' to ' + to + '.');
-    const notes = (d.notes || []).map(n => n.brief.replace(/\s+/g, ' ').trim()).filter(Boolean).slice(0, 5);
-    if (notes.length) out.push('', 'From the team’s notes:', ...notes.map(n => '- ' + n));
+    // reps' end-of-day notes are internal: they stay under "The numbers behind it" for Amr to pick from, not in the draft
     out.push('', 'What’s next:', ...(String(next || '').split('\n').map(s => s.trim()).filter(Boolean).map(s => '- ' + s.replace(/^-\s*/, '')) || []));
     if (!String(next || '').trim()) out.push('- More calling on the same lists next week');
     out.push('', 'Let me know if you’d like anything changed.', '', 'Thanks,', 'Amr');
