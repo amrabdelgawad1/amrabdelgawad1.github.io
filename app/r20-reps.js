@@ -151,6 +151,7 @@
       const dl = e.target.closest('[data-r20rdel]');
       if (dl) {
         if (dl.dataset.sure !== '1') { dl.dataset.sure = '1'; dl.textContent = 'Sure? Earned bonuses go too'; setTimeout(() => { if (dl.isConnected) { dl.dataset.sure = ''; dl.textContent = 'Delete'; } }, 4000); return; }
+        if (window.PortalUI && PortalUI.del) { PortalUI.del(dl, { text:'Bonus rule deleted, with its earned bonuses.', label:'Delete', sel:'.p-row', run:() => safe(db().from('bonus_rules').delete().eq('id', +dl.dataset.r20rdel)), after:() => load() }); return; }
         dl.disabled = true; const x = await safe(db().from('bonus_rules').delete().eq('id', +dl.dataset.r20rdel)); if (x.error) { dl.disabled = false; return; } load();
       }
     });
@@ -234,6 +235,7 @@
       const ed = e.target.closest('[data-r20tedit]'); if (ed) { S.edit = Object.assign({}, list.find(x => x.id === +ed.dataset.r20tedit)); draw(); window.scrollTo({ top:0, behavior:'smooth' }); return; }
       const cp = e.target.closest('[data-r20tcopy]'); if (cp) { const o = list.find(x => x.id === +cp.dataset.r20tcopy); S.edit = { channel:o.channel, audience:o.audience, title:o.title + ' (mine)', subject:o.subject, body:o.body }; draw(); window.scrollTo({ top:0, behavior:'smooth' }); return; }
       const dl = e.target.closest('[data-r20tdel]');
+      if (dl && window.PortalUI && PortalUI.del) { PortalUI.del(dl, { text:'Template deleted.', label:'Delete', rows:[dl.closest('.p-card')], run:() => safe(db().from('outreach_templates').delete().eq('id', +dl.dataset.r20tdel)), after:() => { S.open = null; load(); } }); return; }
       if (dl) { if (dl.dataset.sure !== '1') { dl.dataset.sure = '1'; dl.textContent = 'Sure?'; return; } const x = await safe(db().from('outreach_templates').delete().eq('id', +dl.dataset.r20tdel)); if (!x.error) { S.open = null; load(); } return; }
       if (e.target.id === 'r20tCopy' || e.target.id === 'r20tSms' || e.target.id === 'r20tMail') {
         const t = list.find(x => x.id === S.open); if (!t) return;

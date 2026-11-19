@@ -360,6 +360,7 @@
         rb.innerHTML = list.filter(x => x.owner === uid()).map(x => '<div class="p-row"><span><b>' + esc(x.title) + '</b>' + (x.shared ? ' ' + pill('Team', 'plain') : '') + '<br><small>' + esc(x.body.slice(0, 120)) + '</small></span><button type="button" class="p-btn is-ghost" data-rdel="' + x.id + '">Delete</button></div>').join(''); return;
       }
       const d = e.target.closest('[data-rdel]');
+      if (d && window.PortalUI && PortalUI.del) { const id = +d.dataset.rdel; PortalUI.del(d, { text:'Saved reply deleted.', label:'Delete', sel:'.p-row', run:() => safe(db().from('portal_saved_replies').delete().eq('id', id)), after:() => { list = list.filter(y => y.id !== id); const r = d.closest('.p-row'); if (r) r.remove(); } }); return; }
       if (d) { if (d.dataset.sure !== '1') { d.dataset.sure = '1'; d.textContent = 'Sure?'; return; }
         const x = await safe(db().from('portal_saved_replies').delete().eq('id', +d.dataset.rdel));
         if (!x.error) { list = list.filter(y => y.id !== +d.dataset.rdel); d.closest('.p-row').remove(); } }
@@ -401,6 +402,7 @@
         const x = await safe(db().from('portal_checklists').update({ steps, updated_at:new Date().toISOString() }).eq('id', +sv.dataset.clsave));
         d.querySelector('[role=status]').textContent = x.error ? errText(x, 'Couldn’t save.') : 'Steps saved.'; return; }
       const dl = e.target.closest('[data-cldel]');
+      if (dl && window.PortalUI && PortalUI.del) { PortalUI.del(dl, { text:'Checklist deleted.', label:'Delete checklist', sel:'[data-cl]', run:() => safe(db().from('portal_checklists').delete().eq('id', +dl.dataset.cldel)), after:() => { const r = dl.closest('[data-cl]'); if (r) r.remove(); } }); return; }
       if (dl) { if (dl.dataset.sure !== '1') { dl.dataset.sure = '1'; dl.textContent = 'Sure? Delete it'; return; }
         const x = await safe(db().from('portal_checklists').delete().eq('id', +dl.dataset.cldel)); if (!x.error) dl.closest('[data-cl]').remove(); return; }
       if (e.target.id === 'r5ClAdd') { const name = $('r5ClName').value.trim(), steps = parse($('r5ClSteps').value);

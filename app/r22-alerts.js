@@ -151,6 +151,7 @@
   });
   document.addEventListener('click', async e => {
     const d = e.target.closest('[data-r22cdel]'); if (!d) return;
+    if (window.PortalUI && PortalUI.del) { const box = d.closest('.r22-comments').parentElement, fm = box.querySelector('.r22-cform'); PortalUI.del(d, { text:'Comment deleted.', label:'Delete', sel:'.r22-c', run:() => safe(db().from('portal_comments').delete().eq('id', +d.dataset.r22cdel)), after:() => { if (fm) R22Comments.thread(box, fm.dataset.thing, fm.dataset.id); } }); return; }
     if (!sure(d, 'Sure?', 'Delete')) return;
     const box = d.closest('.r22-comments').parentElement, fm = box.querySelector('.r22-cform');
     await safe(db().from('portal_comments').delete().eq('id', +d.dataset.r22cdel));
@@ -298,6 +299,7 @@
       const m = e.target.closest('[data-r22mv]'); if (m) { setStatus(+m.dataset.r22mv, m.dataset.to); return; }
       const ed = e.target.closest('[data-r22edit]'); if (ed) { S.edit = true; draw(); return; }
       const dl = e.target.closest('[data-r22del]');
+      if (dl && window.PortalUI && PortalUI.del) { const id = +dl.dataset.r22del; PortalUI.del(dl, { text:'Task deleted.', label:'Delete', rows:[$('r22Detail')].concat([...body.querySelectorAll('[data-r22open="' + id + '"]')]), run:() => safe(db().from('portal_tasks').delete().eq('id', id)), after:async () => { S.open = null; keep(); await load(); draw(); } }); return; }
       if (dl) { if (!sure(dl, 'Sure? Delete', 'Delete')) return; dl.disabled = true; const x = await safe(db().from('portal_tasks').delete().eq('id', +dl.dataset.r22del)); if (!x.error) { S.open = null; keep(); await load(); draw(); } return; }
     });
     body.addEventListener('submit', async e => {
@@ -550,7 +552,7 @@
       const un = e.target.closest('[data-r22sundo]');
       if (un) { if (!sure(un, 'Sure? Removes it from Cash', 'Undo last')) return; un.disabled = true; const x = await safe(db().rpc('subscription_undo', { p_id:+un.dataset.r22sundo })); if (x.error) { un.disabled = false; un.textContent = 'Couldn’t undo'; return; } reload(); return; }
       const ac = e.target.closest('[data-r22sact]'); if (ac) { const s = subs.find(x => x.id === +ac.dataset.r22sact); ac.disabled = true; await safe(db().from('cash_subscriptions').update({ active:!s.active }).eq('id', s.id)); reload(); return; }
-      const dl = e.target.closest('[data-r22sdel]'); if (dl) { if (!sure(dl, 'Sure? Cash entries stay', 'Delete')) return; dl.disabled = true; await safe(db().from('cash_subscriptions').delete().eq('id', +dl.dataset.r22sdel)); reload(); }
+      const dl = e.target.closest('[data-r22sdel]'); if (dl && window.PortalUI && PortalUI.del) { PortalUI.del(dl, { text:'Subscription deleted. Its Cash entries stay.', label:'Delete', rows:[dl.closest('.r20-rc').parentElement], run:() => safe(db().from('cash_subscriptions').delete().eq('id', +dl.dataset.r22sdel)), after:() => { reload(); } }); return; } if (dl) { if (!sure(dl, 'Sure? Cash entries stay', 'Delete')) return; dl.disabled = true; await safe(db().from('cash_subscriptions').delete().eq('id', +dl.dataset.r22sdel)); reload(); }
     });
     body.addEventListener('submit', async e => {
       const fm = e.target.closest('form'); if (!fm) return;

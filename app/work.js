@@ -85,6 +85,7 @@
     });
     body.addEventListener('click', async e => {
       const d = e.target.closest('[data-tdel]'); if (!d) return;
+      if (window.PortalUI && PortalUI.del) { PortalUI.del(d, { text:'Task deleted.', label:'Delete', rows:[d.parentElement], run:() => safe(db().from('portal_tasks').delete().eq('id', +d.dataset.tdel)), after:() => reload() }); return; }
       if (d.dataset.sure !== '1') { d.dataset.sure = '1'; d.textContent = 'Sure?'; return; }
       d.disabled = true; await safe(db().from('portal_tasks').delete().eq('id', +d.dataset.tdel)); reload();
     });

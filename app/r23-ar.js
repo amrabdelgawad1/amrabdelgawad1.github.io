@@ -20,6 +20,16 @@
     'Look':'المظهر', 'The portal uses one light look so every page, course and calculator matches.':'البوابة تستخدم مظهرًا فاتحًا واحدًا لتتطابق كل الصفحات والكورسات والحاسبات.',
     'Cairo':'القاهرة', 'New York (Eastern)':'نيويورك (الشرقي)', 'Chicago (Central)':'شيكاغو (الأوسط)', 'Denver (Mountain)':'دنفر (الجبلي)', 'Los Angeles (Pacific)':'لوس أنجلوس (المحيط الهادئ)',
     'London':'لندن', 'Dubai':'دبي', 'Riyadh':'الرياض',
+    // Status: off-site backups (P5, round 23 part 2)
+    'Off-site copy':'النسخة الخارجية', 'Monthly restore test':'اختبار الاستعادة الشهري', 'Open the run':'افتح التشغيل',
+    'No off-site copy reported yet. It runs every night at about 3:17 AM Cairo time.':'لم تصل أي نسخة خارجية بعد. تعمل كل ليلة نحو الساعة 3:17 صباحًا بتوقيت القاهرة.',
+    'Not run yet. It puts the off-site copy back on a test machine on the 2nd of each month and checks every table and file.':'لم يُشغَّل بعد. يعيد النسخة الخارجية على جهاز اختبار يوم 2 من كل شهر ويفحص كل جدول وكل ملف.',
+    'A second copy lives outside Supabase: every night GitHub copies the whole database and every new or changed file (course videos, recordings, uploads) into your private portal-backups repo (Releases), and on the 2nd of each month it puts that copy back on a test machine to prove it restores. See Off-site copy and Monthly restore test above.':'توجد نسخة ثانية خارج Supabase: كل ليلة ينسخ GitHub قاعدة البيانات كاملة وكل ملف جديد أو معدّل (فيديوهات الكورسات، التسجيلات، الملفات المرفوعة) إلى مستودع portal-backups الخاص بك (Releases)، ويوم 2 من كل شهر يعيد هذه النسخة على جهاز اختبار ليثبت أنها تُستعاد. راجع النسخة الخارجية واختبار الاستعادة الشهري بالأعلى.',
+    // Undo bar on more deletes (I5, round 23 part 2)
+    'Task deleted.':'تم حذف المهمة.', 'Comment deleted.':'تم حذف التعليق.', 'Subscription deleted. Its Cash entries stay.':'تم حذف الاشتراك. قيوده في النقدية تبقى.',
+    'Bonus rule deleted, with its earned bonuses.':'تم حذف قاعدة المكافأة مع المكافآت المستحقة منها.', 'Template deleted.':'تم حذف القالب.',
+    'Lead deleted, with its touches.':'تم حذف العميل المحتمل مع تواصلاته.', 'Saved reply deleted.':'تم حذف الرد المحفوظ.', 'Checklist deleted.':'تم حذف قائمة المهام.',
+    'Commission deleted.':'تم حذف العمولة.', 'Visitor (not signed in)':'زائر (غير مسجّل الدخول)', 'Rate deleted. Commissions already added stay.':'تم حذف السعر. العمولات المضافة سابقًا تبقى.', 'Deleted.':'تم الحذف.',
     // Invite and access templates (I30)
     'Quick setup':'إعداد سريع', 'Start as':'ابدأ كـ', 'Agent (everything the role comes with)':'موظف (كل ما يأتي مع الدور)',
     'Calling rep':'مندوب اتصال', 'Shifts, Acquisitions course, no Deal tools':'الورديات، كورس الاستحواذ، بدون أدوات الصفقات',

@@ -7,6 +7,7 @@
 //   4. a file changed since main whose ?v= number was not raised in app/index.html or app/sw.js, or sw.js VERSION not raised
 //   5. a JSON file that doesn't parse
 //   6. a time shown as "a" / "p" instead of AM / PM in a new or changed line (hour12 formats with 'a'/'p' suffixes)
+//   7. a public page that saves to the database without /error-report.js (visitors' errors would never reach Logs)
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname, resolve, relative } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -105,6 +106,17 @@ if (base && git('merge-base', base, 'HEAD')) {
 for (const f of files.filter(f => f.endsWith('.json') || f.endsWith('.webmanifest'))) {
   try { JSON.parse(readFileSync(f, 'utf8')); } catch (e) { err('JSON does not parse: ' + rel(f) + ' (' + e.message + ')'); }
 }
+
+// 7. Public pages that send something to the database report their errors (P6, round 23 part 2): a page outside /app
+//    and /course that loads tracker/config.js and isn't signed-in (no portal-shell.js) must load /error-report.js
+let pub = 0;
+for (const f of files.filter(f => f.endsWith('.html') && !/^(app|course|crm|cash|tracker|calc-build|house-calculator|land-calculator)\//.test(rel(f)))) {
+  const html = readFileSync(f, 'utf8');
+  if (!/tracker\/config\.js/.test(html) || /portal-shell\.js/.test(html)) continue;
+  pub++;
+  if (!/\/error-report\.js/.test(html)) err('Public page without error reports: ' + rel(f) + ' (add <script src="/error-report.js?v=N"></script> in <head>)');
+}
+notes.push(pub + ' public pages report their errors');
 
 console.log(notes.map(n => '✓ ' + n).join('\n'));
 if (errors.length) { console.error('\n' + errors.length + ' problem(s):\n- ' + errors.join('\n- ')); process.exit(1); }

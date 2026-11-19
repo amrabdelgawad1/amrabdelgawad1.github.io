@@ -76,6 +76,18 @@
       try { o.hide && o.hide(); } catch (e) {}
       pending = o; show(o.text, o.ms || 10000, true);
     },
+    // I5, part 2: one call for "delete this row, with Undo". rows: the elements to take off the screen (default: the
+    // button's row). run(): the real delete, after 10 seconds (return the Supabase result; an error puts the row back).
+    // after(): what the page did before once a delete finished (reload, redraw).
+    del(btn, o){
+      const rows = (o.rows || [btn.closest(o.sel || '.p-row, li, tr, [data-cl], .p-card') || btn]).filter(Boolean);
+      const label = btn.textContent;
+      btn.disabled = true;
+      this.undo({ text: o.text || (AR() ? 'تم الحذف.' : 'Deleted.'),
+        hide: () => rows.forEach(r => { r.hidden = true; }),
+        restore: () => { rows.forEach(r => { r.hidden = false; }); btn.disabled = false; if (btn.dataset.sure) { btn.dataset.sure = ''; btn.textContent = o.label || label; } },
+        commit: o.run, done: o.after });
+    },
     when, zone, deviceZone, zoneShort,
     setZone(z){ try { if (z) localStorage.setItem('portalZone', z); else localStorage.removeItem('portalZone'); } catch (e) {} },
     confirm(o){
