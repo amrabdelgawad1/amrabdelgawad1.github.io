@@ -4,3 +4,5 @@ The public website and the signed-in portal.
 
 Planning notes, handoffs and the roadmap live in the private `portal-backups` repo, folder `docs/`.
 Database migrations and dev tools live in the private `talents-database` repo, folder `site-repo/`. This repo is public, so nothing secret goes here.
+
+Before pushing a round, run the smoke tests: `node .github/smoke.mjs` (they also run on every push and pull request).
