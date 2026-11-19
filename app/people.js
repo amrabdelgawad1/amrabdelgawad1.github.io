@@ -30,6 +30,20 @@
   const KEY_NAME = { course:'Acquisitions course', deals:'Deal CRM and calculators', learn:'Learning Hub', mkt:'Marketing course', psy:'Psychology course', voice:'Amr Voice Studio',
     live:'Live now', requests:'Missed-shift requests', team:'Everyone’s hours', money:'Money' };
   const CONTROLLED = ['course', 'deals', 'learn', 'mkt', 'psy', 'voice', 'money'];
+  // Round 23 (I30): access templates, one click sets the role and the boxes. Nothing saves until Save (or the invite is sent).
+  // Student and Client have no role of their own in the database yet: Student is an Agent with courses only (they still see
+  // My hours); Client waits for the client portal (plan Round 36).
+  const TEMPLATES = [
+    { id:'caller', name:'Calling rep', sub:'Shifts, Acquisitions course, no Deal tools', role:'agent', ticks:['course'], tap:false },
+    { id:'acq', name:'Acquisitions rep', sub:'Shifts, course, Deal CRM with authenticator code, call counter', role:'agent', ticks:['course', 'deals'], tap:true, mfa:true, rem:true },
+    { id:'manager', name:'Team manager', sub:'Runs shifts and requests, course and Deal tools', role:'manager', ticks:['course', 'deals'], tap:false },
+    { id:'student', name:'Course student', sub:'Courses only (Acquisitions, Marketing, Psychology)', role:'agent', ticks:['course', 'mkt', 'psy'], tap:false },
+    { id:'client', name:'Client', sub:'Comes with the client portal (Round 36)', off:true }
+  ];
+  const tplOf = id => TEMPLATES.find(t => t.id === id && !t.off);
+  function applyTpl(d, t){
+    d.role = t.role; d.ticks = new Set(t.ticks); d.tap = !!t.tap; d.mfa = !!t.mfa; if ('rem' in t) d.rem = !!t.rem; d.tpl = t.id; d.dirty = true;
+  }
 
   let people = [], log = [], filter = 'all', q = '', current = '', draft = null, busy = false;
   let unames = {}, lastIn = {};   // user_id -> username, user_id -> { at, method }
@@ -53,8 +67,9 @@
           '<label>Full name<input class="pp-field" id="ppInvName" maxlength="80" autocomplete="off" placeholder="Sara Nabil"></label>' +
           '<label>Email<input class="pp-field" id="ppInvEmail" type="email" autocomplete="off" placeholder="sara@email.com"></label>' +
           '<label>Works for<select class="pp-field" id="ppInvCo"></select></label>' +
-          '<fieldset class="pp-inline"><legend>Role</legend><label><input type="radio" name="ppInvRole" value="agent" checked> Agent</label><label><input type="radio" name="ppInvRole" value="manager"> Manager</label></fieldset>' +
-          '<p class="pp-note">New people get everything their role comes with. You can change it after.</p>' +
+          '<fieldset class="pp-inline pp-invtpl"><legend>Start as</legend><label><input type="radio" name="ppInvRole" value="agent" checked> Agent (everything the role comes with)</label>' +
+            TEMPLATES.map(t => '<label' + (t.off ? ' class="is-disabled"' : '') + '><input type="radio" name="ppInvRole" value="tpl:' + t.id + '"' + (t.off ? ' disabled' : '') + '> ' + esc(t.name) + ' <small>' + esc(t.sub) + '</small></label>').join('') + '</fieldset>' +
+          '<p class="pp-note">You can change anything after on their row.</p>' +
           '<p class="pp-err" id="ppInvErr" role="alert"></p>' +
           '<div class="pp-btns"><button class="p-btn" type="submit" data-via="email">Send email invite</button><button class="p-btn is-ghost" type="submit" data-via="whatsapp">Get WhatsApp link</button></div>' +
         '</form>' +
@@ -176,6 +191,8 @@
       '<button type="button" class="pp-back" data-back>← All people</button>' +
       '<div class="pp-top"><span class="pp-av big' + (off ? ' is-off' : '') + '" aria-hidden="true">' + esc(initials(p.name)) + '</span><div><h2>' + esc(p.name) + '</h2><p>' + esc(p.email || '') + ' · ' + (off ? 'Off' : 'Active') + '</p></div><a class="p-btn is-ghost pp-file" href="#person/' + encodeURIComponent(p.user_id) + '">Open person file</a></div>' +
       (off ? '<p class="pp-offnote">' + esc(fn) + '’s access is turned off. They can’t sign in or open anything. Their shifts and history are kept.</p>' : '') +
+      (off ? '' : '<fieldset class="pp-sec pp-tpls"><legend>Quick setup</legend><div class="pp-tplrow">' + TEMPLATES.map(t => '<button type="button" class="p-btn is-ghost pp-tpl' + (d.tpl === t.id ? ' is-on' : '') + '" data-tpl="' + t.id + '"' + (t.off ? ' disabled' : '') + ' aria-pressed="' + (d.tpl === t.id) + '"><b>' + esc(t.name) + '</b><small>' + esc(t.sub) + '</small></button>').join('') + '</div>' +
+        '<p class="pp-note">' + (d.tpl ? 'Set up as ' + esc(tplOf(d.tpl).name) + '. Change anything below, then Save changes.' : 'One click fills the role and the boxes below. Nothing changes until you press Save changes.') + '</p></fieldset>') +
       '<fieldset class="pp-sec"><legend>Role</legend><div class="pp-roles">' +
         roleCard('owner', 'Owner', 'Only you', true) + roleCard('manager', 'Manager', 'Runs the team, no money or access', false) +
         roleCard('agent', 'Agent', 'Own shifts, own deals, assigned courses', false) + roleCard('student', 'Student', 'Only their courses (coming later)', true) +
@@ -252,6 +269,8 @@
     });
     box.addEventListener('click', async e => {
       if (e.target.closest('[data-back]')) { location.hash = '#people'; current = ''; draft = null; drawDetail(); drawList(); return; }
+      const tb = e.target.closest('[data-tpl]');
+      if (tb && draft && tplOf(tb.dataset.tpl)) { applyTpl(draft, tplOf(tb.dataset.tpl)); drawDetail(); const again = $('ppDetail').querySelector('[data-tpl="' + tb.dataset.tpl + '"]'); if (again) again.focus(); return; }
       const b = e.target.closest('[data-act]'); if (!b || busy) return;
       const p = person(current); if (!p) return;
       const act = b.dataset.act;
@@ -331,6 +350,15 @@
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { $('ppInvErr').textContent = 'Enter a valid email.'; $('ppInvEmail').focus(); return; }
       const btn = f.querySelector('[data-via="' + via + '"]'); btn.setAttribute('aria-busy', 'true');
       const r = await T().callAccess({ action:'invite', name, email, company_id:co, via });
+      const tpl = role.startsWith('tpl:') ? tplOf(role.slice(4)) : null;
+      if (!r.error && tpl) {
+        // Round 23 (I30): team-access makes them an Agent; the template's role and boxes are set right after, by Amr, and logged
+        const d = { role:'agent', ticks:new Set(), tap:false, mfa:false, rem:true }; applyTpl(d, tpl);
+        const plan = planOf({ access:[], not_given:[] }, d);
+        const { error } = await T().db.from('members').update({ role:plan.role, access:plan.access, not_given:plan.not_given, deals_mfa:d.mfa, tap_counter:d.tap, deals_remember:d.rem })
+          .ilike('email', email.replace(/[\\%_]/g, '\\$&'));
+        if (error) T().toast(first(name) + ' is invited as an Agent. Set ' + tpl.name + ' on their row.');
+      }
       if (!r.error && role === 'manager') {
         // team-access makes them an Agent (the column default); the role is set right after, by Amr, and logged
         const { error } = await T().db.from('members').update({ role:'manager' }).ilike('email', email.replace(/[\\%_]/g, '\\$&'));   // exact match, any case: _ and % are wildcards in ilike

@@ -1,0 +1,17 @@
+/* Shared parts (round 23, I2/I5): the Undo bar and short notes, the same on every signed-in page. Script: /portal-ui.js */
+.pui-bar{ position:fixed; left:50%; bottom:max(18px, env(safe-area-inset-bottom)); transform:translateX(-50%); z-index:2147483000;
+  display:flex; align-items:center; gap:14px; max-width:calc(100% - 24px); min-height:46px; padding:8px 8px 8px 16px; overflow:hidden;
+  background:#1f2328; color:#fff; border-radius:12px; box-shadow:0 12px 32px rgba(16,24,40,.28); font:500 14.5px/1.35 "Inter", system-ui, sans-serif; }
+.pui-bar[hidden]{ display:none; }
+.pui-bar-t{ flex:1 1 auto; min-width:0; }
+.pui-bar-b{ flex:none; font:700 14px/1 "Inter", system-ui, sans-serif; min-height:34px; padding:0 14px; border-radius:8px; border:0; cursor:pointer;
+  background:#fff; color:#1f2328; }
+.pui-bar-b[hidden]{ display:none; }
+.pui-bar-b:focus-visible{ outline:3px solid #8ab4ff; outline-offset:2px; }
+.pui-bar-fill{ position:absolute; left:0; bottom:0; height:3px; width:100%; background:#8ab4ff; transform-origin:left; transform:scaleX(0); }
+.pui-bar.is-run .pui-bar-fill{ animation:pui-run var(--pui-ms, 10000ms) linear forwards; }
+@keyframes pui-run{ from{ transform:scaleX(1); } to{ transform:scaleX(0); } }
+html[dir="rtl"] .pui-bar{ padding:8px 16px 8px 8px; }
+html[dir="rtl"] .pui-bar-fill{ transform-origin:right; }
+@media (prefers-reduced-motion:reduce){ .pui-bar.is-run .pui-bar-fill{ animation:none; } }
+@media print{ .pui-bar{ display:none !important; } }

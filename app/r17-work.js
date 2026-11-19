@@ -118,7 +118,7 @@
     // Several recordings of the same lesson read share a title: number them Take 1, 2, 3 (oldest first) and show the time
     const sameTitle = {}; calls.slice().sort((a, b) => a.created_at < b.created_at ? -1 : 1).forEach(x => { const k = x.rep + '|' + x.title; (sameTitle[k] = sameTitle[k] || []).push(x); });
     Object.values(sameTitle).forEach(g => { if (g.length > 1) g.forEach((x, i) => { x.take = i + 1; }); });
-    const clock = d => new Date(d).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true });
+    const clock = d => window.PortalUI ? window.PortalUI.when(d, { date:false }) : new Date(d).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true });
     const urls = new Map();
     const S = { obj:'', stage:'', q:'', untagged:false, edit:null };
     function draw(){

@@ -408,8 +408,9 @@
       box.querySelectorAll('[data-task]').forEach(x => { x.value = ans[x.dataset.task] || ''; x.addEventListener('input', () => { ans[x.dataset.task] = x.value; save(); }); });
       const sub = box.querySelector('[data-submit]'); if (sub) sub.addEventListener('click', () => {
         const empty = m.assignment.tasks.findIndex((x, i) => !(ans[i] || '').trim());
-        if (empty > -1 && !confirm(t('emptyTask', empty + 1))) return;
-        s.done = true; save(); route();
+        const go = () => { s.done = true; save(); route(); };
+        if (empty > -1) { const m = t('emptyTask', empty + 1); (window.PortalUI ? PortalUI.confirm({ msg:m, ok:undefined, danger:false }) : Promise.resolve(confirm(m))).then(y => { if (y) go(); }); return; }
+        go();
       });
       box.querySelectorAll('[data-score]').forEach(inp => inp.addEventListener('input', () => {
         const max = +inp.max; let v = Math.max(0, Math.min(max, Number(inp.value) || 0)); if (inp.value !== '' && String(v) !== inp.value) inp.value = v;
@@ -599,7 +600,7 @@
       if (x.dataset.ink) { ink = +x.dataset.ink; mode = 'draw'; }
       if (x.dataset.mode) mode = mode === x.dataset.mode ? 'draw' : x.dataset.mode;
       if (x.hasAttribute('data-undo') && strokes.length) { strokes.pop(); save(); draw(); }
-      if (x.hasAttribute('data-clear') && strokes.length && confirm(t('clearAsk'))) { strokes.length = 0; save(); draw(); }
+      if (x.hasAttribute('data-clear') && strokes.length) (window.PortalUI ? PortalUI.confirm({ msg:t('clearAsk'), ok:undefined, danger:true }) : Promise.resolve(confirm(t('clearAsk')))).then(y => { if (y) { strokes.length = 0; save(); draw(); } });
       if (x.hasAttribute('data-done')) on = false;
       apply(); });
     btn.addEventListener('click', () => { on = !on; if (on) mode = 'draw'; apply(); });

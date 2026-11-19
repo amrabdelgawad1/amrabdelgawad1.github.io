@@ -304,7 +304,7 @@
         if (x.dataset.ink) { ink = +x.dataset.ink; erase = false; }
         if (x.hasAttribute('data-erase')) erase = !erase;
         if (x.hasAttribute('data-undo')) { strokes.pop(); keep(); draw(); }
-        if (x.hasAttribute('data-clear') && strokes.length && confirm('Clear your drawings on this page?')) { strokes.length = 0; keep(); draw(); }
+        if (x.hasAttribute('data-clear') && strokes.length) { const m = 'Clear your drawings on this page?'; (window.PortalUI ? PortalUI.confirm({ msg:m, ok:'Clear', danger:true }) : Promise.resolve(confirm(m))).then(y => { if (y) { strokes.length = 0; keep(); draw(); } }); }
         if (x.hasAttribute('data-done')) toggle(false);
         b.querySelectorAll('[data-ink]').forEach(y => y.setAttribute('aria-pressed', +y.dataset.ink === ink && !erase));
         b.querySelector('[data-erase]').setAttribute('aria-pressed', erase);

@@ -17,7 +17,7 @@
     { file:'house-calculator-v2.html', name:'House calculator', page:'/house-calculator/', guard:'(land|house)-calculator' }
   ];
   const kb = n => n == null ? '–' : n >= 1024 ? Math.round(n / 1024).toLocaleString('en-US') + ' KB' : n + ' bytes';
-  const when = d => { try { return new Date(d).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }); } catch(e) { return ''; } };
+  const when = d => { if (window.PortalUI) return window.PortalUI.when(d); try { return new Date(d).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }); } catch(e) { return ''; } };   // round 23 (I6): with the zone
   const stamp = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()); };
   async function sha256(buf){ const h = await crypto.subtle.digest('SHA-256', buf); return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, '0')).join(''); }
 

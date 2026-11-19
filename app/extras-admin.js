@@ -219,7 +219,10 @@
     });
     body.addEventListener('click', async e => {
       const w = e.target.closest('[data-wk]'); if (w) { schWeek = isoDay(addDays(new Date(schWeek + 'T12:00'), +w.dataset.wk)); return reopen('schedule', el, ok); }
-      const d = e.target.closest('[data-del]'); if (d) { d.disabled = true; const x = await safe(db().from('schedule_shifts').delete().eq('id', +d.dataset.del)); if (!x.error) reopen('schedule', el, ok); return; }
+      const d = e.target.closest('[data-del]'); if (d) {
+        const id = +d.dataset.del, row = d.closest('.px-slot, tr, li') || d;   // round 23 (I5): 10-second Undo before the shift is removed
+        if (window.PortalUI) { window.PortalUI.undo({ text:'Scheduled shift removed.', hide:() => { row.hidden = true; }, restore:() => { row.hidden = false; }, commit:() => safe(db().from('schedule_shifts').delete().eq('id', id)), done:() => reopen('schedule', el, ok) }); return; }
+        d.disabled = true; const x = await safe(db().from('schedule_shifts').delete().eq('id', id)); if (!x.error) reopen('schedule', el, ok); return; }
       const o = e.target.closest('[data-to]'); if (o) { o.disabled = true; const note = (body.querySelector('[data-tonote="' + o.dataset.to + '"]') || {}).value || null;
         const x = await safe(db().rpc('time_off_decide', { p_id:+o.dataset.to, p_status:o.dataset.st, p_note:note })); if (!x.error) reopen('schedule', el, ok); else o.disabled = false; }
     });
@@ -250,8 +253,10 @@
     });
     body.addEventListener('click', async e => {
       const d = e.target.closest('[data-codel]'); if (!d) return;
-      if (d.dataset.sure !== '1') { d.dataset.sure = '1'; d.textContent = 'Sure? Delete'; return; }
-      d.disabled = true; const x = await safe(db().from('coaching_posts').delete().eq('id', +d.dataset.codel)); if (!x.error) coaching(el, ok);
+      if (!window.PortalUI && d.dataset.sure !== '1') { d.dataset.sure = '1'; d.textContent = 'Sure? Delete'; return; }
+      { const id = +d.dataset.codel, row = d.closest('article, li, .p-card, tr') || d;   // round 23 (I5): 10-second Undo
+        if (window.PortalUI) { window.PortalUI.undo({ text:'Coaching post deleted.', hide:() => { row.hidden = true; }, restore:() => { row.hidden = false; }, commit:() => safe(db().from('coaching_posts').delete().eq('id', id)), done:() => coaching(el, ok) }); return; }
+        d.disabled = true; const x = await safe(db().from('coaching_posts').delete().eq('id', id)); if (!x.error) coaching(el, ok); }
     });
   }
 

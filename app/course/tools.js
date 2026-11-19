@@ -290,7 +290,7 @@
       const a = e.target.closest('[data-act]'); if (!a) return;
       if (a.dataset.act === 'add') { st.ch.push({ id: uidGen(), name: '', spend: '', leads: '', appts: '', deals: '', profit: '', target: '' }); Notes.put('mkt', 'cpd', st); draw();
         const last = el.querySelectorAll('.lt-name'); if (last.length) last[last.length - 1].focus(); }
-      if (a.dataset.act === 'clear' && confirm(t('clearSure'))) { Object.assign(st, blankCpd(), { cur: st.cur }); Notes.put('mkt', 'cpd', st); draw(); }
+      if (a.dataset.act === 'clear') (window.PortalUI ? PortalUI.confirm({ msg:t('clearSure'), ok:undefined, danger:true }) : Promise.resolve(confirm(t('clearSure')))).then(y => { if (y) { Object.assign(st, blankCpd(), { cur: st.cur }); Notes.put('mkt', 'cpd', st); draw(); } });
       if (a.dataset.act === 'example') {
         const n = t('exNames');
         st.ch = [
@@ -358,7 +358,7 @@
     form.onchange = form.oninput;
     form.onsubmit = e => { e.preventDefault(); commit(); location.hash = '#/tools/' + tool; };
     el.onclick = e => {
-      if (e.target.closest('[data-del]')) { if (confirm(t('delSure'))) { st.items = st.items.filter(r => r.id !== x.id); Notes.put(course, tool, st); location.hash = '#/tools/' + tool; } return; }
+      if (e.target.closest('[data-del]')) { (window.PortalUI ? PortalUI.confirm({ msg:t('delSure'), ok:undefined, danger:true }) : Promise.resolve(confirm(t('delSure')))).then(y => { if (y) { st.items = st.items.filter(r => r.id !== x.id); Notes.put(course, tool, st); location.hash = '#/tools/' + tool; } }); return; }
       if (cfg.click) cfg.click(e, x, () => { Notes.put(course, tool, st); formPage(el, course, tool, st, x.id, cfg); });
     };
   }

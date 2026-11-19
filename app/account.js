@@ -157,8 +157,8 @@
   document.body.appendChild(sheet);
   let tab = 'profile', agentOpen = new Set(), agentView = null, lastFocus = null;
   const TABS = () => isOwner()
-    ? [['profile','My profile'], ['agents','Agents'], ['rates','Dollar rates'], ['password','Sign-in'], ['devices','Devices'], ['alerts','Phone alerts'], ['backup','Backup']]
-    : [['profile','My profile'], ['password','Sign-in'], ['devices','Devices'], ['alerts','Phone alerts']];   // Devices: r21-me.js (round 21, P1)   // Phone alerts: round6.js   // round 6: light only, so no Appearance tab
+    ? [['profile','My profile'], ['agents','Agents'], ['rates','Dollar rates'], ['password','Sign-in'], ['devices','Devices'], ['notify','Notifications'], ['lang','Language and time'], ['backup','Backup']]
+    : [['profile','My profile'], ['password','Sign-in'], ['devices','Devices'], ['notify','Notifications'], ['lang','Language and time']];   // round 23 (I29): Notifications and Language and time in r23-settings.js; phone alerts now live inside Notifications   // Devices: r21-me.js (round 21, P1)   // Phone alerts: round6.js   // round 6: light only, so no Appearance tab
   function openSettings(t){
     lastFocus = document.activeElement;
     tab = t; agentView = null;
@@ -199,6 +199,7 @@
     B.scrollTop = 0;
     if (tab === 'profile') return drawProfile();
     if (tab === 'devices') return window.PortalDevices ? window.PortalDevices.draw(B) : (B.innerHTML = '<p class="note">Refresh the app to see your devices.</p>');
+    if (tab === 'notify' || tab === 'lang') return window.R23Settings ? window.R23Settings[tab](B) : (B.innerHTML = '<p class="note">Refresh the app to see this.</p>');
     if (tab === 'alerts') return window.PortalPush ? window.PortalPush.draw(B) : (B.innerHTML = '<p class="note">Refresh the app to set up phone alerts.</p>');
     if (tab === 'agents') return agentView ? drawAgentProfile() : drawAgents();
     if (tab === 'rates') return drawRates();

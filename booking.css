@@ -157,3 +157,6 @@
   .confirm-actions .btn{ width:100%; }
   .booking-submit{ width:100%; }
 }
+
+/* Round 23 (P11): spam trap, never shown to people */
+.booking-form .hp-field{ position:absolute !important; left:-10000px !important; width:1px; height:1px; overflow:hidden; }
