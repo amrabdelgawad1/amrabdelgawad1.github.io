@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Round 26 (S6, D1): the "we buy" page for Amr's own deals. It only talks to the site's own Supabase project, through
+     seller_page_info() and seller_lead_submit(). It stays closed until Amr sets the business name in the Deal CRM (Inbox),
+     so the brand on this page comes from the database, not from this file. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://ztlpgyomjuzmjmuifbbd.supabase.co">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<!-- Kept out of search results until the business name is chosen and the page is opened -->
+<meta name="robots" content="noindex, nofollow">
+<title>Sell your property for cash</title>
+<meta name="description" content="Sell your house or land as-is, on your timeline. Tell us about the property and we will reach out with a fair cash offer.">
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF7F1; --card:#FFFFFF; --ink:#14213D; --text:#1F2733; --light:#5B6472; --border:#E4DCCB;
+  --accent:#E3AA35; --accent2:#94650C; --on-accent:#14213D; --ok:#2F7D4F; --err:#B4372A; --field:#FFFFFF;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0E1626; --card:#16213A; --ink:#F5EFE3; --text:#E7E2D8; --light:#A8B0BE; --border:#2A3756; --accent2:#E3AA35; --field:#101A2E; --ok:#5FBF86; --err:#E57A6C; }
+}
+*{ box-sizing:border-box; } [hidden]{ display:none !important; }
+html,body{ margin:0; background:var(--bg); color:var(--text); font:16px/1.55 Inter, system-ui, sans-serif; }
+a{ color:var(--accent2); }
+.wrap{ max-width:760px; margin:0 auto; padding:40px 16px 64px; }
+.top{ display:flex; align-items:center; gap:10px; font-weight:700; color:var(--ink); text-decoration:none; font-size:15px; }
+.top svg{ width:26px; height:26px; color:var(--ink); }
+.eyebrow{ margin:36px 0 8px; font-size:12px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--accent2); }
+h1{ font-family:"DM Serif Display", Georgia, serif; font-weight:400; color:var(--ink); font-size:clamp(34px, 6vw, 48px); line-height:1.05; margin:0; }
+.lede{ font-size:17px; color:var(--light); margin:14px 0 0; max-width:60ch; }
+.points{ display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin:26px 0 30px; padding:0; list-style:none; }
+.points li{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px; font-size:14.5px; }
+.points b{ display:block; color:var(--ink); margin-bottom:2px; }
+form{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px 20px; }
+fieldset{ border:0; margin:0 0 22px; padding:0; }
+legend{ font-family:"DM Serif Display", Georgia, serif; color:var(--ink); font-size:22px; margin-bottom:12px; padding:0; }
+.grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.grid .full{ grid-column:1 / -1; }
+@media (max-width:560px){ .grid{ grid-template-columns:1fr; } }
+label{ display:block; font-size:14px; font-weight:600; color:var(--ink); }
+label small{ font-weight:400; color:var(--light); }
+input[type=text], input[type=email], input[type=tel], input[type=number], select, textarea{
+  display:block; width:100%; margin-top:6px; padding:11px 12px; font:inherit; color:var(--text);
+  background:var(--field); border:1px solid var(--border); border-radius:10px;
+}
+textarea{ min-height:84px; resize:vertical; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, .chip input:focus-visible + span{ outline:2px solid var(--accent); outline-offset:2px; }
+.chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.chip{ position:relative; font-weight:500; }
+.chip input{ position:absolute; opacity:0; inset:0; cursor:pointer; }
+.chip span{ display:inline-block; padding:8px 14px; border:1px solid var(--border); border-radius:999px; background:var(--field); font-size:14px; }
+.chip input:checked + span{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:600; }
+.check{ display:flex; gap:10px; align-items:flex-start; font-weight:400; font-size:13.5px; color:var(--light); }
+.check input{ margin-top:4px; width:18px; height:18px; flex:none; accent-color:var(--accent2); }
+.hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+.btn{ display:inline-block; border:0; cursor:pointer; font:700 15px Inter, sans-serif; background:var(--accent); color:var(--on-accent); padding:14px 24px; border-radius:999px; }
+.btn[disabled]{ opacity:.6; cursor:wait; }
+.msg{ margin:14px 0 0; font-size:14.5px; }
+.msg.err{ color:var(--err); }
+.done{ text-align:center; padding:36px 20px; }
+.done h2{ font-family:"DM Serif Display", Georgia, serif; font-weight:400; color:var(--ink); font-size:30px; margin:0 0 8px; }
+.done svg{ width:48px; height:48px; color:var(--ok); }
+.closed{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:28px 20px; text-align:center; }
+.foot{ margin-top:28px; font-size:13px; color:var(--light); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="top" id="sBrand" aria-live="polite">&nbsp;</p>
+
+  <div class="closed" id="sClosed" hidden>
+    <h1>This page isn't open yet</h1>
+    <p class="lede" style="margin:14px auto 0">Please check back soon.</p>
+  </div>
+
+  <div id="sOpen" hidden>
+  <p class="eyebrow">We buy houses and land</p>
+  <h1>Sell your property as-is, on your timeline</h1>
+  <p class="lede">Tell us a little about the property. We'll look it over and reach out to talk through a fair cash offer. No repairs, no cleaning, and no fees on your side.</p>
+
+  <ul class="points">
+    <li><b>As-is</b>Leave the repairs and the clean-out to us.</li>
+    <li><b>Your timeline</b>Close in a couple of weeks, or later if you need time.</li>
+    <li><b>No pressure</b>Hear the offer, ask questions, and decide when you're ready.</li>
+  </ul>
+
+  <form id="sForm" novalidate>
+    <fieldset>
+      <legend>About you</legend>
+      <div class="grid">
+        <label>Full name<input type="text" id="sName" autocomplete="name" required maxlength="80"></label>
+        <label>Phone<input type="tel" id="sPhone" autocomplete="tel" required placeholder="(555) 123-4567"></label>
+        <label class="full">Email <small>(optional)</small><input type="email" id="sEmail" autocomplete="email" maxlength="120"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>About the property</legend>
+      <div class="grid">
+        <label class="full">Property address or parcel number<input type="text" id="sAddr" autocomplete="street-address" required maxlength="160"></label>
+        <label class="full">City or county, and state<input type="text" id="sCity" maxlength="80" placeholder="Polk County, FL"></label>
+        <div class="full">
+          <label id="kindL">What is it?</label>
+          <div class="chips" role="radiogroup" aria-labelledby="kindL">
+            <label class="chip"><input type="radio" name="kind" value="house"><span>A house</span></label>
+            <label class="chip"><input type="radio" name="kind" value="land"><span>Land</span></label>
+          </div>
+        </div>
+        <label>How soon would you like to sell?
+          <select id="sWhen"><option value="">Pick one</option><option value="asap">As soon as possible</option><option value="1-3m">In 1 to 3 months</option><option value="3-6m">In 3 to 6 months</option><option value="6m+">More than 6 months</option><option value="unsure">Not sure yet</option></select>
+        </label>
+        <label>Condition
+          <select id="sCond"><option value="">Pick one</option><option value="good">Good, move-in ready</option><option value="some">Needs some work</option><option value="major">Needs major repairs</option><option value="land">It's land only</option></select>
+        </label>
+        <label class="full">Price you have in mind <small>(optional)</small><input type="text" id="sAsk" maxlength="40" inputmode="numeric" placeholder="$"></label>
+        <label class="full">What has you thinking about selling? <small>(optional)</small><textarea id="sWhy" maxlength="300" placeholder="Inherited it, moving, tired of being a landlord, repairs, anything that helps"></textarea></label>
+      </div>
+    </fieldset>
+
+    <!-- CONSENT WORDING: DRAFT, NOT YET REVIEWED. Amr's attorney must review both checkboxes below before the page is
+         opened (legal_docs doc seller_contact, version 2026-11-19-draft). Every submission is recorded in consent_records
+         with that version, and "+texts" when the second box is ticked. -->
+    <div id="consent">
+      <label class="check"><input type="checkbox" id="sConsent" required><span>I agree that <b class="sB">the buyer</b> may call or email me at the number and email above about selling this property. Agreeing is not a condition of any purchase.</span></label>
+      <label class="check" style="margin-top:10px"><input type="checkbox" id="sTexts"><span>You may also text me about this property at the number above. Message and data rates may apply; frequency varies. Reply STOP to stop at any time. This is optional.</span></label>
+    </div>
+
+    <div class="hp" aria-hidden="true"><label>Website<input type="text" id="sWebsite" tabindex="-1" autocomplete="off"></label></div>
+
+    <p style="margin-top:20px"><button class="btn" type="submit" id="sGo">Send my details</button></p>
+    <p class="msg err" id="sMsg" role="alert" hidden></p>
+  </form>
+
+  <div class="done" id="sDone" hidden tabindex="-1">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>
+    <h2>Thank you, we got it</h2>
+    <p>We'll look over the property and reach out soon. If photos would help, we can send you a private link to share them from your phone.</p>
+  </div>
+
+  <p class="foot" id="sFoot">Your details are only used to talk with you about this property and are never sold.</p>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+<script src="/tracker/config.js?v=3"></script>
+<script src="sell.js?v=1"></script>
+</body>
+</html>
