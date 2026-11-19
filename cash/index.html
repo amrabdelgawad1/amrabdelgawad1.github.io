@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Serif:ital@1&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/portal.css?v=11">
+<link rel="stylesheet" href="/portal.css?v=12">
 
 <link rel="stylesheet" href="../style.css?v=10">
 <style>
@@ -790,6 +790,7 @@
             <form class="plan-form" id="budgetForm" novalidate>
               <label class="label">Category<input class="field" id="bCat" list="bCats" maxlength="40" placeholder="e.g. Subscriptions"><datalist id="bCats"></datalist></label>
               <label class="label">Limit a month (EGP)<input class="field" id="bAmt" type="number" min="0" step="1" inputmode="decimal"></label>
+              <label class="label">Bell alert at (%)<input class="field" id="bAlert" type="number" min="1" max="100" step="1" value="80" inputmode="numeric"></label>
               <button type="submit" class="btn btn-ghost btn-sm">Save budget</button>
             </form>
           </div>
@@ -1213,6 +1214,6 @@
 <script src="../ask.js?v=5"></script>
 <script src="/portal-ui.js?v=1"></script>
 <script src="team.js?v=22"></script>
-<script src="cash.js?v=33"></script>
+<script src="cash.js?v=34"></script>
 </body>
 </html>

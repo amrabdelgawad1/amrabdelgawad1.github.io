@@ -415,9 +415,10 @@
         '<label class="sc-f px-pay" hidden>Currency<select id="anCur">' + opt('USD', '$ USD') + opt('EGP', 'EGP') + '</select></label>' +
         f('Show until (optional)', '<input type="date" id="anUntil" min="' + today() + '">') +
         '<label class="px-check"><input type="checkbox" id="anPin"> Pin it to the top</label>' +
+        '<label class="px-check px-must"><input type="checkbox" id="anMust"> Must read: each person confirms they read it, and you see who hasn’t</label>' +
         '<button class="p-btn" type="submit">Post</button><p class="p-empty" id="anMsg" role="status"></p></form>') +
       card('Posted', plural((r.data || []).length, 'announcement'), (r.data || []).length ? '<div class="px-posts">' + r.data.map(a => PX.annHtml(a, false).replace('</article>', '<button type="button" class="p-btn is-ghost px-del" data-andel="' + a.id + '">Delete</button></article>')).join('') + '</div>' : empty('Nothing posted yet.'));
-    const kind = () => { const pay = $('anKind').value === 'pay'; body.querySelectorAll('.px-pay').forEach(x => x.hidden = !pay); };
+    const kind = () => { const pay = $('anKind').value === 'pay'; body.querySelectorAll('.px-pay').forEach(x => x.hidden = !pay); const m = body.querySelector('.px-must'); if (m) { m.hidden = pay; if (pay) $('anMust').checked = false; } };
     $('anKind').addEventListener('change', kind);
     $('anForm').addEventListener('submit', async e => {
       e.preventDefault();
@@ -426,7 +427,10 @@
       if (pay && !$('anWho').value) return say('anMsg', 'A pay extra is for one person. Pick who it is for.');
       if (pay && (amt === '' || +amt <= 0)) return say('anMsg', 'Type the amount of the extra.');
       say('anMsg', 'Posting…');
-      const x = await safe(db().rpc('announcement_post', { p_title:title, p_body:$('anBody').value.trim() || null, p_user:$('anWho').value || null, p_kind:$('anKind').value,
+      // Round 22 (N6): a must-read announcement asks each person to confirm (announcement_post_must)
+      const x = $('anMust') && $('anMust').checked && !pay
+        ? await safe(db().rpc('announcement_post_must', { p_title:title, p_body:$('anBody').value.trim() || null, p_user:$('anWho').value || null, p_pinned:true, p_expires:$('anUntil').value || null }))
+        : await safe(db().rpc('announcement_post', { p_title:title, p_body:$('anBody').value.trim() || null, p_user:$('anWho').value || null, p_kind:$('anKind').value,
         p_amount:pay ? +amt : null, p_currency:$('anCur').value, p_pinned:$('anPin').checked, p_expires:$('anUntil').value || null }));
       if (x.error) return say('anMsg', errText(x, 'Couldn’t post it. Try again.'));
       reopen('announcements', el, ok);

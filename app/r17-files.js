@@ -28,6 +28,7 @@
     if (!ok()) return;
     if (r.error) { body.innerHTML = failed(r.error); return; }
     let files = (r.data || []).map(x => Object.assign({ bucket:'files' }, x));
+    if (window.R22Comments) await window.R22Comments.load('file');   // round 22: notes on files
     const S = { place:owner ? '' : 'shared', q:'', kind:'' };
     function draw(){
       const list = files.filter(x => (!S.place || placeOf(x) === S.place) && (!S.kind || kindOf(x.name, x.mime) === S.kind) && (!S.q || x.name.toLowerCase().includes(S.q)));
@@ -46,6 +47,7 @@
           const folder = x.name.split('/').slice(x.bucket === 'files' ? 1 : 0, -1).join(' / ');
           return '<tr><td><b>' + esc(x.bucket === 'files' ? base(x.name).replace(/^[a-z0-9]{6,10}-/, '') : base(x.name)) + '</b>' + (folder ? '<br><small>' + esc(folder) + '</small>' : '') + '</td><td>' + esc(placeName(placeOf(x))) + '</td><td>' + esc(kindOf(x.name, x.mime)) + '</td><td>' + size(x.size) + '</td>' +
             '<td>' + esc(fmtDay(x.at, { month:'short', day:'numeric', year:'numeric' }) + ', ' + fmtTime(x.at)) + '</td><td class="r17-acts"><button type="button" class="p-btn is-ghost" data-open="' + esc(x.bucket + '|' + x.name) + '">Open</button>' +
+            (x.bucket === 'files' && window.R22Comments ? '<button type="button" class="p-btn is-ghost" data-r22fnote="' + esc(x.name) + '" data-r22ftitle="' + esc(base(x.name).replace(/^[a-z0-9]{6,10}-/, '')) + '">Notes' + (window.R22Comments.count('file', 'files|' + x.name) ? ' (' + window.R22Comments.count('file', 'files|' + x.name) + ')' : '') + '</button>' : '') +
             (owner && x.bucket === 'files' ? '<button type="button" class="p-btn is-ghost" data-rm="' + esc(x.name) + '">Delete</button>' : '') + '</td></tr>';
         })) + (list.length > 400 ? '<p class="p-hint">Showing the newest 400. Search to find others.</p>' : '') : empty(files.length ? 'No files match.' : owner ? 'No files yet. Upload the first one above.' : 'Nothing shared yet.')) +
         (owner ? '<p class="p-hint">Only My files and Team shared can be deleted here. Other files keep their delete buttons on their own pages. Encrypted Deal CRM files open only inside the CRM.</p>' : '');
