@@ -668,10 +668,40 @@
     if (window.CoursePractice && user) CoursePractice.mount($('practiceBox'), { db, user, mod, it, title:it.shortTitle || heading(it), toast }).then(f => { leaving = f; }).catch(() => {});
     if (mod.number === S.totalModules && /staying certified/i.test(it.title || '')) renewCard(it);
     lessonVideo(mod, it);
+    lessonDiagrams(mod, it);
     stateSheets(mod, it);
     // Round 29: questions under the lesson (E1), and this lesson saved as the learner's place in the course (I16)
     if (window.LessonQA && user) LessonQA.mount($('qaBox'), { db, course:'acq', module:mod.id, item:it.id, title:'Lesson ' + it.id + ' · ' + heading(it), sub:'Module ' + mod.number, link:'/course/#/m/' + mod.id + '/l/' + it.id, owner:!!S.isAdmin, lang:'en' });
     if (S.isAdmin && window.CourseNarrate) CourseNarrate.lesson(db, mod, it, $('narrBox'));
+  }
+
+  // ---------- Lesson diagrams (Nov 2026) ----------
+  // Pictures of what a lesson already says, kept in course_diagrams so the lesson text never changes.
+  // Each one goes right after the paragraph whose text starts with spec.after (or at the top of the lesson).
+  async function lessonDiagrams(mod, it){
+    let rows = [];
+    try { const r = await db.from('course_diagrams').select('position,spec').eq('module_id', mod.id).eq('item_id', it.id).order('position'); rows = r.data || []; } catch(e){ return; }
+    const text = $('lessonText'); if (!rows.length || !text || !document.contains(text)) return;
+    rows.forEach(({ spec:d }) => {
+      if (!d || !d.kind) return;
+      const fig = document.createElement('figure');
+      fig.className = 'dg dg-' + d.kind;
+      fig.innerHTML = drawDiagram(d) + (d.title ? '<figcaption>' + esc(d.title) + '</figcaption>' : '');
+      const at = d.after && [...text.children].find(el => el.textContent.trim().startsWith(d.after));
+      if (at) at.after(fig); else text.prepend(fig);
+    });
+  }
+  function drawDiagram(d){
+    const arrow = '<span class="dg-arrow" aria-hidden="true"></span>';
+    if (d.kind === 'chain') return '<ol class="dg-chain">' + (d.steps || []).map(s => '<li class="dg-step' + (s.hi ? ' hi' : '') + '"><span class="dg-l">' + esc(s.label) + '</span>' +
+      (s.math ? '<span class="dg-m">' + esc(s.math) + '</span>' : '') + '<b class="dg-v">' + esc(s.value) + '</b>' + (s.note ? '<span class="dg-n">' + esc(s.note) + '</span>' : '') + '</li>').join('') + '</ol>';
+    if (d.kind === 'ladder') return '<ol class="dg-ladder">' + (d.steps || []).map(s => '<li><b>' + esc(s.t) + '</b><span>' + esc(s.s) + '</span></li>').join('') + '</ol>';
+    if (d.kind === 'flow') return '<div class="dg-flow">' + (d.nodes || []).map((n, i) => (i ? '<span class="dg-link">' + arrow + '<small>' + esc((d.links || [])[i - 1] || '') + '</small></span>' : '') +
+      '<div class="dg-node"><b>' + esc(n.t) + '</b><span>' + esc(n.s || '') + '</span></div>').join('') + '</div>' + (d.foot ? '<p class="dg-foot">' + esc(d.foot) + '</p>' : '');
+    if (d.kind === 'columns') return '<div class="dg-cols">' + (d.cols || []).map(c => '<div class="dg-col"><b>' + esc(c.t) + '</b><span class="dg-cs">' + esc(c.s || '') + '</span><ul>' +
+      (c.items || []).map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>').join('') + '</div>';
+    if (d.kind === 'timeline') return '<ol class="dg-time">' + (d.points || []).map(p => '<li class="' + (p.hi ? 'hi' : '') + '"><b>' + esc(p.when) + '</b><span>' + esc(p.what) + '</span>' + (p.who ? '<small>' + esc(p.who) + '</small>' : '') + '</li>').join('') + '</ol>';
+    return '';
   }
 
   // ---------- Module 13: live state sheets ----------
