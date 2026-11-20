@@ -2,8 +2,8 @@
 // Pages and files always come fresh from the network when there is one; the copy here is only for offline.
 // Course content, progress and images come from Supabase and are never stored here.
 // Change VERSION on every release.
-const VERSION = 'course-v51';
-const SHELL = ['./', 'index.html', 'course.css?v=11', 'hub.css?v=6', '/app/course/ink.css?v=3', 'read.css?v=3', 'theme.css?v=2', '/portal.css?v=12', '/portal-shell.js?v=14', 'md.js?v=5', '/app/course/ink.js?v=2', 'narrate.js?v=3', 'app.js?v=29', '/lesson-qa.js?v=1', '/lesson-qa.css?v=1', 'practice.js?v=3', 'admin.js?v=6', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-180.png', '/guard.js?v=1', '/tracker/config.js'];
+const VERSION = 'course-v52';
+const SHELL = ['./', 'index.html', 'course.css?v=11', 'hub.css?v=6', '/app/course/ink.css?v=3', 'read.css?v=3', 'theme.css?v=3', '/portal.css?v=12', '/portal-shell.js?v=14', 'md.js?v=5', '/app/course/ink.js?v=2', 'narrate.js?v=3', 'app.js?v=30', '/lesson-qa.js?v=1', '/lesson-qa.css?v=1', 'practice.js?v=3', 'admin.js?v=6', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-180.png', '/guard.js?v=1', '/tracker/config.js'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('course-') && k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim()));

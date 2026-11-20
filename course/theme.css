@@ -64,7 +64,7 @@
 .dg-arrow{ display:block; width:100%; min-width:40px; height:2px; background:var(--acq-orange-hi); position:relative; }
 .dg-arrow::after{ content:""; position:absolute; right:-1px; top:-5px; border:6px solid transparent; border-left-color:var(--acq-orange-hi); border-right:0; }
 .dg-foot{ margin:12px 0 0; font-size:14px; color:var(--acq-sub); }
-.dg-cols{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; }
+.dg-cols{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; }
 .dg-col{ display:flex; flex-direction:column; gap:6px; padding:14px; border:1px dashed var(--acq-line); border-radius:10px; }
 .dg-col:first-child{ border:2px solid var(--acq-orange); }
 .dg-col > b{ font:900 26px/1 var(--acq-cond); text-transform:uppercase; }
@@ -102,3 +102,21 @@ figure.dg{ text-align:left; }
   .dg-link .dg-arrow{ width:2px; min-width:0; height:26px; }
   .dg-link .dg-arrow::after{ right:-5px; top:auto; bottom:-1px; border:6px solid transparent; border-top-color:var(--acq-orange-hi); border-bottom:0; }
 }
+/* batch 2 shapes: numbered steps and a score scale */
+.dg ol.dg-steps{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; padding:0; margin:0; counter-reset:none; }
+.dg-steps li{ display:flex; flex-direction:column; gap:4px; padding:10px 12px; border:1px dashed var(--acq-line); border-radius:10px; }
+.dg-steps li i{ font:900 26px/1 var(--acq-cond); font-style:normal; color:var(--acq-orange-hi); }
+.dg-steps li b{ font:900 18px/1.05 var(--acq-cond); text-transform:uppercase; }
+.dg-steps li span{ font-size:12.5px; color:var(--acq-orange-hi); }
+.dg-steps li.hi{ background:var(--acq-orange); border:0; }
+.dg ol.dg-scale{ display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:0; padding:0; margin:0; border-radius:10px; overflow:hidden; }
+.dg-scale li{ display:flex; flex-direction:column; gap:4px; padding:12px; border-right:1px solid rgba(255,255,255,.08); }
+.dg-scale li:nth-child(1){ background:rgba(255,255,255,.03); }
+.dg-scale li:nth-child(2){ background:rgba(226,96,42,.12); }
+.dg-scale li:nth-child(3){ background:rgba(226,96,42,.28); }
+.dg-scale li.hi{ background:var(--acq-orange); }
+.dg-scale li i{ font:900 26px/1 var(--acq-cond); font-style:normal; }
+.dg-scale li b{ font:900 18px/1 var(--acq-cond); text-transform:uppercase; }
+.dg-scale li span{ font-size:13px; color:var(--acq-sub); }
+.dg-scale li.hi i, .dg-scale li.hi b, .dg-scale li.hi span{ color:var(--acq-ground); }
+.dg-col li:only-child{ border-top:0; }
