@@ -701,6 +701,8 @@
     if (d.kind === 'columns') return '<div class="dg-cols">' + (d.cols || []).map(c => '<div class="dg-col"><b>' + esc(c.t) + '</b><span class="dg-cs">' + esc(c.s || '') + '</span><ul>' +
       (c.items || []).map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>').join('') + '</div>';
     if (d.kind === 'timeline') return '<ol class="dg-time">' + (d.points || []).map(p => '<li class="' + (p.hi ? 'hi' : '') + '"><b>' + esc(p.when) + '</b><span>' + esc(p.what) + '</span>' + (p.who ? '<small>' + esc(p.who) + '</small>' : '') + '</li>').join('') + '</ol>';
+    if (d.kind === 'steps') return '<ol class="dg-steps">' + (d.steps || []).map((s, i) => '<li' + (s.hi ? ' class="hi"' : '') + '><i>' + (i + 1) + '</i><b>' + esc(s.t) + '</b>' + (s.s ? '<span>' + esc(s.s) + '</span>' : '') + '</li>').join('') + '</ol>';
+    if (d.kind === 'scale') return '<ol class="dg-scale">' + (d.bands || []).map(b => '<li' + (b.hi ? ' class="hi"' : '') + '><i>' + esc(b.range) + '</i><b>' + esc(b.t) + '</b><span>' + esc(b.s || '') + '</span></li>').join('') + '</ol>';
     return '';
   }
 
