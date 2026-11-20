@@ -74,3 +74,62 @@ a.lh-course:hover .lh-go{ filter:brightness(1.08); }
 /* Round 29 fix: size the arrow in "Continue where you left off" rows (it had no size and filled the card) */
 .lh-res > svg{ width:18px; height:18px; flex:0 0 18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 .lh-res-t small, .lh-res-t b{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* Course covers (Nov 2026): each course in its own look, with an emblem instead of a letter. No grids. */
+.lh-cv{ aspect-ratio:16/9; padding:0; container-type:inline-size; }
+.lh-cv-bar{ position:absolute; inset:0 auto 0 0; width:6px; }
+.lh-cv-disc, .lh-cv-dots{ position:absolute; border-radius:50%; }
+.lh-cv-em{ position:absolute; }
+.lh-cv-tag{ position:absolute; left:7%; top:8%; display:flex; gap:8px; align-items:center; z-index:1; }
+.lh-cv-tag b{ font:700 10px/1 'JetBrains Mono', ui-monospace, monospace; text-transform:uppercase; padding:4px 7px; border-radius:3px; }
+.lh-cv-tag i{ font:600 10px/1 'JetBrains Mono', ui-monospace, monospace; font-style:normal; }
+.lh-cv-title{ position:absolute; left:7%; top:22%; max-width:58%; z-index:1; }
+.lh-cv-ar{ position:absolute; left:7%; bottom:9%; font:600 clamp(12px, 4.4cqw, 16px)/1.2 'IBM Plex Sans Arabic', sans-serif; z-index:1; }
+.lh-cv-stat{ position:absolute; display:flex; flex-direction:column; z-index:1; }
+.lh-cv-stat b{ line-height:.9; }
+.lh-cv-stat i{ font:600 9px/1.4 'JetBrains Mono', ui-monospace, monospace; font-style:normal; letter-spacing:.08em; text-transform:uppercase; }
+
+.lh-cv-acq{ background:#13211A; }
+.lh-cv-acq .lh-cv-bar{ background:#E2602A; }
+.lh-cv-acq .lh-cv-disc{ display:none; }
+.lh-cv-acq .lh-cv-em{ right:2%; bottom:5%; width:56%; height:80%; }
+.lh-cv-acq .lh-cv-tag b{ background:#E2602A; color:#13211A; }
+.lh-cv-acq .lh-cv-tag i{ color:#9FB0A6; }
+.lh-cv-acq .lh-cv-title{ max-width:46%; font:900 clamp(24px, 9cqw, 36px)/.92 'Big Shoulders Display', Impact, sans-serif; color:#F3F5F1; text-transform:uppercase; }
+.lh-cv-acq .lh-cv-stat{ left:7%; bottom:8%; }
+.lh-cv-acq .lh-cv-stat b{ font:900 clamp(26px, 10cqw, 38px)/.9 'Big Shoulders Display', sans-serif; color:#F2733A; }
+.lh-cv-acq .lh-cv-stat i{ color:#B9C2BC; }
+
+.lh-cv-psy{ background:#0F1A2B; }
+.lh-cv-psy .lh-cv-bar{ background:#F4A340; }
+.lh-cv-psy .lh-cv-disc{ right:-8%; top:50%; width:52%; aspect-ratio:1; transform:translateY(-50%); background:#17253D; }
+.lh-cv-psy .lh-cv-em{ right:1%; bottom:14%; width:54%; height:60%; }
+.lh-cv-psy .lh-cv-tag b{ background:#F4A340; color:#0F1A2B; }
+.lh-cv-psy .lh-cv-tag i{ color:#9AA7BE; }
+.lh-cv-psy .lh-cv-title{ font:700 clamp(20px, 7.6cqw, 30px)/1.02 'Newsreader', Georgia, serif; color:#F2F4F7; max-width:44%; }
+.lh-cv-psy .lh-cv-ar{ color:#F4C98A; }
+.lh-cv-psy .lh-cv-stat{ right:5%; top:8%; align-items:flex-end; }
+.lh-cv-psy .lh-cv-stat b{ font:700 clamp(18px, 7cqw, 26px)/.9 'Newsreader', Georgia, serif; color:#F4A340; }
+.lh-cv-psy .lh-cv-stat i{ color:#B7C1D1; }
+
+.lh-cv-mkt{ background:#FFD400; }
+.lh-cv-mkt .lh-cv-bar{ display:none; }
+.lh-cv-mkt .lh-cv-dots{ right:-10%; top:50%; width:58%; aspect-ratio:1; transform:translateY(-50%); background:#fff; }
+.lh-cv-mkt .lh-cv-em{ right:-1%; top:50%; width:52%; height:76%; transform:translateY(-50%); }
+.lh-cv-mkt .lh-cv-tag b{ background:#111; color:#FFD400; }
+.lh-cv-mkt .lh-cv-tag i{ color:#111; }
+.lh-cv-mkt .lh-cv-title{ font:400 clamp(28px, 12cqw, 46px)/.95 'Anton', Impact, sans-serif; color:#111; text-transform:uppercase; }
+.lh-cv-mkt .lh-cv-stat{ left:7%; bottom:8%; }
+.lh-cv-mkt .lh-cv-stat b{ font:400 clamp(24px, 9cqw, 34px)/.9 'Anton', Impact, sans-serif; color:#B0005F; }
+.lh-cv-mkt .lh-cv-stat i{ color:#111; }
+
+/* locked: same cover, dimmed, with the lock */
+.lh-cv.is-locked{ background-color:#2A2D34; }
+.lh-cv.is-locked > :not(.lh-art-lock){ filter:grayscale(1) brightness(.75); }
+.lh-cv.is-locked .lh-art-lock{ left:auto; right:5%; bottom:8%; top:auto; z-index:2; }
+@media (max-width:640px){ .lh-cv{ aspect-ratio:16/9; } }
+
+/* the small badge in "Continue where you left off" takes its course's colors */
+.lh-res-acq{ background:#13211A !important; color:#F2733A !important; }
+.lh-res-psy{ background:#0F1A2B !important; color:#F4A340 !important; }
+.lh-res-mkt{ background:#FFD400 !important; color:#111 !important; }

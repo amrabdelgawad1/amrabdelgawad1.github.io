@@ -79,10 +79,22 @@
   const arrowIc = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
   const canOpen = c => open[c.id] && !(owner && asLearner);
 
-  function art(c, locked){
-    return `<span class="lh-art${locked ? ' is-locked' : ''}" aria-hidden="true">
-      <span class="lh-art-bar"></span><span class="lh-art-kick">Course</span>
-      <span class="lh-art-letter">${c.letter}</span>
+  // Course covers (Nov 2026): each course has its own look and emblem instead of a letter.
+  // Acquisitions = a house on its lot, Psychology = a therapist and client in session, Marketing = a megaphone.
+  // Only the title and module count come from the course; nothing here changes course content.
+  const EMBLEM = {
+    acq:'<svg class="lh-cv-em" viewBox="0 0 200 160" aria-hidden="true"><path d="M6 142H196" stroke="#5E7A6B" stroke-width="2" stroke-dasharray="6 5"/><polygon points="46,72 100,26 154,72" fill="rgba(226,96,42,.18)" stroke="#E2602A" stroke-width="3" stroke-linejoin="round"/><rect x="60" y="72" width="80" height="70" fill="rgba(226,96,42,.10)" stroke="#E2602A" stroke-width="3"/><rect x="91" y="104" width="18" height="38" fill="#E2602A"/><rect x="68" y="84" width="16" height="14" fill="none" stroke="#E2602A" stroke-width="2.5"/><rect x="116" y="84" width="16" height="14" fill="none" stroke="#E2602A" stroke-width="2.5"/><path d="M174 142V96" stroke="#F3F5F1" stroke-width="3"/><rect x="158" y="80" width="36" height="20" rx="2" fill="#E2602A"/></svg>',
+    psy:'<svg class="lh-cv-em" viewBox="0 0 240 160" aria-hidden="true" fill="none" stroke="#F4A340" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 146H230" stroke="#2A3D5C"/><path d="M38 68V146M38 112H80M78 112V146"/><circle cx="58" cy="56" r="11"/><path d="M56 68L60 108H88L90 146M58 80L76 92"/><rect x="72" y="86" width="14" height="10" fill="#F4A340"/><path d="M204 70V146M160 114H204M162 114V146"/><circle cx="182" cy="58" r="11"/><path d="M184 70L180 110H154L152 146M182 84L166 98"/><path d="M106 22h40a8 8 0 0 1 8 8v8a8 8 0 0 1-8 8h-22l-8 8v-8h-10a8 8 0 0 1-8-8v-8a8 8 0 0 1 8-8z" fill="#0F1A2B"/></svg>',
+    mkt:'<svg class="lh-cv-em" viewBox="0 0 200 160" aria-hidden="true"><rect x="36" y="62" width="22" height="38" fill="#111"/><polygon points="58,62 138,28 138,134 58,100" fill="#E4007C" stroke="#111" stroke-width="4" stroke-linejoin="round"/><path d="M78 104L86 134H100L94 108" fill="#FFD400" stroke="#111" stroke-width="4" stroke-linejoin="round"/><path d="M154 60Q168 81 154 102M168 46Q190 81 168 116" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round"/></svg>'
+  };
+  const CODE = { acq:'ACQ', psy:'PSY · EN / ع', mkt:'MKT' };
+  function art(c, locked, mods){
+    return `<span class="lh-art lh-cv lh-cv-${c.id}${locked ? ' is-locked' : ''}" aria-hidden="true">
+      <span class="lh-cv-bar"></span>${c.id === 'mkt' ? '<span class="lh-cv-dots"></span>' : '<span class="lh-cv-disc"></span>'}${EMBLEM[c.id] || ''}
+      <span class="lh-cv-tag"><b>Course</b><i>${CODE[c.id] || ''}</i></span>
+      <span class="lh-cv-title">${esc(c.title)}</span>
+      ${c.id === 'psy' ? '<span class="lh-cv-ar" dir="rtl" lang="ar">علم النفس</span>' : ''}
+      ${mods ? `<span class="lh-cv-stat"><b>${mods}</b><i>Modules</i></span>` : ''}
       ${locked ? `<span class="lh-art-lock">${lockIc}</span>` : ''}</span>`;
   }
   // When a price is added later, this is where the price and a Buy button go
@@ -126,7 +138,7 @@
     const list = resume.map(r => [r, COURSES.find(c => c.id === r.course)]).filter(([r, c]) => c && canOpen(c) && /^\/[^\/\\]/.test(r.href || ''));
     if (!list.length) return '';
     return `<section aria-labelledby="lhResH"><h2 class="lh-h2" id="lhResH">Continue where you left off</h2><div class="lh-resume">${list.map(([r, c]) =>
-      `<a class="lh-res" href="${esc(r.href)}"><span class="lh-res-l" aria-hidden="true">${c.letter}</span>
+      `<a class="lh-res" href="${esc(r.href)}"><span class="lh-res-l lh-res-${c.id}" aria-hidden="true">${c.letter}</span>
         <span class="lh-res-t"><small>${esc(c.title)}${r.sub ? ' · ' + esc(r.sub) : ''}${r.at ? ' · ' + esc(fmtWhen(r.at)) : ''}</small><b>${esc(r.title || 'Your last lesson')}</b></span>
         ${r.pos ? `<span class="lh-res-v">Video at ${clock(r.pos)}</span>` : ''}${arrowIc}</a>`).join('')}</div></section>`;
   }
@@ -134,7 +146,7 @@
     const ok = canOpen(c), p = prog[c.id], mods = (p && p.total) || c.modules;
     const pct = p && p.total ? Math.round(p.done / p.total * 100) : 0;
     const meta = [mods ? `<span><b>${mods}</b> modules</span>` : '', ok && p ? `<span><b>${p.done}</b> passed</span>` : ''].join('');
-    const inner = `${art(c, !ok)}
+    const inner = `${art(c, !ok, mods)}
       <span class="lh-body">
         <span class="cp-kick">${ok ? (p && p.done ? 'In progress' : 'Ready to start') : 'Locked'}</span>
         <h2>${esc(c.title)}</h2>
