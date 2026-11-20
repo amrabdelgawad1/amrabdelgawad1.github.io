@@ -293,6 +293,11 @@ function renderItem(m, it) {
   // Lesson video (only when one has been uploaded for this section; see video.js)
   var V = window.LH_DB;
   if (it.type === 'section' && window.PsyVideo && V && V.db) window.PsyVideo.mount(document.getElementById('lvideo'), { db: V.db, uid: V.uid, course: (window.PSY_COURSE && window.PSY_COURSE.access) || 'psy', moduleId: m.id, itemId: it.id, isAdmin: OWNER && !asLearner, lang: lang });
+  // Owner only (Nov 2026): send this section, or the whole module, to Voice Studio for Arabic (فصحى) narration (narrate.js)
+  if (it.type === 'section' && OWNER && !asLearner && window.PsyNarrate && V && V.db) {
+    var nb = document.createElement('div'), lv = document.getElementById('lvideo');
+    if (lv) { lv.after(nb); window.PsyNarrate.mount(nb, { db: V.db, module: m, item: it }); }
+  }
   // Round 29: questions under each section (E1), and the section saved as this person's place in the course (I16)
   if (!isQ && window.LessonQA && V && V.db) {
     var qa = document.createElement('div'); (app.querySelector('.cp-lesson') || app).appendChild(qa);
