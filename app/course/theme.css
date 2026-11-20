@@ -1,0 +1,8 @@
+/* Marketing course look (Nov 2026): the "print studio" theme from the approved course-looks canvas.
+   Yellow poster, magenta and black, poster type for headlines, a megaphone as the emblem. Colors, fonts and decoration only. */
+:root{ --accent:#B0005F; --accent-hi:#E4007C; --accent-soft:#FCE4F1; --on-accent:#FFFFFF; --mkt-yellow:#FFD400; }
+.cp-logo{ background:var(--mkt-yellow); color:#111; font-family:'Anton', Impact, sans-serif; font-weight:400; }
+.cp-h1{ font-family:'Anton', Impact, sans-serif; font-weight:400; text-transform:uppercase; letter-spacing:.01em; }
+html[lang="ar"] .cp-h1{ font-family:'IBM Plex Sans Arabic', sans-serif; font-weight:700; text-transform:none; }
+.cp-thumb{ background:var(--mkt-yellow); border:2px solid #111; }
+.btn:hover{ filter:brightness(1.08); }

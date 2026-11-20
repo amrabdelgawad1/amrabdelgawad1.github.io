@@ -94,26 +94,31 @@
 
   // ---------- thumbnails: one 1280×720 template for the course, every module and every part ----------
   const ctx = document.createElement('canvas').getContext('2d');
-  const FONT = () => PL === 'ar' ? '"IBM Plex Sans Arabic"' : '"Bricolage Grotesque"';
+  const FONT = () => PL === 'ar' ? '"IBM Plex Sans Arabic"' : '"Anton"';
   function wrap(text, size, max){
-    ctx.font = `${PL === 'ar' ? 700 : 800} ${size}px ${FONT()}`;
+    ctx.font = `${PL === 'ar' ? 700 : 400} ${size}px ${FONT()}`;
     const words = text.split(' '), lines = []; let line = '';
     for (const w of words) { const s = line ? line + ' ' + w : w; if (ctx.measureText(s).width > max && line) { lines.push(line); line = w; } else line = s; }
     if (line) lines.push(line);
     return lines;
   }
+  // Thumbnails in the Marketing course look (Nov 2026): a yellow poster, poster type, and the course emblem
+  // (a megaphone) instead of a plain dark card. Only the drawing changes; titles and numbers are the same.
+  const MKT_EMBLEM = '<circle cx="100" cy="80" r="96" fill="#fff" stroke="#111" stroke-width="5"/><rect x="36" y="62" width="22" height="38" fill="#111"/><polygon points="58,62 138,28 138,134 58,100" fill="#E4007C" stroke="#111" stroke-width="4" stroke-linejoin="round"/><path d="M78 104L86 134H100L94 108" fill="#FFD400" stroke="#111" stroke-width="4" stroke-linejoin="round"/><path d="M154 60Q168 81 154 102M168 46Q190 81 168 116" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round"/>';
   function thumb(o){
-    const rtl = PL === 'ar', max = o.num ? 820 : 1060; let size = 84, lines = wrap(o.title, size, max);
-    while ((lines.length > 3 || lines.some(l => (ctx.measureText(l).width > max))) && size > 50) { size -= 4; lines = wrap(o.title, size, max); }
-    const lh = Math.round(size * (rtl ? 1.3 : 1.08)), top = 360 - (lines.length * lh) / 2 + size * .8;
-    const X = rtl ? 1184 : 96, dir = rtl ? ' direction="rtl"' : ' direction="ltr"', disp = rtl ? 'IBM Plex Sans Arabic, sans-serif' : 'Bricolage Grotesque, sans-serif', body = rtl ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif';
+    const rtl = PL === 'ar', max = o.num ? 760 : 820, title = rtl ? o.title : o.title.toUpperCase(); let size = 88, lines = wrap(title, size, max);
+    while ((lines.length > 3 || lines.some(l => (ctx.measureText(l).width > max))) && size > 50) { size -= 4; lines = wrap(title, size, max); }
+    const lh = Math.round(size * (rtl ? 1.3 : 1.02)), top = 380 - (lines.length * lh) / 2 + size * .8;
+    const X = rtl ? 1184 : 96, dir = rtl ? ' direction="rtl"' : ' direction="ltr"', disp = rtl ? 'IBM Plex Sans Arabic, sans-serif' : 'Anton, Impact, sans-serif', body = rtl ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif';
+    const ex = rtl ? 40 : 930;
     return `<svg viewBox="0 0 1280 720" role="img" aria-label="${esc(o.kick + ': ' + o.title)}" xmlns="http://www.w3.org/2000/svg">
-      <rect width="1280" height="720" fill="#14161B"/>
-      <rect x="${rtl ? 1120 : 96}" y="96" width="64" height="8" rx="4" fill="#FF5A1F" stroke="none"/>
-      <text x="${X}" y="150"${dir} fill="#FF5A1F" stroke="none" font-family="${body}" font-weight="700" font-size="26"${rtl ? '' : ' letter-spacing="4"'}>${esc(rtl ? o.kick : o.kick.toUpperCase())}</text>
-      ${o.num ? `<text x="${rtl ? 96 : 1184}" y="640" direction="ltr" text-anchor="${rtl ? 'start' : 'end'}" fill="#FF5A1F" stroke="none" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="230" opacity=".95">${esc(o.num)}</text>` : ''}
-      <g fill="#FFFFFF" stroke="none" font-family="${disp}" font-weight="${rtl ? 700 : 800}" font-size="${size}">${lines.map((l, i) => `<text x="${X}" y="${Math.round(top + i * lh)}"${dir}>${esc(l)}</text>`).join('')}</g>
-      ${o.foot ? `<text x="${X}" y="636"${dir} fill="#B9BDC6" stroke="none" font-family="${body}" font-weight="500" font-size="28">${esc(o.foot)}</text>` : ''}
+      <rect width="1280" height="720" fill="#FFD400"/>
+      <g transform="translate(${ex} 50) scale(1.55)">${MKT_EMBLEM}</g>
+      <rect x="${rtl ? 1120 : 96}" y="96" width="64" height="8" fill="#111" stroke="none"/>
+      <text x="${X}" y="150"${dir} fill="#B0005F" stroke="none" font-family="${body}" font-weight="700" font-size="26"${rtl ? '' : ' letter-spacing="4"'}>${esc(rtl ? o.kick : o.kick.toUpperCase())}</text>
+      ${o.num ? `<text x="${rtl ? 96 : 1184}" y="660" direction="ltr" text-anchor="${rtl ? 'start' : 'end'}" fill="#E4007C" stroke="none" font-family="Anton, Impact, sans-serif" font-size="210">${esc(o.num)}</text>` : ''}
+      <g fill="#111111" stroke="none" font-family="${disp}" font-weight="${rtl ? 700 : 400}" font-size="${size}">${lines.map((l, i) => `<text x="${X}" y="${Math.round(top + i * lh)}"${dir}>${esc(l)}</text>`).join('')}</g>
+      ${o.foot ? `<text x="${X}" y="650"${dir} fill="#3A372F" stroke="none" font-family="${body}" font-weight="600" font-size="28">${esc(o.foot)}</text>` : ''}
     </svg>`;
   }
   const modTitle = m => PL === 'ar' && !hasAr(m) ? planT(C.plan.find(p => p.id === m.id)) : loc(m).t;
