@@ -1,0 +1,12 @@
+/* Psychology course look (Nov 2026): the "session notebook" theme from the approved course-looks canvas.
+   Navy and amber, a book serif for headings, Arabic beside English. Colors, fonts and decoration only. */
+:root{ --accent:#9A5A0C; --accent-hi:#F4A340; --accent-soft:#FDF4E7; --on-accent:#FFFFFF; --psy-navy:#0F1A2B; --psy-navy2:#17253D; }
+.cp-logo{ background:var(--psy-navy); color:#F4A340; font-family:'Newsreader', Georgia, serif; }
+.cp-h1, .cp-wrap h1, .cp-wrap h2, .cp-mcard h3{ font-family:'Newsreader', Georgia, serif; letter-spacing:0; }
+html[lang="ar"] .cp-h1, html[lang="ar"] .cp-wrap h1, html[lang="ar"] .cp-wrap h2, html[lang="ar"] .cp-mcard h3{ font-family:'IBM Plex Sans Arabic', sans-serif; }
+.cp-thumb{ background:var(--psy-navy); }
+.btn:hover{ filter:brightness(1.08); }
+/* lesson video: labelled in both languages, framed in navy */
+.vbox:has(.vwrap)::before{ content:"Lesson video · فيديو الدرس"; font:700 12px/1.4 'Inter', 'IBM Plex Sans Arabic', sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); }
+.vwrap{ border:1px solid var(--psy-navy); box-shadow:0 0 0 4px rgba(15,26,43,.06); }
+.vwrap .wm-logo{ background:#F4A340; color:var(--psy-navy); }

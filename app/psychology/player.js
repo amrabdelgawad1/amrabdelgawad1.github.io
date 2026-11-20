@@ -125,23 +125,29 @@ function pad2(n) { return (n < 10 ? '0' : '') + n; }
 /* one 1280x720 template for the course, every module and every part (the Marketing course's template) */
 var mctx = document.createElement('canvas').getContext('2d');
 function mwrap(text, size, max) {
-  mctx.font = (lang === 'ar' ? 700 : 800) + ' ' + size + 'px ' + (lang === 'ar' ? '"IBM Plex Sans Arabic"' : '"Bricolage Grotesque"');
+  mctx.font = '700 ' + size + 'px ' + (lang === 'ar' ? '"IBM Plex Sans Arabic"' : '"Newsreader"');
   var words = text.split(' '), lines = [], line = '';
   words.forEach(function (w) { var s = line ? line + ' ' + w : w; if (mctx.measureText(s).width > max && line) { lines.push(line); line = w; } else line = s; });
   if (line) lines.push(line);
   return lines;
 }
+// Thumbnails in the Psychology course look (Nov 2026): navy and amber, a book serif, and the course emblem
+// (a therapist and client in session) instead of a grid. Only the drawing changes; titles and numbers are the same.
+var PSY_EMBLEM = '<g fill="none" stroke="#F4A340" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 146H230" stroke="#2A3D5C"/><path d="M38 68V146M38 112H80M78 112V146"/><circle cx="58" cy="56" r="11"/><path d="M56 68L60 108H88L90 146M58 80L76 92"/><rect x="72" y="86" width="14" height="10" fill="#F4A340"/><path d="M204 70V146M160 114H204M162 114V146"/><circle cx="182" cy="58" r="11"/><path d="M184 70L180 110H154L152 146M182 84L166 98"/><path d="M106 22h40a8 8 0 0 1 8 8v8a8 8 0 0 1-8 8h-22l-8 8v-8h-10a8 8 0 0 1-8-8v-8a8 8 0 0 1 8-8z" fill="#0F1A2B"/></g>';
 function mthumb(o) {
-  var rtl = lang === 'ar', max = o.num ? 820 : 1060, size = 84, lines = mwrap(o.title, size, max);
+  var rtl = lang === 'ar', max = o.num ? 760 : 820, size = 84, lines = mwrap(o.title, size, max);
   while ((lines.length > 3 || lines.some(function (l) { return mctx.measureText(l).width > max; })) && size > 50) { size -= 4; lines = mwrap(o.title, size, max); }
-  var lh = Math.round(size * (rtl ? 1.3 : 1.08)), top = 360 - (lines.length * lh) / 2 + size * .8;
-  var X = rtl ? 1184 : 96, dir = rtl ? ' direction="rtl"' : ' direction="ltr"', disp = rtl ? 'IBM Plex Sans Arabic, sans-serif' : 'Bricolage Grotesque, sans-serif', body = rtl ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif';
+  var lh = Math.round(size * (rtl ? 1.3 : 1.08)), top = 380 - (lines.length * lh) / 2 + size * .8;
+  var X = rtl ? 1184 : 96, dir = rtl ? ' direction="rtl"' : ' direction="ltr"', disp = rtl ? 'IBM Plex Sans Arabic, sans-serif' : 'Newsreader, Georgia, serif', body = rtl ? 'IBM Plex Sans Arabic, sans-serif' : 'Inter, sans-serif';
+  var ex = rtl ? 40 : 880;
   return '<svg viewBox="0 0 1280 720" role="img" aria-label="' + esc(o.kick + ': ' + o.title) + '" xmlns="http://www.w3.org/2000/svg">' +
-    '<rect width="1280" height="720" fill="#14161B"/><rect x="' + (rtl ? 1120 : 96) + '" y="96" width="64" height="8" rx="4" fill="#FF5A1F" stroke="none"/>' +
-    '<text x="' + X + '" y="150"' + dir + ' fill="#FF5A1F" stroke="none" font-family="' + body + '" font-weight="700" font-size="26"' + (rtl ? '' : ' letter-spacing="4"') + '>' + esc(rtl ? o.kick : o.kick.toUpperCase()) + '</text>' +
-    (o.num ? '<text x="' + (rtl ? 96 : 1184) + '" y="640" direction="ltr" text-anchor="' + (rtl ? 'start' : 'end') + '" fill="#FF5A1F" stroke="none" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="230" opacity=".95">' + esc(o.num) + '</text>' : '') +
-    '<g fill="#FFFFFF" stroke="none" font-family="' + disp + '" font-weight="' + (rtl ? 700 : 800) + '" font-size="' + size + '">' + lines.map(function (l, i) { return '<text x="' + X + '" y="' + Math.round(top + i * lh) + '"' + dir + '>' + esc(l) + '</text>'; }).join('') + '</g>' +
-    (o.foot ? '<text x="' + X + '" y="636"' + dir + ' fill="#B9BDC6" stroke="none" font-family="' + body + '" font-weight="500" font-size="28">' + esc(o.foot) + '</text>' : '') + '</svg>';
+    '<rect width="1280" height="720" fill="#0F1A2B"/><rect x="' + (rtl ? 1256 : 0) + '" y="0" width="24" height="720" fill="#F4A340"/>' +
+    '<circle cx="' + (ex + 180) + '" cy="200" r="190" fill="#17253D"/>' +
+    '<g transform="translate(' + ex + ' 60) scale(1.5)">' + PSY_EMBLEM + '</g>' +
+    '<text x="' + X + '" y="150"' + dir + ' fill="#F4A340" stroke="none" font-family="' + body + '" font-weight="700" font-size="26"' + (rtl ? '' : ' letter-spacing="4"') + '>' + esc(rtl ? o.kick : o.kick.toUpperCase()) + '</text>' +
+    (o.num ? '<text x="' + (rtl ? 96 : 1184) + '" y="660" direction="ltr" text-anchor="' + (rtl ? 'start' : 'end') + '" fill="#F4A340" stroke="none" font-family="Newsreader, Georgia, serif" font-weight="700" font-size="200">' + esc(o.num) + '</text>' : '') +
+    '<g fill="#F2F4F7" stroke="none" font-family="' + disp + '" font-weight="700" font-size="' + size + '">' + lines.map(function (l, i) { return '<text x="' + X + '" y="' + Math.round(top + i * lh) + '"' + dir + '>' + esc(l) + '</text>'; }).join('') + '</g>' +
+    (o.foot ? '<text x="' + X + '" y="650"' + dir + ' fill="#B7C1D1" stroke="none" font-family="' + body + '" font-weight="500" font-size="28">' + esc(o.foot) + '</text>' : '') + '</svg>';
 }
 function numParts(m) { return m.parts.filter(function (x) { return /^\d+$/.test(String(x.n)); }).length; }
 function numSecs(m) { return m.items.filter(function (x) { return x.type === 'section'; }).length; }
