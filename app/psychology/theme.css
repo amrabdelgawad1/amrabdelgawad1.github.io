@@ -10,3 +10,8 @@ html[lang="ar"] .cp-h1, html[lang="ar"] .cp-wrap h1, html[lang="ar"] .cp-wrap h2
 .vbox:has(.vwrap)::before{ content:"Lesson video · فيديو الدرس"; font:700 12px/1.4 'Inter', 'IBM Plex Sans Arabic', sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); }
 .vwrap{ border:1px solid var(--psy-navy); box-shadow:0 0 0 4px rgba(15,26,43,.06); }
 .vwrap .wm-logo{ background:#F4A340; color:var(--psy-navy); }
+/* owner-only Arabic narration panel (narrate.js) */
+.vbox.narr{ display:flex; flex-direction:column; gap:8px; margin:12px 0; padding:12px 14px; border:1px dashed var(--accent); border-radius:10px; background:var(--accent-soft); }
+.vbox.narr .row{ display:flex; flex-wrap:wrap; gap:8px; }
+.vbox.narr .note{ font-size:13px; color:var(--ink2); }
+.vbox.narr audio{ width:100%; }
