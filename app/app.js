@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id);
   const cfg = window.TRACKER_CONFIG || {};
   // v changes with each release of the cash page, so the app never shows a stale copy
-  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=50';
+  const CASH_URL = window.APP_CASH_URL || '../cash/?embed=1&v=51';
 
   // An invite or new sign-in link lands here with its type in the address; read it before supabase-js clears it
   const linkType = new URLSearchParams(location.hash.slice(1)).get('type');
@@ -1028,7 +1028,16 @@
   // ---------- install ----------
   let installPrompt = null;
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; $('installBtn').hidden = false; });
-  $('installBtn').addEventListener('click', async () => { if (!installPrompt) return; installPrompt.prompt(); installPrompt = null; $('installBtn').hidden = true; closeMenu(); });
+  $('installBtn').addEventListener('click', async () => {
+    if (!installPrompt) { closeMenu(); location.hash = '#help/install-app'; return; }   // round 33 (P16): iPhone has no install prompt; show the steps
+    installPrompt.prompt(); installPrompt = null; $('installBtn').hidden = true; closeMenu();
+  });
+  // Round 33 (P16): on an iPhone or iPad not yet added to the home screen, "Install the app" opens the steps instead
+  try {
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const app = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    if (ios && !app) $('installBtn').hidden = false;
+  } catch(e) {}
 
   // ---------- backup (owner) ----------
   // Saves every table to one file on this device. Supabase's free plan keeps no copies you can restore yourself.

@@ -175,6 +175,8 @@
     }
     // Round 29 (E1): lesson questions (answered ones for everyone who can read them; waiting ones too for Amr)
     if (window.R29Learn) (await window.R29Learn.search(db()).catch(() => [])).forEach(x => out.push(x));
+    // Round 33 (P2): help articles (only the ones this person may read: r33-help.js filters by their pages)
+    if (window.R33Help) (await window.R33Help.search().catch(() => [])).forEach(x => out.push(x));
     const mods = cst.data && Array.isArray(cst.data.modules) ? cst.data.modules : [];
     mods.forEach(m => (m.items || []).forEach(it => (it.type === 'group' ? (it.items || []) : [it]).forEach(c => {
       if (c && c.type === 'lesson' && c.title) out.push({ kind:'Lesson', title:c.title, sub:'Acquisitions · Module ' + m.number + (m.open === false ? ' · locked' : ''), href:'/course/#/m/' + m.id + '/l/' + c.id });

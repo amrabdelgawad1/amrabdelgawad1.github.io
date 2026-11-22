@@ -300,7 +300,26 @@
     'Devices':'الأجهزة', 'Devices and sessions':'الأجهزة والجلسات', 'This device':'هذا الجهاز', 'No other devices are signed in.':'لا أجهزة أخرى مسجّلة الدخول.', 'See every device':'اعرض كل الأجهزة',
     'Every phone, computer and browser signed in to your account. If one isn’t yours, sign it out and change your password.':'كل هاتف وكمبيوتر ومتصفح مسجّل الدخول إلى حسابك. إن لم يكن أحدها لك، سجّل خروجه وغيّر كلمة المرور.',
     'A device you sign out stops working within the hour, as soon as its sign-in needs renewing. Times are your device’s time.':'الجهاز الذي تسجّل خروجه يتوقف خلال ساعة، عند تجديد تسجيل دخوله. الأوقات بتوقيت جهازك.',
-    'Refresh the app to see your devices.':'حدّث التطبيق لترى أجهزتك.', 'Couldn’t load your devices. Check your connection and try again.':'تعذّر تحميل أجهزتك. تحقق من الاتصال وحاول مجدداً.'
+    'Refresh the app to see your devices.':'حدّث التطبيق لترى أجهزتك.', 'Couldn’t load your devices. Check your connection and try again.':'تعذّر تحميل أجهزتك. تحقق من الاتصال وحاول مجدداً.',
+    // Round 33 part 1: help center (P2) and the phone bar (P16)
+    'Help center':'مركز المساعدة', 'Help':'المساعدة', 'Help for this page':'مساعدة لهذه الصفحة', 'Close help':'إغلاق المساعدة', 'How each page works':'كيف تعمل كل صفحة',
+    'Short how-tos for every part of the portal. Tap the ? at the top of any page to open the one for that page.':'شروحات قصيرة لكل جزء من البوابة. اضغط علامة ? أعلى أي صفحة لتفتح شرح تلك الصفحة.',
+    'Search help':'ابحث في المساعدة', 'Take the Start here tour':'ابدأ جولة «ابدأ من هنا»', 'Edit articles':'تعديل المقالات', 'All help articles':'كل مقالات المساعدة',
+    'Edit this article':'تعديل هذه المقالة', 'Edit':'تعديل', 'Hidden from the team':'مخفية عن الفريق', 'Only you':'لك وحدك', 'Hidden':'مخفية',
+    'There’s no help article for this page yet.':'لا توجد مقالة مساعدة لهذه الصفحة بعد.', ' Ask Amr in Messages if something isn’t clear.':' اسأل عمرو في الرسائل إذا كان شيء غير واضح.',
+    'Nothing found. Try another word, or ask Amr in Messages.':'لم نجد شيئاً. جرّب كلمة أخرى، أو اسأل عمرو في الرسائل.',
+    'This article isn’t here, or it isn’t for your pages. ':'هذه المقالة غير موجودة، أو ليست لصفحاتك. ', 'See all help articles':'اعرض كل مقالات المساعدة',
+    'Edit help articles':'تعديل مقالات المساعدة', 'New article':'مقالة جديدة', 'See the help center':'اعرض مركز المساعدة', 'All articles':'كل المقالات', 'See it as the team does':'اعرضها كما يراها الفريق',
+    'Write short how-tos in plain words. Pick who sees each one and which pages’ ? button opens it. Every save keeps the old words in Version history.':'اكتب شروحات قصيرة بكلمات بسيطة. اختر من يراها وأي صفحات يفتحها زر ? فيها. كل حفظ يبقي الكلمات القديمة في سجل النسخ.',
+    'Title':'العنوان', 'Area':'القسم', 'Order in its area (lower comes first)':'الترتيب داخل القسم (الأصغر أولاً)', 'One-line summary':'ملخص في سطر', 'Words':'النص',
+    '## starts a heading, - a bullet, 1. a step. [Link text](#page) links to a portal page. Leave an empty line between paragraphs.':'## يبدأ عنواناً، و- نقطة، و1. خطوة. [نص الرابط](#page) يربط بصفحة في البوابة. اترك سطراً فارغاً بين الفقرات.',
+    'Who sees it':'من يراها', 'Everyone on the team':'كل الفريق', 'Only team members with any of these switched on':'أعضاء الفريق المفعّل لهم أي من هذه فقط', 'Only me':'أنا فقط',
+    'Opens from these pages’ ? button':'تُفتح من زر ? في هذه الصفحات', 'Published (untick to hide it from the team while you work on it)':'منشورة (أزل العلامة لإخفائها عن الفريق أثناء العمل عليها)',
+    'Save article':'حفظ المقالة', 'Preview':'معاينة', 'Version history':'سجل النسخ', 'Put this version back':'أعد هذه النسخة', 'Article saved':'تم حفظ المقالة', 'Article deleted':'تم حذف المقالة',
+    'Getting started':'البداية', 'Team and shifts':'الفريق والورديات', 'Payroll and Earnings':'الرواتب والأرباح', 'My lists and calling':'قوائمي والاتصال', 'Deal CRM':'نظام الصفقات',
+    'Contracts':'العقود', 'Learning Hub':'مركز التعلّم', 'Files':'الملفات', 'Messages and the bell':'الرسائل والجرس', 'Me area':'مساحتي', 'Settings and Devices':'الإعدادات والأجهزة', 'Cash and clients':'المال والعملاء',
+    'Home':'الرئيسية', 'Team':'الفريق', 'Deals':'الصفقات', 'Cash':'المال', 'My lists':'قوائمي', 'Learning':'التعلّم', 'My hours':'ساعاتي', 'More':'المزيد', 'More: the whole menu':'المزيد: القائمة كاملة',
+    'Install the app':'ثبّت التطبيق',
   });
   if (L.RULES) L.RULES.push(
     [/^(\d+) days? in a row$/, (m, n) => n + ' يوم متتالي'],
@@ -460,6 +479,9 @@
     [/^(\d+) leads? left$/, (m, n) => 'متبقٍ ' + n + ' عميل'],
     [/^Recording\? ([A-Z]{2}) needs everyone’s consent\.$/, (m, s) => 'تسجيل؟ ولاية ' + s + ' تشترط موافقة الجميع.'],
     [/^Call back (.+)$/, (m, w) => 'معاودة الاتصال بـ ' + w],
-    [/^Offer \$([\d,]+) from (.+)$/, (m, a, w) => 'عرض $' + a + ' من ' + w]
+    [/^Offer \$([\d,]+) from (.+)$/, (m, a, w) => 'عرض $' + a + ' من ' + w],
+    [/^(\d+) articles?$/, (m, n) => n + ' مقالة'],
+    [/^More in (.+)$/, (m, a) => 'المزيد في ' + ((L.AR[a]) || a)],
+    [/^Last updated (.+)$/, (m, d) => 'آخر تحديث ' + d]
   );
 })();

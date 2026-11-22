@@ -38,6 +38,7 @@
     check:svg('<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 12l2.5 2.5 4.5-5"/>'),
     chat:svg('<path d="M4 5h16v11H9l-5 4z"/>'),
     cards:svg('<rect x="3" y="6" width="13" height="14" rx="2"/><path d="M8 3h11a2 2 0 0 1 2 2v12"/>'),
+    help:svg('<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/>'),
     bell:svg('<path d="M6 9.5a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4s2-1.5 2-6.5z"/><path d="M10 19.5a2 2 0 0 0 4 0"/>')
   };
   const COURSE_KEYS = ['course', 'mkt', 'psy'];
@@ -49,6 +50,7 @@
     { id:'tasks', group:'Work', name:'Tasks', sub:'What needs doing, with due dates', href:'/app/#tasks', icon:'check', can:() => true },
     { id:'messages', group:'Work', name:'Messages', sub:me => me.role === 'owner' ? 'Talk to the team' : 'Talk to Amr and the team', href:'/app/#messages', icon:'chat', can:() => true },
     { id:'handbook', group:'Work', name:'Handbook', sub:'How we work', href:'/app/#handbook', icon:'book', can:() => true },
+    { id:'help', group:'Work', name:'Help center', sub:'How each page works', href:'/app/#help', icon:'help', can:() => true },
     { id:'deals', group:'Work', name:'Deal CRM', sub:'Leads, deals and follow-ups', href:'/app/deals/', icon:'house', needs:['deals'] },
     { id:'calc', group:'Work', name:'Land calculator', sub:'Land deals, in its own look', href:'/land-calculator/', icon:'calc', needs:['deals'] },
     { id:'calc-house', group:'Work', name:'House calculator', sub:'House deals, in its own look', href:'/house-calculator/', icon:'calc', needs:['deals'] },
@@ -219,6 +221,16 @@
     bw.innerHTML = '<button type="button" class="p-bell" aria-expanded="false" aria-controls="' + nid + '" aria-label="Notifications">' + IC.bell + '<span class="p-badge" hidden></span></button>' +
       '<div class="p-notes" id="' + nid + '" role="dialog" aria-label="Notifications" hidden></div>';
     if (o.me && o.me.parentNode) o.me.before(bw); else header.append(bw);
+    // Round 33 (P2): the ? button opens how this page works. On /app it opens a side panel (app/r33-help.js);
+    // on the other pages (Deal CRM, Learning Hub, calculators...) it goes to that article in the help center.
+    const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'p-help'; hb.hidden = true;
+    hb.setAttribute('aria-label', 'Help for this page'); hb.title = 'Help for this page'; hb.innerHTML = IC.help;
+    hb.addEventListener('click', () => {
+      const key = helpKey();
+      if (window.PortalHelp && /^\/app\/?(index\.html)?$/.test(location.pathname)) window.PortalHelp.open(key);
+      else location.href = '/app/#help/for/' + encodeURIComponent(key);
+    });
+    bw.before(hb); b.help = hb;
     b.bell = bw.querySelector('.p-bell'); b.notes = bw.querySelector('.p-notes'); b.bellWrap = bw;
     b.bell.addEventListener('click', () => bellOpen(b, b.notes.hidden));
     b.notes.addEventListener('change', e => { if (e.target.closest('[data-mailme], [data-mailhour]')) saveMail(b); });
@@ -253,6 +265,7 @@
   function draw(b){
     const ok = !!me;
     b.btn.parentElement.hidden = !ok;
+    if (b.help) b.help.hidden = !ok;
     if (!ok) return;
     b.menu.innerHTML = appsHtml();
     drawBell(b);
@@ -269,6 +282,19 @@
     if (b.meBtn) b.meBtn.setAttribute('aria-label', 'Your account' + (me.name ? ': ' + me.name : ''));
   }
   const drawAll = () => bars.forEach(draw);
+  // Which help article the ? opens: the /app page in the address, or the app this page belongs to
+  function helpKey(){
+    const p = location.pathname;
+    if (/^\/app\/?(index\.html)?$/.test(p)) {
+      if (document.body.classList.contains('sheet-open')) return 'settings';
+      return location.hash.slice(1).split('/')[0] || (me && me.role === 'owner' ? 'admin' : 'home');
+    }
+    if (p.startsWith('/app/deals')) return 'app:deals';
+    if (/calculator/.test(p)) return 'app:calc';
+    if (p.startsWith('/app/learn') || p.startsWith('/app/course') || p.startsWith('/app/psychology') || p.startsWith('/course')) return 'app:learn';
+    if (p.startsWith('/cash')) return 'overview';
+    return 'home';
+  }
   function setMode(b, cur){ if (b.modes) b.modes.querySelectorAll('a').forEach(a => a.dataset.mode === cur ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')); }
 
   function toggle(b, open){
