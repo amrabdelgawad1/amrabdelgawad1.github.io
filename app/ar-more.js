@@ -446,11 +446,20 @@
     'Year':'السنة', 'Ends':'تنتهي', 'Paid':'المدفوع', 'Interest':'الفائدة', 'Principal':'أصل القرض', 'Balance after':'الرصيد بعدها', 'Month':'الشهر', 'Payment':'الدفعة',
     'Marketing spend':'إنفاق التسويق', 'Deals closed':'صفقات مغلقة', 'Profit per deal':'الربح لكل صفقة', 'Profit for each $1 spent':'الربح لكل 1$ منفق', 'Where the spend comes from':'من أين يأتي الإنفاق',
     'From':'من', 'To':'إلى', 'Cash expense categories that count as marketing':'فئات مصروفات الكاش التي تُحسب تسويقاً',
-    'Marketing spend ($, blank = from Cash and lists)':'إنفاق التسويق ($، فارغ = من الكاش والقوائم)', 'Deals closed (blank = from the Deal CRM)':'الصفقات المغلقة (فارغ = من نظام الصفقات)'
+    'Marketing spend ($, blank = from Cash and lists)':'إنفاق التسويق ($، فارغ = من الكاش والقوائم)', 'Deals closed (blank = from the Deal CRM)':'الصفقات المغلقة (فارغ = من نظام الصفقات)',
+    // Round 25: selling deals (search results; the Deal CRM carries its own Arabic for the Sell this deal section)
+    'Deal page':'صفحة الصفقة', 'Offer':'عرض', 'Picked':'تم الاختيار', 'Not picked':'لم يُختر', 'New':'جديد',
+    'Sell a deal: buyers who fit, deal page, email buyers, offers':'بيع صفقة: المشترون المناسبون، صفحة الصفقة، مراسلة المشترين، العروض',
+    'Open a deal under contract, then Sell this deal':'افتح صفقة تحت العقد، ثم «بيع هذه الصفقة»',
+    'Deal page settings: business name and mailing address':'إعدادات صفحة الصفقة: اسم النشاط والعنوان البريدي',
+    'Deal CRM, Sell this deal, Email buyers, Settings':'الـ Deal CRM، بيع هذه الصفقة، راسل المشترين، الإعدادات',
+    'Sell this deal':'بيع هذه الصفقة', 'Buyers who fit':'المشترون المناسبون', 'Email buyers':'راسل المشترين', 'Publish a deal page':'انشر صفحة الصفقة',
+    'Unpublish':'إلغاء النشر', 'POF checked':'تم فحص إثبات الأموال', 'Mark checked':'علّم كمفحوص', 'Went another way':'اخترنا عرضاً آخر', 'Pick this offer':'اختر هذا العرض',
   });
   if (L.RULES) L.RULES.push(
     [/^(\d+) leads? left$/, (m, n) => 'متبقٍ ' + n + ' عميل'],
     [/^Recording\? ([A-Z]{2}) needs everyone’s consent\.$/, (m, s) => 'تسجيل؟ ولاية ' + s + ' تشترط موافقة الجميع.'],
-    [/^Call back (.+)$/, (m, w) => 'معاودة الاتصال بـ ' + w]
+    [/^Call back (.+)$/, (m, w) => 'معاودة الاتصال بـ ' + w],
+    [/^Offer \$([\d,]+) from (.+)$/, (m, a, w) => 'عرض $' + a + ' من ' + w]
   );
 })();

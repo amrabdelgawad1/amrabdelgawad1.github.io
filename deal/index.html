@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Round 25 (B3, B5, B6, B4 unsubscribe): one public deal page at /deal/#s=SLUG (from a blast email: &t=TOKEN).
+     It only reads deal_page_get(), the separate public copy Amr chose to publish (never the encrypted deal, never seller
+     details). Buyers can press "I'm interested" or send an offer (deal_page_reply, spam guard). #u=TOKEN is the unsubscribe
+     link from deal emails (deal_unsubscribe). SQL: portal-backups docs/sql/2026-11-22-round25-selling.sql. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/ https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/; font-src https://fonts.gstatic.com; img-src 'self' data: https://ztlpgyomjuzmjmuifbbd.supabase.co https://*.tile.openstreetmap.org; connect-src https://ztlpgyomjuzmjmuifbbd.supabase.co">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<title>Deal</title>
+<script src="/error-report.js?v=1"></script>
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="stylesheet" href="deal.css?v=1">
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><span id="dBrand">&nbsp;</span><span class="pill" id="dPill" hidden>Off-market deal</span></div>
+
+  <div id="dLoad" class="card"><p class="muted">Loading the deal…</p></div>
+  <div id="dGone" class="card" hidden><h1>This deal is no longer available</h1><p class="muted">It may have sold or been taken down. If you are on our buyers list, the next one will come to your inbox.</p></div>
+
+  <div id="dUnsub" class="card" hidden>
+    <h1>Stop deal emails?</h1>
+    <p class="muted" id="dUnsubT">Press the button and we will stop sending you deal emails.</p>
+    <p><button class="btn" type="button" id="dUnsubGo">Unsubscribe</button></p>
+    <p class="msg" id="dUnsubM" role="status" hidden></p>
+  </div>
+
+  <article id="dDeal" hidden>
+    <div class="gallery" id="dGal" hidden><img id="dMain" alt=""><div class="thumbs" id="dThumbs"></div></div>
+    <div class="head">
+      <div><h1 id="dTitle"></h1><p class="place" id="dPlace"></p></div>
+      <div class="price"><span>Asking</span><b id="dPrice"></b></div>
+    </div>
+    <div class="facts" id="dFacts"></div>
+    <section class="card" id="dAboutW" hidden><h2>About the property</h2><p id="dAbout" class="pre"></p></section>
+    <section class="card" id="dTermsW" hidden><h2>Terms</h2><p id="dTerms" class="pre"></p></section>
+    <section class="card" id="dMapW" hidden><h2>Where it is</h2><p class="muted small" id="dMapN"></p><div id="dMap"></div></section>
+
+    <section class="card" id="dAct">
+      <h2>Want it?</h2>
+      <p class="note" id="dYou" hidden></p>
+      <div class="tabs" role="tablist"><button type="button" role="tab" aria-selected="true" data-k="offer">Make an offer</button><button type="button" role="tab" aria-selected="false" data-k="interest">I'm interested</button></div>
+      <form id="dForm" novalidate>
+        <div class="grid">
+          <label class="o">Your offer ($)<input type="text" inputmode="numeric" id="fAmt" placeholder="$"></label>
+          <label class="o">Close by<input type="date" id="fClose"></label>
+          <div class="o full"><span class="lbl" id="pofL">Do you have proof of funds ready?</span>
+            <div class="chips" role="radiogroup" aria-labelledby="pofL"><label class="chip"><input type="radio" name="pof" value="1"><span>Yes</span></label><label class="chip"><input type="radio" name="pof" value="0"><span>Not yet</span></label></div></div>
+          <label>Your name<input type="text" id="fName" autocomplete="name" maxlength="80"></label>
+          <label>Company <small>(optional)</small><input type="text" id="fCo" autocomplete="organization" maxlength="80"></label>
+          <label>Email<input type="email" id="fEmail" autocomplete="email" maxlength="120"></label>
+          <label>Phone <small>(US)</small><input type="tel" id="fPhone" autocomplete="tel" maxlength="20"></label>
+          <label class="full">Anything to add? <small>(optional)</small><textarea id="fNote" maxlength="500" placeholder="Walkthrough questions, how you'll fund it, anything that helps"></textarea></label>
+        </div>
+        <div class="hp" aria-hidden="true"><label>Website<input type="text" id="fWebsite" tabindex="-1" autocomplete="off"></label></div>
+        <p><button class="btn" type="submit" id="fGo">Send my offer</button></p>
+        <p class="msg err" id="fMsg" role="alert" hidden></p>
+        <p class="small muted">We use your details only to talk with you about this deal and the next ones that fit.</p>
+      </form>
+      <div class="done" id="fDone" hidden tabindex="-1"><h2>Thank you, we got it</h2><p id="fDoneT">We'll reach out soon.</p></div>
+    </section>
+    <p class="foot" id="dFoot"></p>
+  </article>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+<script src="/tracker/config.js?v=3"></script>
+<script src="deal.js?v=1"></script>
+</body>
+</html>
