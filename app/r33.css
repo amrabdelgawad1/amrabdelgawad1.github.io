@@ -1,0 +1,72 @@
+/* Round 33 part 1 (Nov 22 2026): P2 help center (r33-help.js) and P16 phone layout pass.
+   Uses Round 23's shared look (--p-* tokens, .p-card, .p-btn). No inline styles anywhere. */
+
+/* ---------- help center and article ---------- */
+#pView .r33-top{ display:grid; gap:12px; }
+#pView .r33-q input{ width:100%; min-height:48px; padding:10px 14px; border:1px solid var(--p-line2); border-radius:var(--p-r-sm); background:var(--p-card); color:var(--p-ink); font:400 16px/1.4 var(--p-body); box-sizing:border-box; }
+#pView .r33-q input:focus-visible{ outline:2px solid var(--p-accent); outline-offset:1px; }
+#pView .r33-link{ display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:56px; padding:10px 0; color:var(--p-ink); text-decoration:none; border-bottom:1px solid var(--p-line); }
+#pView .r33-link:last-child{ border-bottom:0; }
+#pView .r33-link small{ color:var(--p-muted); font-size:13.5px; line-height:1.4; }
+#pView .r33-link:hover b, #pView .r33-link:focus-visible b{ color:var(--p-accent); }
+#pView .r33-crumb{ margin:0 0 6px; font-size:13.5px; color:var(--p-muted); }
+#pView .r33-crumb a{ color:var(--p-ink2); }
+.r33-h{ margin:0 0 6px; font:800 24px/1.2 var(--p-head, var(--p-body)); color:var(--p-ink); }
+.r33-sum{ margin:0 0 14px; color:var(--p-ink2); font-size:16px; line-height:1.5; }
+.r33-upd{ margin-top:18px; }
+.r33-body{ font-size:16px; line-height:1.65; color:var(--p-ink); max-width:70ch; }
+.r33-body h3{ margin:22px 0 6px; font:700 17px/1.3 var(--p-body); color:var(--p-ink); }
+.r33-body p{ margin:0 0 12px; }
+.r33-body ul, .r33-body ol{ margin:0 0 12px; padding-left:22px; }
+.r33-body li{ margin:4px 0; }
+.r33-body a{ color:var(--p-accent); font-weight:600; text-underline-offset:3px; }
+html[dir="rtl"] .r33-body ul, html[dir="rtl"] .r33-body ol{ padding-left:0; padding-right:22px; }
+
+/* the editor (Amr) */
+#pView .r33-form{ display:grid; gap:14px; }
+#pView .r33-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; }
+#pView .r33-grid .px-wide{ grid-column:1 / -1; }
+#pView .r33-form textarea{ font:400 15px/1.55 ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+#pView .r33-fs{ margin:0; padding:12px 14px; border:1px solid var(--p-line); border-radius:var(--p-r-sm); }
+#pView .r33-fs legend{ padding:0 6px; font-weight:700; color:var(--p-ink); }
+#pView .r33-checks{ display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:2px 12px; margin:4px 0 6px 26px; }
+#pView .r33-checks[hidden]{ display:none; }
+#pView .r33-pages{ margin-left:0; max-height:320px; overflow:auto; }
+#pView .r33-opt{ display:flex; align-items:center; gap:10px; min-height:40px; font-size:15px; color:var(--p-ink); cursor:pointer; }
+#pView .r33-opt input{ width:20px; height:20px; flex:none; accent-color:var(--p-accent); }
+#pView .r33-del{ border-color:#b42318; color:#b42318; }
+#pView .r33-verbody{ padding:8px 12px 14px; border-left:3px solid var(--p-line2); margin:0 0 8px 6px; }
+
+/* the ? side panel on /app */
+.r33-panel{ position:fixed; inset:0; z-index:80; }
+.r33-panel[hidden]{ display:none; }
+.r33-shade{ position:absolute; inset:0; background:rgba(15, 18, 25, .38); }
+.r33-sheet{ position:absolute; top:0; right:0; bottom:0; width:min(460px, 100vw); display:flex; flex-direction:column; background:var(--p-card, #fff); color:var(--p-ink); box-shadow:var(--p-shadow, 0 10px 40px rgba(0,0,0,.2)); }
+html[dir="rtl"] .r33-sheet{ right:auto; left:0; }
+.r33-sheet-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px 12px 20px; border-bottom:1px solid var(--p-line); font:700 17px/1.3 var(--p-body); }
+.r33-x{ flex:none; width:44px; height:44px; border:1px solid var(--p-line2); border-radius:var(--p-r-sm); background:var(--p-card); color:var(--p-ink); font-size:24px; line-height:1; cursor:pointer; }
+.r33-x:focus-visible{ outline:2px solid var(--p-accent); outline-offset:2px; }
+.r33-sheet-body{ flex:1; overflow:auto; padding:16px 20px calc(24px + env(safe-area-inset-bottom, 0px)); overscroll-behavior:contain; }
+.r33-foot{ display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+body.r33-open{ overflow:hidden; }
+@media (max-width:640px){ .r33-sheet{ top:auto; left:0; width:100%; max-height:88dvh; border-radius:16px 16px 0 0; } }
+
+/* ---------- P16: phones ---------- */
+@media (max-width:640px){
+  /* tap targets: 44 px at least */
+  #vApp button:not(.p-tab), #vApp .p-btn, #vApp select, #vApp .p-ptabs-row a,
+  #vApp input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]):not([type="color"]),
+  .p-notes a[data-nid], .p-apps a, .r33-sheet .p-btn{ min-height:44px; }
+  #vApp input[type="checkbox"], #vApp input[type="radio"]{ width:22px; height:22px; }
+  #vApp label:has(> input[type="checkbox"]), #vApp label:has(> input[type="radio"]){ min-height:44px; }
+  /* text boxes at 16 px so iPhone doesn't zoom in when you tap one */
+  #vApp input:not([type="checkbox"]):not([type="radio"]), #vApp select, #vApp textarea{ font-size:16px; }
+  .p-tab{ min-height:56px; }
+  /* wide tables scroll sideways instead of squashing: four or more columns keep a readable width */
+  #pView .p-tablewrap, #pView .r22-np, #pView .vs-tablewrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; }
+  #pView .p-tablewrap > table:has(tr > :nth-child(4)), #pView .r22-np > table:has(tr > :nth-child(4)), #pView .r33-wrap > table:has(tr > :nth-child(4)){ min-width:520px; }
+  #pView .p-tablewrap > table:has(tr > :nth-child(6)), #pView .r33-wrap > table:has(tr > :nth-child(6)){ min-width:680px; }
+  #pView .p-tablewrap th, #pView .r33-wrap th{ white-space:nowrap; }
+  #pView .r33-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%; }
+}
+@media (max-width:380px){ .p-shelled .p-me-name{ display:none; } }

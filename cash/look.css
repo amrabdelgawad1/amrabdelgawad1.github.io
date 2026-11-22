@@ -329,3 +329,16 @@ html .plan-form .label{ flex:1 1 140px; }
 .cp-row .neg{ color:var(--bad, #b4372a); }
 .cp-head{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--muted, #6b7280); }
 .cp-total{ border-bottom:0; font-weight:700; }
+
+/* Round 33 (P16): Team and shifts on phones. Every shift stays a card you can read in full (break time too),
+   and the buttons are big enough to tap (44 px). Wider screens are unchanged. */
+@media (max-width:640px){
+  html .team table.log td.c-brk{ display:block; grid-column:2 / -1; grid-row:6; font-size:13px; color:var(--muted); }
+  html .team table.log td.c-brk::before{ content:"Break "; }
+  html .team td.c-del .del, html .del{ width:44px; height:44px; }
+  html .team table.log input[type=checkbox]{ width:22px; height:22px; }
+  html .note-btn{ min-height:40px; padding:8px 12px; }
+  html .team .c-status .status{ min-height:36px; }
+  html .hist-search{ min-height:44px; font-size:16px; }
+  html .ask-i, html select, html .rate-input{ min-height:44px; font-size:16px; }
+}
