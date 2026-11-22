@@ -166,6 +166,13 @@
       (cp.data || []).forEach(x => out.push({ kind:'Proposal', title:'P-' + x.number + ' ' + x.title, sub:[x.client_name, x.status].join(' · '), href:'#proposals/' + x.id }));
       (iv.data || []).forEach(i => out.push({ kind:'Invoice', title:'Invoice #' + i.number + ' · ' + (coN[i.company_id] || 'Client'), sub:'$' + (+i.amount).toFixed(2) + ' · ' + (i.status === 'part' ? 'part paid' : i.status), text:String(i.number), href:'#invoices/' + i.id }));
     }
+    // Round 25: published deal pages, offers from them, and the deal page tools (Amr only; the database allows only him)
+    if (owner) {
+      const [dp, dr] = await Promise.all([safe(db().from('deal_pages').select('deal_id,slug,title,place,price,views')), safe(db().from('deal_replies').select('id,deal_id,kind,name,amount,status,created_at').order('created_at', { ascending:false }).limit(300))]);
+      const pt = {}; (dp.data || []).forEach(p => { pt[p.deal_id] = p.title; out.push({ kind:'Deal page', title:p.title, sub:[p.place, p.price ? '$' + Math.round(+p.price).toLocaleString('en-US') : '', (p.views || 0) + ' views'].filter(Boolean).join(' · '), text:p.slug, href:'/app/deals/#id=' + p.deal_id }); });
+      (dr.data || []).forEach(x => out.push({ kind:x.kind === 'offer' ? 'Offer' : 'Interested', title:(x.kind === 'offer' ? 'Offer $' + Math.round(+x.amount).toLocaleString('en-US') + ' from ' : '') + x.name, sub:[pt[x.deal_id] || 'Deal page', x.status === 'won' ? 'Picked' : x.status === 'lost' ? 'Not picked' : 'New'].join(' · '), href:'/app/deals/#id=' + x.deal_id }));
+      [['Sell a deal: buyers who fit, deal page, email buyers, offers', 'Open a deal under contract, then Sell this deal'], ['Deal page settings: business name and mailing address', 'Deal CRM, Sell this deal, Email buyers, Settings']].forEach(z => out.push({ kind:'Page', title:z[0], sub:z[1], href:'/app/deals/' }));
+    }
     // Round 29 (E1): lesson questions (answered ones for everyone who can read them; waiting ones too for Amr)
     if (window.R29Learn) (await window.R29Learn.search(db()).catch(() => [])).forEach(x => out.push(x));
     const mods = cst.data && Array.isArray(cst.data.modules) ? cst.data.modules : [];
