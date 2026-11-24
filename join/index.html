@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://ztlpgyomjuzmjmuifbbd.supabase.co https://api.country.is; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self' blob:; connect-src https://ztlpgyomjuzmjmuifbbd.supabase.co https://api.country.is; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="robots" content="index, follow">
 <script src="/error-report.js?v=1"></script>
@@ -77,6 +77,30 @@ h2.sub{ font-family:"DM Serif Display", Georgia, serif; font-weight:400; color:v
 .fine{ font-size:13.5px; color:var(--light); margin:0 0 16px; }
 .points.four{ grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); }
 .foot{ margin-top:28px; font-size:13px; color:var(--light); }
+/* Round 34: open jobs and the voice test */
+.jobs{ display:grid; gap:14px; margin:0 0 10px; }
+.job{ background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px 18px 8px; }
+.job h3{ margin:0; font-family:"DM Serif Display", Georgia, serif; font-weight:400; font-size:22px; color:var(--ink); line-height:1.2; }
+.job-meta{ margin:4px 0 8px; font-size:13.5px; color:var(--light); }
+.job p{ margin:0 0 10px; font-size:15px; }
+.job-facts{ list-style:none; margin:0 0 10px; padding:0; display:grid; gap:6px; font-size:14.5px; }
+.job-facts b{ display:inline-block; min-width:56px; color:var(--ink); margin-right:6px; }
+.job details{ margin:0 0 10px; font-size:14.5px; }
+.job summary{ cursor:pointer; color:var(--accent2); font-weight:600; min-height:44px; display:flex; align-items:center; }
+.job ul{ margin:6px 0 10px; padding-left:20px; }
+.job-need{ margin:10px 0 0; font-weight:700; color:var(--ink); }
+.btn-sm{ padding:11px 18px; font-size:14px; min-height:44px; }
+.btn2{ display:inline-flex; align-items:center; gap:8px; min-height:48px; border:1px solid var(--border); cursor:pointer; font:600 15px Inter, sans-serif; background:var(--field); color:var(--ink); padding:10px 18px; border-radius:999px; }
+.btn2:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.btn2.rec::before{ content:""; width:12px; height:12px; border-radius:50%; background:var(--err); }
+.script{ margin:8px 0 14px; padding:14px 16px; border-left:4px solid var(--accent); background:var(--field); border-radius:0 10px 10px 0; font-size:16px; line-height:1.6; color:var(--ink); }
+.recrow{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.recrow.is-on .timer{ color:var(--err); font-weight:700; }
+.timer{ font-variant-numeric:tabular-nums; font-size:14.5px; color:var(--light); min-width:90px; }
+#jPlay{ display:block; width:100%; max-width:420px; margin-top:10px; }
+.vmsg{ margin:8px 0 0; font-size:14px; color:var(--light); }
+legend small{ font-family:Inter, sans-serif; font-size:13px; color:var(--light); }
+@media (max-width:560px){ form{ padding:20px 14px; } .job{ padding:16px 14px 6px; } .btn{ width:100%; } .btn-sm{ width:auto; } }
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"JobPosting","title":"Remote Real Estate Cold Caller / Acquisitions Rep","description":"<p>Call US land and house owners for real estate investors as part of a small remote team. Paid hourly in US dollars, full paid training (course, scripts, roleplay, call reviews), evening shifts in Egypt time, commission on deals.</p><p>You need clear spoken English, a quiet place to work, a computer and a stable internet connection.</p>","datePosted":"2026-11-09","validThrough":"2027-05-09","employmentType":["PART_TIME","CONTRACTOR"],"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"Egypt"},"hiringOrganization":{"@type":"Organization","name":"Amr Abdelgawad","sameAs":"https://amrabdelgawad.site/","logo":"https://amrabdelgawad.site/favicon.svg"},"directApply":true}</script>
 </head>
@@ -95,15 +119,23 @@ h2.sub{ font-family:"DM Serif Display", Georgia, serif; font-weight:400; color:v
     <li><b>Room to grow</b>Commission on deals, a certificate, and a path to team lead.</li>
   </ul>
 
+  <h2 class="sub">Open jobs</h2>
+  <div class="jobs" id="jJobs" aria-live="polite"><p class="fine">Loading the open jobs…</p></div>
+
   <h2 class="sub">How it works</h2>
   <ol class="steps">
-    <li><span><b>Apply below.</b> Five minutes. A link to a short voice note helps a lot.</span></li>
+    <li><span><b>Apply below.</b> Five minutes. The 30-second voice test on the form helps a lot.</span></li>
     <li><span><b>A 15-minute call with me.</b> We talk, and you read a short script out loud.</span></li>
     <li><span><b>Training, paid.</b> The course and roleplay with scored practice calls.</span></li>
     <li><span><b>Go live.</b> Your first shifts, with feedback on your calls every week.</span></li>
   </ol>
 
   <form id="jForm" novalidate>
+    <fieldset id="jPostBox" hidden>
+      <legend>The job</legend>
+      <label>Which job are you applying for?<select id="jPost"></select></label>
+    </fieldset>
+
     <fieldset>
       <legend>About you</legend>
       <div class="grid">
@@ -129,14 +161,30 @@ h2.sub{ font-family:"DM Serif Display", Georgia, serif; font-weight:400; color:v
           <select id="jStart"><option value="">Pick one</option><option>Right away</option><option>Within 2 weeks</option><option>Within a month</option><option>Later</option></select>
         </label>
         <label class="full">Why does this job interest you?<textarea id="jWhy" maxlength="1500"></textarea></label>
-        <label class="full">Link to a 30-second voice note <small>(optional: Google Drive, Dropbox, Vocaroo; introduce yourself in English)</small><input type="text" id="jSample" inputmode="url" maxlength="300" placeholder="https://"></label>
         <label class="full">Did someone on the team send you? <small>(optional, their name)</small><input type="text" id="jRef" maxlength="80"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Voice test <small id="jVoiceNeed">(about 30 seconds, it helps a lot)</small></legend>
+      <p class="fine">Press Record, then read this out loud in English at your normal pace. Press Stop when you finish. Your browser will ask to use the microphone.</p>
+      <p class="script" id="jScript"></p>
+      <div class="recrow" id="jRecRow">
+        <button type="button" class="btn2 rec" id="jRec">Record</button>
+        <button type="button" class="btn2" id="jStop" hidden>Stop</button>
+        <button type="button" class="btn2" id="jRedo" hidden>Record again</button>
+        <span class="timer" id="jTimer" aria-live="off">0:00 / 1:30</span>
+      </div>
+      <audio id="jPlay" controls hidden></audio>
+      <p class="vmsg" id="jVMsg" role="status"></p>
+      <div class="grid">
+        <label class="full">Or a link to a voice note <small>(optional: Google Drive, Dropbox, Vocaroo)</small><input type="text" id="jSample" inputmode="url" maxlength="300" placeholder="https://"></label>
       </div>
     </fieldset>
 
     <div class="hp" aria-hidden="true"><label>Website<input type="text" id="jWebsite" tabindex="-1" autocomplete="off"></label></div>
 
-    <p class="fine">By applying you agree that I keep your answers to review your application, as the <a href="/privacy/">privacy policy</a> explains, and that you agree to the <a href="/terms/">terms</a>.</p>
+    <p class="fine">By applying you agree that I keep your answers and your voice test to review your application, as the <a href="/privacy/">privacy policy</a> explains, and that you agree to the <a href="/terms/">terms</a>.</p>
     <p><button class="btn" type="submit" id="jGo">Send my application</button></p>
     <p class="msg err" id="jMsg" role="alert" hidden></p>
   </form>
@@ -151,7 +199,7 @@ h2.sub{ font-family:"DM Serif Display", Georgia, serif; font-weight:400; color:v
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="/tracker/config.js?v=3"></script>
-<script src="join.js?v=1"></script>
+<script src="join.js?v=2"></script>
 <script src="/stats.js?v=3"></script>
 </body>
 </html>
