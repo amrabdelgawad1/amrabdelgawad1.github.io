@@ -474,6 +474,21 @@
     'Deal CRM, Sell this deal, Email buyers, Settings':'الـ Deal CRM، بيع هذه الصفقة، راسل المشترين، الإعدادات',
     'Sell this deal':'بيع هذه الصفقة', 'Buyers who fit':'المشترون المناسبون', 'Email buyers':'راسل المشترين', 'Publish a deal page':'انشر صفحة الصفقة',
     'Unpublish':'إلغاء النشر', 'POF checked':'تم فحص إثبات الأموال', 'Mark checked':'علّم كمفحوص', 'Went another way':'اخترنا عرضاً آخر', 'Pick this offer':'اختر هذا العرض',
+    // Round 35: public site (Site messages, Sign-up requests)
+    'Site messages':'رسائل الموقع', 'Sign-up requests':'طلبات التسجيل',
+    'Messages from the contact form on your site. Only you see them, and nobody gets an automatic reply. Press Reply to answer from your own email.':'رسائل من نموذج التواصل في موقعك. لا يراها أحد غيرك، ولا يصل لأحد رد تلقائي. اضغط رد لتجيب من بريدك.',
+    'People asking for course access on amrabdelgawad.site/signup/. Approve fills the invite form with the courses they asked for; nothing is sent until you press Send. Decline sends nothing.':'أشخاص يطلبون الوصول إلى الكورسات من amrabdelgawad.site/signup/. الموافقة تملأ نموذج الدعوة بالكورسات التي طلبوها، ولا يُرسل شيء حتى تضغط إرسال. الرفض لا يرسل شيئاً.',
+    'Inbox':'الوارد', 'Archived':'مؤرشف', 'Replied':'تم الرد', 'Reply':'رد', 'Mark replied':'علّم كتم الرد',
+    'Mark read':'علّم كمقروء', 'Mark new':'علّم كجديد', 'Archive':'أرشفة', 'Back to inbox':'إعادة إلى الوارد',
+    'Waiting':'بانتظار القرار', 'Approved':'تمت الموافقة', 'Declined':'مرفوض', 'Decline':'رفض', 'Back to waiting':'إعادة إلى الانتظار',
+    'Open their access':'افتح صلاحياته', 'Mark approved':'علّم كموافق عليه', 'Already has an account':'لديه حساب بالفعل', 'Has a turned-off account':'لديه حساب موقوف',
+    'Nothing here':'لا شيء هنا', 'No archived messages.':'لا توجد رسائل مؤرشفة.',
+    'No messages yet. They show here when someone uses the contact form.':'لا توجد رسائل بعد. تظهر هنا عندما يستخدم أحد نموذج التواصل.',
+    'No requests waiting. The sign-up page is amrabdelgawad.site/signup/.':'لا توجد طلبات بالانتظار. صفحة التسجيل هي amrabdelgawad.site/signup/.',
+    'No requests in this list.':'لا توجد طلبات في هذه القائمة.', 'Message deleted.':'تم حذف الرسالة.', 'Request deleted.':'تم حذف الطلب.',
+    'Marked replied.':'تم التعليم كتم الرد.', 'Marked read.':'تم التعليم كمقروء.', 'Marked new.':'تم التعليم كجديد.', 'Archived.':'تمت الأرشفة.',
+    'Marked approved.':'تم التعليم كموافق عليه.', 'Declined. Nothing was sent to them.':'تم الرفض. لم يُرسل لهم شيء.', 'Back to waiting.':'أُعيد إلى الانتظار.',
+    'Hiring me':'توظيفي', 'Hiring a team':'توظيف فريق', 'Courses':'الكورسات', 'Something else':'شيء آخر',
   });
   if (L.RULES) L.RULES.push(
     [/^(\d+) leads? left$/, (m, n) => 'متبقٍ ' + n + ' عميل'],
@@ -482,6 +497,8 @@
     [/^Offer \$([\d,]+) from (.+)$/, (m, a, w) => 'عرض $' + a + ' من ' + w],
     [/^(\d+) articles?$/, (m, n) => n + ' مقالة'],
     [/^More in (.+)$/, (m, a) => 'المزيد في ' + ((L.AR[a]) || a)],
-    [/^Last updated (.+)$/, (m, d) => 'آخر تحديث ' + d]
+    [/^Last updated (.+)$/, (m, d) => 'آخر تحديث ' + d],
+    [/^(\d+) new site messages?, latest (.+)$/, (m, n, w) => n + ' رسالة جديدة من الموقع، آخرها من ' + w],
+    [/^(\d+) sign-up requests? to decide$/, (m, n) => n + ' طلب تسجيل بانتظار قرارك']
   );
 })();

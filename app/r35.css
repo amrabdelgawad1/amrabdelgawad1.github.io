@@ -1,0 +1,17 @@
+/* Round 35 (plan): public site. Site messages (#inbox) and Sign-up requests (#signups). */
+#pView .r35-seg{margin:0 0 14px;max-width:100%;overflow-x:auto}
+#pView .r35-seg b{font-weight:700;opacity:.75;margin-left:4px}
+#pView .r35-list{display:grid;gap:12px}
+#pView .r35-item.is-new{border-left:4px solid var(--p-accent,#E2602A)}
+#pView .r35-item.is-hot{outline:2px solid var(--p-accent,#E2602A);outline-offset:2px}
+#pView .r35-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:15px}
+#pView .r35-when{margin-left:auto;font-size:13px;color:var(--p-ink2,#5b6168)}
+#pView .r35-meta{margin:6px 0 0;font-size:13.5px;color:var(--p-ink2,#5b6168);overflow-wrap:anywhere}
+#pView .r35-body{margin:8px 0 0;font-size:15.5px;line-height:1.55;overflow-wrap:anywhere;white-space:normal}
+#pView .r35-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+#pView .r35-acts .p-btn{min-height:44px}
+#pView .r35-no{color:var(--p-no,#9C2C17)}
+@media (max-width:600px){
+  #pView .r35-when{margin-left:0;width:100%}
+  #pView .r35-acts .p-btn{flex:1 1 calc(50% - 8px);justify-content:center;text-align:center}
+}
