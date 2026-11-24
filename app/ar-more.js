@@ -502,3 +502,74 @@
     [/^(\d+) sign-up requests? to decide$/, (m, n) => n + ' طلب تسجيل بانتظار قرارك']
   );
 })();
+
+// Round 34 (Nov 24 2026): hiring pages (Job posts, Applicant board, hire form, onboarding plans, handbook sign-off,
+// offboarding finish). Only fills words not already in the dictionary, so earlier and later rounds keep their wording.
+(function(){
+  'use strict';
+  const L = window.AppLang;
+  if (!L || !L.AR) return;
+  const W = {
+    // menu and page titles
+    'Applicant board':'لوحة المتقدمين', 'Job posts':'إعلانات الوظائف', 'Applicants':'المتقدمون',
+    'The jobs on amrabdelgawad.site/join. Open jobs show there with the apply form and the voice test; closed ones stay here with their applicants.':'الوظائف المعروضة على amrabdelgawad.site/join. الوظائف المفتوحة تظهر هناك مع نموذج التقديم واختبار الصوت، والمغلقة تبقى هنا مع المتقدمين لها.',
+    'Everyone who applied on the Join page, by stage. Drag a card left or right (or use the arrows); drag the board or swipe to scroll. Open a card to play the voice test, add notes or hire.':'كل من تقدّم من صفحة الانضمام، حسب المرحلة. اسحب البطاقة يميناً أو يساراً (أو استخدم الأسهم)، واسحب اللوحة أو مرّر للتنقل. افتح البطاقة لتسمع اختبار الصوت أو تضيف ملاحظات أو توظّف.',
+    // stages
+    'Applied':'تقدّم', 'Screened':'تمت المراجعة الأولية', 'Voice test':'اختبار الصوت', 'Roleplay':'تمثيل المكالمة', 'Offer':'عرض العمل', 'Hired':'تم التوظيف', 'Rejected':'مرفوض',
+    // board
+    'Job':'الوظيفة', 'All jobs':'كل الوظائف', 'No job picked':'بدون وظيفة محددة', 'Find':'بحث', 'List view':'عرض القائمة', 'Name, email or phone':'الاسم أو البريد أو الهاتف',
+    'applied this week':'تقدّموا هذا الأسبوع', 'not looked at yet':'لم تُراجع بعد', 'in progress':'قيد المتابعة', 'hired in 90 days':'وُظّفوا خلال 90 يوماً',
+    'Drop here to hire':'أفلت هنا للتوظيف', 'Drop a card here':'أفلت بطاقة هنا', 'Close':'إغلاق', 'About them':'عنهم', 'Phone / WhatsApp':'الهاتف / واتساب',
+    'Country':'الدولة', 'English':'الإنجليزية', 'Hours a week':'الساعات أسبوعياً', 'Can start':'يمكنه البدء', 'Experience':'الخبرة', 'Why this job':'لماذا هذه الوظيفة', 'Referred by':'رشّحه',
+    'Stage':'المرحلة', 'Your note (only you)':'ملاحظتك (لك فقط)', 'Why not (only you)':'سبب الرفض (لك فقط)', 'Save':'حفظ', 'Interview scorecard':'بطاقة تقييم المقابلة',
+    'Copy email':'انسخ البريد', 'Open WhatsApp chat':'افتح محادثة واتساب', 'Delete applicant':'احذف المتقدم', 'No voice test.':'لا يوجد اختبار صوت.', 'The text they read':'النص الذي قرأه',
+    'Hire':'توظيف', 'Make their onboarding plan':'أنشئ خطة التهيئة له', 'Onboarding':'التهيئة',
+    'Nothing here messages the applicant. Copy and WhatsApp only open things for you.':'لا شيء هنا يرسل رسالة للمتقدم. النسخ وواتساب يفتحان الأشياء لك فقط.',
+    // job posts
+    '+ New job post':'+ إعلان وظيفة جديد', 'See the Join page':'افتح صفحة الانضمام', 'New job post':'إعلان وظيفة جديد', 'Job title':'المسمى الوظيفي', 'Link name':'اسم الرابط',
+    'Kind of job':'نوع الوظيفة', 'Where':'المكان', 'Pay':'الأجر', 'Hours':'الساعات', 'Order on the page':'الترتيب في الصفحة', 'Short summary':'ملخص قصير',
+    'What the job is (one point per line)':'ما هي الوظيفة (نقطة في كل سطر)', 'What they need (one point per line)':'ما يحتاجه المتقدم (نقطة في كل سطر)',
+    'Voice test: the text they read out loud':'اختبار الصوت: النص الذي يقرؤونه بصوت عالٍ', 'The voice test is needed to apply':'اختبار الصوت مطلوب للتقديم',
+    'Open: show it on the Join page':'مفتوحة: اعرضها في صفحة الانضمام', 'Save job post':'احفظ الإعلان', 'Open':'مفتوحة', 'Closed':'مغلقة', 'Edit':'تعديل',
+    'Close it':'أغلقها', 'Open it again':'افتحها مجدداً', 'Copy link':'انسخ الرابط', 'Voice test needed to apply':'اختبار الصوت مطلوب للتقديم', 'Voice test optional':'اختبار الصوت اختياري',
+    'No job posts yet':'لا توجد إعلانات وظائف بعد', 'Add the first job. It shows on amrabdelgawad.site/join as soon as it is open.':'أضف أول وظيفة. ستظهر على amrabdelgawad.site/join بمجرد فتحها.',
+    // hire and plan form
+    'Full name':'الاسم الكامل', 'Email':'البريد الإلكتروني', 'Works for':'يعمل لدى', 'Pick later':'اختر لاحقاً', 'Start as':'يبدأ بصفة',
+    'Agent (everything the role comes with)':'وكيل (كل ما يأتي مع الدور)', 'Start date':'تاريخ البدء', 'Finish the modules by':'إنهاء الوحدات بحلول',
+    'Acquisitions course modules to finish':'وحدات كورس الاستحواذ المطلوب إنهاؤها', 'First shift':'أول وردية', 'Day':'اليوم', 'Starts':'تبدأ', 'Ends':'تنتهي',
+    'Leave the day empty to add the first shift later in Schedule and time off.':'اترك اليوم فارغاً لتضيف أول وردية لاحقاً من الجدول والإجازات.',
+    'Note for them (they see it on their plan)':'ملاحظة له (يراها في خطته)', 'Send email invite and hire':'أرسل دعوة بالبريد ووظّف', 'Get WhatsApp link and hire':'احصل على رابط واتساب ووظّف',
+    'Save the plan':'احفظ الخطة', 'Open WhatsApp with this message':'افتح واتساب بهذه الرسالة',
+    'The invite goes out only when you press one of these buttons. The email button sends their sign-in link from your connected Gmail; the WhatsApp button only makes a link for you to send.':'لا تُرسل الدعوة إلا عند الضغط على أحد هذين الزرين. زر البريد يرسل رابط الدخول من Gmail المتصل، وزر واتساب ينشئ رابطاً فقط لترسله أنت.',
+    // onboarding plans
+    'Onboarding plans':'خطط التهيئة', 'Course modules, handbook sign-offs and first shift':'وحدات الكورس وتوقيعات الدليل وأول وردية', 'Person':'الشخص', 'Course modules':'وحدات الكورس',
+    'Handbook signed':'توقيعات الدليل', 'First or next shift':'أول وردية أو التالية', 'Make a plan':'أنشئ خطة', 'Change plan':'غيّر الخطة', 'No plan':'لا توجد خطة',
+    'Not scheduled':'غير مجدولة', 'No required pages':'لا توجد صفحات مطلوبة', 'None picked':'لم يُختر شيء',
+    // home: your plan
+    'Your plan':'خطتك', 'Handbook pages to sign':'صفحات الدليل المطلوب توقيعها', 'Your first shift':'أول وردية لك', 'Your next shift':'ورديتك التالية', 'Done':'تم', 'Sign':'وقّع',
+    // handbook sign-off
+    'Sign this page':'وقّع هذه الصفحة', 'Your full name':'اسمك الكامل', 'Signed':'تم التوقيع', 'Sign-off':'التوقيع', 'Not yet':'ليس بعد', 'Agreements':'الموافقات',
+    'New hires and the team must sign this page':'يجب على الموظفين الجدد والفريق توقيع هذه الصفحة', 'Also ring their bell in the portal (nothing is emailed)':'نبّههم أيضاً بالجرس في البوابة (لا يُرسل بريد)',
+    'Ask everyone to sign again':'اطلب من الجميع التوقيع مجدداً',
+    'This page needs your signature. Type your full name as it shows in the portal to confirm you read and understood it.':'هذه الصفحة تحتاج توقيعك. اكتب اسمك الكامل كما يظهر في البوابة لتؤكد أنك قرأتها وفهمتها.',
+    // offboarding finish
+    'Finish':'الإنهاء', 'Final pay':'الأجر الأخير', 'Open Payroll':'افتح الرواتب', 'Their record':'سجلّه', 'Save a copy of their record':'احفظ نسخة من سجلّه', 'Save a new copy':'احفظ نسخة جديدة',
+    'Open the saved copy':'افتح النسخة المحفوظة', 'Exit notes':'ملاحظات المغادرة', '(only you)':'(لك فقط)', 'Save notes':'احفظ الملاحظات', 'Sign-in and access':'الدخول والصلاحيات',
+    'Access off':'الصلاحيات موقوفة', 'Undo: give their access back':'تراجع: أعد صلاحياته', 'Sign out on every device and turn off access':'سجّل خروجه من كل الأجهزة وأوقف صلاحياته',
+    'Working it out…':'جارٍ الحساب…', 'Pay it from Payroll as usual; the money itself moves outside the portal.':'ادفعه من الرواتب كالعادة؛ المال نفسه يُحوّل خارج البوابة.',
+    'The exit survey isn’t answered yet. Once access is off they can’t answer it.':'لم يُجب على استبيان المغادرة بعد. بعد إيقاف الصلاحيات لن يستطيع الإجابة.',
+    'One step: signs them out on every phone and computer, switches off every tool (courses, Deal CRM, call counter, phone alerts) and blocks the sign-in. Their shifts, notes and history stay.':'خطوة واحدة: تسجّل خروجه من كل هاتف وكمبيوتر، وتوقف كل الأدوات (الكورسات، نظام الصفقات، عدّاد المكالمات، تنبيهات الهاتف) وتمنع الدخول. وردياته وملاحظاته وسجلّه تبقى.',
+    'Shifts, pay, onboarding, sign-offs, agreements and the list of their documents, saved as one file in Files. Their documents stay in Person files.':'الورديات والأجر والتهيئة والتوقيعات والموافقات وقائمة مستنداته، محفوظة كملف واحد في الملفات. مستنداته تبقى في ملفات الفريق.'
+  };
+  Object.keys(W).forEach(k => { if (!(k in L.AR)) L.AR[k] = W[k]; });
+  if (L.RULES) L.RULES.push(
+    [/^(\d+) of (\d+) lessons$/, (m, a, b) => a + ' من ' + b + ' دروس'],
+    [/^(\d+) of (\d+) signed$/, (m, a, b) => 'وقّع ' + a + ' من ' + b],
+    [/^See applicants \((\d+)\)$/, (m, n) => 'عرض المتقدمين (' + n + ')'],
+    [/^Play the voice test \((.+)\)$/, (m, t) => 'شغّل اختبار الصوت (' + t + ')'],
+    [/^Voice test (\d+:\d\d)$/, (m, t) => 'اختبار صوت ' + t],
+    [/^Plan for (.+)$/, (m, n) => 'خطة ' + n],
+    [/^Onboarding plan for (.+)$/, (m, n) => 'خطة تهيئة ' + n],
+    [/^(\d+) handbook pages? needs? your signature\.$/, (m, n) => n + ' من صفحات الدليل تحتاج توقيعك.']
+  );
+})();

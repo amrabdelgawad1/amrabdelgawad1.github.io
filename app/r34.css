@@ -1,0 +1,77 @@
+/* Round 34 (Nov 24 2026): hiring. Job posts, Applicant board (reuses the client pipeline board, p20.css), hire and
+   onboarding plan form, handbook sign-off, offboarding finish. Shared look tokens from Round 23 (--p-*). No inline styles. */
+
+/* forms */
+#pView .r34-form{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px 14px; align-items:end; }
+#pView .r34-form .px-wide{ grid-column:1 / -1; }
+#pView .r34-fs{ margin:0; padding:12px 14px; border:1px solid var(--p-line); border-radius:var(--p-r-sm, 12px); min-width:0; }
+#pView .r34-fs legend{ padding:0 6px; font-weight:700; color:var(--p-ink); }
+#pView .r34-fs legend small{ font-weight:500; color:var(--p-muted); }
+#pView .r34-fs .p20-chk small{ font-weight:500; color:var(--p-muted); }
+#pView .r34-fs .is-off{ opacity:.55; }
+#pView .r34-mods{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:2px 14px; }
+#pView .r34-row3{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; }
+#pView .r34-in{ width:100%; min-height:44px; padding:10px 12px; border:1px solid var(--p-line2, var(--p-line)); border-radius:var(--p-r-sm, 10px); background:var(--p-card); color:var(--p-ink); font:400 15px/1.4 var(--p-body); box-sizing:border-box; }
+#pView .r34-in:focus-visible{ outline:2px solid var(--p-accent); outline-offset:1px; }
+#pView .r34-no{ color:var(--p-bad, #b4372a); }
+
+/* job posts */
+#pView .r34-counts{ display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 10px; }
+#pView .r34-counts span{ display:inline-flex; align-items:baseline; gap:6px; padding:4px 10px; border:1px solid var(--p-line); border-radius:99px; font-size:13px; color:var(--p-ink2); }
+#pView .r34-counts b{ font-size:15px; color:var(--p-ink); }
+
+/* applicant board */
+#pView .r34-tools{ align-items:flex-end; }
+#pView .r34-tools .sc-f{ min-width:180px; }
+#pView .r34-voice{ color:var(--p-accent); font-weight:700; }
+#pView .r34-panel{ margin-bottom:16px; }
+#pView .r34-two{ display:grid; grid-template-columns:minmax(0, 1.1fr) minmax(0, 1fr); gap:22px; }
+#pView .r34-audio audio{ width:100%; max-width:440px; display:block; margin:4px 0 8px; }
+#pView .r34-script{ margin:6px 0 12px; }
+#pView .r34-script summary{ cursor:pointer; min-height:40px; display:flex; align-items:center; color:var(--p-ink2); font-weight:600; }
+#pView .r34-script p{ margin:6px 0 0; padding:10px 12px; border-left:3px solid var(--p-accent); background:var(--p-soft, rgba(20,33,61,.04)); border-radius:0 10px 10px 0; line-height:1.55; }
+#pView .r34-done{ margin-bottom:14px; padding:12px 16px; border-color:var(--p-accent); }
+#pView .r34-done p{ margin:0 0 8px; }
+#pView .r34-done .wk-row{ flex-wrap:wrap; }
+
+/* home: your plan */
+.r34-mine .r34-note{ margin:0 0 10px; padding:10px 12px; border-radius:10px; background:var(--p-soft, rgba(20,33,61,.04)); }
+.r34-mine .r34-mod{ display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:52px; text-decoration:none; color:var(--p-ink); }
+.r34-mine .r34-mod small{ display:block; color:var(--p-muted); font-size:13px; }
+
+/* handbook sign-off */
+#pView .r34-tag{ margin-left:8px; padding:1px 8px; border-radius:99px; border:1px solid var(--p-line); font-size:11.5px; font-weight:700; color:var(--p-muted); white-space:nowrap; }
+#pView .r34-tag.is-due{ border-color:var(--p-accent); color:var(--p-accent); }
+html[dir="rtl"] #pView .r34-tag{ margin-left:0; margin-right:8px; }
+#pView .r34-hbtop{ margin-bottom:14px; border-color:var(--p-accent); }
+#pView .r34-hbtop p{ margin:0 0 8px; }
+#pView .r34-sign{ margin-top:18px; padding-top:14px; border-top:1px solid var(--p-line); }
+#pView .r34-sign .wk-row{ align-items:flex-end; flex-wrap:wrap; }
+#pView .r34-sign .sc-f{ flex:1 1 240px; }
+#pView .r34-signed .p-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:48px; }
+#pView .r34-signed small{ display:block; color:var(--p-muted); font-size:12.5px; }
+
+/* offboarding finish */
+#pView .r34-off{ margin-top:16px; padding-top:12px; border-top:1px solid var(--p-line); }
+#pView .r34-offgrid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; }
+#pView .r34-offc{ padding:12px 14px; border:1px solid var(--p-line); border-radius:12px; display:flex; flex-direction:column; gap:8px; align-items:flex-start; min-width:0; }
+#pView .r34-offc h4{ margin:0; font:700 15px/1.3 var(--p-body); color:var(--p-ink); }
+#pView .r34-offc h4 small{ font-weight:500; color:var(--p-muted); }
+#pView .r34-offc p{ margin:0; }
+#pView .r34-wide{ grid-column:1 / -1; }
+#pView .r34-big{ font:800 26px/1.1 var(--p-head, var(--p-body)); color:var(--p-ink); }
+#pView .r34-warn{ color:var(--p-accent); font-weight:600; }
+#pView .r34-cut{ border-color:rgba(180,55,42,.35); }
+
+/* phones */
+@media (max-width:760px){
+  #pView .r34-two, #pView .r34-offgrid{ grid-template-columns:1fr; }
+  #pView .r34-form{ grid-template-columns:1fr; }
+  #pView .r34-row3{ grid-template-columns:1fr 1fr; }
+  #pView .r34-row3 .sc-f:first-child{ grid-column:1 / -1; }
+  #pView .r34-tools .sc-f{ flex:1 1 100%; min-width:0; }
+  #pView .r34-panel .px-tools .p-btn, #pView .r34-offc .p-btn, #pView .r34-sign .p-btn, #pView .r34-job .px-tools .p-btn{ min-height:44px; }
+  #pView .r34-offc .p-btn, #pView .r34-sign .p-btn{ width:100%; justify-content:center; }
+  #pView .r34-mods{ grid-template-columns:1fr; }
+  #pView .r34-counts span{ font-size:12.5px; }
+}

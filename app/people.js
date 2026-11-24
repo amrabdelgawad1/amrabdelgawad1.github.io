@@ -151,6 +151,8 @@
     draft = { id:p.user_id, role:p.role === 'manager' ? 'manager' : 'agent', ticks:new Set(EXTRAS.map(e => e.key).filter(k => keys.has(k) && (k === 'course' || k === 'deals' || k === 'voice' || keys.has('learn')))),
       company:p.company_id, until:p.deals_until || '', mfa:!!p.deals_mfa, rem:p.deals_remember !== false, tap:!!p.tap_counter, dirty:false };
   }
+  // Round 34: the hire form on the Applicant board uses the same templates and the same rules for what to save
+  window.PeopleAccess = { templates:TEMPLATES, tplOf:id => tplOf(id), applyTpl:(d, t) => applyTpl(d, t), planOf:(p, d) => planOf(p, d) };
   // What the boxes add up to: role keys minus not_given, plus extras
   function planOf(p, d){
     const roleKeys = ROLE_KEYS[d.role];
