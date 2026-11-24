@@ -1,0 +1,43 @@
+/* Round 35 (plan S9): contact form (contact.js) and the main page's story and team link bands. Uses the site's
+   variables from style.css, so light and dark both work. */
+.cf{ display:grid; gap:16px; text-align:left; }
+.cf-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.cf label{ display:grid; gap:6px; font-size:.92rem; font-weight:600; color:var(--text); }
+.cf label small{ font-weight:400; color:var(--muted); }
+.cf input, .cf select, .cf textarea{ width:100%; box-sizing:border-box; font:inherit; font-weight:400; font-size:1rem; color:var(--text);
+  background:var(--bg3); border:1px solid var(--border2); border-radius:var(--radius-sm); padding:12px 14px; min-height:48px; }
+.cf textarea{ resize:vertical; min-height:130px; }
+.cf input:focus, .cf select:focus, .cf textarea:focus{ outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+.cf-hp{ position:absolute !important; left:-9999px !important; width:1px; height:1px; overflow:hidden; }
+.cf-fine{ margin:0; font-size:.85rem; color:var(--muted); }
+.cf-fine a{ color:inherit; text-decoration:underline; }
+.cf-err{ margin:0; color:#B42318; font-weight:600; font-size:.92rem; }
+html[data-theme="dark"] .cf-err{ color:#F97066; }
+.cf-go{ justify-self:start; min-height:48px; }
+.cf-done{ padding:24px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg2); text-align:left; }
+.cf-done:focus{ outline:none; }
+.cf-done p{ margin:0; color:var(--muted); }
+.cf-done .cf-done-h{ margin:0 0 6px; font-weight:700; color:var(--text); font-size:1.1rem; }
+
+.message-card{ background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:clamp(22px, 4vw, 40px); }
+
+/* main page: My Story */
+.story-grid{ display:grid; grid-template-columns:1fr 1.4fr; gap:clamp(24px, 5vw, 64px); align-items:start; }
+.story-copy p{ margin:0 0 14px; color:var(--muted); font-size:1.05rem; line-height:1.7; }
+.story-copy p:last-child{ margin-bottom:0; }
+.story-facts{ list-style:none; margin:20px 0 0; padding:0; display:grid; gap:10px; }
+.story-facts li{ display:flex; gap:10px; align-items:baseline; color:var(--text); }
+.story-facts i{ color:var(--accent2); }
+
+/* main page: one-line link to Hire a Team */
+.team-link-band{ display:flex; align-items:center; justify-content:space-between; gap:16px 24px; flex-wrap:wrap;
+  background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:clamp(20px, 3vw, 28px) clamp(22px, 4vw, 36px); }
+.team-link-band p{ margin:0; color:var(--muted); }
+.team-link-band b{ color:var(--text); }
+.section.team-offer.is-slim{ padding:clamp(32px, 5vw, 56px) 0; }
+
+@media (max-width:760px){
+  .cf-row, .story-grid{ grid-template-columns:1fr; }
+  .cf-go{ justify-self:stretch; }
+  .team-link-band .btn{ width:100%; justify-content:center; }
+}

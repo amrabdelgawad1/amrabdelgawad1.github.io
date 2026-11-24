@@ -328,6 +328,19 @@
 
   // ---------- invite ----------
   let via = 'email';
+  // Round 35 (S3): a sign-up request being approved. Fills the form as a Course student with only the courses they asked for;
+  // once the invite goes out, the request is marked approved (r35-site.js). Nothing is sent until Amr presses a send button.
+  let pre = null;
+  function applyPre(){
+    if (!pre || !$('ppInvForm')) return;
+    $('ppInvite').hidden = false; $('ppInviteBtn').setAttribute('aria-expanded', 'true'); $('ppLink').hidden = true;
+    $('ppInvName').value = pre.name || ''; $('ppInvEmail').value = pre.email || '';
+    const r = $('ppInvForm').querySelector('input[name=ppInvRole][value="tpl:student"]'); if (r) r.checked = true;
+    let note = $('ppInvPre');
+    if (!note) { note = document.createElement('p'); note.id = 'ppInvPre'; note.className = 'pp-note'; $('ppInvErr').before(note); }
+    note.textContent = 'From a sign-up request. Courses they asked for: ' + (pre.labels || []).join(', ') + '. Only those will be switched on.';
+    $('ppInvite').scrollIntoView({ block:'start' }); $('ppInvEmail').focus();
+  }
   function showLink(name, link, note){
     $('ppInvite').hidden = false; $('ppInviteBtn').setAttribute('aria-expanded', 'true');
     $('ppLink').hidden = false; $('ppLinkFor').textContent = name; $('ppLinkNote').textContent = note; $('ppLinkVal').value = link;
@@ -350,7 +363,8 @@
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { $('ppInvErr').textContent = 'Enter a valid email.'; $('ppInvEmail').focus(); return; }
       const btn = f.querySelector('[data-via="' + via + '"]'); btn.setAttribute('aria-busy', 'true');
       const r = await T().callAccess({ action:'invite', name, email, company_id:co, via });
-      const tpl = role.startsWith('tpl:') ? tplOf(role.slice(4)) : null;
+      const fromReq = pre && pre.email.toLowerCase() === email.toLowerCase() && role === 'tpl:student' ? pre : null;
+      const tpl = role.startsWith('tpl:') ? (fromReq ? Object.assign({}, tplOf('student'), { ticks:fromReq.ticks }) : tplOf(role.slice(4))) : null;
       if (!r.error && tpl) {
         // Round 23 (I30): team-access makes them an Agent; the template's role and boxes are set right after, by Amr, and logged
         const d = { role:'agent', ticks:new Set(), tap:false, mfa:false, rem:true }; applyTpl(d, tpl);
@@ -366,6 +380,7 @@
       }
       btn.removeAttribute('aria-busy');
       if (r.error) { $('ppInvErr').textContent = r.error; return; }
+      if (fromReq) { try { await fromReq.onDone(); } catch(x) {} pre = null; const n = $('ppInvPre'); if (n) n.remove(); }
       const joined = r.linked_shifts ? ' ' + r.linked_shifts + ' earlier shift' + (r.linked_shifts === 1 ? '' : 's') + ' joined their history.' : '';
       if (r.sent) { $('ppLink').hidden = true; T().toast('Invite emailed to ' + email + '.' + joined); }
       else showLink(name, r.link, 'Send this to ' + first(name) + '. It works once and expires in 24 hours.' + joined);
@@ -387,6 +402,8 @@
       if (!people.length || !id) await refresh(); else { drawList(); drawDetail(); }
       // On a wide screen, open the first person when none is picked; on a phone, the list comes first
       if (!current && people.length && matchMedia('(min-width: 900px)').matches) { current = shown()[0] ? shown()[0].user_id : ''; drawList(); drawDetail(); }
-    }
+      applyPre();
+    },
+    prefill(req){ pre = req; applyPre(); }
   };
 })();

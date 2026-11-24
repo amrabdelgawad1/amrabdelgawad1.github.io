@@ -381,6 +381,7 @@
     access.slice(0, 5).forEach(n => waits.push({ tag:'Access', text:n.title, href:String(n.link || '#people').replace(/^\/app\//, ''), act:'Give access' }));
     if ((fb.data || []).length) waits.push({ tag:'Feedback', text:plural(fb.data.length, 'problem or idea', 'problems or ideas') + ' not marked done', href:'#logs/feedback', act:'Read' });
     if (window.R29Learn) (await window.R29Learn.waits(db).catch(() => [])).forEach(w => waits.push(w));   // round 29 (E1): lesson questions
+    if (window.R35Site) (await window.R35Site.waits(db).catch(() => [])).forEach(w => waits.push(w));   // round 35 (S9, S3): site messages, sign-up requests
     if (other.length) waits.push({ tag:'Alerts', text:plural(other.length, 'unread alert') + ': ' + other.slice(0, 2).map(n => n.title).join(' · '), href:'#', act:'Open the bell', bell:true });
     // Round 21: Me today (routine, study, work log, follow-ups, goal steps), from r21-me.js
     const meRows = window.R21Me ? await window.R21Me.summary(db).catch(() => null) : null;
