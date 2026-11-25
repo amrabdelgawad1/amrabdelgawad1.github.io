@@ -748,8 +748,8 @@
   // Learners get a 15-minute link, our own player (no download or picture-in-picture menu; speed control; full screen that keeps the badge), and a fixed brand badge.
   // Admins can upload or replace the video from the lesson page.
   const videoPath = (mod, it) => contentPath(mod, 'videos/' + it.id + '.mp4');
-  async function videoUrl(path){
-    if (MEDIA) { const u = await MEDIA.url('course/' + path); if (u) return u; }
+  async function videoUrl(path, check = true){
+    if (MEDIA) { const u = await MEDIA.url('course/' + path, check); if (u) return u; }
     try { const { data, error } = await db.storage.from('course').createSignedUrl(path, 15 * 60); return error ? null : data.signedUrl; }
     catch(e){ return null; }
   }
@@ -758,7 +758,8 @@
     if (!box) return;
     // Next to each video: <id>.json (captions in English and Arabic, chapters) and <id>.jpg (cover). Both optional.
     const base = path.replace(/\.mp4$/, '');
-    const [url, extraUrl, posterUrl] = await Promise.all([videoUrl(path), videoUrl(base + '.json'), videoUrl(base + '.jpg')]);
+    // Only the video is checked first; the captions and cover just load (a missing one is skipped), so the player shows sooner
+    const [url, extraUrl, posterUrl] = await Promise.all([videoUrl(path), videoUrl(base + '.json', false), videoUrl(base + '.jpg', false)]);
     let X = null, prog = null;
     if (url) {
       [X, prog] = await Promise.all([
