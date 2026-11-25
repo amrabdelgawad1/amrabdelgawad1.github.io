@@ -169,7 +169,8 @@
     if (type !== 'first') { markSignedIn(keepPref()); db.rpc('log_link_sign_in', { p_device: deviceId() }).then(() => {}, () => {}); }
     $('unWrap').hidden = true;
     const { data: mine, error } = await db.from('usernames').select('username').eq('user_id', session.user.id).maybeSingle();
-    if (!error && !mine) { $('unWrap').hidden = false; $('un').value = ((nm || '').split(/\s+/)[0] || '').toLowerCase().replace(/[^a-z0-9._]/g, ''); }
+    const isClient = !!(session.user.user_metadata && session.user.user_metadata.client);   // client logins (Round 36) sign in with their email only
+    if (!error && !mine && !isClient) { $('unWrap').hidden = false; $('un').value = ((nm || '').split(/\s+/)[0] || '').toLowerCase().replace(/[^a-z0-9._]/g, ''); }
     show('vSetPw'); (!$('unWrap').hidden && !$('un').value ? $('un') : $('pw1')).focus();
   }
   $('pwForm').addEventListener('submit', async e => {
@@ -243,6 +244,12 @@
       role = 'owner'; startOwner(); return;
     }
 
+    // Plan Round 36 (O5): a client login has its own page, /client/ (client_me() is null for the team)
+    const cm = await db.rpc('client_me');
+    if (!cm.error && cm.data) {
+      if (cm.data.off) { $('noAccessMsg').textContent = 'Your client portal is switched off right now. Ask Amr if that’s a mistake.'; show('vNoAccess'); return; }
+      location.replace('/client/'); return;
+    }
     const { data: prof, error } = await db.rpc('my_profile');
     profile = Array.isArray(prof) ? prof[0] : prof;
     if (error || !profile) { $('noAccessMsg').textContent = 'This account isn’t set up for the tracker. Ask Amr to invite you.'; show('vNoAccess'); return; }

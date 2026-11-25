@@ -643,3 +643,50 @@
     [/^(\d+) (modules?|diagrams?|questions?)$/, (m, n, w) => n + ' ' + ({ module:'وحدة', modules:'وحدات', diagram:'رسم', diagrams:'رسوم', question:'سؤال', questions:'أسئلة' })[w]]
   );
 })();
+// Plan Round 36 (O5): client portal (/client/) and Clients › Portal access
+(function(){
+  'use strict';
+  const L = window.AppLang;
+  if (!L || !L.AR) return;
+  const W = {
+    // client page
+    'Your client portal':'بوابة العميل', 'Your portal is closed':'بوابتك مغلقة', 'Go to sign in':'اذهب لتسجيل الدخول',
+    'Access to this page is switched off right now. If that seems wrong, please reach out to Amr.':'الوصول إلى هذه الصفحة موقوف الآن. إن بدا ذلك خطأً فتواصل مع عمرو.',
+    'Welcome':'أهلاً', 'Your team’s work':'عمل فريقك', 'Hours and numbers':'الساعات والأرقام', 'Calls':'المكالمات', 'Invoices':'الفواتير', 'Sections':'الأقسام',
+    'Show':'عرض', 'This week':'هذا الأسبوع', 'Last week':'الأسبوع الماضي', 'This month':'هذا الشهر', 'Last month':'الشهر الماضي', 'Last 90 days':'آخر 90 يوماً', 'Pick dates':'اختر التواريخ',
+    'From':'من', 'To':'إلى', 'By rep':'حسب المندوب', 'By day':'حسب اليوم', 'Every shift':'كل الورديات', 'Hours worked':'ساعات العمل', 'Dials':'اتصالات', 'Conversations':'محادثات',
+    'Appointments':'مواعيد', 'Offers':'عروض', 'Shifts':'الورديات', 'Rep':'المندوب', 'Day':'اليوم', 'Time':'الوقت', 'Hours':'الساعات',
+    'No shifts in these dates.':'لا ورديات في هذه التواريخ.', 'Pick a range up to 400 days.':'اختر مدة حتى 400 يوم.', 'Couldn’t load your numbers. Please refresh.':'تعذّر تحميل أرقامك. حدّث الصفحة من فضلك.',
+    'Calls Amr picked to share with you.':'مكالمات اختارها عمرو لمشاركتها معك.', 'Play':'تشغيل', 'No calls shared with you yet.':'لم تُشارك معك مكالمات بعد.',
+    'Couldn’t load the calls. Please refresh.':'تعذّر تحميل المكالمات. حدّث الصفحة من فضلك.', 'This call couldn’t load. Please try again later.':'تعذّر تحميل هذه المكالمة. حاول لاحقاً.',
+    'No invoices yet.':'لا فواتير بعد.', 'Couldn’t load your invoices. Please refresh.':'تعذّر تحميل فواتيرك. حدّث الصفحة من فضلك.', 'Still to pay':'المتبقي للدفع', 'Invoice':'فاتورة',
+    'Not paid yet':'لم تُدفع بعد', 'Part paid':'مدفوعة جزئياً', 'Paid':'مدفوعة', 'Period':'الفترة', 'Amount':'المبلغ', 'Left to pay':'المتبقي', 'Due':'تاريخ الاستحقاق', 'Paid on':'دُفعت في',
+    'Download PDF':'تنزيل PDF', 'Couldn’t open it. Try again':'تعذّر فتحه. حاول مجدداً', 'The PDF for this invoice isn’t ready yet. Ask Amr if you need it now.':'ملف PDF لهذه الفاتورة غير جاهز بعد. اطلبه من عمرو إن احتجته الآن.',
+    'Times are in your device’s time zone. Questions about anything here? Reply to Amr the usual way.':'الأوقات بتوقيت جهازك. عندك سؤال عن أي شيء هنا؟ راسل عمرو بالطريقة المعتادة.',
+    'Your client portal is switched off right now. Ask Amr if that’s a mistake.':'بوابة العميل الخاصة بك موقوفة الآن. اسأل عمرو إن كان ذلك خطأً.',
+    // owner: Portal access
+    'Portal access':'وصول البوابة', 'Client portal access':'وصول العملاء للبوابة', 'Client':'العميل', 'Not set up':'غير مُعدّ', 'Portal on':'البوابة مفتوحة', 'Portal off':'البوابة مغلقة',
+    'Reps they see':'المندوبون الذين يراهم', 'works for them':'يعمل لديهم', 'Logins':'تسجيلات الدخول', 'Add a login':'أضف تسجيل دخول', 'Their name':'اسمه', 'Their email':'بريده الإلكتروني',
+    'Make a sign-in link':'أنشئ رابط تسجيل دخول', 'New sign-in link':'رابط تسجيل دخول جديد', 'Turn off':'أوقف', 'Sure? Turn off':'متأكد؟ أوقف', 'Turn back on':'أعد التشغيل', 'Copy link':'انسخ الرابط',
+    'Open WhatsApp with this message':'افتح واتساب بهذه الرسالة', 'Recordings they can play':'تسجيلات يمكنه تشغيلها', 'Share':'مشاركة', 'Call':'المكالمة', 'Length':'المدة', 'Recorded':'تاريخ التسجيل',
+    'Login on':'الدخول مفعّل', 'Login off':'الدخول موقوف', 'Not yet':'ليس بعد', 'Making the link…':'جارٍ إنشاء الرابط…', 'Link copied.':'نُسخ الرابط.', 'Login turned off.':'أُوقف تسجيل الدخول.', 'Login turned back on.':'أُعيد تشغيل تسجيل الدخول.',
+    'Add a client in Clients first.':'أضف عميلاً من صفحة العملاء أولاً.',
+    'Off shuts every one of their logins out right away. Their logins and your picks stay, so you can turn it back on.':'الإيقاف يمنع كل تسجيلات دخولهم فوراً. تبقى تسجيلاتهم واختياراتك لتعيد التشغيل متى شئت.',
+    'Copy this and send it yourself. It works once; make a new one if it expires.':'انسخه وأرسله بنفسك. يعمل مرة واحدة؛ أنشئ رابطاً جديداً إن انتهت صلاحيته.',
+    'They sign in at amrabdelgawad.site/app with their email and the password they choose, and land on their own page.':'يسجّلون الدخول من amrabdelgawad.site/app ببريدهم وكلمة المرور التي يختارونها، ويصلون إلى صفحتهم الخاصة.',
+    'Ticking shares it right away; unticking hides it from them. They see the call’s title and the rep’s first name, never the score.':'التحديد يشاركها فوراً، وإلغاؤه يخفيها عنهم. يرون عنوان المكالمة والاسم الأول للمندوب، ولا يرون التقييم أبداً.',
+    'No call recordings yet. Reps add them from the Learning Hub or Deal CRM.':'لا تسجيلات مكالمات بعد. يضيفها المندوبون من مركز التعلّم أو إدارة الصفقات.'
+  };
+  Object.keys(W).forEach(k => { if (!(k in L.AR)) L.AR[k] = W[k]; });
+  if (L.RULES) L.RULES.push(
+    [/^Welcome, (.+)$/, (m, n) => 'أهلاً، ' + n],
+    [/^(.+): your team’s work$/, (m, c) => c + ': عمل فريقك'],
+    [/^Invoice #(\d+)$/, (m, n) => 'فاتورة رقم ' + n],
+    [/^What (.+) sees$/, (m, c) => 'ما يراه ' + c],
+    [/^Portal access is on for (.+)$/, (m, c) => 'وصول البوابة مفعّل لـ ' + c],
+    [/^No logins for (.+) yet\.$/, (m, c) => 'لا تسجيلات دخول لـ ' + c + ' بعد.'],
+    [/^(\d+) shared$/, (m, n) => n + ' مُشاركة'],
+    [/^Shared with (.+)\.$/, (m, c) => 'شُوركت مع ' + c + '.'],
+    [/^Hidden from (.+)\.$/, (m, c) => 'أُخفيت عن ' + c + '.']
+  );
+})();
