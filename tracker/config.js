@@ -10,8 +10,8 @@
   } catch(e) {}
 })();
 window.TRACKER_CONFIG = {
-  supabaseUrl: 'https://ztlpgyomjuzmjmuifbbd.supabase.co',
-  supabaseKey: 'sb_publishable_vxm-0NApjcfUkPhJ0XE8CQ_5hr3x9M-',
+  supabaseUrl: 'https://vepqjjophogryvbkfgcu.supabase.co',
+  supabaseKey: 'sb_publishable_mYIQ65Im6_0A8MVTZZevLQ_sxbCJH4u',
   // Backup names for /tracker, used only until the agents list (Team > Agents) has loaded once on a device.
   // Add and number agents on Team > Agents instead of here.
   teamNames: ['Abdullah Mega', 'Youssef Khfaga']
