@@ -366,8 +366,10 @@
             if (!String(L(it.html, 'en')).replace(/<[^>]+>/g, '').trim()) add(it.id, 'error', 'English text is empty');
             if (!L(it.title, 'ar')) add(it.id, 'warn', 'has no Arabic title');
             const ar = String(L(it.html, 'ar'));
+            // lines in quotes are spoken examples (a client or coach talking), so they may be in dialect on purpose
+            const plain = ar.replace(/<[^>]+>/g, ' ').replace(/«[^»]*»/g, ' ').replace(/"[^"]*"/g, ' ').replace(/“[^”]*”/g, ' '), dia = plain.match(DIALECT);
             if (!ar.replace(/<[^>]+>/g, '').trim()) add(it.id, 'warn', 'Arabic text is not written yet');
-            else if (DIALECT.test(ar.replace(/<[^>]+>/g, ' '))) add(it.id, 'warn', 'Arabic looks like dialect in places (“' + ar.replace(/<[^>]+>/g, ' ').match(DIALECT)[2] + '”). Keep it فصحى');
+            else if (dia) add(it.id, 'warn', 'Arabic looks like dialect outside a quote (“' + dia[2] + '”). Keep it فصحى unless it is a spoken line');
             if (it.type === 'section' && !/^\d+\.\d+$/.test(it.label || '')) add(it.id, 'warn', 'section number “' + (it.label || '') + '” is not like 2.3');
             const n = emDashes(JSON.stringify([it.title, it.html])); if (n) add(it.id, 'warn', n + ' em dash(es)');
             if (/Write the section here\./.test(JSON.stringify(it.html))) add(it.id, 'warn', 'still has placeholder text');
@@ -444,7 +446,7 @@
   async function route(){
     const [, c, mid, key] = location.hash.replace(/^#/, '').split('/').map(decodeURIComponent);
     await flush();
-    if (c && C[c] && c !== S.course) { S.course = c; S.mods = []; S.mid = null; }
+    if (c && C[c] && c !== S.course) { S.course = c; S.mods = []; S.mid = null; S.lang = 'en'; }
     if (c && C[c]) S.course = c;
     try {
       if (!S.mods.length || !mid) await loadCourse();
@@ -782,7 +784,7 @@
   async function onClick(e){
     const t = e.target.closest('[data-course],[data-nav],[data-act],[data-move],[data-hide],[data-unhide],[data-roll],[data-lang],[data-add],[data-bmove],[data-bdel],[data-smove],[data-sdel],[data-tdel],[data-ddel],[data-drdel],[data-dradd],[data-go]');
     if (!t || t.tagName === 'SELECT') return;
-    if (t.dataset.course) { e.preventDefault(); await flush(); S.course = t.dataset.course; S.mods = []; S.mid = null; S.problems = null; return go('#builder/' + S.course); }
+    if (t.dataset.course) { e.preventDefault(); await flush(); S.course = t.dataset.course; S.mods = []; S.mid = null; S.problems = null; S.lang = 'en'; return go('#builder/' + S.course); }
     if (t.dataset.nav) { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); return go(t.dataset.nav); }
     if (t.dataset.go) { e.preventDefault(); return go(t.dataset.go); }
     if (t.dataset.lang) { S.lang = t.dataset.lang; return draw(); }
