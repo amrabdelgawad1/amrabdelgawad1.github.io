@@ -150,7 +150,8 @@
           safe(db().from('course_builder_shelf').select('item_id,after_id,item').eq('course', 'acq').eq('module_id', id)), this.modules()]);
         if (c.error) throw c.error;
         const w = clone(c.data) || {}; w._diagrams = {}; (dg.data || []).forEach(r => { (w._diagrams[r.item_id] = w._diagrams[r.item_id] || []).push(r.spec); });
-        w._hidden = (sh.data || []).map(r => ({ after:r.after_id, item:r.item }));
+        // a lesson back in the live module (after a roll back) is not hidden any more
+        w._hidden = (sh.data || []).filter(r => !this.find(w, r.item_id)).map(r => ({ after:r.after_id, item:r.item }));
         return { w, at:(list.find(m => m.id === id) || {}).at || null };
       },
       title:w => 'Module ' + w.number + ' · ' + (w.title || ''),
@@ -308,7 +309,7 @@
       async live(id){
         const f = await readFile('psy'), m = f.data.modules.find(x => x.id === id);
         const sh = await safe(db().from('course_builder_shelf').select('item_id,after_id,item').eq('course', 'psy').eq('module_id', id));
-        const w = clone(m); w._hidden = (sh.data || []).map(r => ({ after:r.after_id, item:r.item }));
+        const w = clone(m); w._hidden = (sh.data || []).filter(r => !this.find(w, r.item_id)).map(r => ({ after:r.after_id, item:r.item }));
         return { w, at:f.at };
       },
       title:w => 'Module ' + w.num + ' · ' + L(w.title, 'en'),
