@@ -398,7 +398,8 @@
     a.self = b.dataset.self; save(); card.querySelector('[data-fb]').innerHTML = feedback(loc(CUR.m).parts[CUR.i].q[j], a.text || '', a.self);
   });
   function wire(m, k){
-    const box = $('cpMain'); CUR = m && /^\d+$/.test(k || '') ? { m, i:+k - 1 } : null;
+    const box = $('cpMain');
+    if (window.AmrMediaFill && db) window.AmrMediaFill(db, box);   // pictures added in the course builder (R2) CUR = m && /^\d+$/.test(k || '') ? { m, i:+k - 1 } : null;
     if (m && /^\d+$/.test(k || '') && m.parts[+k - 1]) {
       const i = +k - 1, s = P(m.id, i), qa = QA(m.id, i), p = loc(m).parts[i];
       box.querySelectorAll('[data-ans]').forEach(x => { const j = x.dataset.ans; x.value = (qa[j] || {}).text || ''; x.addEventListener('input', () => { (qa[j] = qa[j] || {}).text = x.value; save(); }); });

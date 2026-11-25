@@ -22,6 +22,9 @@
   }
   const linkHtml = (href, text) => '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + text + '</a>';
   function imgHtml(alt, src, title){
+    // a picture added in the course builder: kept in R2, its link is filled in after the lesson is drawn (/media.js AmrMediaFill)
+    const r2 = String(src || '').match(/^r2:(course\/[\w\-./]+)$/);
+    if (r2 && !/\.\./.test(r2[1])) return '<img data-r2="' + esc(r2[1]) + '" alt="' + esc(alt) + '"' + (title ? ' title="' + esc(title) + '"' : '') + ' loading="lazy" decoding="async">';
     const s = safeUrl(src);
     if (!s) return esc(alt);
     return '<img src="' + esc(s) + '" alt="' + esc(alt) + '"' + (title ? ' title="' + esc(title) + '"' : '') + ' loading="lazy" decoding="async">';
@@ -126,7 +129,7 @@
   const sectionKind = t => { const k = SECTIONS.find(s => s[0].test(t.trim())); return k ? k[1] : null; };
   // 2. A paragraph that opens with a bold label ("**Legal flag.** text", "**Tip:** text") becomes a small box.
   const BOXES = { 'your work for this lesson':'work', 'tip':'tip', 'pro tip':'tip', 'watch out':'warn', 'warning':'warn', 'legal flag':'warn', 'compliance':'warn', 'never':'warn',
-    'common mistake':'warn', 'the rule':'key', 'rule':'key', 'key point':'key', 'remember':'key', 'example':'case', 'on linda\'s call':'case', 'on linda\'s deal':'case', 'in short':'sum' };
+    'common mistake':'warn', 'why it matters':'key', 'the rule':'key', 'rule':'key', 'key point':'key', 'remember':'key', 'example':'case', 'on linda\'s call':'case', 'on linda\'s deal':'case', 'in short':'sum' };
   const BOX = new RegExp('^\\*\\*(' + Object.keys(BOXES).join('|') + ')([.:])\\*\\*\\s+([\\s\\S]+)$', 'i');
   const LINDA_NOTE = /^\*\*(Linda's [^*]{1,40}?)([.:])\*\*\s+([\s\S]+)$/;
   function render(md){

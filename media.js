@@ -8,6 +8,14 @@
 (function(){
   const BASE = 'https://amr-media.amrabdelgawad423.workers.dev/';
   const enc = k => k.split('/').map(encodeURIComponent).join('/');
+  // Lesson pictures added in the course builder live in R2 too. Lessons name them as <img data-r2="key">
+  // (Markdown: ![alt](r2:key "caption")); this fills in a signed-in link for each one under root.
+  window.AmrMediaFill = async function(db, root){
+    if (!db || !root || !root.querySelectorAll) return;
+    const imgs = [...root.querySelectorAll('img[data-r2]:not([src])')]; if (!imgs.length) return;
+    const M = window.AmrMedia(db);
+    await Promise.all(imgs.map(async im => { const u = await M.url(im.getAttribute('data-r2'), false); if (u) im.src = u; }));
+  };
   window.AmrMedia = function(db){
     const token = async () => { try { const { data } = await db.auth.getSession(); return (data && data.session && data.session.access_token) || ''; } catch(e){ return ''; } };
     const auth = async () => ({ Authorization:'Bearer ' + await token() });

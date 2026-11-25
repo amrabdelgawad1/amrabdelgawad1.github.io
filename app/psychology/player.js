@@ -305,6 +305,7 @@ function renderItem(m, it) {
       link: '/app/psychology/#/' + m.id + '/' + it.id, owner: OWNER && !asLearner, lang: lang });
   }
   Find.highlight();
+  if (window.AmrMediaFill && V && V.db) window.AmrMediaFill(V.db, app);   // pictures added in the course builder (R2)
   if (tools) {
     document.getElementById('fab').onclick = function () { Ink.stop(); Pad.open(m, it); };
     Ink.attach(m, it, document.getElementById('content'));
