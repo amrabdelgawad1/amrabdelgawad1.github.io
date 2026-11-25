@@ -57,6 +57,9 @@ body.r33-open{ overflow:hidden; }
   #vApp button:not(.p-tab), #vApp .p-btn, #vApp select, #vApp .p-ptabs-row a,
   #vApp input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]):not([type="color"]),
   .p-notes a[data-nid], .p-apps a, .r33-sheet .p-btn{ min-height:44px; }
+  /* compact buttons some pages set at 36 px on wide screens (Outreach quick picks, Receipts Attach, chips) stay 44 px on phones */
+  #vApp #pView .p-btn, #vApp #pView button:not(.p-tab), #vApp #pView .np-file, #vApp #pView .wk-x,
+  #vApp #pView .r17-chips label, #vApp #pView .r21-days label, #vApp #pView .r21-steps label{ min-height:44px; }
   #vApp input[type="checkbox"], #vApp input[type="radio"]{ width:22px; height:22px; }
   #vApp label:has(> input[type="checkbox"]), #vApp label:has(> input[type="radio"]){ min-height:44px; }
   /* text boxes at 16 px so iPhone doesn't zoom in when you tap one */
