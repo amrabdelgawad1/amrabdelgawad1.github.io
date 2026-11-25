@@ -222,7 +222,7 @@
             '<div class="prose" id="lessonText">' + placeDiagrams(body, dg) + '</div>' + (extra.states || '') + '<p class="endmark">End of lesson</p></article></main></div>' };
       },
       videoKey:(mid, key) => 'course/content/' + mid + '/videos/' + key + '.mp4',
-      imageKey:(mid, key, name) => 'course/content/' + mid + '/images/' + key + '-' + name
+      imageKey:(mid, key, name) => picKey('acq', mid, key, name)
     },
 
     // ---------------- Marketing ----------------
@@ -303,7 +303,7 @@
             '</div></article></div></main></div></div>' };
       },
       videoKey:() => null,
-      imageKey:(mid, key, name) => 'course/builder/mkt/' + mid + '/' + key + '-' + name
+      imageKey:(mid, key, name) => picKey('mkt', mid, key, name)
     },
 
     // ---------------- Psychology ----------------
@@ -403,9 +403,12 @@
             (!html && lang === 'ar' ? '<div class="note-ar">لم تُكتب الترجمة العربية لهذا القسم بعد.</div>' : '') + '<div class="content">' + (html || '') + '</div></div></main></div></div>' };
       },
       videoKey:(mid, key) => 'psy/videos/' + mid + '/' + key + '.mp4',   // still in the course-content bucket (video.js)
-      imageKey:(mid, key, name) => 'course/builder/psy/' + mid + '/' + key + '-' + name
+      imageKey:(mid, key, name) => picKey('psy', mid, key, name)
     }
   };
+  // The amr-media Worker only takes files under course/content/<module>/videos/ or narration/, so lesson pictures go in a
+  // pictures folder there, named by course so the three courses never share a name.
+  const picKey = (course, mid, key, name) => 'course/content/' + mid + '/videos/pictures/' + course + '-' + String(key).replace(/[^\w.-]/g, '-') + '-' + name;
   async function keepVersion(course, mid, number, content, op){
     if (!content) return;
     const r = await safe(db().rpc('course_builder_history_add', { p_course:course, p_module:mid, p_number:number == null ? null : +number || null, p_content:content, p_op:op || 'PUBLISH' }));
