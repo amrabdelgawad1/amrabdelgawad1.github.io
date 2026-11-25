@@ -60,9 +60,11 @@
   // Which side is "A" in a blind-test pair: fixed per job and pair, so a reload doesn't reshuffle
   const oursIsA = (id, i) => { let h = i * 31; for (const c of id) h = (h * 33 + c.charCodeAt(0)) >>> 0; return h % 2 === 0; };
 
+  // Voice Studio audio, lesson narration and lesson videos live in Cloudflare R2 since Nov 25, 2026 (/media.js)
+  const vsStore = b => window.AmrMedia(db()).bucket(b);
   const signedUrl = async (path, download, bucket) => {
     if (!path) return null;
-    const r = await safe(db().storage.from(bucket || 'voice').createSignedUrl(path, 3600, download ? { download } : undefined));
+    const r = await safe(vsStore(bucket || 'voice').createSignedUrl(path, 3600, download ? { download } : undefined));
     return r.data && r.data.signedUrl;
   };
   const ago = d => { const s = (Date.now() - new Date(d)) / 1000; return s < 90 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : fmtDay(d) + ' ' + fmtTime(d); };
@@ -259,7 +261,7 @@
   // copied to narration/_versions/<lesson>/<time>.mp3/.json, so an earlier narration can be put back.
   const VER = (m, l) => 'content/' + m + '/narration/_versions/' + l + '/';
   async function saveVersion(m, l){
-    const st = db().storage.from('course'), dir = 'content/' + m + '/narration/';
+    const st = vsStore('course'), dir = 'content/' + m + '/narration/';
     const cur = await safe(st.list('content/' + m + '/narration', { limit:1000, search:l + '.' }));
     const mp3 = (cur.data || []).find(o => o.name === l + '.mp3'); if (!mp3) return true;   // nothing live yet
     const tag = new Date(mp3.updated_at || mp3.created_at || Date.now()).toISOString().slice(0, 16).replace(/[:T]/g, '-');
@@ -272,7 +274,7 @@
     return true;
   }
   async function versions(j, el, reopen){
-    const m = j.target.module, l = j.target.lesson, st = db().storage.from('course');
+    const m = j.target.module, l = j.target.lesson, st = vsStore('course');
     const r = await safe(st.list(VER(m, l).replace(/\/$/, ''), { limit:1000, sortBy:{ column:'name', order:'desc' } }));
     const list = (r.data || []).filter(o => /\.mp3$/.test(o.name));
     const when = n => { const p2 = n.replace(/\.mp3$/, '').split('-'); const d = new Date(Date.UTC(+p2[0], +p2[1] - 1, +p2[2], +p2[3], +p2[4])); return isNaN(d) ? n : fmtDay(d) + ' ' + fmtTime(d); };
@@ -303,7 +305,7 @@
   // Share: a private link to the MP3 that works for 7 days, copied for you to paste anywhere
   async function share(j, b){
     const p = j.output_mp3 || j.output_wav; if (!p) return;
-    const r = await safe(db().storage.from('voice').createSignedUrl(p, 7 * 24 * 3600, { download:fileName(isLesson(j) ? 'Lesson ' + lessonTitle(j) : j.title, p.split('.').pop()) }));
+    const r = await safe(vsStore('voice').createSignedUrl(p, 7 * 24 * 3600, { download:fileName(isLesson(j) ? 'Lesson ' + lessonTitle(j) : j.title, p.split('.').pop()) }));
     const u = r.data && r.data.signedUrl, was = b.textContent;
     if (!u) { b.textContent = 'Couldn’t make a link'; return; }
     let copied = false; try { await navigator.clipboard.writeText(u); copied = true; } catch(e) {}
@@ -674,7 +676,7 @@
     if (!parent) return 'Couldn’t find the narration these takes came from.';
     const tidy = parent.title.replace(/ \((piece|line) \d+ (redone|take [ABC])\)$/, '') + ' (piece ' + (+t.redo_piece) + ' redone)';
     if (t.target && t.target.lesson) {
-      const m = t.target.module, l = t.target.lesson, st = db().storage.from('course'), dir = 'content/' + m + '/narration/' + l;
+      const m = t.target.module, l = t.target.lesson, st = vsStore('course'), dir = 'content/' + m + '/narration/' + l;
       const cu = await signedUrl(dir + '.json', null, 'course'), cur = cu && await fetch(cu, { cache:'no-store' }).then(x => x.json()).catch(() => null);
       if (!cur || !cur.narration || cur.narration.job !== parent.id) return 'The narration learners hear changed after these takes were made, so nothing was switched. Make new takes from the lesson as it is now.';
       const pm = await manifest(parent), tm = await manifest(t);
@@ -989,7 +991,7 @@
     const map = {};   // "m1/1.1" -> path of the staged mp4; map.files["m1/1.1"] -> every staged file name (mp4, json, jpg)
     Object.defineProperty(map, 'files', { value:{}, enumerable:false });
     await Promise.all(mods.map(async m => {
-      const r = await safe(db().storage.from('course').list('content/' + m + '/videos/_new', { limit:1000 }));
+      const r = await safe(vsStore('course').list('content/' + m + '/videos/_new', { limit:1000 }));
       (r.data || []).forEach(o => {
         const k = o.name.match(/^(.+)\.(mp4|json|jpg)$/); if (!k) return;
         (map.files[m + '/' + k[1]] = map.files[m + '/' + k[1]] || []).push(o.name);
@@ -1008,7 +1010,7 @@
     if (putting) return 0;
     putting = true; stagedCache.at = 0;
     try {
-      const st = db().storage.from('course'), base = 'content/' + m + '/videos/';
+      const st = vsStore('course'), base = 'content/' + m + '/videos/';
       const live = await safe(st.list('content/' + m + '/videos', { limit:1000 }));
       if (live.error) { report('Couldn’t read the live videos. Nothing was changed.'); return 0; }
       const have = new Set((live.data || []).map(o => o.name)), stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
@@ -1272,7 +1274,7 @@
       const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), dir = uid() + '/voices/' + id + '/';
       const clipPath = dir + 'clip.' + extOf(clip), consentPath = dir + 'consent.' + extOf(consent);
       ev.submitter && (ev.submitter.disabled = true); say('vsVMsg', 'Uploading…');
-      const st = db().storage.from('voice');
+      const st = vsStore('voice');
       const a = await safe(st.upload(clipPath, clip, { contentType:clip.type || 'audio/webm' }));
       const b = a.error ? a : await safe(st.upload(consentPath, consent, { contentType:consent.type || 'audio/webm' }));
       if (a.error || b.error) { ev.submitter && (ev.submitter.disabled = false); return say('vsVMsg', errText(a.error ? a : b, 'The upload didn’t work. Try again.')); }
@@ -1290,8 +1292,8 @@
         await safe(db().from('voice_jobs').update({ status:'cancelled', message:'Cancelled: the voice was removed' }).eq('voice_id', v.id).in('status', ['queued']));
         const r = await safe(db().from('voice_voices').delete().eq('id', v.id));
         if (r.error) { btn.disabled = false; return; }
-        const dir = v.clip_path.split('/').slice(0, -1).join('/'), ls = await safe(db().storage.from('voice').list(dir));
-        if (ls.data && ls.data.length) await safe(db().storage.from('voice').remove(ls.data.map(o => dir + '/' + o.name)));
+        const dir = v.clip_path.split('/').slice(0, -1).join('/'), ls = await safe(vsStore('voice').list(dir));
+        if (ls.data && ls.data.length) await safe(vsStore('voice').remove(ls.data.map(o => dir + '/' + o.name)));
         reopen();
       }
     }));
@@ -1334,7 +1336,7 @@
       const ext = /\.wav$/i.test(file.name) ? 'wav' : 'mp3';
       const path = 'ab/' + (crypto.randomUUID ? crypto.randomUUID() : Date.now()) + '/eleven.' + ext;
       say('vsAbMsg', 'Uploading…');
-      const up = await safe(db().storage.from('voice').upload(path, file, { contentType:ext === 'wav' ? 'audio/wav' : 'audio/mpeg' }));
+      const up = await safe(vsStore('voice').upload(path, file, { contentType:ext === 'wav' ? 'audio/wav' : 'audio/mpeg' }));
       if (up.error) return say('vsAbMsg', errText(up, 'The upload didn’t work. Try again.'));
       const r = await safe(db().from('voice_jobs').insert({ title:'Blind test: ' + file.name.replace(/\.[^.]+$/, ''), text:'Blind test against ElevenLabs', language:'en', mood:'teaching', target:{ mode:'ab', source:path } }));
       if (r.error) return say('vsAbMsg', errText(r, 'Couldn’t start it. Try again.'));
