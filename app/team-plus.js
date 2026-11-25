@@ -127,7 +127,7 @@
       const t = (a.dataset.orig || [...a.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join(' ')).trim();
       if (t) out.push({ kind:'Page', title:t, href:a.getAttribute('href') });
     });
-    const [ppl, hb, lib, tk, dl, ct, cs, cf, pd, an, cst] = await Promise.all([
+    const [ppl, hb, lib, tk, dl, ct, cs, cf, pd, an, cst, bc] = await Promise.all([
       owner ? people() : Promise.resolve([]),
       safe(db().from('handbook_pages').select('id,title,body')),
       safe(db().from('library_entries').select('id,title,section,kind,body').eq('active', true).limit(500)),
@@ -139,9 +139,13 @@
       safe(db().from('contract_files').select('id,file_name,state,template_id').eq('retired', false)),
       owner ? safe(db().from('person_docs').select('id,user_id,title,kind')) : Promise.resolve({}),
       safe(db().from('announcements').select('id,title,body,at').order('at', { ascending:false }).limit(100)),
-      safe(db().rpc('course_state', { p_content:true }))
+      safe(db().rpc('course_state', { p_content:true })),
+      // Round 27: the Deal CRM's contacts directory (business contacts only), if this person may read them
+      safe(db().from('biz_contacts').select('id,kind,company,name,area').limit(500))
     ]);
     ppl.forEach(p => out.push({ kind:'Person', title:p.name, sub:[p.email, p.active ? (p.role === 'manager' ? 'Manager' : 'Agent') : 'Access off'].filter(Boolean).join(' · '), href:'#person/' + p.user_id }));
+    const CK = { title:'Title company', attorney:'Attorney', inspector:'Inspector', contractor:'Contractor', lender:'Lender', surveyor:'Surveyor', agent:'Agent', other:'Contact' };
+    (bc.data || []).forEach(c => out.push({ kind:'Contact', title:[c.company, c.name].filter(Boolean).join(' · '), sub:[CK[c.kind] || 'Contact', c.area].filter(Boolean).join(' · '), href:'/app/deals/#contacts' }));
     (hb.data || []).forEach(p => out.push({ kind:'Handbook', title:p.title, sub:(p.body || '').split('\n')[0], text:p.body, href:'#handbook/' + p.id }));
     (lib.data || []).forEach(e => out.push({ kind:'Script', title:e.title, sub:e.section, text:e.body, href:'#library' }));
     (tk.data || []).forEach(t => out.push({ kind:'Task', title:t.title, sub:t.due_on ? 'Due ' + fmtDay(t.due_on) : '', text:t.notes, href:'#tasks' }));
