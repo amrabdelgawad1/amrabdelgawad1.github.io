@@ -587,3 +587,59 @@
     [/^(\d+) handbook pages? needs? your signature\.$/, (m, n) => n + ' من صفحات الدليل تحتاج توقيعك.']
   );
 })();
+
+// Round 30: the course builder (r30-builder.js)
+(function(){
+  'use strict';
+  const L = window.AppLang;
+  if (!L || !L.AR) return;
+  const W = {
+    'Build and change every course on screen. Changes save as a draft that only you see. Learners see them after you press Publish, and the version that was live is kept so you can roll back.':'ابنِ أي كورس وعدّله على الشاشة. التعديلات تُحفظ كمسودة لا يراها غيرك. يراها المتعلمون بعد أن تضغط نشر، وتُحفظ النسخة التي كانت منشورة لتتمكن من الرجوع إليها.',
+    'Check course':'افحص الكورس', 'Acquisitions':'الاستحواذ', 'Marketing':'التسويق', 'Psychology':'علم النفس', 'Modules':'الوحدات', 'New module':'وحدة جديدة',
+    '+ Add a module':'+ أضف وحدة', 'It stays a draft until you publish it.':'تبقى مسودة حتى تنشرها.', 'Draft':'مسودة', 'Draft · not live':'مسودة · غير منشورة', 'Same as live':'مطابق للمنشور',
+    'Draft, never published':'مسودة لم تُنشر بعد', 'New Marketing modules are added to the course plan in the site code first, then filled in here.':'وحدات التسويق الجديدة تُضاف أولاً إلى خطة الكورس في كود الموقع، ثم تُملأ هنا.',
+    'Edit':'تعديل', 'Hide':'إخفاء', 'Unhide':'إظهار', 'Move up':'تحريك لأعلى', 'Move down':'تحريك لأسفل', 'Hidden from learners':'مخفي عن المتعلمين',
+    '+ Add a lesson':'+ أضف درساً', '+ Add a part':'+ أضف جزءاً', '+ Add a section':'+ أضف قسماً', '+ Add a term':'+ أضف مصطلحاً', '+ Add a diagram':'+ أضف رسماً توضيحياً', '+ Add a row':'+ أضف صفاً',
+    'Marketing saves each learner’s progress by part position, so parts can be added at the end but not moved or hidden.':'التسويق يحفظ تقدّم كل متعلم حسب ترتيب الأجزاء، لذلك يمكن إضافة جزء في النهاية لكن لا يمكن تحريك الأجزاء أو إخفاؤها.',
+    'Publish module':'انشر الوحدة', 'Throw away the draft':'احذف المسودة', 'Open in the course':'افتح في الكورس', 'Versions':'النسخ', 'Kept on every Publish':'تُحفظ مع كل نشر',
+    'Roll back to this':'ارجع إلى هذه النسخة', 'Before a publish':'قبل النشر', 'Before a roll back':'قبل الرجوع', 'Before it was removed':'قبل الحذف',
+    'No earlier versions yet. Each Publish keeps the version that was live.':'لا توجد نسخ سابقة بعد. كل نشر يحفظ النسخة التي كانت منشورة.',
+    'No changes yet. Edits save as a draft.':'لا تعديلات بعد. التعديلات تُحفظ كمسودة.', 'Saving…':'جارٍ الحفظ…', 'Checking…':'جارٍ الفحص…', 'Publishing…':'جارٍ النشر…', 'Rolling back…':'جارٍ الرجوع…',
+    'Sure? Publish to learners':'متأكد؟ انشر للمتعلمين', 'Sure? Throw it away':'متأكد؟ احذفها', 'Sure? Learners get this version':'متأكد؟ سيرى المتعلمون هذه النسخة',
+    'Live preview':'معاينة مباشرة', 'Lesson text':'نص الدرس', 'Arabic text':'النص العربي', 'Right to left':'من اليمين لليسار', 'English':'الإنجليزية', 'Arabic':'العربية',
+    'Title (starts with the lesson number)':'العنوان (يبدأ برقم الدرس)', 'Short title (menus and Voice Studio)':'العنوان المختصر (القوائم واستوديو الصوت)', 'Title':'العنوان', 'Arabic title':'العنوان بالعربية', 'Part title':'عنوان الجزء', 'Minutes':'الدقائق',
+    'Heading':'عنوان', 'Paragraph':'فقرة', 'Box':'صندوق', 'Picture':'صورة', 'List or table':'قائمة أو جدول', 'Arabic summary (فصحى)':'الملخص العربي (فصحى)', 'Example':'مثال', 'Summary':'الخلاصة', 'List':'قائمة', 'Table':'جدول', 'Block':'جزء',
+    'Why it matters':'لماذا يهم', 'Tip':'نصيحة', 'Watch out':'انتبه', 'Note':'ملاحظة', 'Arabic summary':'الملخص العربي', 'Add':'أضف', 'Section':'قسم',
+    'Why it matters / key point':'لماذا يهم / نقطة أساسية', 'Remove this block':'احذف هذا الجزء', 'Remove this section':'احذف هذا القسم', 'Remove this term':'احذف هذا المصطلح', 'Remove this diagram':'احذف هذا الرسم', 'Remove this row':'احذف هذا الصف',
+    'Describe the picture (for screen readers)':'صف الصورة (لقارئ الشاشة)', 'Caption (optional)':'تعليق تحت الصورة (اختياري)', 'Choose a picture':'اختر صورة', 'Replace the picture':'استبدل الصورة', 'No picture yet':'لا توجد صورة بعد',
+    'Stored with the course videos (R2)':'محفوظة مع فيديوهات الكورس (R2)', 'Uploading the picture…':'جارٍ رفع الصورة…', 'Picture added. It is stored with the course videos.':'أُضيفت الصورة. حُفظت مع فيديوهات الكورس.',
+    'Example box':'صندوق المثال', 'B2B box (optional)':'صندوق B2B (اختياري)', 'Terms':'المصطلحات', 'Term':'المصطلح', 'Meaning':'المعنى', 'Quiz':'الاختبار', 'Practice questions':'أسئلة التدريب',
+    'Edit the questions':'عدّل الأسئلة', 'Questions are edited in the quiz builder (coming next).':'تُعدّل الأسئلة في محرّر الاختبارات (قريباً).',
+    'Diagrams':'الرسوم التوضيحية', 'Kind':'النوع', 'Title (optional)':'العنوان (اختياري)', 'Goes after the paragraph that starts with':'يأتي بعد الفقرة التي تبدأ بـ',
+    'Number chain':'سلسلة أرقام', 'Ladder':'سلّم', 'Flow':'مسار', 'Columns':'أعمدة', 'Timeline':'خط زمني', 'Numbered steps':'خطوات مرقّمة', 'Scale':'مقياس',
+    'Label':'التسمية', 'Math':'الحساب', 'Value':'القيمة', 'Highlight':'تمييز', 'Step':'خطوة', 'Detail':'التفاصيل', 'Under the heading':'تحت العنوان', 'Points, one per line':'النقاط، نقطة في كل سطر',
+    'When':'متى', 'What':'ماذا', 'Who':'من', 'Range':'النطاق', 'Arrow labels, one per line':'نصوص الأسهم، نص في كل سطر', 'Line under it':'سطر تحته',
+    'State sheet':'ورقة الولاية', 'State sheets':'أوراق الولايات', 'Same sheet as the Contracts page and the Deal CRM':'نفس الورقة الموجودة في صفحة العقود ونظام الصفقات', 'State':'الولاية',
+    'Wholesaling rule':'قاعدة البيع بالجملة', 'Disclosure state?':'ولاية إفصاح؟', 'Who closes':'من يُغلق الصفقة', 'Usual deed':'نوع سند الملكية المعتاد', 'Checked on':'تاريخ المراجعة',
+    'Changes go live with Publish, here and on the Contracts page.':'التعديلات تُنشر مع زر النشر، هنا وفي صفحة العقود.', 'No sheet for this state on the Contracts page yet.':'لا توجد ورقة لهذه الولاية في صفحة العقود بعد.',
+    'Video':'الفيديو', 'No video for this lesson yet.':'لا يوجد فيديو لهذا الدرس بعد.', 'Marketing lessons have no videos.':'دروس التسويق ليس لها فيديوهات.',
+    'Make video':'أنشئ فيديو', 'Make video comes with the video tools next.':'زر إنشاء الفيديو يأتي مع أدوات الفيديو قريباً.', 'Needs re-voice':'يحتاج تسجيل صوت جديد',
+    'Lesson group':'مجموعة دروس', 'Written drill':'تمرين كتابي', 'Checkpoint':'نقطة تقييم', 'Exam':'امتحان', 'Playbook':'دليل عملي', 'Notes':'ملاحظات', 'Not in a part':'خارج الأجزاء',
+    'Must fix':'يجب إصلاحه', 'Check':'راجِع', 'No problems found.':'لا توجد مشكلات.', 'Close':'إغلاق', 'Open':'افتح', 'Showing the first 300.':'عرض أول 300.',
+    'Hidden. Learners stop seeing it after you publish.':'أُخفي. يتوقف المتعلمون عن رؤيته بعد النشر.', 'Back in the module. Learners see it after you publish.':'عاد إلى الوحدة. يراه المتعلمون بعد النشر.',
+    'It can’t move further that way.':'لا يمكن تحريكه أكثر في هذا الاتجاه.', 'Draft thrown away. The live version is unchanged.':'حُذفت المسودة. النسخة المنشورة كما هي.',
+    'Nothing to publish: there is no draft. Learners already see this version.':'لا شيء للنشر: لا توجد مسودة. المتعلمون يرون هذه النسخة بالفعل.',
+    'Use a PNG, JPG, WebP or GIF picture.':'استخدم صورة PNG أو JPG أو WebP أو GIF.', 'That picture is over 8 MB. Make it smaller first.':'الصورة أكبر من 8 ميجابايت. صغّرها أولاً.',
+    'This module has no Arabic yet.':'هذه الوحدة ليس لها نسخة عربية بعد.', 'Add a part to this module first.':'أضف جزءاً لهذه الوحدة أولاً.'
+  };
+  Object.keys(W).forEach(k => { if (!(k in L.AR)) L.AR[k] = W[k]; });
+  if (L.RULES) L.RULES.push(
+    [/^Module (\d+) · (.+)$/, (m, n, t) => 'الوحدة ' + n + ' · ' + t],
+    [/^Draft saved (.+)\. Learners still see the live version\.$/, (m, t) => 'حُفظت المسودة ' + t + '. المتعلمون ما زالوا يرون النسخة المنشورة.'],
+    [/^Live since (.+)$/, (m, t) => 'منشورة منذ ' + t],
+    [/^Draft saved (.+)$/, (m, t) => 'حُفظت المسودة ' + t],
+    [/^Publish anyway \((.+)\)$/, (m, t) => 'انشر رغم ذلك (' + t + ')'],
+    [/^Course check · (.+)$/, (m, t) => 'فحص الكورس · ' + t],
+    [/^(\d+) (modules?|diagrams?|questions?)$/, (m, n, w) => n + ' ' + ({ module:'وحدة', modules:'وحدات', diagram:'رسم', diagrams:'رسوم', question:'سؤال', questions:'أسئلة' })[w]]
+  );
+})();

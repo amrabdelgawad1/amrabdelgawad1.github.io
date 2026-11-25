@@ -671,6 +671,7 @@
     if (mod.number === S.totalModules && /staying certified/i.test(it.title || '')) renewCard(it);
     lessonVideo(mod, it);
     lessonDiagrams(mod, it);
+    if (window.AmrMediaFill) window.AmrMediaFill(db, $('lessonText'));   // pictures added in the course builder (R2)
     stateSheets(mod, it);
     // Round 29: questions under the lesson (E1), and this lesson saved as the learner's place in the course (I16)
     if (window.LessonQA && user) LessonQA.mount($('qaBox'), { db, course:'acq', module:mod.id, item:it.id, title:'Lesson ' + it.id + ' · ' + heading(it), sub:'Module ' + mod.number, link:'/course/#/m/' + mod.id + '/l/' + it.id, owner:!!S.isAdmin, lang:'en' });
