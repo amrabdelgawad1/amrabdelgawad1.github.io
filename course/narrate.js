@@ -54,16 +54,17 @@
   const notAllowed = e => /row-level|permission|policy|JWT|42501/i.test((e && e.message) || '');
 
   // Copies narration/<lesson>.mp3/.json to narration/_versions/<lesson>/<time>.* (the same as Voice Studio does)
+  // Narration lives in Cloudflare R2 since Nov 25, 2026 (/media.js)
   async function keep(db, m, l){
-    const st = db.storage.from('course'), dir = 'content/' + m + '/narration/', ver = dir + '_versions/' + l;
-    const cur = await st.list('content/' + m + '/narration', { limit:1000, search:l + '.' }).catch(() => ({}));
-    const mp3 = ((cur && cur.data) || []).find(o => o.name === l + '.mp3'); if (!mp3) return true;
-    const tag = new Date(mp3.updated_at || mp3.created_at || Date.now()).toISOString().slice(0, 16).replace(/[:T]/g, '-');
-    const have = await st.list(ver, { limit:1000 }).catch(() => ({}));
-    if (((have && have.data) || []).some(o => o.name === tag + '.mp3')) return true;
-    const c = await st.copy(dir + l + '.mp3', ver + '/' + tag + '.mp3').catch(e => ({ error:e }));
+    const M = window.AmrMedia(db), dir = 'course/content/' + m + '/narration/', ver = dir + '_versions/' + l + '/';
+    const cur = await M.list(dir);
+    const mp3 = cur.find(o => o.name === l + '.mp3'); if (!mp3) return true;
+    const tag = new Date(mp3.uploaded || Date.now()).toISOString().slice(0, 16).replace(/[:T]/g, '-');
+    const have = await M.list(ver);
+    if (have.some(o => o.name === tag + '.mp3')) return true;
+    const c = await M.copy(dir + l + '.mp3', ver + tag + '.mp3');
     if (c && c.error) return false;
-    await st.copy(dir + l + '.json', ver + '/' + tag + '.json').catch(() => null);
+    await M.copy(dir + l + '.json', ver + tag + '.json');
     return true;
   }
 
@@ -74,8 +75,8 @@
       if (!document.contains(box)) return;
       let play = '';
       if (j && j.status === 'done') {
-        const u = await db.storage.from('course').createSignedUrl('content/' + mod.id + '/narration/' + it.id + '.mp3', 3600);
-        if (u.data) play = '<audio controls preload="none" src="' + esc(u.data.signedUrl) + '"></audio>';
+        const u = await window.AmrMedia(db).url('course/content/' + mod.id + '/narration/' + it.id + '.mp3');
+        if (u) play = '<audio controls preload="none" src="' + esc(u) + '"></audio>';
       }
       box.innerHTML = '<div class="vbox narr"><button type="button" class="link-btn" id="narrGo">' + (j ? 'Narrate again in my voice' : 'Narrate in my voice') + '</button>' +
         '<span class="note" id="narrState" role="status">' + (j ? 'Voice Studio: ' + esc(words[j.status] || j.status) + (j.status === 'running' ? ' (' + Math.round((j.progress || 0) * 100) + '%)' : '') + (j.status === 'failed' && j.message ? ' · ' + esc(j.message) : '') : 'Admin only. Uses your cloned voice on your PC, no credits.') +
