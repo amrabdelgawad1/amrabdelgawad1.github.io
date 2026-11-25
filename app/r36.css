@@ -1,0 +1,15 @@
+/* Plan Round 36 (O5): Clients › Portal access (owner only) */
+.r36-top{ align-items:end; flex-wrap:wrap; }
+.r36-state{ padding-bottom:10px; }
+.r36-switch, .r36-chk{ display:flex; align-items:center; gap:10px; min-height:44px; font-weight:600; cursor:pointer; }
+.r36-switch input, .r36-chk input{ width:20px; height:20px; flex:none; }
+.r36-reps{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:2px 16px; margin:4px 0 10px; }
+.r36-chk small{ font-weight:500; opacity:.7; margin-inline-start:4px; }
+.r36-user{ display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px 16px; padding:12px 0; border-bottom:1px solid var(--line, rgba(0,0,0,.08)); }
+.r36-user > div:first-child{ min-width:0; overflow-wrap:anywhere; }
+.r36-link{ flex-basis:100%; display:flex; flex-direction:column; gap:6px; }
+.r36-link input{ width:100%; font-size:13px; }
+.r36-add{ margin-top:14px; }
+.r36-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; }
+.r36-foot{ margin:6px 4px 0; }
+@media (max-width:640px){ .r36-grid{ grid-template-columns:1fr; } .r36-user .px-tools{ width:100%; } .r36-user .px-tools .p-btn{ flex:1; } }

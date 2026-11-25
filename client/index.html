@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Browser safety rules: this page only talks to the site's own Supabase project (plan Round 36, client portal) -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://vepqjjophogryvbkfgcu.supabase.co wss://vepqjjophogryvbkfgcu.supabase.co; media-src blob: https://vepqjjophogryvbkfgcu.supabase.co; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#FAF7F1">
+<title>Your client portal</title>
+<script src="/guard.js?v=2"></script>
+<script src="/error-report.js?v=1"></script>
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="client.css?v=1">
+</head>
+<body>
+<header class="bar">
+  <a class="brand" href="/client/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V9l8-5 8 5v11h-5v-6H9v6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span id="cCo">Your client portal</span></a>
+  <div class="bar-acts">
+    <button type="button" class="link" id="cLang"></button>
+    <button type="button" class="link" id="cOut" hidden>Sign out</button>
+  </div>
+</header>
+<main class="wrap" id="cMain">
+  <p class="muted" id="cLoad">Loading…</p>
+
+  <section id="cOff" hidden class="card center">
+    <h1>Your portal is closed</h1>
+    <p class="muted" id="cOffMsg">Access to this page is switched off right now. If that seems wrong, please reach out to Amr.</p>
+    <a class="btn" href="/app/">Go to sign in</a>
+  </section>
+
+  <div id="cApp" hidden>
+    <p class="eyebrow" id="cHello">Welcome</p>
+    <h1 id="cTitle">Your team’s work</h1>
+
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button type="button" role="tab" class="tab" data-tab="numbers" aria-selected="true">Hours and numbers</button>
+      <button type="button" role="tab" class="tab" data-tab="calls" aria-selected="false">Calls</button>
+      <button type="button" role="tab" class="tab" data-tab="invoices" aria-selected="false">Invoices</button>
+    </nav>
+
+    <section data-pane="numbers">
+      <div class="range">
+        <label>Show<select id="cRange">
+          <option value="week">This week</option>
+          <option value="last">Last week</option>
+          <option value="month" selected>This month</option>
+          <option value="lastmonth">Last month</option>
+          <option value="90">Last 90 days</option>
+          <option value="custom">Pick dates</option>
+        </select></label>
+        <span id="cCustom" hidden><label>From<input type="date" id="cFrom"></label><label>To<input type="date" id="cTo"></label></span>
+      </div>
+      <p class="muted small" id="cRangeTxt"></p>
+      <div class="tiles" id="cTiles"></div>
+      <h2>By rep</h2>
+      <div id="cReps"></div>
+      <h2>By day</h2>
+      <div id="cDays"></div>
+      <details class="more"><summary>Every shift</summary><div id="cShifts"></div></details>
+    </section>
+
+    <section data-pane="calls" hidden>
+      <p class="muted">Calls Amr picked to share with you.</p>
+      <div id="cCalls"></div>
+    </section>
+
+    <section data-pane="invoices" hidden>
+      <div id="cInv"></div>
+    </section>
+
+    <p class="muted small foot">Times are in your device’s time zone. Questions about anything here? Reply to Amr the usual way.</p>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+<script src="/tracker/config.js?v=4"></script>
+<script src="/app/i18n.js?v=5"></script>
+<script src="/app/ar-more.js?v=27"></script>
+<script src="client.js?v=1"></script>
+</body>
+</html>
