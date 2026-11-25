@@ -78,6 +78,8 @@
     return;
   }
   const db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
+  // Lesson videos and narration live in Cloudflare R2 since Nov 25, 2026 (/media.js, amr-media Worker)
+  const MEDIA = window.AmrMedia ? window.AmrMedia(db) : null;
   async function rpc(fn, args){
     const { data, error } = await db.rpc(fn, args || {});
     if (error) throw error;
@@ -747,6 +749,7 @@
   // Admins can upload or replace the video from the lesson page.
   const videoPath = (mod, it) => contentPath(mod, 'videos/' + it.id + '.mp4');
   async function videoUrl(path){
+    if (MEDIA) { const u = await MEDIA.url('course/' + path); if (u) return u; }
     try { const { data, error } = await db.storage.from('course').createSignedUrl(path, 15 * 60); return error ? null : data.signedUrl; }
     catch(e){ return null; }
   }
@@ -1038,7 +1041,7 @@
     window.addEventListener('pagehide', onHide);
     window.addEventListener('hashchange', function leave(){ window.removeEventListener('hashchange', leave); if (acc > 0.5) save(true); });
     syncPlay(); syncTime();
-    // The link lasts 15 minutes; if it runs out mid-lesson, get a fresh one and carry on from the same spot.
+    // The link carries the sign-in, which renews about every hour; if it runs out mid-lesson, get a fresh one and carry on from the same spot.
     let lastFix = 0;
     v.addEventListener('error', async () => {
       if (Date.now() - lastFix < 30e3) return; lastFix = Date.now();
@@ -1055,9 +1058,9 @@
       const st = $('vidState');
       inp.value = '';
       if (!/\.mp4$/i.test(f.name) || (f.type && f.type !== 'video/mp4')) { st.textContent = 'Use an MP4 video.'; return; }
-      if (f.size > 50 * 1024 * 1024) { st.textContent = 'That video is over 50 MB.'; return; }
+      if (f.size > 95 * 1024 * 1024) { st.textContent = 'That video is over 95 MB.'; return; }
       inp.disabled = true; st.textContent = 'Uploading…';
-      const { error } = await db.storage.from('course').upload(path, f, { upsert:true, contentType:'video/mp4' });
+      const { error } = MEDIA ? await MEDIA.put('course/' + path, f, 'video/mp4') : { error:{ message:'Media helper missing' } };
       inp.disabled = false;
       if (error) { if (document.contains(st)) st.textContent = 'The upload didn’t work. Check your connection and try again.'; return; }
       toast('Video uploaded');
