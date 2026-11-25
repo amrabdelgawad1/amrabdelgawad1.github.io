@@ -276,13 +276,13 @@
       },
       async publish(mid, w){
         const f = await readFile('mkt', true), data = f.data;
-        await history('mkt', mid, data.modules[mid] && data.modules[mid].n, { en:data.modules[mid] || null, ar:((data.ar || {}).modules || {})[mid] || null });
+        await keepVersion('mkt', mid, data.modules[mid] && data.modules[mid].n, { en:data.modules[mid] || null, ar:((data.ar || {}).modules || {})[mid] || null });
         data.modules[mid] = w.en; if (w.ar) { data.ar = data.ar || { modules:{} }; data.ar.modules[mid] = w.ar; }
         await writeFile('mkt', data);
       },
       async rollback(mid, hist){
         const v = await version(hist), f = await readFile('mkt', true), data = f.data;
-        await history('mkt', mid, data.modules[mid] && data.modules[mid].n, { en:data.modules[mid] || null, ar:((data.ar || {}).modules || {})[mid] || null }, 'ROLLBACK');
+        await keepVersion('mkt', mid, data.modules[mid] && data.modules[mid].n, { en:data.modules[mid] || null, ar:((data.ar || {}).modules || {})[mid] || null }, 'ROLLBACK');
         if (v.content.en) data.modules[mid] = v.content.en; if (v.content.ar) { data.ar = data.ar || { modules:{} }; data.ar.modules[mid] = v.content.ar; }
         await writeFile('mkt', data);
       },
@@ -379,13 +379,13 @@
       async publish(mid, w){
         const f = await readFile('psy', true), data = f.data, i = data.modules.findIndex(m => m.id === mid);
         const live = this.strip(w);
-        if (i >= 0) { await history('psy', mid, data.modules[i].num, data.modules[i]); data.modules[i] = live; }
+        if (i >= 0) { await keepVersion('psy', mid, data.modules[i].num, data.modules[i]); data.modules[i] = live; }
         else data.modules.push(live);
         await writeFile('psy', data);
       },
       async rollback(mid, hist){
         const v = await version(hist), f = await readFile('psy', true), data = f.data, i = data.modules.findIndex(m => m.id === mid);
-        if (i >= 0) { await history('psy', mid, data.modules[i].num, data.modules[i], 'ROLLBACK'); data.modules[i] = v.content; } else data.modules.push(v.content);
+        if (i >= 0) { await keepVersion('psy', mid, data.modules[i].num, data.modules[i], 'ROLLBACK'); data.modules[i] = v.content; } else data.modules.push(v.content);
         await writeFile('psy', data);
       },
       strip(w){ const c = clone(w); Object.keys(c).filter(k => k.charAt(0) === '_').forEach(k => delete c[k]); return c; },
@@ -399,7 +399,7 @@
       imageKey:(mid, key, name) => 'course/builder/psy/' + mid + '/' + key + '-' + name
     }
   };
-  async function history(course, mid, number, content, op){
+  async function keepVersion(course, mid, number, content, op){
     if (!content) return;
     const r = await safe(db().rpc('course_builder_history_add', { p_course:course, p_module:mid, p_number:number == null ? null : +number || null, p_content:content, p_op:op || 'PUBLISH' }));
     if (r.error) throw r.error;
