@@ -192,7 +192,11 @@
         const map = {}; Object.keys(drafts).forEach(k => { map[k] = this.strip(drafts[k]); });
         const r = await safe(db().rpc('course_builder_check', { p_id:mid || null, p_drafts:map }));
         if (r.error) throw r.error;
-        return (r.data || []).map(x => ({ module:x.module_id, item:x.item_id, severity:x.severity, issue:x.issue, label:'Module ' + x.module_no }));
+        const out = (r.data || []).map(x => ({ module:x.module_id, item:x.item_id, severity:x.severity, issue:x.issue, label:'Module ' + x.module_no }));
+        // a picture block whose file was never uploaded
+        Object.keys(map).filter(k => !mid || k === mid).forEach(k => { const walk = l => (l || []).forEach(x => { if (x.type === 'group') walk(x.items);
+          else if (String(x.bodyMarkdown || '').includes('(r2:course/pending')) out.unshift({ module:k, item:x.id, severity:'error', issue:'a picture block has no picture yet', label:'Module ' + map[k].number }); }); walk(map[k].items); });
+        return out;
       },
       async publish(mid, w, live){
         const r = await safe(db().rpc('course_builder_publish_acq', { p_module:mid, p_content:this.strip(w) }));
@@ -630,7 +634,10 @@
     return '<div class="cb-block cb-' + b.t + '">' + tools + inner + '</div>';
   }
   const boxKind = html => ((String(html).match(/class="box ([a-z]+)/) || [])[1]) || 'key';
+  // a picture block waiting for its file: Markdown needs a link to keep the block, so it points at this until the upload
+  const PENDING = 'r2:course/pending';
   function imgFields(b, at){
+    if (b.src === PENDING) b = Object.assign({}, b, { src:'' });
     return '<div class="cb-img">' + (b.src ? '<img class="cb-thumb" alt="" ' + (/^r2:/.test(b.src) ? 'data-r2="' + esc(b.src.slice(3)) + '"' : 'src="' + esc(b.src) + '"') + '>' : '') +
       '<label class="sc-f">Describe the picture (for screen readers)<input type="text" data-b="alt"' + at + ' value="' + esc(b.alt || '') + '"></label>' +
       '<label class="sc-f">Caption (optional)<input type="text" data-b="cap"' + at + ' value="' + esc(b.cap || '') + '"></label>' +
@@ -681,7 +688,7 @@
   function newBlock(k){
     const ar = S.lang === 'ar';
     if (S.course === 'acq') return { h:{ t:'h', text:'New heading', style:'**' }, p:{ t:'p', text:'Write here.' }, why:{ t:'box', label:'Why it matters', sep:'.', text:'Write why this matters.' },
-      ex:{ t:'box', label:'Example', sep:'.', text:'Write the example.' }, tip:{ t:'box', label:'Tip', sep:'.', text:'Write the tip.' }, img:{ t:'img', alt:'', src:'', cap:'' },
+      ex:{ t:'box', label:'Example', sep:'.', text:'Write the example.' }, tip:{ t:'box', label:'Tip', sep:'.', text:'Write the tip.' }, img:{ t:'img', alt:'', src:PENDING, cap:'' },
       md:{ t:'md', text:'- First point\n- Second point' }, ar:{ t:'ar', h:'بالعربي', style:'**', text:'اكتب الملخص هنا بالفصحى.' } }[k];
     const H = { h:ar ? '<h4>عنوان جديد</h4>' : '<h4>New heading</h4>', p:ar ? '<p>اكتب هنا.</p>' : '<p>Write here.</p>',
       why:'<div class="box key"><div class="label">' + (ar ? 'لماذا يهم' : 'Why it matters') + '</div>\n<p>' + (ar ? 'اكتب هنا.' : 'Write here.') + '</p></div>',
@@ -759,7 +766,7 @@
     const p = A().preview(S.w, S.key, S.lang, { states:S.course === 'acq' ? statesPreview() : '', video:!!S.body.querySelector('#cbVideo video') });
     // R2 pictures get their signed-in links before the page is drawn (the preview runs no scripts)
     const d = document.createElement('div'); d.innerHTML = p.html;
-    const imgs = [...d.querySelectorAll('img[data-r2]')];
+    const imgs = [...d.querySelectorAll('img[data-r2]')].filter(im => im.getAttribute('data-r2') !== 'course/pending');
     if (imgs.length && window.AmrMedia) { const M = window.AmrMedia(db()); await Promise.all(imgs.map(async im => { const u = await M.url(im.getAttribute('data-r2'), false); if (u) im.setAttribute('src', u); })); }
     const ar = p.lang === 'ar';
     fr.srcdoc = '<!DOCTYPE html><html lang="' + (ar ? 'ar' : 'en') + '"' + (ar ? ' dir="rtl"' : '') + '><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="' + location.origin + '/" target="_blank">' +
