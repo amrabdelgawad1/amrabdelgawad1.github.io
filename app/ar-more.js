@@ -490,6 +490,20 @@
     'Marked approved.':'تم التعليم كموافق عليه.', 'Declined. Nothing was sent to them.':'تم الرفض. لم يُرسل لهم شيء.', 'Back to waiting.':'أُعيد إلى الانتظار.',
     'Hiring me':'توظيفي', 'Hiring a team':'توظيف فريق', 'Courses':'الكورسات', 'Something else':'شيء آخر',
   });
+  // Round 27 (closing): contract drafts for attorney review, contacts in search, and the Deal CRM labels (the CRM keeps
+  // the same words in its own dictionary, r27.js, because it runs in its own frame)
+  Object.assign(L.AR, {
+    'Contact':'جهة اتصال', 'Title company':'شركة الملكية', 'Attorney':'محامي', 'Inspector':'معاين', 'Contractor':'مقاول', 'Lender':'مقرض', 'Surveyor':'مسّاح', 'Agent':'وكيل عقاري',
+    'Mutual release (cancel the purchase agreement)':'إلغاء متبادل (إلغاء عقد الشراء)', 'Extension addendum (more time to inspect or close)':'ملحق تمديد (وقت إضافي للمعاينة أو الإغلاق)',
+    'Land option agreement':'اتفاقية خيار شراء أرض', 'Joint venture agreement (one deal)':'اتفاقية شراكة (صفقة واحدة)', 'Promissory note':'سند دين', 'Mortgage or deed of trust':'رهن عقاري أو سند ائتمان',
+    'DRAFT FOR ATTORNEY REVIEW':'مسودة لمراجعة المحامي', 'Drafts for attorney review':'مسودات لمراجعة المحامي', 'Buyer name on the contract (ask your attorney how to write it)':'اسم المشتري في العقد (اسأل المحامي عن طريقة كتابته)',
+    'Day counters':'عداد الأيام', 'Inspection period':'فترة المعاينة', 'Title work':'أوراق الملكية', 'Title work due':'موعد أوراق الملكية', 'Option expires':'انتهاء الخيار', 'days left':'يوم متبقي',
+    'Contacts on this deal':'جهات الاتصال في هذه الصفقة', 'Link a contact':'اربط جهة اتصال', 'New contact':'جهة اتصال جديدة', 'Use as title company':'استخدمها كشركة الملكية', 'Search contacts':'ابحث في جهات الاتصال',
+    'Make the assignment':'اعمل عقد التنازل', 'Picked from offers':'مختار من العروض', 'Pick a buyer from your list':'اختر مشترياً من قائمتك',
+    'Deal fee':'عمولة الصفقة', 'Record the expected fee':'سجّل العمولة المتوقعة', 'Mark received':'علّم كمستلمة', 'Mark lost':'علّم كضائعة', 'Back to expected':'رجّعها متوقعة',
+    'JV split':'تقسيم الشراكة', 'Add partner':'أضف شريكاً', 'Your share':'نصيبك', 'Paid out':'تم الدفع', 'Make the JV agreement':'اعمل اتفاقية الشراكة', 'Deal income':'دخل الصفقات',
+    'Earnest money sent':'تم إرسال العربون', 'Inspection done':'تمت المعاينة', 'Buyer assigned':'تم التنازل للمشتري', 'Title opened':'تم فتح ملف الملكية', 'Closed and funded':'أُغلقت وتم التمويل'
+  });
   if (L.RULES) L.RULES.push(
     [/^(\d+) leads? left$/, (m, n) => 'متبقٍ ' + n + ' عميل'],
     [/^Recording\? ([A-Z]{2}) needs everyone’s consent\.$/, (m, s) => 'تسجيل؟ ولاية ' + s + ' تشترط موافقة الجميع.'],

@@ -3,6 +3,8 @@
 //   const doc = await DocxFill.read(arrayBuffer)
 //   DocxFill.fields(doc)            -> { fields:['seller_name', ...], odd:['{Seller Name!}', ...] }  in order of first use
 //   await DocxFill.fill(doc, fn)    -> Blob (.docx). fn(key) returns the text for {key}
+//   DocxFill.fromText(text)         -> doc, a plain Word file made from a text template (round 27: templates with no
+//                                      uploaded Word file). Each line is a paragraph, headings in capitals are bold.
 // Word often splits one {field} over several runs (spell check, autocorrect, formatting), so fields are found per
 // paragraph across runs, and the value goes into the run where the field starts. Formatting of that run is kept.
 // Field names: letters, numbers, spaces and underscores, any case. {Seller Name} and {seller_name} are the same field.
@@ -127,5 +129,21 @@
     return write({ entries });
   }
 
-  root.DocxFill = { read, fields, fill, keyOf };
+  // ---------- a Word file from a text template ----------
+  function fromText(text){
+    const DOSDATE = 33, run = (x, b) => '<w:r><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/>' + (b ? '<w:b/>' : '') + '<w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">' + esc(x) + '</w:t></w:r>';
+    const paras = String(text || '').replace(/\r/g, '').split('\n').map(line => {
+      const bold = /^DRAFT FOR ATTORNEY REVIEW/.test(line) || /^STARTING TEMPLATE/.test(line) || (/^[^a-z{]*$/.test(line) && /[A-Z]{3}/.test(line)) || /^\d+\.\s+[^a-z]+$/.test(line);
+      return '<w:p><w:pPr><w:spacing w:after="80" w:line="276" w:lineRule="auto"/></w:pPr>' + (line ? run(line, bold) : '') + '</w:p>';
+    }).join('');
+    const parts = [
+      ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'],
+      ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'],
+      ['word/document.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + paras +
+        '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>']
+    ];
+    return { entries:parts.map(([name, xml]) => ({ name, flag:0, time:0, date:DOSDATE, data:te.encode(xml) })) };
+  }
+
+  root.DocxFill = { read, fields, fill, keyOf, fromText };
 })(typeof window !== 'undefined' ? window : globalThis);
