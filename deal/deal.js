@@ -8,7 +8,7 @@
   const startedAt = new Date().toISOString();
   const cfg = window.TRACKER_CONFIG || {};
   const db = window.supabase && cfg.supabaseUrl ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, { auth:{ persistSession:false } }) : null;
-  const PUB = 'https://ztlpgyomjuzmjmuifbbd.supabase.co/storage/v1/object/public/deal-pages/';
+  const PUB = 'https://vepqjjophogryvbkfgcu.supabase.co/storage/v1/object/public/deal-pages/';
   const h = new URLSearchParams(location.hash.slice(1));
   const slug = (h.get('s') || '').toLowerCase().replace(/[^a-z0-9]/g, ''), token = (h.get('t') || '').replace(/[^A-Za-z0-9_-]/g, ''), unsub = (h.get('u') || '').replace(/[^A-Za-z0-9_-]/g, '');
   const money = n => n > 0 ? '$' + Math.round(n).toLocaleString('en-US') : '';
