@@ -30,7 +30,7 @@
     new Date(at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit', hour12:true });
   const bucket = () => db().storage.from('course-content');
   const hooks = { quiz:null, makeVideo:null, afterDraw:null };
-  window.CourseBuilder = { hooks, mdLines, htmlLines };
+  window.CourseBuilder = { hooks };
 
   // ======================================================================
   // Small parsers: Markdown lessons (Acquisitions) and HTML lessons (Marketing, Psychology) as blocks
