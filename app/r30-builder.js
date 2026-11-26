@@ -402,7 +402,9 @@
         const it = this.find(w, key) || {}, html = L(it.html, lang);
         return { css:['/portal.css?v=13', '/app/course/course.css?v=10', '/app/psychology/psy-content.css?v=4', '/app/psychology/theme.css?v=2'], lang,
           html:'<div class="cp" id="cp"><div class="cp-body"><main class="cp-main" id="cpMain"><div class="cp-wrap cp-lesson"><span class="cp-kick">' + esc(it.label || '') + '</span><h1 class="cp-h1">' + esc(L(it.title, lang) || L(it.title, 'en')) + '</h1>' +
-            (!html && lang === 'ar' ? '<div class="note-ar">لم تُكتب الترجمة العربية لهذا القسم بعد.</div>' : '') + '<div class="content">' + (html || '') + '</div></div></main></div></div>' };
+            // like the course (Round 32, E21): no Arabic yet shows the English with the course's own small note
+            (!html && lang === 'ar' ? '<div class="note-ar">' + esc(((window.I18N || {}).ar || {}).arPending || 'الترجمة العربية لهذه الصفحة قيد الإعداد. يظهر النص بالإنجليزية مؤقتًا.') + '</div>' : '') +
+            '<div class="content' + (!html && lang === 'ar' ? ' fallback-en" lang="en' : '') + '">' + (html || L(it.html, 'en') || '') + '</div></div></main></div></div>' };
       },
       videoKey:(mid, key) => 'psy/videos/' + mid + '/' + key + '.mp4',   // still in the course-content bucket (video.js)
       imageKey:(mid, key, name) => picKey('psy', mid, key, name)
@@ -776,9 +778,19 @@
     const imgs = [...d.querySelectorAll('img[data-r2]')].filter(im => im.getAttribute('data-r2') !== 'course/pending');
     if (imgs.length && window.AmrMedia) { const M = window.AmrMedia(db()); await Promise.all(imgs.map(async im => { const u = await M.url(im.getAttribute('data-r2'), false); if (u) im.setAttribute('src', u); })); }
     const ar = p.lang === 'ar';
+    // Round 32: the preview shows what learners get, the course's EN / ع switch (E21) and the folding boxes (I17)
+    if (A().langs.length > 1) d.insertAdjacentHTML('afterbegin', '<div class="cb-pl"><div class="cp-langs" role="group" aria-label="Language">' +
+      A().langs.map(l => '<button type="button" data-prevlang="' + l + '" aria-pressed="' + (l === S.lang) + '"' + (l === 'ar' ? ' lang="ar"' : ' lang="en"') + '>' + (l === 'ar' ? 'ع' : 'EN') + '</button>').join('') + '</div></div>');
+    if (window.LessonFold) window.LessonFold.mark(d, ar);
+    p.css = p.css.concat(['/lesson-fold.css?v=1']);
     fr.srcdoc = '<!DOCTYPE html><html lang="' + (ar ? 'ar' : 'en') + '"' + (ar ? ' dir="rtl"' : '') + '><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="' + location.origin + '/" target="_blank">' +
-      '<link rel="stylesheet" href="' + FONTS + '">' + p.css.map(h => '<link rel="stylesheet" href="' + h + '">').join('') + '</head><body' + (p.bodyClass ? ' class="' + p.bodyClass + '"' : '') + '>' + d.innerHTML + '</body></html>';
-    fr.onload = () => { try { const h = fr.contentDocument.documentElement.scrollHeight; fr.style.height = Math.min(Math.max(h, 400), 4000) + 'px'; } catch(e){} };
+      '<link rel="stylesheet" href="' + FONTS + '">' + p.css.map(h => '<link rel="stylesheet" href="' + h + '">').join('') + '<style>.cb-pl{display:flex;justify-content:flex-end;padding:10px 14px 0}</style></head><body' + (p.bodyClass ? ' class="' + p.bodyClass + '"' : '') + '>' + d.innerHTML + '</body></html>';
+    fr.onload = () => { try {
+      const doc = fr.contentDocument, h = doc.documentElement.scrollHeight; fr.style.height = Math.min(Math.max(h, 400), 4000) + 'px';
+      // the preview runs no scripts of its own, so the builder wires the switch and the boxes from here (nothing is saved)
+      if (window.LessonFold) window.LessonFold.apply(doc.body, { lang:ar ? 'ar' : 'en' });
+      doc.querySelectorAll('[data-prevlang]').forEach(b => b.addEventListener('click', async () => { if (b.dataset.prevlang === S.lang) return; S.lang = b.dataset.prevlang; draw(); }));
+    } catch(e){} };
   }
   async function afterEditor(){
     preview(); loadVideo();

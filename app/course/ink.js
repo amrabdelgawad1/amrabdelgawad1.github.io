@@ -89,7 +89,7 @@
       function has(m, it) { try { var d = JSON.parse(store.get(key(m, it)) || 'null'); return !!(d && d.s && d.s.length); } catch (e) { return false; } }
       function blocks() { return [].slice.call(host.children).filter(function (e) { return e !== cv; }); }
       function hostRect() { return host.getBoundingClientRect(); }
-      function anchorRect(i) { var b = blocks()[i]; if (!b) return null; var r = b.getBoundingClientRect(), hr = hostRect(); return { x: r.left - hr.left, y: r.top - hr.top, w: Math.max(r.width, 1), h: Math.max(r.height, 1) }; }
+      function anchorRect(i) { var b = blocks()[i]; if (!b || b.classList.contains('lf-shut')) return null; /* marks on a folded box wait until it opens (lesson-fold.js) */ var r = b.getBoundingClientRect(), hr = hostRect(); return { x: r.left - hr.left, y: r.top - hr.top, w: Math.max(r.width, 1), h: Math.max(r.height, 1) }; }
       function toAbs(s) { var a = anchorRect(s.a); if (!a) return null; var out = []; for (var i = 0; i < s.p.length; i += 3) out.push(a.x + s.p[i] * a.w, a.y + s.p[i + 1] * a.h, s.p[i + 2]); return out; }
       function fit() {
         if (!host || !cv) return;
@@ -135,7 +135,7 @@
         if (!cur) return;
         var a = cur.abs, cy = 0, n = a.length / 3; for (var i = 0; i < a.length; i += 3) cy += a[i + 1]; cy /= n;
         var bl = blocks(), hr = hostRect(), best = 0, bd = 1e9;
-        bl.forEach(function (b, j) { var r = b.getBoundingClientRect(), top = r.top - hr.top, bot = top + r.height; var d = cy < top ? top - cy : cy > bot ? cy - bot : 0; if (d < bd) { bd = d; best = j; } });
+        bl.forEach(function (b, j) { if (b.classList.contains('lf-shut')) return; var r = b.getBoundingClientRect(), top = r.top - hr.top, bot = top + r.height; var d = cy < top ? top - cy : cy > bot ? cy - bot : 0; if (d < bd) { bd = d; best = j; } });
         var ar = anchorRect(best), p = [];
         if (!ar) { cur = null; redraw(); return; }
         for (var k = 0; k < a.length; k += 3) p.push(Math.round((a[k] - ar.x) / ar.w * 10000) / 10000, Math.round((a[k + 1] - ar.y) / ar.h * 10000) / 10000, Math.round(a[k + 2] * 100) / 100);

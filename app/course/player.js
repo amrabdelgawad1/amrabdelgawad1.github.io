@@ -377,7 +377,13 @@
     if (lang === 'ar' && PL === 'en') html = `<p class="cp-trans" lang="ar" dir="rtl">${UI.ar.untranslated}</p>` + html;
     const same = location.hash === lastHash, y = window.scrollY; lastHash = location.hash;
     const main = $('cpMain'); main.lang = PL; main.dir = PL === 'ar' ? 'rtl' : 'ltr';
-    main.innerHTML = html; side([mid, k]); bar(); wire(m, k); if (!same) menu(false);
+    main.innerHTML = html;
+    // Round 32 (I17): the example boxes fold away; open on the first visit, then each box keeps the learner's choice (saved with progress)
+    if (m && /^\d+$/.test(k || '') && m.parts[+k - 1] && isOpen(m) && window.LessonFold) {
+      const ps = P(m.id, +k - 1);
+      window.LessonFold.apply(main.querySelector('.cp-page'), { lang:PL, get:() => ps.fold || null, set:v => { if (v) ps.fold = v; else delete ps.fold; save(); } });
+    }
+    side([mid, k]); bar(); wire(m, k); if (!same) menu(false);
     // Round 29: questions under each part (E1), and the part saved as this person's place in the course (I16)
     if (m && /^\d+$/.test(k || '') && m.parts[+k - 1] && db && window.LessonQA && isOpen(m)) {
       const qa = document.createElement('div'); (main.querySelector('.cp-wrap') || main).appendChild(qa);
@@ -399,7 +405,8 @@
   });
   function wire(m, k){
     const box = $('cpMain');
-    if (window.AmrMediaFill && db) window.AmrMediaFill(db, box);   // pictures added in the course builder (R2) CUR = m && /^\d+$/.test(k || '') ? { m, i:+k - 1 } : null;
+    if (window.AmrMediaFill && db) window.AmrMediaFill(db, box);   // pictures added in the course builder (R2)
+    CUR = m && /^\d+$/.test(k || '') ? { m, i:+k - 1 } : null;
     if (m && /^\d+$/.test(k || '') && m.parts[+k - 1]) {
       const i = +k - 1, s = P(m.id, i), qa = QA(m.id, i), p = loc(m).parts[i];
       box.querySelectorAll('[data-ans]').forEach(x => { const j = x.dataset.ans; x.value = (qa[j] || {}).text || ''; x.addEventListener('input', () => { (qa[j] = qa[j] || {}).text = x.value; save(); }); });
@@ -541,6 +548,7 @@
     const main = $('cpMain'), el = main.querySelector(`[data-a="${j.a}"]`) || main;
     if (el.matches('.cp-q') && el.hidden) el.hidden = false;
     if (el.matches('details')) el.open = true;
+    if (window.LessonFold) window.LessonFold.reveal(el);   // a jump to a folded box opens it
     window.scrollTo(0, Math.max(0, el.getBoundingClientRect().top + window.scrollY - 84));
     el.classList.remove('cp-flash'); void el.offsetWidth; el.classList.add('cp-flash');
     const fq = fold(j.q).replace(/\s+/g, ' ').trim(); if (!fq) return;
