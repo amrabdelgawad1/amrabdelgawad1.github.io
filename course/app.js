@@ -666,6 +666,10 @@
         view: b => openViewer(contentPath(mod, b.dataset.file), b.dataset.name),
         print: () => window.print()
       } });
+    // Round 32 (I17): "Why it matters" and example boxes fold away; open on the first visit, then each box keeps the learner's choice.
+    // Saved with the pen marks (learn_progress, course 'acq-ink'), so it follows the learner to other devices.
+    if (window.LessonFold) { const fk = 'fold:' + mod.id + ':' + it.id;
+      LessonFold.apply($('lessonText'), { lang:'en', get:() => inkStore.get(fk), set:v => inkStore.set(fk, v ? JSON.stringify(v) : null) }); }
     inkTools(mod, it);
     if (window.CoursePractice && user) CoursePractice.mount($('practiceBox'), { db, user, mod, it, title:it.shortTitle || heading(it), toast }).then(f => { leaving = f; }).catch(() => {});
     if (mod.number === S.totalModules && /staying certified/i.test(it.title || '')) renewCard(it);

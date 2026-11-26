@@ -282,6 +282,10 @@ function renderItem(m, it) {
     '<button class="fab' + (Pad.hasInk(m, it) ? ' has' : '') + '" id="fab" type="button" aria-label="' + esc(t('scratch')) + '">' + (PEN ? PEN.icons.pad : I.pen) + '<span class="lbl">' + esc(t('scratch')) + '</span><span class="dot"></span></button></div>';
   app.innerHTML = h;
   bindGo(); enhance(m, it);
+  // Round 32 (I17): "Key idea" and example boxes fold away; open on the first visit, then each box keeps the learner's choice (synced)
+  if (!isQ && window.LessonFold) { var fk = 'fold:' + m.id + ':' + it.id;
+    window.LessonFold.apply(document.getElementById('content'), { lang: lang, get: function () { return Store.get(fk); },
+      set: function (v) { if (v) Store.set(fk, JSON.stringify(v)); else Store.del(fk); } }); }
   // Update the button, sidebar and progress in place (a full re-render would stop a playing lesson video).
   var db = document.getElementById('doneBtn'); if (db) db.onclick = function () {
     var v = !isDone(m, it); setDone(m, it, v);
@@ -485,6 +489,7 @@ var Find = (function () {
       r.setStart(n, a); r.setEnd(n, b); var mk = document.createElement('mark'); mk.className = 'hit';
       try { r.surroundContents(mk); } catch (e) { return; }
       var det = mk.closest('details'); if (det) det.open = true;
+      if (window.LessonFold) window.LessonFold.reveal(mk);   // a search hit inside a folded box opens it
       setTimeout(function () { mk.scrollIntoView({ block: 'center' }); }, 60);
       setTimeout(function () { mk.classList.add('fade'); }, 4000);
       return;

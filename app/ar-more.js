@@ -745,7 +745,9 @@
     'New rates apply to jobs that finish from now on.':'تُطبّق الأسعار الجديدة على المهام التي تنتهي من الآن.', 'Per lesson and course':'لكل درس وكورس',
     'No GPU work recorded yet.':'لم يُسجّل أي عمل للمعالج الرسومي بعد.', 'Adding up GPU time…':'جارٍ جمع وقت المعالج الرسومي…', 'Use numbers of 0 or more.':'استخدم أرقاماً من 0 فأكثر.',
     'GPU time and estimated cost of every narration and lesson video, per month, course and lesson.':'وقت المعالج الرسومي والتكلفة التقديرية لكل تعليق صوتي وفيديو درس، حسب الشهر والكورس والدرس.',
-    'Acquisitions':'الاستحواذ', 'Psychology':'علم النفس', 'Marketing':'التسويق', 'Scripts and tests':'نصوص واختبارات'
+    'Acquisitions':'الاستحواذ', 'Psychology':'علم النفس', 'Marketing':'التسويق', 'Scripts and tests':'نصوص واختبارات',
+    // Round 32: lesson boxes that fold (lesson-fold.js) and the course language switch in the builder preview
+    'Hide this box':'إخفاء هذا الصندوق', 'Show this box':'إظهار هذا الصندوق', 'Language':'اللغة', 'Show the lesson in English':'اعرض الدرس بالإنجليزية', 'Show the lesson in Arabic':'اعرض الدرس بالعربية'
   };
   Object.keys(W).forEach(k => { if (!(k in L.AR)) L.AR[k] = W[k]; });
   if (L.RULES) L.RULES.push(

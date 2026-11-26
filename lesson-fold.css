@@ -1,0 +1,21 @@
+/* Round 32 (I17): "Why it matters" and "Example" boxes that fold away (lesson-fold.js). Each course keeps its own box look;
+   this only adds the Hide/Show button in the label row and hides the rest of a folded box on screens. Printing shows everything. */
+.lf > .lf-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; }
+.lf-btn{ flex:none; display:inline-flex; align-items:center; gap:4px; min-height:30px; padding:0 8px; margin-block:-6px; margin-inline:0 -8px;
+  border:0; border-radius:8px; background:transparent; color:inherit; cursor:pointer;
+  font:600 12px/1 var(--sans, var(--body, Inter, system-ui, sans-serif)); letter-spacing:0; text-transform:none; opacity:.75; }
+html[dir="rtl"] .lf-btn, [dir="rtl"].lf .lf-btn{ font-family:"IBM Plex Sans Arabic", var(--sans, Inter, sans-serif); }
+.lf-btn:hover{ opacity:1; background:rgba(127,127,127,.12); }
+.lf-btn:focus-visible{ opacity:1; outline:2px solid currentColor; outline-offset:1px; }
+.lf-btn svg{ width:16px; height:16px; transform:rotate(180deg); transition:transform .18s ease; }
+.lf.lf-shut .lf-btn svg{ transform:none; }
+.lf-w{ font-size:12px; }
+@media screen{
+  .lf.lf-shut > :not(.lf-head){ display:none !important; }
+  .lf.lf-shut > .lf-head{ margin-bottom:0 !important; }
+  /* folded boxes keep even top and bottom space in each look */
+  .content .box.lf.lf-shut{ padding-bottom:14px; }
+  .content .case.lf.lf-shut{ padding-bottom:16px; }
+}
+@media (prefers-reduced-motion: reduce){ .lf-btn svg{ transition:none; } }
+@media print{ .lf-btn{ display:none !important; } .lf > .lf-head{ cursor:auto; } }
