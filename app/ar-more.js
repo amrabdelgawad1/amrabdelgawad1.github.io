@@ -767,3 +767,49 @@
     [/^Failed: (.*)$/, (m, t) => 'فشل: ' + t]
   );
 })();
+
+// Round 38: Automations, Friday summary, quiet hours and phone alert steps
+(function(){
+  'use strict';
+  const L = window.AppLang;
+  if (!L || !L.AR) return;
+  const W = {
+    'Automations':'الأتمتة', 'Rules':'القواعد', 'Run log':'سجل التشغيل', 'Waiting for your OK':'بانتظار موافقتك', 'Friday summary':'ملخص الجمعة',
+    'Simple rules: when something happens in the portal, the portal does the next step for you. Rules never email, text or message anyone outside the team, never touch money or pay, and never delete anything. Those wait here for your OK.':'قواعد بسيطة: عندما يحدث شيء في البوابة، تقوم البوابة بالخطوة التالية عنك. القواعد لا ترسل بريداً أو رسالة نصية أو رسالة لأي شخص خارج الفريق، ولا تلمس المال أو الأجور، ولا تحذف أي شيء. هذه تنتظر موافقتك هنا.',
+    'New rule':'قاعدة جديدة', 'Edit rule':'تعديل القاعدة', 'Edit':'تعديل', 'Test on a past event':'جرّبها على حدث سابق', 'Runs':'مرات التشغيل', 'Remove':'إزالة', 'Sure? Remove it':'متأكد؟ أزلها',
+    'When':'عندما', 'Only if':'فقط إذا', 'Then':'ثم', 'On':'تعمل', 'Off':'متوقفة', 'Hasn’t run yet.':'لم تعمل بعد.', 'Name':'الاسم', 'What it’s for (optional)':'الغرض منها (اختياري)',
+    'Only if (optional)':'فقط إذا (اختياري)', 'No conditions: it runs on every event of this kind.':'بدون شروط: تعمل مع كل حدث من هذا النوع.', 'Add a condition':'أضف شرطاً', 'Add a step':'أضف خطوة',
+    'Remove this step':'احذف هذه الخطوة', 'Save rule':'حفظ القاعدة', 'Field':'الحقل', 'Check':'الفحص', 'Value':'القيمة', 'Do':'افعل', 'To':'إلى', 'For':'لـ', 'Title':'العنوان', 'More (optional)':'تفاصيل (اختياري)',
+    'Due in (days)':'الموعد بعد (أيام)', 'Priority':'الأولوية', 'Normal':'عادية', 'High':'عالية', 'Low':'منخفضة', 'Note':'ملاحظة', 'Tag':'وسم', 'Move to':'انقل إلى', 'Kind':'النوع', 'Message':'رسالة', 'Email':'بريد', 'Text':'رسالة نصية',
+    'To (who you’ll send it to)':'إلى (من سترسلها له)', 'Subject (optional)':'الموضوع (اختياري)', 'Me':'أنا', 'The person in the event':'الشخص في الحدث',
+    'Send a bell and phone alert':'أرسل تنبيه الجرس والهاتف', 'Make a task':'أنشئ مهمة', 'Add a note':'أضف ملاحظة', 'Add a tag':'أضف وسماً', 'Move the card':'انقل البطاقة', 'Draft a message for my OK':'اكتب مسودة رسالة لموافقتي',
+    'A deal moves to another stage':'صفقة تنتقل إلى مرحلة أخرى', 'A deal closes (closed, won, sold or funded)':'صفقة تُغلق (مغلقة، رابحة، مباعة أو مموّلة)', 'A deal is added':'إضافة صفقة',
+    'Someone clocks out':'شخص ينهي ورديته', 'A lead gets an outcome':'عميل محتمل يحصل على نتيجة', 'A callback is set':'تحديد معاودة اتصال', 'An invoice is sent':'إرسال فاتورة',
+    'A client payment comes in':'وصول دفعة من عميل', 'Someone applies to join':'شخص يتقدّم للانضمام', 'Someone finishes a lesson':'شخص ينهي درساً', 'A task is finished':'إنجاز مهمة',
+    'is':'يساوي', 'is not':'لا يساوي', 'has the words':'يحتوي على', 'doesn’t have':'لا يحتوي على', 'is at least':'على الأقل', 'is at most':'على الأكثر',
+    'Pick a past event':'اختر حدثاً سابقاً', 'Test':'جرّب', 'Close':'إغلاق', 'No past events of this kind yet':'لا توجد أحداث سابقة من هذا النوع بعد',
+    'Run it for real on this event':'شغّلها فعلياً على هذا الحدث', 'Sure? This does the steps for real':'متأكد؟ هذا ينفّذ الخطوات فعلياً',
+    'Show every rule':'أظهر كل القواعد', 'No runs yet. Runs and tests show here.':'لا توجد مرات تشغيل بعد. التشغيل والتجارب تظهر هنا.', 'Done':'تم', 'Test only':'تجربة فقط', 'No match':'لا تطابق', 'Problem':'مشكلة', 'A removed rule':'قاعدة محذوفة',
+    'Automations only draft these. Nothing goes to a client, seller or anyone outside the team until you send it yourself.':'الأتمتة تكتب هذه كمسودات فقط. لا يصل شيء لعميل أو بائع أو أي شخص خارج الفريق حتى ترسله بنفسك.',
+    'Nothing waiting.':'لا شيء بالانتظار.', 'Handled lately':'تمت معالجتها مؤخراً', 'Copy the text':'انسخ النص', 'I sent it myself':'أرسلتها بنفسي', 'Not needed':'غير مطلوبة',
+    'You sent this yourself.':'أرسلت هذه بنفسك.', 'Marked not needed.':'عُلّمت كغير مطلوبة.',
+    'Send me the Friday summary':'أرسل لي ملخص الجمعة', 'At (Cairo time)':'في الساعة (بتوقيت القاهرة)', 'Send a test to me now':'أرسل تجربة لي الآن', 'Latest summary':'آخر ملخص',
+    'None yet. The first one comes this Friday, or send a test.':'لا يوجد بعد. يصل الأول هذه الجمعة، أو أرسل تجربة.',
+    'One page for you every Friday, in the bell and by email: shifts and hours, calls by rep, deals, fees, invoices, cash this week, lessons, applicants, and what’s waiting for you. Only you get it.':'صفحة واحدة لك كل جمعة، في الجرس وبالبريد: الورديات والساعات، المكالمات لكل مندوب، الصفقات، الأتعاب، الفواتير، النقد هذا الأسبوع، الدروس، المتقدمون، وما ينتظرك. أنت فقط تستلمها.',
+    'Quiet hours':'ساعات الهدوء', 'Use quiet hours':'استخدم ساعات الهدوء', 'Quiet hours off.':'ساعات الهدوء متوقفة.',
+    'No phone alerts in these hours. The bell still keeps them for when you open the portal. Sign-in warnings and must-read announcements still come through.':'لا تنبيهات على الهاتف في هذه الساعات. الجرس يحتفظ بها حتى تفتح البوابة. تحذيرات تسجيل الدخول والإعلانات المهمة تصل دائماً.',
+    'How to get alerts on your phone':'كيف تصلك التنبيهات على هاتفك',
+    'Then each kind of alert above follows your Phone ticks. If alerts stop, turn phone alerts off and on again on that phone.':'بعدها يتبع كل نوع من التنبيهات أعلاه اختيارك في عمود الهاتف. إذا توقفت التنبيهات، أوقفها ثم شغّلها مرة أخرى على ذلك الهاتف.',
+    'Automations and Friday summary':'الأتمتة وملخص الجمعة', 'Alerts from automation rules, and the Friday summary for Amr':'تنبيهات قواعد الأتمتة، وملخص الجمعة لعمرو',
+    'Give the rule a name.':'أعطِ القاعدة اسماً.', 'Every alert and task needs a title.':'كل تنبيه ومهمة يحتاج عنواناً.', 'Write the draft message.':'اكتب نص المسودة.',
+    'Rule saved.':'حُفظت القاعدة.', 'Rule added, switched off. Test it, then switch it on.':'أُضيفت القاعدة وهي متوقفة. جرّبها ثم شغّلها.', 'Switched on.':'شُغّلت.', 'Switched off.':'أُوقفت.', 'Rule removed.':'أُزيلت القاعدة.',
+    'Done. See the run log.':'تم. راجع سجل التشغيل.', 'Copied.':'نُسخ.', 'Sending…':'جارٍ الإرسال…', 'Sent to you only. Check the bell and your email.':'أُرسلت لك فقط. راجع الجرس وبريدك.', 'Friday summary off.':'ملخص الجمعة متوقف.',
+    'This page is only for Amr.':'هذه الصفحة لعمرو فقط.'
+  };
+  Object.keys(W).forEach(k => { if (!(k in L.AR)) L.AR[k] = W[k]; });
+  if (L.RULES) L.RULES.push(
+    [/^(\d+) rules?, (\d+) switched on\. The starter rules begin switched off\.$/, (m, a, b) => a + ' قاعدة، ' + b + ' تعمل. القواعد الجاهزة تبدأ متوقفة.'],
+    [/^Ran (\d+) times?, last (.+) Cairo time\.$/, (m, n, t) => 'عملت ' + n + ' مرة، آخرها ' + t + ' بتوقيت القاهرة.'],
+    [/^Saved\. It comes every Friday at (.+) Cairo time\.$/, (m, t) => 'حُفظ. يصل كل جمعة الساعة ' + t + ' بتوقيت القاهرة.']
+  );
+})();
