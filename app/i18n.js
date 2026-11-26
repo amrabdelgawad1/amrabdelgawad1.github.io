@@ -115,7 +115,7 @@
   };
   const ATTRS = ['placeholder', 'aria-label', 'title'];
   // Never touched: code, typing boxes, and anything marked data-no-ar or translate="no" (lesson content, call transcripts, names)
-  const skip = el => !el || /^(SCRIPT|STYLE|TEXTAREA|CODE|PRE)$/.test(el.nodeName) || (el.closest && el.closest('[data-no-ar],[translate="no"],.notranslate'));
+  const skip = el => !el || /^(SCRIPT|STYLE|TEXTAREA|CODE|PRE)$/.test(el.nodeName) || (el.closest && el.closest('[data-no-ar],[translate="no"],.notranslate,[contenteditable]:not([contenteditable="false"])'));   // editable areas: never change what someone is typing or editing
   function walk(root){
     if (!root || root.nodeType !== 1 && root.nodeType !== 9) return;
     if (root.nodeType === 1 && skip(root)) return;
