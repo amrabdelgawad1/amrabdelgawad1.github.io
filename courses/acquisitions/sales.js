@@ -39,7 +39,9 @@
       const i = await fn({ action:'info' });
       if (!i.ready) return notOpen();
       $('cPrice').textContent = money(i.price_cents, i.currency);
-      $('cPriceSub').textContent = i.interval ? 'per ' + i.interval + ', cancel any time' : 'Launch price for the first 50 students, then $297. One payment, lifetime access.';
+      $('cPriceSub').textContent = i.interval ? 'per ' + i.interval + ', cancel any time'
+        : i.price_cents < 29700 ? 'Launch price for the first 50 students, then $297. One payment, lifetime access.'
+        : 'One payment, lifetime access.';
       $('cTest').hidden = !i.sandbox;
       $('cGo').textContent = 'Buy the course'; $('cGo').disabled = false;
     } catch(e) { notOpen(); }
