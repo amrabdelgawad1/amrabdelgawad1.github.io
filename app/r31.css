@@ -79,3 +79,6 @@
   #pView .r31-step{grid-template-columns:28px 1fr}
   #pView .r31-step span{grid-column:2}
 }
+/* the portal paints every #pView button's text white (html body :is(#pView,#pPeople) .p-btn); the dialog sits outside .px */
+html body #pView .r31-dlg .p-btn.is-ghost{background:var(--p-card);color:var(--p-ink);border:1px solid var(--p-line2)}
+html body #pView .r31-dlg .p-btn.is-ghost:hover{border-color:var(--p-accent);color:var(--p-accent)}
