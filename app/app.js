@@ -1107,5 +1107,8 @@
     }
     route();
   })();
+  // Round 33 part 2: the language switch is saved on the person's account too, so their emails and phone alerts
+  // come in the same language. The server only writes when it changed.
+  document.addEventListener('talents-signed-in', () => { try { db.rpc('set_my_lang', { p_lang: (window.AppLang && window.AppLang.lang) === 'ar' ? 'ar' : 'en' }).then(() => {}, () => {}); } catch (e) {} });
   db.auth.onAuthStateChange(event => { if (event === 'SIGNED_OUT') { stopTimers(); show('vLogin'); document.dispatchEvent(new Event('talents-signed-out')); } });
 })();

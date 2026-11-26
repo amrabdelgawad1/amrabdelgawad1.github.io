@@ -85,6 +85,16 @@
         '<li><b>Put it back.</b><p>In Supabase, open Table Editor, pick the same table, then Insert › Import data from CSV and choose the file. Rows that already exist are skipped if they have the same id.</p></li>' +
         '<li><b>Or ask for help.</b><p>Tell Claude “put back the &lt;table&gt; rows from the &lt;date&gt; backup”. Nothing is deleted while restoring.</p></li></ol>');
 
+    // Round 33 part 2: English still seen on screen with Arabic on (kept on this device by i18n.js). The repo check
+    // (.github/ar-check.mjs, in the smoke tests) covers labels in the code; this catches text that comes from the database.
+    const arBox = () => { let o = {}; try { o = JSON.parse(localStorage.getItem('arMissing') || '{}'); } catch (e) {}
+      const ks = Object.keys(o).sort((x, y) => o[y].at - o[x].at);
+      return card('Arabic check', ks.length ? plural(ks.length, 'line') : '', '<p class="tp-note">English seen on screen while Arabic was on, on this device. Names, addresses and numbers are expected here. Anything else needs an Arabic line in app/ar-more.js. Labels in the code are checked on every push.</p>' +
+        (ks.length ? ks.slice(0, 120).map(k => '<div class="p-row"><span data-no-ar>' + esc(k) + '<br><small>' + esc(o[k].page || '') + '</small></span></div>').join('') + '<div class="wk-row"><button type="button" class="p-btn" data-arclear>Clear the list</button></div>'
+          : '<p class="p-empty">' + ((window.AppLang && window.AppLang.lang) === 'ar' ? 'Nothing in English so far. Open the pages, then come back here.' : 'Switch the portal to Arabic, open the pages, then come back here.') + '</p>')); };
+    body.insertAdjacentHTML('beforeend', '<div id="r33Ar">' + arBox() + '</div>');
+    body.addEventListener('click', e => { if (!e.target.closest('[data-arclear]')) return; try { localStorage.removeItem('arMissing'); } catch (x) {} if (window.AppLang && window.AppLang.missing) window.AppLang.missing.clear(); $('r33Ar').innerHTML = arBox(); });
+
     body.addEventListener('click', async e => {
       if (e.target.id === 'r6Again') return V.status.open(el, ok);
       if (e.target.id === 'r6Now') { e.target.disabled = true; const x = await safe(db().rpc('portal_backup_now'));
