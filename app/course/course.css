@@ -299,3 +299,12 @@ html[lang="ar"] body{ font-family:var(--body); }
 .cp-checks details[open] summary{ border-bottom:1px solid var(--line); }
 .cp-checks details p{ margin:0; padding:12px 14px; background:var(--ok-soft); border-radius:0 0 8px 8px; }
 .cp-recap dd, .cp-recap li, .cp-checks p{ overflow-wrap:anywhere; }
+
+/* Round 32 (E21): on phones the course top bar was wider than the screen (9 buttons plus the EN / ع switch), so the page slid
+   sideways, worst in Arabic. Same buttons, a little smaller, and the course logo steps aside while the back button is there. */
+@media (max-width:520px){
+  .cp-top.p-shelled.p-has-back .cp-brand.p-brand-keep{ display:none; }
+  .cp-top.p-shelled.p-shelled{ gap:2px; }
+  .cp-top.p-shelled .cp-menu, .cp-top.p-shelled .cp-findbtn, .cp-top.p-shelled .p-back, .cp-top.p-shelled .p-apps-btn,
+  .cp-top.p-shelled .p-help, .cp-top.p-shelled .p-bell, .cp-top.p-shelled .p-me{ width:38px; height:38px; min-width:0; }
+}

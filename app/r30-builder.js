@@ -296,7 +296,7 @@
       preview(w, key, lang){
         const i = +key - 1, en = w.en.parts[i] || {}, ar = w.ar && w.ar.parts[i], p = lang === 'ar' && ar ? Object.assign({}, en, ar, { s:(en.s || []).map((s, j) => Object.assign({}, s, (ar.s || [])[j])) }) : en;
         const f = fileCache.mkt && fileCache.mkt.data, src = list => (list || []).map(s => f && f.sources && f.sources[s] ? '<span class="chip src">' + esc(f.sources[s].t) + '</span>' : '').join('');
-        return { css:['/portal.css?v=13', '/app/course/course.css?v=10', '/app/course/theme.css?v=1'], lang,
+        return { css:['/portal.css?v=13', '/app/course/course.css?v=11', '/app/course/theme.css?v=1'], lang,
           html:'<div class="cp" id="cp"><div class="cp-body"><main class="cp-main" id="cpMain"><div class="cp-wrap"><span class="cp-kick">' + esc((lang === 'ar' ? 'الجزء ' : 'Part ') + w.en.n + '.' + key) + '</span><h1 class="cp-h1">' + esc(p.t || '') + '</h1>' +
             '<article class="cp-card cp-lesson"><div class="cp-page">' + (p.s || []).map(s => '<section class="cp-sec"><h3>' + esc(s.h || '') + ' ' + src(s.src) + '</h3>' + (s.b || '') + '</section>').join('') +
             '<section class="cp-box case"><span class="cp-kick">' + (lang === 'ar' ? 'مثال' : 'Example') + '</span>' + (p.ex || '') + '</section>' +
@@ -400,7 +400,7 @@
       strip(w){ const c = clone(w); Object.keys(c).filter(k => k.charAt(0) === '_').forEach(k => delete c[k]); return c; },
       preview(w, key, lang){
         const it = this.find(w, key) || {}, html = L(it.html, lang);
-        return { css:['/portal.css?v=13', '/app/course/course.css?v=10', '/app/psychology/psy-content.css?v=4', '/app/psychology/theme.css?v=2'], lang,
+        return { css:['/portal.css?v=13', '/app/course/course.css?v=11', '/app/psychology/psy-content.css?v=4', '/app/psychology/theme.css?v=2'], lang,
           html:'<div class="cp" id="cp"><div class="cp-body"><main class="cp-main" id="cpMain"><div class="cp-wrap cp-lesson"><span class="cp-kick">' + esc(it.label || '') + '</span><h1 class="cp-h1">' + esc(L(it.title, lang) || L(it.title, 'en')) + '</h1>' +
             // like the course (Round 32, E21): no Arabic yet shows the English with the course's own small note
             (!html && lang === 'ar' ? '<div class="note-ar">' + esc(((window.I18N || {}).ar || {}).arPending || 'الترجمة العربية لهذه الصفحة قيد الإعداد. يظهر النص بالإنجليزية مؤقتًا.') + '</div>' : '') +
