@@ -553,7 +553,7 @@
       hours_week:numOrNull('p20pHours'), rate:numOrNull('p20pRate'), start_on:val('p20pStart') || null, valid_until:val('p20pValid') || null, terms:val('p20pTerms') || null, status:val('p20pStatus') || 'draft',
       package_id:+val('p20pPkg') || null });
     function paper(p){
-      return '<article class="p-card p20-paper" id="p20Paper">' + propBlocks(p).map(b => b.small ? '<p class="p20-small">' + esc(b.small) + '</p>' : b.h1 ? '<h2>' + esc(b.h1) + '</h2>' : b.h2 ? '<h3>' + esc(b.h2) + '</h3>' :
+      return '<article data-no-ar dir="ltr" lang="en" class="p-card p20-paper" id="p20Paper">' + propBlocks(p).map(b => b.small ? '<p class="p20-small">' + esc(b.small) + '</p>' : b.h1 ? '<h2>' + esc(b.h1) + '</h2>' : b.h2 ? '<h3>' + esc(b.h2) + '</h3>' :
         b.rule ? '<hr>' : b.row ? '<p class="p20-row' + (b.bold ? ' b' : '') + '"><span>' + esc(b.row[0]) + '</span><span>' + esc(b.row[1]) + '</span></p>' : b.gap ? '' : String(b.p).split(/\n+/).map(x => '<p>' + esc(x) + '</p>').join('')).join('') +
         '<div class="px-tools px-noprint"><button type="button" class="p-btn" data-p20ppdf="save">Save PDF to Files</button><button type="button" class="p-btn is-ghost" data-p20ppdf="dl">Download PDF</button>' +
         '<button type="button" class="p-btn is-ghost" id="p20pPrint">Print</button><button type="button" class="p-btn is-ghost" id="p20pCopy">Copy as text</button>' +
@@ -691,7 +691,7 @@
       if (!ok()) return;
       inv._people = pp.people || [];
       const pays = PAY.filter(p => p.invoice_id === id), left = Math.max(0, +inv.amount - +inv.amount_paid), t = nyDay();
-      box.innerHTML = '<section class="p-card np-invoice p20-paper" id="p20iPaper">' + lines(inv, inv._people).map(b => b.small ? '<p class="p20-small">' + esc(b.small) + '</p>' : b.h1 ? '<h2>' + esc(b.h1) + '</h2>' : b.rule ? '<hr>' :
+      box.innerHTML = '<section data-no-ar dir="ltr" lang="en" class="p-card np-invoice p20-paper" id="p20iPaper">' + lines(inv, inv._people).map(b => b.small ? '<p class="p20-small">' + esc(b.small) + '</p>' : b.h1 ? '<h2>' + esc(b.h1) + '</h2>' : b.rule ? '<hr>' :
           b.row ? '<p class="p20-row' + (b.bold ? ' b' : '') + (b.row.length === 3 ? ' three' : '') + '">' + b.row.map(c => '<span>' + esc(c) + '</span>').join('') + '</p>' : b.gap ? '' : '<p>' + esc(b.p) + '</p>').join('') +
         '<div class="px-noprint p20-acts"><div class="px-tools"><button type="button" class="p-btn" data-p20ipdf="save">Save PDF to Files</button><button type="button" class="p-btn is-ghost" data-p20ipdf="dl">Download PDF</button><button type="button" class="p-btn is-ghost" id="p20iPrint">Print</button>' +
           (inv.pdf_path ? '<span class="p-hint">Saved in Files › mine/clients/invoices</span>' : '') + '<span class="p-hint" id="p20iDocMsg" role="status"></span></div>' +
