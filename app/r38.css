@@ -1,0 +1,31 @@
+/* Round 38: Automations, Friday summary, quiet hours */
+.r38-tabs{ margin:4px 0 14px; }
+.r38-top{ align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+.r38-rule{ border-left:4px solid var(--p-line); }
+.r38-rule.is-on{ border-left-color:#067647; }
+.r38-switch{ display:inline-flex; align-items:center; gap:8px; min-height:44px; font-weight:600; cursor:pointer; }
+.r38-switch input{ width:20px; height:20px; }
+.r38-dl{ display:grid; grid-template-columns:max-content 1fr; gap:6px 14px; margin:10px 0; }
+.r38-dl dt{ font-size:12px; letter-spacing:.6px; text-transform:uppercase; color:var(--p-muted, #6b7280); padding-top:2px; }
+.r38-dl dd{ margin:0; overflow-wrap:anywhere; }
+.r38-test, .r38-edit h3{ margin-top:14px; }
+.r38-test{ border-top:1px solid var(--p-line); padding-top:12px; }
+.r38-test h3{ font-size:15px; margin:0 0 8px; }
+.r38-result{ margin-top:10px; padding:10px 12px; border-radius:10px; background:var(--p-soft, rgba(20,33,61,.05)); }
+.r38-result ul, .r38-log ul{ margin:6px 0 0; padding-left:18px; }
+.is-bad{ color:#b42318; }
+.r38-act{ border:1px solid var(--p-line); border-radius:12px; padding:10px 12px; margin:0 0 10px; }
+.r38-act legend{ font-weight:600; padding:0 6px; }
+.r38-cond{ align-items:end; }
+.r38-log{ list-style:none; margin:0; padding:0; }
+.r38-log > li{ padding:10px 0; border-bottom:1px solid var(--p-line); }
+.r38-log > li p{ margin:4px 0 0; }
+.r38-logtop{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.r38-logtop small{ color:var(--p-muted, #6b7280); margin-left:auto; }
+.r38-draft{ padding:12px 0; border-bottom:1px solid var(--p-line); }
+.r38-body{ white-space:pre-wrap; overflow-wrap:anywhere; }
+.r38-frame{ width:100%; min-height:500px; border:1px solid var(--p-line); border-radius:12px; background:#fff; }
+.r38-quiet select{ min-height:40px; }
+.r38-steps{ margin-top:10px; }
+.r38-steps summary{ cursor:pointer; font-weight:600; min-height:44px; display:flex; align-items:center; }
+@media (max-width:640px){ .r38-dl{ grid-template-columns:1fr; } .r38-logtop small{ margin-left:0; width:100%; } }

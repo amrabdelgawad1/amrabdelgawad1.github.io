@@ -345,6 +345,7 @@
     ['money', 'Money', 'Budget alerts and subscription renewals', true],
     ['clients', 'Clients', 'Follow-ups due on client leads and clients', true],
     ['team', 'Team and site', 'Job applications and feedback from the team', true],
+    ['automations', 'Automations and Friday summary', 'Alerts from automation rules, and the Friday summary for Amr'],
     ['other', 'Everything else', 'Anything not listed above']
   ];
   const hourName = h => (h % 12 || 12) + ':00 ' + (h < 12 ? 'AM' : 'PM');
