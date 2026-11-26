@@ -1,0 +1,81 @@
+/* Round 31 (plan): course builder part 2. Quiz builder and question bank (dialog), re-voice list, Make the video steps,
+   GPU time and cost (Status card and Voice Studio > GPU cost). */
+
+/* quiz builder dialog */
+.r31-dlg{width:min(980px,calc(100vw - 24px));max-height:calc(100vh - 32px);padding:0;border:1px solid var(--p-line,#e4e1da);border-radius:16px;background:var(--p-card,#fff);color:var(--p-ink,#1d2126);box-shadow:0 24px 64px rgba(0,0,0,.22);display:flex;flex-direction:column}
+.r31-dlg:not([open]){display:none}
+.r31-dlg::backdrop{background:rgba(15,18,22,.45)}
+.r31-qhead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:16px 20px;border-bottom:1px solid var(--p-line,#e4e1da)}
+.r31-qhead h2{margin:0;font-size:18px}
+.r31-qhead > span{color:var(--p-muted,#8a8f96);font-size:13.5px}
+.r31-qhead .p-btn{margin-left:auto}
+.r31-qtools{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 16px;padding:12px 20px 0}
+.r31-qtools .sc-f{flex:1 1 220px;margin:0}
+.r31-qnote{margin:10px 20px 0!important;font-size:13px}
+.r31-qbody{overflow:auto;padding:8px 20px 20px;flex:1 1 auto}
+.r31-set{padding:14px 0;border-top:1px solid var(--p-line,#e4e1da)}
+.r31-set:first-child{border-top:0}
+.r31-sethead{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.r31-sethead h3{margin:0;font-size:16px;flex:1 1 260px}
+.r31-setrow{margin-top:8px!important}
+.r31-setrow .sc-f input{width:80px}
+.r31-spread{font-size:13px;color:var(--p-ink2,#5b6168);font-variant-numeric:tabular-nums}
+.r31-iss{list-style:none;margin:10px 0;padding:0;display:grid;gap:4px;font-size:13.5px}
+.r31-iss li{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
+.r31-iss .is-err{color:var(--p-bad,#b3261e)}
+.r31-q{margin-top:12px;padding:12px 14px;border:1px solid var(--p-line,#e4e1da);border-radius:12px;background:var(--p-card,#fff)}
+.r31-qtop{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-bottom:6px}
+.r31-qtop .p-empty{margin:0;font-size:12.5px}
+.r31-qact{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto;align-items:center}
+.r31-qact select,.r31-qtop select{max-width:220px}
+.r31-opts{display:grid;gap:6px;margin:8px 0}
+.r31-opt{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px;align-items:center;padding:4px 6px;border-radius:10px}
+.r31-opt.is-right{background:rgba(46,125,50,.09)}
+.r31-opt input[type=text]{width:100%;min-width:0}
+.r31-opt small{color:var(--p-muted,#8a8f96);font-size:12px;font-variant-numeric:tabular-nums;min-width:2.5em;text-align:right}
+.r31-pick{display:flex;align-items:center;gap:6px;cursor:pointer}
+.r31-pick b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;border:1px solid var(--p-line,#e4e1da);font-size:13px}
+.r31-opt.is-right .r31-pick b{background:#2e7d32;border-color:#2e7d32;color:#fff}
+.r31-oadd{margin-bottom:8px}
+.cb-ic.is-sure{width:auto;padding:0 8px}
+
+/* module page: re-voice */
+#pView .r31-rv{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
+#pView .r31-rv > li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 10px;border:1px solid var(--p-line,#e4e1da);border-radius:10px}
+#pView .r31-rv > li .p-empty{margin:0}
+#pView .r31-rv > li .p-btn{margin-left:auto}
+#pView .r31-rv details{flex-basis:100%;font-size:13.5px}
+#pView .r31-rv details ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px}
+
+/* lesson page: Make the video */
+#pView .r31-steps{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}
+#pView .r31-step{display:grid;grid-template-columns:28px minmax(90px,auto) 1fr;gap:4px 10px;align-items:start;font-size:14px}
+#pView .r31-step i{font-style:normal;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;border:1px solid var(--p-line,#e4e1da);font-size:13px;font-weight:600}
+#pView .r31-step.is-ok i{background:#2e7d32;border-color:#2e7d32;color:#fff}
+#pView .r31-step.is-run i{border-color:var(--p-accent,#E2602A);color:var(--p-accent,#E2602A)}
+#pView .r31-step.is-bad i{background:var(--p-bad,#b3261e);border-color:var(--p-bad,#b3261e);color:#fff}
+#pView .r31-step b{padding-top:3px}
+#pView .r31-step span{padding-top:3px;color:var(--p-ink2,#5b6168);overflow-wrap:anywhere}
+#pView .r31-step small{display:block;color:var(--p-muted,#8a8f96);font-size:12.5px}
+#pView .r31-hist{margin-top:10px;font-size:13.5px}
+#pView .r31-hist ul{margin:6px 0;padding-left:18px;display:grid;gap:3px}
+
+/* GPU time and cost */
+.r31-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:4px 0 12px}
+.r31-stat{display:grid;gap:2px;padding:10px 12px;border:1px solid var(--p-line,#e4e1da);border-radius:12px}
+.r31-stat span{font-size:12.5px;color:var(--p-muted,#8a8f96)}
+.r31-stat b{font-size:20px;font-variant-numeric:tabular-nums}
+.r31-stat small{font-size:12.5px;color:var(--p-ink2,#5b6168)}
+.r31-h3{margin:18px 0 8px;font-size:15px}
+.r31-tw{overflow-x:auto;max-height:460px;overflow-y:auto}
+.r31-tw table{min-width:520px;width:100%}
+.r31-tw thead th{position:sticky;top:0;background:var(--p-card,#fff)}
+.vs-app .r31-vscost{padding:4px 0}
+.vs-app .r31-stat{border-color:var(--vs-line,#d9dfdb);background:var(--vs-card,#fff)}
+.vs-app .r31-tw thead th{background:var(--vs-paper,#f6f7f5)}
+@media (max-width:640px){
+  .r31-opt{grid-template-columns:auto 1fr auto}
+  .r31-opt small{display:none}
+  #pView .r31-step{grid-template-columns:28px 1fr}
+  #pView .r31-step span{grid-column:2}
+}

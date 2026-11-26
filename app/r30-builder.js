@@ -14,7 +14,8 @@
 // Hidden lessons are taken out of the live module and kept in course_builder_shelf, so Unhide puts them back where they were.
 // Lesson ids never change (Voice Studio, videos and progress use them). A Publish that changes narrated text marks the lesson
 // "needs re-voice" in course_builder_revoice for Round 31 (V1).
-// Round 31 hooks: window.CourseBuilder.hooks.quiz(ctx) and .makeVideo(ctx); the editor shows their buttons once they are set.
+// Round 31 hooks (app/r31-course.js): hooks.quiz(ctx) opens the quiz builder, hooks.makeVideo(ctx) the Make the video panel,
+// hooks.afterDraw(ctx, body) fills #r31Mod (module page: question bank, re-voice) and #r31Vid (lesson page: video builds).
 (function(){
   'use strict';
   const PX = window.PX; if (!PX) return;
@@ -28,8 +29,8 @@
   const when = at => !at ? '' : window.PortalUI ? window.PortalUI.when(at, { zone:false }) :
     new Date(at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit', hour12:true });
   const bucket = () => db().storage.from('course-content');
-  const hooks = { quiz:null, makeVideo:null };
-  window.CourseBuilder = { hooks };
+  const hooks = { quiz:null, makeVideo:null, afterDraw:null };
+  window.CourseBuilder = { hooks, mdLines, htmlLines };
 
   // ======================================================================
   // Small parsers: Markdown lessons (Acquisitions) and HTML lessons (Marketing, Psychology) as blocks
@@ -256,6 +257,7 @@
           if (!en) return add(null, 'error', 'module is missing from the content file');
           if (!en.t) add(null, 'error', 'module has no title');
           if (!(en.quiz || []).length) add(null, 'error', 'module has no checkpoint quiz');
+          else if (window.R31Quiz) window.R31Quiz.mktIssues(en.quiz, ar && ar.quiz).forEach(x => add(null, x.severity, 'quiz: ' + x.issue));
           (en.parts || []).forEach((p, i) => {
             const k = String(i + 1);
             if (!String(p.t || '').trim()) add(k, 'error', 'part has no title');
@@ -485,7 +487,7 @@
     if (!S.w) throw new Error('This module isn’t there any more.');
     if (S.course === 'acq') { S.w._hidden = S.w._hidden || []; S.w._diagrams = S.w._diagrams || {}; }
     if (S.course === 'psy') S.w._hidden = S.w._hidden || [];
-    const rv = await safe(db().from('course_builder_revoice').select('item_id,lang,marked_at').eq('course', S.course).eq('module_id', mid).is('cleared_at', null));
+    const rv = await safe(db().from('course_builder_revoice').select('item_id,lang,lines,marked_at').eq('course', S.course).eq('module_id', mid).is('cleared_at', null));
     S.revoice = rv.data || [];
   }
   const isDraft = mid => !!S.drafts[mid];
@@ -523,6 +525,7 @@
     S.body.innerHTML = html;
     if (S.key) afterEditor();
     if (S.mid && !S.key) loadVersions();
+    if (hooks.afterDraw && S.mid) try { hooks.afterDraw(ctx(), S.body); } catch(e) { console.warn('builder hook', e); }
   }
 
   // ---------------- CB1: builder home ----------------
@@ -554,6 +557,7 @@
         (c.why ? '<p class="p-empty">' + esc(c.why) + '</p>' : '') +
         (hidden.length ? '<h3 class="cb-h3">Hidden from learners</h3><ul class="cb-hidden">' + hidden.map(h => '<li><span>' + esc(S.course === 'psy' ? (h.item.label ? h.item.label + ' ' : '') + L(h.item.title, 'en') : h.item.title || h.item.id) + '</span><button type="button" class="p-btn is-ghost" data-unhide="' + esc(h.item.id) + '">Unhide</button></li>').join('') + '</ul>' : '') +
         publishBar()) +
+      '<div id="r31Mod"></div>' +
       card('Versions', 'Kept on every Publish', '<div id="cbVersions">' + PX.loading + '</div>');
   }
   const KIND = { group:'Lesson group', assignment:'Written drill', checkpoint:'Checkpoint', quiz:'Quiz', exam:'Exam', playbook:'Playbook', notes:'Notes' };
@@ -659,10 +663,10 @@
   }
   function quizHook(){
     const it = A().find(S.w, S.key);
-    const n = S.course === 'acq' ? ((it.quiz && it.quiz.questions) || []).length : S.course === 'mkt' ? (it.q || []).length : 0;
+    const n = S.course === 'acq' ? ((it.quiz && it.quiz.questions) || []).length : S.course === 'mkt' ? ((S.w.en && S.w.en.quiz) || []).length : 0;
     if (S.course === 'psy') return '';
-    return '<div class="cb-quiz" data-hook="quiz"><b>' + (S.course === 'acq' ? 'Quiz' : 'Practice questions') + '</b><span>' + plural(n, 'question') + '</span>' +
-      (hooks.quiz ? '<button type="button" class="p-btn is-ghost" data-act="quiz">Edit the questions</button>' : '<span class="p-empty">Questions are edited in the quiz builder (coming next).</span>') + '</div>';
+    return '<div class="cb-quiz" data-hook="quiz"><b>' + (S.course === 'acq' ? 'Quiz' : 'Module checkpoint quiz') + '</b><span>' + plural(n, 'question') + (S.course === 'acq' && it.quiz && it.quiz.passMark ? ' · pass mark ' + esc(it.quiz.passMark) + '%' : '') + '</span>' +
+      (hooks.quiz ? '<button type="button" class="p-btn is-ghost" data-act="quiz">' + (S.course === 'acq' ? (n ? 'Edit the questions' : 'Add a quiz') : 'Edit the module quiz') + '</button>' : '<span class="p-empty">Questions are edited in the quiz builder.</span>') + '</div>';
   }
   // Marketing parts: sections (heading + text), the example box, an optional B2B box and the terms
   function mktPart(){ const en = A().find(S.w, S.key); return S.lang === 'ar' ? (S.w.ar && S.w.ar.parts[+S.key - 1]) : en; }
@@ -748,7 +752,7 @@
     const k = A().videoKey(S.mid, S.key);
     return '<section class="p-card"><div class="p-card-head"><h2>Video</h2><span></span></div>' +
       (k ? '<div id="cbVideo">' + PX.loading + '</div>' : empty('Marketing lessons have no videos.')) +
-      '<div class="cb-row" data-hook="make-video">' + (hooks.makeVideo ? '<button type="button" class="p-btn is-ghost" data-act="makevideo">Make video</button>' : '<span class="p-empty">Make video comes with the video tools next.</span>') + '</div></section>';
+      (k ? '<div class="cb-row" data-hook="make-video">' + (hooks.makeVideo ? '<button type="button" class="p-btn" data-act="makevideo">Make the video</button>' : '<span class="p-empty">Make the video comes with the video tools next.</span>') + '</div><div id="r31Vid"></div>' : '') + '</section>';
   }
   async function loadVideo(){
     const box = S.body.querySelector('#cbVideo'), k = A().videoKey(S.mid, S.key); if (!box || !k) return;
@@ -830,7 +834,8 @@
     if (act === 'quiz' && hooks.quiz) return hooks.quiz(ctx());
     if (act === 'makevideo' && hooks.makeVideo) return hooks.makeVideo(ctx());
   }
-  const ctx = () => ({ course:S.course, module:S.mid, lesson:S.key, lang:S.lang, work:S.w, save:touch, redraw:draw });
+  const ctx = () => ({ course:S.course, module:S.mid, lesson:S.key, lang:S.lang, work:S.w, live:S.live, revoice:S.revoice, def:A(),
+    isDraft:isDraft(S.mid), save:touch, flush, redraw:draw, refresh:() => { S.mods = []; S.mid = null; route(); } });
   function redrawSide(){ const y = scrollY; draw(); scrollTo(0, y); }
 
   function onInput(e){

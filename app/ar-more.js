@@ -690,3 +690,78 @@
     [/^Hidden from (.+)\.$/, (m, c) => 'أُخفيت عن ' + c + '.']
   );
 })();
+
+// Round 31 (Nov 26 2026): quiz builder and question bank, re-voice changed lines, Make the video, GPU time and cost
+(function(){
+  'use strict';
+  const L = window.AppLang;
+  if (!L || !L.AR) return;
+  const W = {
+    // quiz builder and question bank
+    'Quiz':'الاختبار', 'Module checkpoint quiz':'اختبار نهاية الوحدة', 'Edit the questions':'عدّل الأسئلة', 'Add a quiz':'أضف اختباراً', 'Edit the module quiz':'عدّل اختبار الوحدة',
+    'Questions are edited in the quiz builder.':'تُعدّل الأسئلة في منشئ الاختبارات.', 'Question bank':'بنك الأسئلة', 'Open the question bank':'افتح بنك الأسئلة',
+    'Spread the right answers in every quiz':'وزّع الإجابات الصحيحة في كل الاختبارات', 'Edits go into the draft, like the lesson text.':'تذهب التعديلات إلى المسودة، مثل نص الدرس.',
+    'Find a question':'ابحث عن سؤال', 'Words in the question or options':'كلمات من السؤال أو الخيارات', 'Only quizzes with problems':'الاختبارات التي فيها مشكلات فقط',
+    'Go to':'انتقل إلى', 'Pick a quiz':'اختر اختباراً', 'Pass mark %':'درجة النجاح %', 'Spread the right answers':'وزّع الإجابات الصحيحة', '+ Add a question':'+ أضف سؤالاً',
+    'Checks pass':'الفحوص سليمة', 'Must fix':'يجب إصلاحه', 'No questions yet.':'لا أسئلة بعد.', 'One right answer':'إجابة صحيحة واحدة', 'Pick all that apply':'اختر كل ما ينطبق',
+    'Copy to…':'انسخ إلى…', 'Question':'السؤال', '+ Add an option':'+ أضف خياراً', 'Why (shown after they answer)':'السبب (يظهر بعد الإجابة)', 'Right answer':'الإجابة الصحيحة',
+    'Drill banks have no pass mark; the checkpoint draws from them.':'بنوك التدريب بلا درجة نجاح؛ يسحب منها اختبار نهاية الوحدة.',
+    'Marketing uses one pass mark for every module (80%), set in the course plan.':'يستخدم كورس التسويق درجة نجاح واحدة لكل الوحدات (80%)، محددة في خطة الكورس.',
+    'Changes go into your draft. Learners see them after you publish the module. Quiz attempts already started keep the questions they began with.':'تذهب التغييرات إلى مسودتك. يراها المتعلمون بعد نشر الوحدة. محاولات الاختبار التي بدأت تحتفظ بأسئلتها الأولى.',
+    'Arabic for this question is kept and moves with its options. Edit the Arabic words in the Marketing source files.':'تُحفظ الترجمة العربية لهذا السؤال وتتحرك مع خياراتها. عدّل الكلمات العربية في ملفات مصدر كورس التسويق.',
+    'Psychology sections have no quizzes.':'أقسام كورس علم النفس بلا اختبارات.', 'This module has no quizzes yet.':'لا اختبارات في هذه الوحدة بعد.',
+    'The right answers are already spread out.':'الإجابات الصحيحة موزعة بالفعل.',
+    // re-voice
+    'Needs re-voice':'يحتاج تسجيل صوت جديد', 'Re-voice changed lines':'أعد تسجيل الأسطر المتغيرة', 'Changed lines':'الأسطر المتغيرة', 'Queuing…':'جارٍ الإضافة إلى الطابور…',
+    'These lessons were published with changed narrated lines. Re-voice keeps every unchanged line as it sounds now and voices only the changed ones.':'نُشرت هذه الدروس بأسطر مسموعة متغيرة. إعادة التسجيل تُبقي كل سطر لم يتغير كما هو، وتسجّل الأسطر المتغيرة فقط.',
+    'Uses the published lesson. Publish your draft first if it changes these lines.':'يستخدم الدرس المنشور. انشر مسودتك أولاً إن كانت تغيّر هذه الأسطر.',
+    'In the queue':'في الطابور',
+    // Make the video
+    'Make the video':'أنشئ الفيديو', 'Make it again':'أنشئه مرة أخرى', 'Making it…':'جارٍ الإنشاء…', 'Sure? Make it':'متأكد؟ أنشئه', 'Narration':'التعليق الصوتي',
+    'Arabic narration (فصحى)':'التعليق الصوتي العربي (فصحى)', 'Your OK':'موافقتك', 'Not built yet':'لم يُبنَ بعد', 'Not narrated yet':'لم يُسجّل بعد', 'Cancelled':'أُلغي',
+    'Put live':'انشره للمتعلمين', 'Sure? Learners get this video':'متأكد؟ سيرى المتعلمون هذا الفيديو', 'Putting it live…':'جارٍ النشر…', 'Throw away this version':'تخلّص من هذه النسخة',
+    'Sure? Throw it away':'متأكد؟ تخلّص منها', 'Earlier versions':'نسخ سابقة', 'The new version (not live).':'النسخة الجديدة (غير منشورة).',
+    'Watch it, then press Put live. Learners see the old video until then.':'شاهده ثم اضغط «انشره للمتعلمين». يرى المتعلمون الفيديو القديم حتى ذلك الحين.',
+    'Learners see this version.':'يرى المتعلمون هذه النسخة.', 'Nothing changes for learners until you press Put live.':'لا يتغير شيء عند المتعلمين حتى تضغط «انشره للمتعلمين».',
+    'Your draft isn’t published. Narration and video use the published lesson.':'مسودتك غير منشورة. يستخدم التعليق الصوتي والفيديو الدرس المنشور.',
+    'Psychology lesson videos aren’t built by the video runner yet, so this makes the narration only.':'لا يبني مشغّل الفيديو دروس علم النفس بعد، لذا يُنشئ هذا التعليق الصوتي فقط.',
+    'Waits for the narration, then yukis-pc builds it':'ينتظر التعليق الصوتي، ثم يبنيه جهاز yukis-pc', 'Waiting for the video runner on yukis-pc':'ينتظر مشغّل الفيديو على جهاز yukis-pc',
+    'Waiting for yukis-pc (offline now)':'ينتظر جهاز yukis-pc (غير متصل الآن)', 'In the queue, the PC is online':'في الطابور، والجهاز متصل',
+    'The staged file isn’t in R2 yet. The PC may still be uploading it.':'الملف الجديد ليس في R2 بعد. ربما ما زال الجهاز يرفعه.',
+    'Older narrations can be put back from Voice Studio › Projects › Versions.':'يمكن إرجاع التسجيلات الأقدم من استوديو الصوت › المشاريع › النسخ.',
+    'A video for this lesson is already being made.':'يجري إنشاء فيديو لهذا الدرس بالفعل.', 'Arabic narration queued.':'أُضيف التعليق الصوتي العربي إلى الطابور.',
+    'Queued. You’ll get a bell when the new video is ready for your OK.':'أُضيف إلى الطابور. سيصلك تنبيه عندما يجهز الفيديو الجديد لموافقتك.',
+    'That version was thrown away. The live video is unchanged.':'تم التخلّص من تلك النسخة. الفيديو المنشور لم يتغير.',
+    'The new video or its captions aren’t saved yet. Try again in a minute.':'الفيديو الجديد أو ترجمته لم يُحفظا بعد. حاول بعد دقيقة.',
+    'It didn’t go live, and everything was put back as it was. Try again.':'لم يُنشر، وأُعيد كل شيء كما كان. حاول مجدداً.',
+    'Couldn’t read the video folders. Nothing was changed.':'تعذّرت قراءة مجلدات الفيديو. لم يتغير شيء.',
+    'This lesson has no published text to narrate yet.':'هذا الدرس ليس فيه نص منشور للتسجيل بعد.', 'This section has no Arabic text to narrate yet.':'هذا القسم ليس فيه نص عربي للتسجيل بعد.',
+    'Couldn’t keep a copy of the current narration in Versions, so nothing was sent. Try again.':'تعذّر حفظ نسخة من التسجيل الحالي في النسخ، لذا لم يُرسل شيء. حاول مجدداً.',
+    // GPU time and cost
+    'GPU cost':'تكلفة المعالج الرسومي', 'GPU time and cost':'وقت المعالج الرسومي وتكلفته', 'Narration and lesson videos':'التعليق الصوتي وفيديوهات الدروس', 'GPU time':'وقت المعالج الرسومي',
+    'Modal cloud':'سحابة Modal', 'estimated':'تقديري', 'narration and video builds':'التعليق الصوتي وبناء الفيديو', 'By month':'حسب الشهر', 'By course':'حسب الكورس', 'By lesson':'حسب الدرس',
+    'Month':'الشهر', 'Video builds':'بناء الفيديو', 'Jobs':'المهام', 'Cost':'التكلفة', 'Lessons':'الدروس', 'Lesson':'الدرس', 'Runs':'مرات التشغيل', 'Rates':'الأسعار',
+    'Modal $ an hour':'Modal بالدولار في الساعة', 'yukis-pc $ an hour':'yukis-pc بالدولار في الساعة', 'Save rates':'احفظ الأسعار',
+    'New rates apply to jobs that finish from now on.':'تُطبّق الأسعار الجديدة على المهام التي تنتهي من الآن.', 'Per lesson and course':'لكل درس وكورس',
+    'No GPU work recorded yet.':'لم يُسجّل أي عمل للمعالج الرسومي بعد.', 'Adding up GPU time…':'جارٍ جمع وقت المعالج الرسومي…', 'Use numbers of 0 or more.':'استخدم أرقاماً من 0 فأكثر.',
+    'GPU time and estimated cost of every narration and lesson video, per month, course and lesson.':'وقت المعالج الرسومي والتكلفة التقديرية لكل تعليق صوتي وفيديو درس، حسب الشهر والكورس والدرس.',
+    'Acquisitions':'الاستحواذ', 'Psychology':'علم النفس', 'Marketing':'التسويق', 'Scripts and tests':'نصوص واختبارات'
+  };
+  Object.keys(W).forEach(k => { if (!(k in L.AR)) L.AR[k] = W[k]; });
+  if (L.RULES) L.RULES.push(
+    [/^Question bank · Module (\d+)$/, (m, n) => 'بنك الأسئلة · الوحدة ' + n],
+    [/^Quiz (\S+) · (.+)$/, (m, n, t) => 'اختبار ' + n + ' · ' + t],
+    [/^Checkpoint · (.+)$/, (m, t) => 'اختبار نهاية الوحدة · ' + t],
+    [/^Drill bank · (.+)$/, (m, t) => 'بنك التدريب · ' + t],
+    [/^Module (\d+) checkpoint quiz$/, (m, n) => 'اختبار نهاية الوحدة ' + n],
+    [/^(\d+) questions? in (\d+) quiz(zes)?$/, (m, a, b) => a + ' سؤال في ' + b + ' اختبار'],
+    [/^(\d+) (things?|quiz(zes)?) to fix$/, (m, n) => n + ' للإصلاح'],
+    [/^(\d+) (things?|quiz(zes)?) to check$/, (m, n) => n + ' للمراجعة'],
+    [/^Usual: (\d+)$/, (m, n) => 'المعتاد: ' + n],
+    [/^(\d+) changed lines? to voice$/, (m, n) => n + ' سطر متغير للتسجيل'],
+    [/^Re-voice all (\d+)$/, (m, n) => 'أعد تسجيل الكل (' + n + ')'],
+    [/^Narrated (.+)$/, (m, t) => 'سُجّل ' + t],
+    [/^Live since (.+)$/, (m, t) => 'منشور منذ ' + t],
+    [/^Failed: (.*)$/, (m, t) => 'فشل: ' + t]
+  );
+})();

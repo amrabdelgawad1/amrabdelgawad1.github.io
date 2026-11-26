@@ -27,9 +27,10 @@
     ['voices', 'Voices', '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>'],
     ['history', 'History', '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'],
     ['pron', 'Pronunciations', '<path d="M4 12h4l2-6 4 12 2-6h4"/>'],
-    ['computer', 'Your computer', '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>']];
+    ['computer', 'Your computer', '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>'],
+    ['cost', 'GPU cost', '<circle cx="12" cy="12" r="9"/><path d="M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5-1.4 0-2.5.8-2.5 2s1.1 1.7 2.5 2 2.5.8 2.5 2-1.1 2-2.5 2c-1 0-2-.5-2.5-1.5M12 6.5V8M12 16v1.5"/>']];
   const isAmr = () => T().role === 'owner';
-  const AMR_ONLY = ['projects'];   // the course batch
+  const AMR_ONLY = ['projects', 'cost'];   // the course batch, GPU time and cost (Round 31, app/r31-course.js)
   const WK_COLS = 'id,owner,name,last_seen,gpu,moods,version,busy_job,specs,rating,speed,checked_at,installed_at,free_vram_mb,os';
   // The Windows app's download link. Empty until the installer is published; then the portal shows the button.
   const WORKER_DOWNLOAD = '';
@@ -1608,7 +1609,9 @@
     return { live:false };
   }
 
-  const VIEWS = { tts:viewTts, projects:viewProjects, review:viewReview, voices:viewVoices, history:viewHistory, pron:viewPron, computer:viewComputer };
+  const VIEWS = { tts:viewTts, projects:viewProjects, review:viewReview, voices:viewVoices, history:viewHistory, pron:viewPron, computer:viewComputer,
+    async cost(main){ main.innerHTML = head('GPU cost', 'GPU time and estimated cost of every narration and lesson video, per month, course and lesson.') + '<div class="r31-vscost"></div>';
+      if (window.R31Cost) window.R31Cost.render(main.querySelector('.r31-vscost')); } };
 
   // ElevenLabs credits not spent: about 1 credit per character narrated on the PC
   const short = n => n >= 1e6 ? (Math.round(n / 1e5) / 10) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'k' : String(n || 0);
