@@ -38,6 +38,7 @@
     check:svg('<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 12l2.5 2.5 4.5-5"/>'),
     chat:svg('<path d="M4 5h16v11H9l-5 4z"/>'),
     cards:svg('<rect x="3" y="6" width="13" height="14" rx="2"/><path d="M8 3h11a2 2 0 0 1 2 2v12"/>'),
+    plus:svg('<path d="M12 5v14M5 12h14"/>'),
     help:svg('<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/>'),
     bell:svg('<path d="M6 9.5a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4s2-1.5 2-6.5z"/><path d="M10 19.5a2 2 0 0 0 4 0"/>')
   };
@@ -231,6 +232,12 @@
       else location.href = '/app/#help/for/' + encodeURIComponent(key);
     });
     bw.before(hb); b.help = hb;
+    // Round 39 (H3): Quick add. The + opens a small panel to add a task, expense, note, lead, deal or file from any page.
+    // /quick-add.js loads on the first tap, so pages that never use it don't download it.
+    const qb = document.createElement('button'); qb.type = 'button'; qb.className = 'p-help p-qadd'; qb.hidden = true;
+    qb.setAttribute('aria-label', 'Quick add'); qb.title = 'Quick add'; qb.setAttribute('aria-haspopup', 'dialog'); qb.innerHTML = IC.plus;
+    qb.addEventListener('click', () => quickAdd(qb));
+    hb.before(qb); b.qadd = qb;
     b.bell = bw.querySelector('.p-bell'); b.notes = bw.querySelector('.p-notes'); b.bellWrap = bw;
     b.bell.addEventListener('click', () => bellOpen(b, b.notes.hidden));
     b.notes.addEventListener('change', e => { if (e.target.closest('[data-mailme], [data-mailhour]')) saveMail(b); });
@@ -266,6 +273,7 @@
     const ok = !!me;
     b.btn.parentElement.hidden = !ok;
     if (b.help) b.help.hidden = !ok;
+    if (b.qadd) b.qadd.hidden = !ok || me.role === 'client';
     if (!ok) return;
     b.menu.innerHTML = appsHtml();
     drawBell(b);
@@ -282,6 +290,13 @@
     if (b.meBtn) b.meBtn.setAttribute('aria-label', 'Your account' + (me.name ? ': ' + me.name : ''));
   }
   const drawAll = () => bars.forEach(draw);
+  // Round 39 (H3): load /quick-add.js once, then open its panel under the + button
+  let qaLoading = null;
+  function quickAdd(btn){
+    if (window.QuickAdd) return window.QuickAdd.open(btn);
+    if (!qaLoading) qaLoading = new Promise((ok, no) => { const s = document.createElement('script'); s.src = '/quick-add.js?v=1'; s.onload = ok; s.onerror = no; document.head.append(s); });
+    qaLoading.then(() => window.QuickAdd && window.QuickAdd.open(btn), () => { qaLoading = null; });
+  }
   // Which help article the ? opens: the /app page in the address, or the app this page belongs to
   function helpKey(){
     const p = location.pathname;
@@ -458,6 +473,7 @@
     async refresh(){ if (!opts) return; loading = load().then(() => loadNotes().catch(() => {})).then(drawAll, () => {}); return loading; },
     // Notifications changed (for example after asking for course access)
     refreshNotes,
-    get me(){ return me; }
+    get me(){ return me; },
+    get db(){ return opts && opts.db; }   // Round 39: Quick add uses the page's own client
   };
 })();

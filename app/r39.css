@@ -1,0 +1,16 @@
+/* Plan Round 39: Today timeline (H2), This week (H8), learning home for students (H10). Portal tokens only, so dark mode follows. */
+.r39-tl{ list-style:none; margin:0; padding:0; display:grid; }
+.r39-tl-i{ display:grid; grid-template-columns:minmax(0, 15.5em) minmax(0, 1fr); gap:4px 14px; align-items:center; padding:10px 0; border-top:1px solid var(--p-line); }
+.r39-tl-i:first-child{ border-top:0; }
+.r39-tl-when{ color:var(--p-muted); font-size:13.5px; font-variant-numeric:tabular-nums; }
+.r39-tl-what{ display:flex; align-items:center; gap:8px; min-height:var(--p-tap); color:var(--p-ink); text-decoration:none; min-width:0; }
+.r39-tl-what span:last-child{ overflow-wrap:anywhere; }
+.r39-tl-what:hover span:last-child, .r39-tl-what:focus-visible span:last-child{ color:var(--p-accent); text-decoration:underline; }
+.r39-tl-sep{ height:0; border-top:2px dashed var(--p-line2); margin:4px 0; }
+.r39-tl-i.is-late .r39-tl-what span:last-child{ font-weight:600; }
+.r39-week-tiles .p-tile small{ display:block; margin-top:2px; color:var(--p-muted); font-size:12px; }
+.r39-courses .p-area .p-pill{ justify-self:start; }
+@media (max-width:640px){
+  .r39-tl-i{ grid-template-columns:1fr; gap:2px; }
+  .r39-tl-what{ min-height:0; }
+}
