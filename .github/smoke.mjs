@@ -8,6 +8,7 @@
 //   5. a JSON file that doesn't parse
 //   6. a time shown as "a" / "p" instead of AM / PM in a new or changed line (hour12 formats with 'a'/'p' suffixes)
 //   7. a public page that saves to the database without /error-report.js (visitors' errors would never reach Logs)
+//   8. a portal label with no Arabic version (Round 33 part 2; see .github/ar-check.mjs)
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname, resolve, relative } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -117,6 +118,15 @@ for (const f of files.filter(f => f.endsWith('.html') && !/^(app|course|crm|cash
   if (!/\/error-report\.js/.test(html)) err('Public page without error reports: ' + rel(f) + ' (add <script src="/error-report.js?v=N"></script> in <head>)');
 }
 notes.push(pub + ' public pages report their errors');
+
+// 8. Every portal label has Arabic, so a new round can't leave gaps (Round 33 part 2)
+{
+  const { arGaps } = await import('./ar-check.mjs');
+  const r = arGaps();
+  r.gaps.slice(0, 40).forEach(g => err('No Arabic for ' + g + ' (add it to app/ar-more.js, or to app/ar-skip.json if it is not shown as words)'));
+  if (r.gaps.length > 40) err((r.gaps.length - 40) + ' more labels without Arabic (node .github/ar-check.mjs lists them all)');
+  notes.push('Arabic for every portal label (' + r.files + ' files, ' + r.keys + ' entries)');
+}
 
 console.log(notes.map(n => '✓ ' + n).join('\n'));
 if (errors.length) { console.error('\n' + errors.length + ' problem(s):\n- ' + errors.join('\n- ')); process.exit(1); }

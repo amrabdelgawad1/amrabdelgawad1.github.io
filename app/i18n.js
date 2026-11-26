@@ -100,6 +100,18 @@
   const fix = v => dates(v).replace(/(\d)\s?AM\b/g, '$1 ص').replace(/(\d)\s?PM\b/g, '$1 م').replace(/[←→]/g, c => c === '→' ? '←' : '→');
   const done = new WeakMap();       // text node -> what we last wrote, so a second walk never flips an arrow back
   const missing = new Map();        // English still on screen with Arabic on (the Status page lists it)
+  // Kept on this device only (localStorage arMissing, newest 300), so the Status page can list English seen with Arabic on
+  let keepT = 0;
+  function keepMissing(){
+    clearTimeout(keepT);
+    keepT = setTimeout(() => { try {
+      const o = JSON.parse(localStorage.getItem('arMissing') || '{}'), now = Date.now();
+      missing.forEach((v, k) => { o[k] = { page: v.page, at: now }; });
+      const keys = Object.keys(o).sort((x, y) => o[y].at - o[x].at).slice(0, 300), out = {};
+      keys.forEach(k => { out[k] = o[k]; });
+      localStorage.setItem('arMissing', JSON.stringify(out));
+    } catch (e) {} }, 2000);
+  }
   const tr = (s, node) => {
     if (node && done.get(node) === s) return null;
     const t = s.trim(); if (!t) return null;
@@ -109,6 +121,7 @@
     if (c == null && /[A-Za-z]{3,}/.test(t) && !/^[\w.+-]+@[\w.-]+$/.test(t) && t.length < 400) {
       const k = t.length > 160 ? t.slice(0, 160) + '…' : t; const was = missing.get(k);
       missing.set(k, { n: (was ? was.n : 0) + 1, page: location.hash || location.pathname });
+      keepMissing();
     }
     if (node) done.set(node, v);
     return v === s ? null : v;
