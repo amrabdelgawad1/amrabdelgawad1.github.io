@@ -96,6 +96,7 @@
   // Team home (#home)
   // ======================================================================
   async function home(my){
+    if (window.R39Home && window.R39Home.isStudent(A())) return studentHome(my);   // round 39 (H10): course students get the learning home
     const T = A(), me = T.me || { role:'agent', keys:T.access || [] }, keys = me.keys || [], prof = T.profile || {};
     const has = k => keys.includes(k);
     const learnOn = has('learn') || has('course');
@@ -123,7 +124,9 @@
         '<div class="p-today" id="pvTodayNums"><p class="p-loading">Loading…</p></div>' +
         (has('deals') ? '<div class="p-grid p-today-lists"><section class="p-card" aria-labelledby="pvDueH"><div class="p-card-head"><h2 id="pvDueH">Callbacks due</h2><span id="pvDueN"></span></div><div id="pvDue"><p class="p-loading">Loading…</p></div></section>' +
           (simple ? '' : actCard) + '</div>' : '') +
+        '<div id="r39Tl"></div>' +
       '</section>' +
+      '<div id="r39Wk"></div>' +
       '<div id="pvOnb" hidden></div>' +
       '<div id="pvExtra"></div>' +
       '<section aria-labelledby="pvCommH" id="pvCommWrap" hidden><div class="p-card"><div class="p-card-head"><h2 id="pvCommH">Your commissions</h2><span id="pvCommN"></span></div><div id="pvComm"></div></div></section>' +
@@ -146,6 +149,7 @@
     board(T.db, my);
     announcement(T.db, my);
     today(T.db, my, has('deals'));
+    r39(T.db, my, { uid:T.user.id, deals:has('deals') });
     myCommissions(T.db, my);
     if (window.Onboarding) window.Onboarding.card(T.db, $('pvOnb'), () => my === run);
     if (window.PortalExtras) window.PortalExtras.home(T.db, $('pvExtra'), () => my === run);   // Nov 9: coaching, call of the week, callbacks, what's new
@@ -317,6 +321,51 @@
   //   Right now   who is on shift (names and since when), the narration queue and whether the PC worker is online,
   //               and this month's cash (came in, spent, still expected) worked out like the Cash page
   // ======================================================================
+  // Round 39 (H2, H8): Today timeline and This week, from r39-home.js, into #r39Tl and #r39Wk
+  async function r39(db, my, o){
+    const R = window.R39Home; if (!R) return;
+    const [tl, wk] = await Promise.all([R.timeline(db, o).catch(() => null), R.snapshot(db, o).catch(() => null)]);
+    if (my !== run) return;
+    const a = $('r39Tl'), b = $('r39Wk');
+    if (a) a.innerHTML = tl || '<section class="p-card"><p class="p-empty">Couldn’t load today. Refresh to try again.</p></section>';
+    if (b && wk) b.innerHTML = wk;
+  }
+  // Round 39 (H10): the learning home for course students (courses only, no company): no clock and no hours,
+  // just their next lesson, their courses, Daily review, lesson questions, practice calls and help
+  async function studentHome(my){
+    const T = A(), me = T.me || { keys:T.access || [] }, keys = me.keys || T.access || [], prof = T.profile || {};
+    const has = k => keys.includes(k);
+    const open = c => c.key === 'course' ? has('course') : has(c.key);
+    const mine = COURSES.filter(open), locked = COURSES.filter(c => !open(c));
+    const areas = [{ href:'/app/learn/', icon:'book', name:'Learning Hub', sub:'All your courses and progress.' }]
+      .concat(mine.map(c => ({ href:c.href, icon:'bookBig', name:c.name, sub:'Open the course' })))
+      .concat([{ href:'#daily', icon:'chart', name:'Daily review', sub:'Questions you missed come back here.' }])
+      .concat(has('course') ? [{ href:'#scoring', icon:'mic', name:'Practice calls', sub:'Send a practice call and get it scored.' }] : [])
+      .concat([{ href:'#help', icon:'book', name:'Help center', sub:'How each page works.' }]);
+    box().innerHTML = '<div class="p-wrap r39-student">' + hero('Your learning', 'Hi, ' + first(prof.name), 'Pick up where you left off.', '') +
+      '<div id="pvAnnc"></div>' +
+      '<section aria-labelledby="pvCont" id="pvContWrap" hidden><h2 class="p-h2" id="pvCont">Next lesson</h2><div id="pvContBox"></div></section>' +
+      '<div id="r39Wk"></div>' +
+      '<section aria-labelledby="pvAreas"><h2 class="p-h2" id="pvAreas">Your courses</h2><div class="p-grid p-areas r39-courses">' + areas.map(area).join('') + '</div></section>' +
+      (locked.length ? '<section aria-labelledby="pvLocked"><h2 class="p-h2 p-h2-sm" id="pvLocked">Not open for you yet</h2><div class="p-lockrow">' +
+        locked.map(c => '<p class="p-locked">' + IC.lock + '<span><b>' + esc(c.name.replace('Real Estate ', '')) + ' course</b> · Locked</span><button type="button" class="p-btn is-ghost p-ask" data-ask="' + esc(c.key) + '">Ask for access</button></p>').join('') + '</div></section>' : '') +
+      '</div>';
+    box().querySelectorAll('[data-ask]').forEach(b => b.addEventListener('click', async () => {
+      if (b.disabled) return; b.disabled = true; b.textContent = 'Sending…';
+      const r = await safe(T.db.rpc('request_course_access', { p_course:b.dataset.ask }));
+      b.textContent = r.error || !r.data ? 'Couldn’t send. Try again' : r.data === 'already' ? 'Already asked today' : 'Sent to Amr';
+      b.disabled = !(r.error || !r.data);
+    }));
+    announcement(T.db, my);
+    if (window.R39Home) window.R39Home.snapshot(T.db, { uid:T.user.id, deals:false }).then(h => { if (my === run && h && $('r39Wk')) $('r39Wk').innerHTML = h; }, () => {});
+    const cont = await continueLearning(T.db, open);
+    if (my !== run || !cont) return;
+    $('pvContBox').innerHTML = '<a class="p-card p-cont" href="' + esc(cont.href) + '"><span class="p-cont-txt"><span class="p-kick">' + esc(cont.kick) + '</span><b>' + esc(cont.title) + '</b></span>' +
+      '<span class="p-cont-prog"><span class="p-bar" role="progressbar" aria-label="' + esc(cont.course) + ' progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + cont.pct + '"><i></i></span><b>' + cont.pct + '%</b></span>' +
+      '<span class="p-btn">Continue</span></a>';
+    const i = $('pvContBox').querySelector('.p-bar i'); if (i) i.style.width = cont.pct + '%';
+    $('pvContWrap').hidden = false;
+  }
   const AUTO_TEAM_FROM = '2026-11-17';   // same date as cash.js: team profit from hours counts from here on
   const egpTxt = n => 'EGP ' + Math.round(n).toLocaleString('en-US');
   const since = t => { if (window.PortalUI) return window.PortalUI.when(t, { date:false, tz:'Africa/Cairo' }); try { return new Date(t).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', timeZone:'Africa/Cairo' }) + ' Cairo'; } catch(e) { return ''; } };   // round 23 (I6): zone shown
@@ -413,6 +462,7 @@
       hero('Admin', 'Overview', need ? plural(need, 'thing') + (need === 1 ? ' needs' : ' need') + ' you today' : 'Nothing needs you right now',
         '<div class="p-stats">' + stat(revs.length, 'to review', '#review') + stat(r.length, r.length === 1 ? 'shift request' : 'shift requests', '#requests') + stat(live == null ? '–' : live, 'clocked in now', '#live') + '</div>') +
       '<section aria-labelledby="pvWaitA"><h2 class="p-h2" id="pvWaitA">Waiting for you</h2>' + waitingList(revs, r, names, cc.waits) + '</section>' +
+      '<div id="r39Tl"></div><div id="r39Wk"></div>' +
       cc.html +
       '<h2 class="p-h2">Everything</h2><div class="p-grid p-boxes">' +
         box5('People', plural(team, 'person', 'people') + ' on the team', [row('Team overview', muted('Open'), '#teamview'), row('Onboarding', muted('Open'), '#onboarding'), row('Clocked in now', muted(live == null ? '–' : plural(live, 'person', 'people')), '#live'),
@@ -430,6 +480,7 @@
       '</div>' + gate1(g1.data) + callsToday(ct) + eodSection(eod.data) + annForm(ann.data) + '</div>';
     wireAnnForm(db);
     wireEod(db, my);
+    r39(db, my, { uid:T.user.id, owner:true, deals:true });   // round 39 (H2, H8)
     box().querySelectorAll('[data-open-bell]').forEach(x => x.addEventListener('click', e => { e.preventDefault(); const b = document.querySelector('.p-bell'); if (b) { b.click(); b.focus(); } }));
     box().querySelectorAll('.p-g1-bar i[data-w]').forEach(i => { i.style.width = i.dataset.w + '%'; });
   }
