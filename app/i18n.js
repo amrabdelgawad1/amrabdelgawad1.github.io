@@ -63,21 +63,63 @@
     [/^In (\d+) min$/, (m, n) => 'بعد ' + n + ' دقيقة'],
     [/^Late (\d+) min$/, (m, n) => 'متأخر ' + n + ' دقيقة']
   ];
-  const tr = s => {
-    const t = s.trim(); if (!t) return null;
-    if (AR[t]) return s.replace(t, AR[t]);
-    for (const [re, fn] of RULES) { const m = t.match(re); if (m) return s.replace(t, fn.apply(null, m)); }
+  // Round 33 part 2: phrases with a name or number inside. Key: English with {} where the changing part goes;
+  // value: Arabic with {} in the same order, or {1} {2} to change the order. ar-more.js adds to TPL.
+  const TPL = {};
+  let tplList = [], tplSize = -1;
+  const esc = x => x.replace(/[.*+?^$()|[\]\\{}]/g, '\\$&');
+  function tpls(){
+    const keys = Object.keys(TPL); if (keys.length === tplSize) return tplList;
+    tplSize = keys.length;
+    tplList = keys.sort((a, b) => b.length - a.length).map(k => [new RegExp('^' + k.split('{}').map(esc).join('(.+?)') + '$'), TPL[k]]);
+    return tplList;
+  }
+  const exact = t => AR[t] != null ? AR[t] : null;
+  function core(t){
+    let v = exact(t); if (v != null) return v;
+    for (const [re, fn] of RULES) { const m = t.match(re); if (m) return fn.apply(null, m); }
+    for (const [re, val] of tpls()) {
+      const m = t.match(re); if (!m) continue;
+      if (m.slice(1).some(x => x.length > 60 || x.trim().split(/\s+/).length > 4)) continue;   // the changing part is a name, number or date, never a sentence
+      const slots = m.slice(1).map(x => { const y = exact(x.trim()); return y != null ? x.replace(x.trim(), y) : x; });
+      let i = 0; return val.replace(/\{(\d)?\}/g, (all, d) => d ? (slots[d - 1] || '') : (slots[i++] || ''));
+    }
+    // Edges: "Saved:" or "· Late" or "(Cash" find "Saved", "Late", "Cash"
+    const e = t.match(/^([·:(\[\-–|\s]*)(.*?)([·:,)\]\-–|\s]*)$/);
+    if (e && (e[1] || e[3]) && e[2]) { const w = exact(e[2]); if (w != null) return e[1] + w + e[3]; }
     return null;
+  }
+  // AM/PM shown as ص / م, and left/right arrows swapped, so they point the way Arabic reads
+  const fix = v => v.replace(/(\d)\s?AM\b/g, '$1 ص').replace(/(\d)\s?PM\b/g, '$1 م').replace(/[←→]/g, c => c === '→' ? '←' : '→');
+  const done = new WeakMap();       // text node -> what we last wrote, so a second walk never flips an arrow back
+  const missing = new Map();        // English still on screen with Arabic on (the Status page lists it)
+  const tr = (s, node) => {
+    if (node && done.get(node) === s) return null;
+    const t = s.trim(); if (!t) return null;
+    const c = core(t);
+    let v = c != null ? s.replace(t, c) : s;
+    v = fix(v);
+    if (c == null && /[A-Za-z]{3,}/.test(t) && !/^[\w.+-]+@[\w.-]+$/.test(t) && t.length < 400) {
+      const k = t.length > 160 ? t.slice(0, 160) + '…' : t; const was = missing.get(k);
+      missing.set(k, { n: (was ? was.n : 0) + 1, page: location.hash || location.pathname });
+    }
+    if (node) done.set(node, v);
+    return v === s ? null : v;
   };
   const ATTRS = ['placeholder', 'aria-label', 'title'];
+  // Never touched: code, typing boxes, and anything marked data-no-ar or translate="no" (lesson content, call transcripts, names)
+  const skip = el => !el || /^(SCRIPT|STYLE|TEXTAREA|CODE|PRE)$/.test(el.nodeName) || (el.closest && el.closest('[data-no-ar],[translate="no"],.notranslate'));
   function walk(root){
     if (!root || root.nodeType !== 1 && root.nodeType !== 9) return;
-    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.parentNode && /^(SCRIPT|STYLE|TEXTAREA|CODE|PRE)$/.test(n.parentNode.nodeName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
-    let n; while ((n = w.nextNode())) { const v = tr(n.nodeValue); if (v != null && v !== n.nodeValue) n.nodeValue = v; }
-    (root.querySelectorAll ? root.querySelectorAll('[placeholder],[aria-label],[title]') : []).forEach(el => ATTRS.forEach(a => { const o = el.getAttribute(a); if (o) { const v = tr(o); if (v != null && v !== o) el.setAttribute(a, v); } }));
+    if (root.nodeType === 1 && skip(root)) return;
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => skip(n.parentNode) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+    let n; while ((n = w.nextNode())) { const v = tr(n.nodeValue, n); if (v != null && v !== n.nodeValue) { n.nodeValue = v; done.set(n, v); } }
+    (root.querySelectorAll ? root.querySelectorAll('[placeholder],[aria-label],[title],input[type=button][value],input[type=submit][value]') : []).forEach(el => { if (skip(el)) return; ATTRS.concat(el.type === 'button' || el.type === 'submit' ? ['value'] : []).forEach(a => { const o = el.getAttribute(a); if (o) { const v = tr(o); if (v != null && v !== o) el.setAttribute(a, v); } }); });
   }
   function on(){
     document.documentElement.lang = 'ar'; document.documentElement.dir = 'rtl';
+    // The browser's own confirm / alert / prompt boxes are outside the page, so their words are changed here
+    ['confirm', 'alert', 'prompt'].forEach(k => { const f = window[k]; if (typeof f === 'function') window[k] = function(msg, ...rest){ return f.call(window, window.AppLang.t(msg == null ? '' : String(msg)), ...rest); }; });
     walk(document.body);
     // Only what changed is walked again (the clock ticks every second; the whole page each time would be wasteful)
     let pending = new Set(), queued = false;
@@ -85,7 +127,7 @@
       list.forEach(r => pending.add(r.type === 'characterData' ? r.target.parentNode : r.target));
       if (queued) return; queued = true;
       requestAnimationFrame(() => { queued = false; const s = pending; pending = new Set(); s.forEach(el => el && el.isConnected && walk(el)); });
-    }).observe(document.body, { childList:true, subtree:true, characterData:true });
+    }).observe(document.body, { childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:['placeholder','aria-label','title'] });
   }
   // The switch, at the bottom of the menu (and on the sign-in card)
   function addSwitch(){
@@ -101,5 +143,5 @@
   }
   const start = () => { addSwitch(); if (lang === 'ar') on(); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
-  window.AppLang = { get lang(){ return lang; }, AR, RULES };  // RULES: pattern phrases (numbers inside); ar-more.js adds to both
+  window.AppLang = { get lang(){ return lang; }, AR, RULES, TPL, missing, t: s => { if (lang !== 'ar') return s; const c = core(String(s).trim()); return fix(c != null ? c : String(s)); } };   // t(): Arabic for text a script shows outside the page (confirm boxes, phone alerts)  // RULES: pattern phrases (numbers inside); ar-more.js adds to both
 })();

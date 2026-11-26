@@ -1,0 +1,59 @@
+/* Round 33 part 2: right to left for the portal shell when Arabic is on (i18n.js sets html[dir=rtl]).
+   English is untouched: every rule here starts with html[dir="rtl"]. */
+
+/* Arabic letters join, so spacing between letters breaks words apart; and Arabic has no capitals */
+html[dir="rtl"] body, html[dir="rtl"] body *{ letter-spacing:0 !important; }
+html[dir="rtl"] body{ font-family:"IBM Plex Sans Arabic", var(--p-body, system-ui), system-ui, sans-serif; }
+html[dir="rtl"] body :is(h1, h2, h3, h4, .p-h1, .p-h2, .p-kick, .sec, .p-ptabs-t){ font-family:"IBM Plex Sans Arabic", system-ui, sans-serif !important; font-style:normal !important; }
+html[dir="rtl"] body input, html[dir="rtl"] body select, html[dir="rtl"] body textarea, html[dir="rtl"] body button{ font-family:inherit; }
+/* numbers, emails, links and money read left to right inside Arabic lines */
+html[dir="rtl"] body :is(input[type=email], input[type=tel], input[type=url], input[type=number], .tnum, [data-ltr]){ direction:ltr; text-align:right; }
+
+/* top bar */
+html[dir="rtl"] .me{ margin-left:0; margin-right:auto; }
+html[dir="rtl"] .burger .dot{ right:auto; left:6px; }
+
+/* menu drawer: opens from the right */
+html[dir="rtl"] .drawer{ left:auto; right:0; border-right:0; border-left:1px solid var(--border); transform:translateX(102%); }
+html[dir="rtl"] .menu-open .drawer{ transform:none; }
+html[dir="rtl"] body #drawer{ border-left:0; }
+html[dir="rtl"] .mi, html[dir="rtl"] .mrow, html[dir="rtl"] .acct-menu .ai, html[dir="rtl"] .set nav button, html[dir="rtl"] .ag-head, html[dir="rtl"] .slip, html[dir="rtl"] .hmonth, html[dir="rtl"] .shead{ text-align:right; }
+html[dir="rtl"] .mi .cnt{ margin-left:0; margin-right:auto; }
+html[dir="rtl"] body #drawer .mi{ border-left:0; border-right:3px solid transparent; }
+html[dir="rtl"] body #drawer .mi:hover{ border-right-color:transparent; }
+html[dir="rtl"] body #drawer .mi.on, html[dir="rtl"] body #drawer .mi.grp-on{ border-left:0; border-right:3px solid var(--p-accent-hi); padding-left:20px; padding-right:20px; }
+html[dir="rtl"] body #drawer .sub .mi{ padding-left:20px; padding-right:50px; }
+html[dir="rtl"] body #drawer .sec.is-shut::after{ transform:rotate(135deg); }
+@media (min-width:1100px){
+  html[dir="rtl"] body:has(#vApp:not([hidden])):has(#drawer:not([hidden])) #vApp{ padding-left:0; padding-right:260px; }
+  html[dir="rtl"] body:has(#vApp:not([hidden])):has(#drawer:not([hidden])) #vApp > .app-bar{ margin-left:0; margin-right:-260px; }
+}
+
+/* lists and key/value rows: the value sits on the far side */
+html[dir="rtl"] .list .row .v, html[dir="rtl"] .mrow .v, html[dir="rtl"] .set .kv span:last-child, html[dir="rtl"] .srow .kv span:last-child, html[dir="rtl"] .hmonth span, html[dir="rtl"] #pView .sc-cat em{ text-align:left; }
+html[dir="rtl"] .person .acts{ padding-left:0; padding-right:48px; }
+html[dir="rtl"] .month .days{ padding:0 10px 8px 0; border-left:0; border-right:2px solid var(--border); margin-left:0; margin-right:4px; }
+html[dir="rtl"] .list .row .n .brief, html[dir="rtl"] #pView .lb-say{ border-left:0; border-right-width:2px; border-right-style:solid; }
+html[dir="rtl"] #pView .lb-say{ border-right-width:4px; border-right-color:var(--p-accent); }
+html[dir="rtl"] .pp-row{ border-left:0; border-right:3px solid transparent; text-align:right; }
+html[dir="rtl"] .pp-row[aria-current="true"]{ border-right-color:var(--p-accent-hi); }
+html[dir="rtl"] #pView .sc-key{ margin-left:0; margin-right:8px; }
+html[dir="rtl"] #pView .sc-notes, html[dir="rtl"] #pView .lb-states{ padding-left:0; padding-right:18px; }
+html[dir="rtl"] #pView .lb-head{ text-align:right; }
+
+/* menus, sheets and dialogs */
+html[dir="rtl"] .acc-menu{ left:auto; right:0; }
+html[dir="rtl"] .acct-menu{ right:auto; left:max(12px, env(safe-area-inset-left)); }
+html[dir="rtl"] .sheet-x{ right:auto; left:10px; }
+html[dir="rtl"] .set nav{ border-right:0; border-left:1px solid var(--border); }
+html[dir="rtl"] .set-head{ padding-right:0; padding-left:44px; }
+html[dir="rtl"] .ag-foot > span{ margin-right:0; margin-left:auto; }
+html[dir="rtl"] .pw-wrap .field{ padding-right:16px; padding-left:64px; }
+html[dir="rtl"] .pw-eye{ right:auto; left:6px; }
+
+/* on/off switches slide the other way */
+html[dir="rtl"] .switch::after{ left:auto; right:3px; transition:right .15s; }
+html[dir="rtl"] .switch[aria-checked="true"]::after{ left:auto; right:23px; }
+
+/* icons that point a direction (back, next, open) are mirrored; clocks, ticks and the like are not */
+html[dir="rtl"] svg:has(> path:is([d="M15 18l-6-6 6-6"], [d="M9 18l6-6-6-6"], [d="M15 6l-6 6 6 6"], [d="M9 6l6 6-6 6"], [d="M5 12h14M13 6l6 6-6 6"], [d="M19 12H5M11 18l-6-6 6-6"])), html[dir="rtl"] [data-flip]{ transform:scaleX(-1); }
