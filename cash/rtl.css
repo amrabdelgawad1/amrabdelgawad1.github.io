@@ -1,0 +1,11 @@
+/* Round 33 part 2: Cash in Arabic (right to left). English is untouched: every rule starts with html[dir="rtl"]. The charts keep their old look. */
+html[dir="rtl"] .c{ margin-left:0; margin-right:1px; }
+html[dir="rtl"] button.crow.go, html[dir="rtl"] .score th{ text-align:right; }
+html[dir="rtl"] .hist-search{ margin-left:0; margin-right:auto; }
+@media (max-width:640px){ html[dir="rtl"] .hist-search{ margin-right:0; } }
+@media (max-width:640px){ html[dir="rtl"] .team table.log td.c-del, html[dir="rtl"] .team table.log th:last-child{ right:auto; left:0; } }
+html[dir="rtl"] .sd-meta{ margin-right:0; margin-left:auto; }
+html[dir="rtl"] .sd-wk .ask-i, html[dir="rtl"] .score .num, html[dir="rtl"] .cp-row span:not(:first-child){ text-align:left; }
+html[dir="rtl"] .sd-amt, html[dir="rtl"] .slip-bar .rep-check + .btn, html[dir="rtl"] .pay-menu .pm-opt[aria-checked="true"]::after{ margin-left:0; margin-right:auto; }
+html[dir="rtl"] .fx-pick .fx-hint{ margin-left:0; margin-right:6px; }
+html[dir="rtl"] .pay-menu .pm-opt{ text-align:right; }

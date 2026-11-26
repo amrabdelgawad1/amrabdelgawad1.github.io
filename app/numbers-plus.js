@@ -177,7 +177,7 @@
       if (!inv1) { if (e.target.id === 'ivPrint') window.print(); return; }
       if (v) {
         const p = (await safe(db().rpc('portal_invoice_preview', { p_company:inv1.company_id, p_from:inv1.period_start, p_to:inv1.period_end }))).data || { people:[] };
-        $('ivDoc').innerHTML = '<section class="p-card np-invoice" id="ivPaper"><div class="np-inv-head"><div><h2>Invoice #' + inv1.number + '</h2><p>Date: ' + esc(fmtDay(inv1.created_at, { month:'long', day:'numeric', year:'numeric' })) + '</p></div><div class="np-inv-from"><b>Amr Abdelgawad</b><p>amrabdelgawad.site</p></div></div>' +
+        $('ivDoc').innerHTML = '<section class="p-card np-invoice" id="ivPaper" data-no-ar dir="ltr" lang="en"><div class="np-inv-head"><div><h2>Invoice #' + inv1.number + '</h2><p>Date: ' + esc(fmtDay(inv1.created_at, { month:'long', day:'numeric', year:'numeric' })) + '</p></div><div class="np-inv-from"><b>Amr Abdelgawad</b><p>amrabdelgawad.site</p></div></div>' +
           '<p><b>Bill to:</b> ' + esc(coName(inv1.company_id)) + '<br><b>Period:</b> ' + esc(fmtDay(inv1.period_start, { month:'long', day:'numeric' }) + ' to ' + fmtDay(inv1.period_end, { month:'long', day:'numeric', year:'numeric' })) + '</p>' +
           table(['Team member', 'Hours', 'Amount'], (p.people || []).map(q => tr([esc(q.name), q.hours, usd(q.amount)])).concat(['<tr class="np-total"><td><b>Total</b></td><td><b>' + inv1.hours + '</b></td><td><b>' + usd(inv1.amount) + '</b></td></tr>'])) +
           (inv1.note ? '<p class="np-inv-note">' + esc(inv1.note) + '</p>' : '') + '<div class="wk-row px-noprint"><button type="button" class="p-btn" id="ivPrint">Print or save as PDF</button></div></section>';

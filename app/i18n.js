@@ -90,7 +90,14 @@
     return null;
   }
   // AM/PM shown as ص / م, and left/right arrows swapped, so they point the way Arabic reads
-  const fix = v => v.replace(/(\d)\s?AM\b/g, '$1 ص').replace(/(\d)\s?PM\b/g, '$1 م').replace(/[←→]/g, c => c === '→' ? '←' : '→');
+  // Month and day names next to a number ("Nov 25", "Monday, Nov 25"); a name like "May" alone stays as it is
+  const MON = { Jan:'يناير', Feb:'فبراير', Mar:'مارس', Apr:'أبريل', May:'مايو', Jun:'يونيو', Jul:'يوليو', Aug:'أغسطس', Sep:'سبتمبر', Sept:'سبتمبر', Oct:'أكتوبر', Nov:'نوفمبر', Dec:'ديسمبر',
+    January:'يناير', February:'فبراير', March:'مارس', April:'أبريل', June:'يونيو', July:'يوليو', August:'أغسطس', September:'سبتمبر', October:'أكتوبر', November:'نوفمبر', December:'ديسمبر' };
+  const DAY = { Mon:'الإثنين', Tue:'الثلاثاء', Wed:'الأربعاء', Thu:'الخميس', Fri:'الجمعة', Sat:'السبت', Sun:'الأحد', Monday:'الإثنين', Tuesday:'الثلاثاء', Wednesday:'الأربعاء', Thursday:'الخميس', Friday:'الجمعة', Saturday:'السبت', Sunday:'الأحد' };
+  const MRE = new RegExp('\\b(' + Object.keys(MON).join('|') + ')\\b\\.?(?=\\s*\\d)|(?<=\\d\\s)(' + Object.keys(MON).join('|') + ')\\b', 'g');
+  const DRE = new RegExp('\\b(' + Object.keys(DAY).join('|') + ')\\b(?=,?\\s+(\\d|' + Object.keys(MON).join('|') + '))', 'g');
+  const dates = v => { if (!/\d/.test(v)) return v; const w = v.replace(DRE, d => DAY[d]).replace(MRE, (m, a, b) => MON[a || b]); return w === v ? v : w.replace(/([\u0600-\u06FF]|\d),\s/g, '$1، '); };
+  const fix = v => dates(v).replace(/(\d)\s?AM\b/g, '$1 ص').replace(/(\d)\s?PM\b/g, '$1 م').replace(/[←→]/g, c => c === '→' ? '←' : '→');
   const done = new WeakMap();       // text node -> what we last wrote, so a second walk never flips an arrow back
   const missing = new Map();        // English still on screen with Arabic on (the Status page lists it)
   const tr = (s, node) => {

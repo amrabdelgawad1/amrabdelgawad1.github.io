@@ -14,10 +14,12 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Serif:ital@1&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Serif:ital@1&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/portal.css?v=13">
 
 <link rel="stylesheet" href="../style.css?v=10">
+<link rel="stylesheet" href="/app/r33-rtl.css?v=2">
+<link rel="stylesheet" href="rtl.css?v=1">
 <style>
   /* ===== Shared and Team tab (moved from /tracker/admin) ===== */
   [hidden]{ display:none !important; }
@@ -1180,7 +1182,7 @@
     <button class="btn btn-ghost btn-sm" id="slipClose">Close</button>
     <button class="btn btn-primary btn-sm" id="slipDownload">Download PDF</button>
   </div>
-  <div class="slip-stage" id="slipStage"><div class="slip-fit" id="slipFit"><div class="slip statement" id="slip"></div></div></div>
+  <div class="slip-stage" id="slipStage" data-no-ar dir="ltr" lang="en"><div class="slip-fit" id="slipFit"><div class="slip statement" id="slip"></div></div></div>
 </div>
 
 <!-- Team payslip and messages -->
@@ -1194,7 +1196,7 @@
     <button class="btn btn-ghost btn-sm" id="tm-slipDownload">Download PDF</button>
     <button class="btn btn-primary btn-sm" id="tm-slipSend" title="Puts this payslip straight into their Payslips in the app">Send to agent</button>
   </div>
-  <div class="slip-stage" id="tm-slipStage"><div class="slip-fit" id="tm-slipFit"><div class="slip" id="tm-slip"></div></div></div>
+  <div class="slip-stage" id="tm-slipStage" data-no-ar dir="ltr" lang="en"><div class="slip-fit" id="tm-slipFit"><div class="slip" id="tm-slip"></div></div></div>
 </div>
 
 <!-- Monthly report for one client company -->
@@ -1210,7 +1212,7 @@
     <button class="btn btn-ghost btn-sm" id="tm-repClose">Close</button>
     <button class="btn btn-primary btn-sm" id="tm-repDownload">Download PDF</button>
   </div>
-  <div class="slip-stage" id="tm-repStage"><div class="slip-fit" id="tm-repFit"><div class="rep-sheets" id="tm-repSheets"><div class="slip statement report" id="tm-rep"></div><div class="slip statement report invoice" id="tm-inv" hidden></div></div></div></div>
+  <div class="slip-stage" id="tm-repStage" data-no-ar dir="ltr" lang="en"><div class="slip-fit" id="tm-repFit"><div class="rep-sheets" id="tm-repSheets"><div class="slip statement report" id="tm-rep"></div><div class="slip statement report invoice" id="tm-inv" hidden></div></div></div></div>
 </div>
 
 <div class="toast" id="tm-toast"><span id="tm-toastMsg"></span><button id="tm-undo">Undo</button></div>
@@ -1222,5 +1224,9 @@
 <script src="/portal-ui.js?v=2"></script>
 <script src="team.js?v=22"></script>
 <script src="cash.js?v=35"></script>
+<!-- Arabic, when the portal language is Arabic (Round 33 part 2). Saved documents (statement, payslips, reports) stay English. -->
+<script src="/app/i18n.js?v=7"></script>
+<script src="/app/ar-more.js?v=32"></script>
+<script src="/app/r23-ar.js?v=2"></script>
 </body>
 </html>
