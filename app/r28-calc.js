@@ -52,7 +52,7 @@
       body = PX.table(['#', 'Month', 'Payment', 'Interest', 'Principal', 'Balance after'], rows.map(r => '<tr><td>' + r.k + '</td><td>' + esc(monthName(r.date)) + '</td><td>' + usd(r.pay) + '</td><td>' + usd(r.int) + '</td><td>' + usd(r.prin) + '</td><td>' + usd(r.bal) + '</td></tr>'));
     }
     const t = rows.reduce((a, r) => { a.pay += r.pay; a.int += r.int; a.prin += r.prin; return a; }, { pay:0, int:0, prin:0 });
-    return '<div class="r28-sched"><h3>' + esc(label) + '</h3>' + body + '<p class="p-hint">' + rows.length + ' payments · paid ' + usd(t.pay) + ' · interest ' + usd(t.int) + ' · principal ' + usd(t.prin) + '</p></div>';
+    return '<div class="r28-sched" data-no-ar dir="ltr" lang="en"><h3>' + esc(label) + '</h3>' + body + '<p class="p-hint">' + rows.length + ' payments · paid ' + usd(t.pay) + ' · interest ' + usd(t.int) + ' · principal ' + usd(t.prin) + '</p></div>';
   }
   const tile = (v, l, s) => '<div class="px-tile"><b>' + v + '</b><span>' + esc(l) + '</span>' + (s ? '<small>' + esc(s) + '</small>' : '') + '</div>';
   const inp = (name, v, extra) => '<input type="number" inputmode="decimal" name="' + name + '" value="' + esc(v) + '" step="any" min="0"' + (extra || '') + '>';
