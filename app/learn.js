@@ -204,25 +204,25 @@
   function partHtml(t, n, m, part, k){
     const s = mod(t.id, n);
     if (part === 'lesson') { const l = m.lessons[k], rd = (s.read || {})[k], last = k === m.lessons.length - 1;
-      return `<header class="lh-lhead"><span class="label">Lesson ${n + 1}.${k + 1} · ${l.mins} min</span><h3 class="lh-ltitle">${l.t}</h3></header>` +
-      l.s.map(([h, b]) => `<section class="lh-sec-lesson"><h3>${h}</h3>${b}</section>`).join('') +
-      (l.ex ? `<section class="lh-case"><span class="label">Worked example</span>${l.ex}</section>` : '') +
-      (l.terms && l.terms.length ? `<section><h3>Key terms</h3><dl class="lh-terms">${l.terms.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl></section>` : '') +
+      return `<header class="lh-lhead"><span class="label">Lesson ${n + 1}.${k + 1} · ${l.mins} min</span><h3 class="lh-ltitle" data-no-ar>${l.t}</h3></header>` +
+      l.s.map(([h, b]) => `<section class="lh-sec-lesson" data-no-ar><h3>${h}</h3>${b}</section>`).join('') +
+      (l.ex ? `<section class="lh-case"><span class="label">Worked example</span><div data-no-ar>${l.ex}</div></section>` : '') +
+      (l.terms && l.terms.length ? `<section><h3>Key terms</h3><dl class="lh-terms" data-no-ar>${l.terms.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl></section>` : '') +
       `<div class="lh-readrow">${rd ? '<span class="pill p-ok">Read ✓</span>' : ''}<a class="btn" href="#learn/${t.id}/${n + 1}/${last ? 'playbook' : 'lesson/' + (k + 2)}" data-read="${k}">${rd ? '' : 'Mark as read · '}${last ? 'Go to the playbook' : 'Next: lesson ' + (n + 1) + '.' + (k + 2)} →</a></div>`; }
-    if (part === 'playbook') { const k = s.ticks || {}, d = m.playbook.steps.filter((x, i) => k[i]).length; return `<h3>${m.playbook.t}</h3>
+    if (part === 'playbook') { const k = s.ticks || {}, d = m.playbook.steps.filter((x, i) => k[i]).length; return `<h3 data-no-ar>${m.playbook.t}</h3>
       <p class="note">${d} of ${m.playbook.steps.length} done. Tick each step as you do it for real.</p>
-      <ol class="lh-steps">${m.playbook.steps.map((x, i) => `<li><label><input type="checkbox" data-tick="${i}"${k[i] ? ' checked' : ''} /><span>${x}</span></label></li>`).join('')}</ol>`; }
+      <ol class="lh-steps" data-no-ar>${m.playbook.steps.map((x, i) => `<li><label><input type="checkbox" data-tick="${i}"${k[i] ? ' checked' : ''} /><span>${x}</span></label></li>`).join('')}</ol>`; }
     if (part === 'notes') return `<h3>My notes</h3><p class="note">Only you can see these. They save as you type.</p><textarea class="field lh-notes" data-notes rows="14" placeholder="What stood out, what to try, questions for Amr…"></textarea>`;
     if (part === 'pad') return `<h3>Scratch pad</h3><p class="note">Work through these for your own business or a client. They save as you type${m.calc ? '; the calculator helps with the numbers' : ''}.</p>
       ${m.calc ? `<button class="lh-tool lh-padcalc" type="button" data-calc="${m.calc}"><span class="lh-ic">=</span><span><b>${CALCS[m.calc].t}</b><small>Open the calculator</small></span></button>` : ''}
-      ${m.pad.map((q, i) => `<label class="lh-q"><span>${q}</span><textarea class="field" rows="4" data-pad="${i}"></textarea></label>`).join('')}`;
+      ${m.pad.map((q, i) => `<label class="lh-q"><span data-no-ar>${q}</span><textarea class="field" rows="4" data-pad="${i}"></textarea></label>`).join('')}`;
     // exam (an answer sheet from an older version of the exam is dropped)
     if (s.review && s.review.length !== m.exam.length) delete s.review;
     const r = s.review;
     return `<h3>Exam</h3><p class="note">${m.exam.length} questions. Pass with ${PASS}% or more to complete the module.${s.best != null ? ' Your best so far: <b>' + s.best + '%</b>.' : ''}</p>
-      <form class="lh-exam" data-exam>${m.exam.map(([q, opts, right, why], i) => `<fieldset class="lh-qz${r ? (r[i] === right ? ' ok' : ' no') : ''}"><legend><b>${i + 1}.</b> ${q}</legend>
-        ${order(n, i, opts.length).map(j => `<label class="lh-opt${r && j === right ? ' right' : ''}"><input type="radio" name="q${i}" value="${j}"${r && r[i] === j ? ' checked' : ''}${r ? ' disabled' : ''} /><span>${opts[j]}</span></label>`).join('')}
-        ${r ? `<p class="note lh-why">${r[i] === right ? 'Correct. ' : 'The answer is “' + opts[right] + '”. '}${why}</p>` : ''}</fieldset>`).join('')}
+      <form class="lh-exam" data-exam>${m.exam.map(([q, opts, right, why], i) => `<fieldset class="lh-qz${r ? (r[i] === right ? ' ok' : ' no') : ''}"><legend><b>${i + 1}.</b> <span data-no-ar>${q}</span></legend>
+        ${order(n, i, opts.length).map(j => `<label class="lh-opt${r && j === right ? ' right' : ''}"><input type="radio" name="q${i}" value="${j}"${r && r[i] === j ? ' checked' : ''}${r ? ' disabled' : ''} /><span data-no-ar>${opts[j]}</span></label>`).join('')}
+        ${r ? `<p class="note lh-why">${r[i] === right ? 'Correct. ' : 'The answer is “' + opts[right] + '”. '}<span data-no-ar>${why}</span></p>` : ''}</fieldset>`).join('')}
         <div class="lh-exam-end">${r ? `<p class="lh-score ${s.last >= PASS ? 'ok' : 'no'}"><b>${s.last}%</b> ${s.last >= PASS ? 'Passed. Well done.' : 'Not yet. Read the lesson again and retry.'}</p><button class="btn ghost" type="button" data-retry>Try again</button>` : '<button class="btn" type="submit">Check my answers</button>'}</div></form>`;
   }
 

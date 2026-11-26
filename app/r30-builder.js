@@ -554,7 +554,7 @@
     const addBtn = key => '<button type="button" class="p-btn is-ghost" data-act="addlesson"' + (key ? ' data-part="' + esc(key) + '"' : '') + '>+ Add a ' + (S.course === 'mkt' ? 'part' : S.course === 'psy' ? 'section' : 'lesson') + '</button>';
     return crumbs() +
       card(c.title(S.w), statePill(),
-        '<ol class="cb-lessons">' + list.map(x => x.head ? '<li class="cb-part"><b>' + esc(x.title) + '</b><ol class="cb-kids">' + (x.kids || []).map(k => row(k)).join('') + '</ol>' + (S.course === 'psy' ? '<div class="cb-row">' + addBtn(x.key) + '</div>' : '') + '</li>' : row(x, true)).join('') + '</ol>' +
+        '<ol class="cb-lessons" data-no-ar>' + list.map(x => x.head ? '<li class="cb-part"><b>' + esc(x.title) + '</b><ol class="cb-kids">' + (x.kids || []).map(k => row(k)).join('') + '</ol>' + (S.course === 'psy' ? '<div class="cb-row">' + addBtn(x.key) + '</div>' : '') + '</li>' : row(x, true)).join('') + '</ol>' +
         (S.course !== 'psy' ? '<div class="cb-row">' + addBtn() + '</div>' : '') +
         (c.why ? '<p class="p-empty">' + esc(c.why) + '</p>' : '') +
         (hidden.length ? '<h3 class="cb-h3">Hidden from learners</h3><ul class="cb-hidden">' + hidden.map(h => '<li><span>' + esc(S.course === 'psy' ? (h.item.label ? h.item.label + ' ' : '') + L(h.item.title, 'en') : h.item.title || h.item.id) + '</span><button type="button" class="p-btn is-ghost" data-unhide="' + esc(h.item.id) + '">Unhide</button></li>').join('') + '</ul>' : '') +
