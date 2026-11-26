@@ -88,7 +88,7 @@
     if (!ok()) return;
     if (r.error || !r.data) { $('crBody').innerHTML = failed(r.error); return; }
     const d = r.data, t = d.totals;
-    $('crBody').innerHTML = '<article class="p-card px-report"><header><span class="p-kick">Weekly report · ' + esc(fmtDay(from, { month:'short', day:'numeric' })) + ' to ' + esc(fmtDay(to, { month:'short', day:'numeric', year:'numeric' })) + '</span><h2>' + esc(d.client) + '</h2><p>Prepared by Amr Abdelgawad</p></header>' +
+    $('crBody').innerHTML = '<article class="p-card px-report" data-no-ar dir="ltr" lang="en"><header><span class="p-kick">Weekly report · ' + esc(fmtDay(from, { month:'short', day:'numeric' })) + ' to ' + esc(fmtDay(to, { month:'short', day:'numeric', year:'numeric' })) + '</span><h2>' + esc(d.client) + '</h2><p>Prepared by Amr Abdelgawad</p></header>' +
       '<div class="px-tiles">' + [[t.hours + ' h', 'calling'], [num(t.dials), 'dials'], [num(t.conversations), 'conversations'], [num(t.appointments), 'appointments set']].map(([v, k]) => '<div class="px-tile"><b>' + v + '</b><span>' + k + '</span></div>').join('') + '</div>' +
       (d.reps.length ? '<h3>By rep</h3>' + table(['Rep', 'Shifts', 'Hours', 'Dials', 'Conversations', 'Appointments'], d.reps.map(x => tr([esc(x.name), x.shifts, x.hours, num(x.dials), num(x.conversations), num(x.appointments)]))) : '<p>No shifts this week.</p>') +
       (d.days.length ? '<h3>By day</h3>' + table(['Day', 'Hours', 'Dials', 'Conversations', 'Appointments'], d.days.map(x => tr([esc(fmtDay(x.day)), x.hours, num(x.dials), num(x.conversations), num(x.appointments)]))) : '') +

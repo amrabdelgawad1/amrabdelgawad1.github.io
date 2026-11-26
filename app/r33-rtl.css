@@ -57,3 +57,6 @@ html[dir="rtl"] .switch[aria-checked="true"]::after{ left:auto; right:23px; }
 
 /* icons that point a direction (back, next, open) are mirrored; clocks, ticks and the like are not */
 html[dir="rtl"] svg:has(> path:is([d="M15 18l-6-6 6-6"], [d="M9 18l6-6-6-6"], [d="M15 6l-6 6 6 6"], [d="M9 6l6 6-6 6"], [d="M5 12h14M13 6l6 6-6 6"], [d="M19 12H5M11 18l-6-6 6-6"])), html[dir="rtl"] [data-flip]{ transform:scaleX(-1); }
+
+/* charts: SVG labels keep the same anchoring as in English, so chart layouts look exactly as before */
+html[dir="rtl"] svg text, html[dir="rtl"] svg tspan{ direction:ltr; unicode-bidi:plaintext; }
