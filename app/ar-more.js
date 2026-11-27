@@ -5201,3 +5201,35 @@
     '{} is “{}”':'{} هو «{}»'
   });
 })();
+
+// Round 33 part 2: second live check: billing note, bell lines with numbers, Files and course stats words. Plain Arabic (فصحى) for labels, messages, empty states, errors and toasts.
+(function(){
+  'use strict';
+  const L = window.AppLang;
+  if (!L || !L.AR) return;
+  Object.assign(L.AR, {
+    'Should bill uses the rate saved on each shift when it was logged. A shift counts as invoiced when an invoice for that client covers its date. Client paid comes from payments recorded on invoices; shifts marked paid before invoices existed still count, shown apart. Set a missing rate in Cash › Team hours › Clients.':'«يجب فوترته» يستخدم السعر المحفوظ مع كل وردية عند تسجيلها. تُعد الوردية مفوترة عندما تغطي فاتورة لذلك العميل تاريخها. «ما دفعه العميل» يأتي من المدفوعات المسجّلة على الفواتير؛ والورديات المعلّمة كمدفوعة قبل وجود الفواتير ما زالت تُحتسب وتظهر منفصلة. حدّد السعر الناقص في النقدية › ساعات الفريق › العملاء.',
+    'everywhere':'كل مكان',
+    'nightly':'ليلية',
+    'File or folder name':'اسم الملف أو المجلد',
+    'watched':'شاهد',
+    'watching':'يشاهد',
+    'Test: today in your Deal CRM':'اختبار: اليوم في نظام صفقاتك'
+  });
+  // Phrases with a name or number: {} is the changing part
+  if (L.TPL) Object.assign(L.TPL, {
+    'Optional, the first {} is used if empty':'اختياري، يُستخدم أول {} إن كان فارغًا',
+    'Team today: {} dials, {} conversations, {} appointments':'الفريق اليوم: {} اتصالات، {} محادثات، {} مواعيد',
+    '{} new leads, {} offers sent, {} follow-ups late.':'{} عملاء جدد، {} عروض مرسلة، {} متابعات متأخرة.',
+    '{} older jobs ran before the worker said which machine it was on; those are judged by speed.':'{} مهمة أقدم عملت قبل أن يحدد العامل الجهاز الذي يعمل عليه؛ تُقيَّم حسب السرعة.',
+    'Send all that look right ({})':'أرسل كل ما يبدو صحيحًا ({})',
+    '{} files':'{} ملفات',
+    '{} file':'{} ملف',
+    '{} finished tries':'{} محاولات مكتملة',
+    '{} finished try':'{} محاولة مكتملة',
+    'Email time, {}':'وقت البريد، {}',
+    '{} conversations · {} offers · {} appointments':'{} محادثات · {} عروض · {} مواعيد',
+    'Done by me (yes or no) is “{}”':'أنجزته أنا (نعم أو لا) هو «{}»',
+    'Draft a email to {} for your OK (nothing is sent)':'اكتب مسودة بريد إلى {} لموافقتك (لا يُرسل شيء)'
+  });
+})();
