@@ -5243,3 +5243,40 @@
     'Back to sign in':'العودة إلى تسجيل الدخول'
   });
 })();
+
+// Round 33 part 2: Round 33 part 2: fourth pass from the live check. Plain Arabic (فصحى) for labels, messages, empty states, errors and toasts.
+(function(){
+  'use strict';
+  const L = window.AppLang;
+  if (!L || !L.AR) return;
+  Object.assign(L.AR, {
+    'learning':'يتعلمون',
+    'Cost per deal = marketing spend ÷ deals closed in the same dates. Deals count when their closed date is in the range. Lists count when they were added in the range, so pick dates long enough for lists to turn into deals (3 to 6 months is common).':'تكلفة الصفقة = إنفاق التسويق ÷ الصفقات المغلقة في نفس التواريخ. تُحسب الصفقة إذا كان تاريخ إغلاقها داخل الفترة، وتُحسب القوائم إذا أُضيفت داخل الفترة، فاختر فترة طويلة بما يكفي لتتحول القوائم إلى صفقات (من 3 إلى 6 أشهر هو المعتاد).',
+    'requests':'طلبات',
+    'calculators':'حاسبات',
+    'Payment by bank transfer within 7 days':'الدفع بتحويل بنكي خلال 7 أيام',
+    'Let them name the price first':'اترك البائع يذكر السعر أولًا',
+    'Youssef asked for Monday':'طلب Youssef يوم الاثنين',
+    'Best week in October / Advance paid on Nov 3':'أفضل أسبوع في أكتوبر / سلفة دُفعت في 3 نوفمبر',
+    'Polk County vacant land, Nov':'أراضٍ فضاء في مقاطعة Polk، نوفمبر',
+    'Called PepsiCo about the Streamside account transfer':'اتصلت بـ PepsiCo بخصوص نقل حساب Streamside',
+    'Hello team, or Hello @Amina,':'Hello team, أو Hello @Amina,',
+    'Signed in to the portal':'سجّل الدخول إلى البوابة',
+    'Scripts and objections reviewed with Amr':'راجع السكربتات والاعتراضات مع Amr',
+    'Working hours and start date agreed':'تم الاتفاق على ساعات العمل وتاريخ البدء',
+    'Cleared for live leads':'مسموح له بالعملاء الحقيقيين',
+    'Practice and call recordings':'تسجيلات التدريب والمكالمات',
+    'Browser errors recorded for Status':'أخطاء المتصفح المسجلة لصفحة الحالة'
+  });
+  // Phrases with a name or number: {} is the changing part
+  if (L.TPL) Object.assign(L.TPL, {
+    'Move to {}':'انقل إلى {}',
+    'Email to {}':'رسالة إلى {}',
+    'Last week: {} – {}':'الأسبوع الماضي: {} – {}',
+    'Tag: {}':'وسم: {}',
+    'Task for me: {}':'مهمة لي: {}',
+    'Share {} · Read it: {}':'مشاركة {} · اقرأها: {}',
+    'New purchase: {} bought the {} course ({})':'شراء جديد: {} اشترى دورة {} ({})',
+    'some shifts are at {}/h, but your hourly rate is {}/h. Fix the shifts in Team › History (Change pay rate) before sending, or send anyway if it’s right.':'بعض الورديات بسعر {} للساعة، لكن سعرك بالساعة {}. صحّح الورديات من الفريق › السجل (تغيير سعر الساعة) قبل الإرسال، أو أرسل على أي حال إن كان صحيحًا.'
+  });
+})();
