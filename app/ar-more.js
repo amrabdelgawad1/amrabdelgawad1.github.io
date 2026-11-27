@@ -5233,3 +5233,13 @@
     'Draft a email to {} for your OK (nothing is sent)':'اكتب مسودة بريد إلى {} لموافقتك (لا يُرسل شيء)'
   });
 })();
+
+// Round 33 part 2: third pass from the live check. Plain Arabic (فصحى) for labels, messages, empty states, errors and toasts.
+(function(){
+  'use strict';
+  const L = window.AppLang;
+  if (!L || !L.AR) return;
+  Object.assign(L.AR, {
+    'Back to sign in':'العودة إلى تسجيل الدخول'
+  });
+})();

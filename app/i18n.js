@@ -71,15 +71,18 @@
   function tpls(){
     const keys = Object.keys(TPL); if (keys.length === tplSize) return tplList;
     tplSize = keys.length;
-    tplList = keys.sort((a, b) => b.length - a.length).map(k => [new RegExp('^' + k.split('{}').map(esc).join('(.+?)') + '$'), TPL[k]]);
+    tplList = keys.sort((a, b) => b.length - a.length).map(k => [new RegExp('^' + k.split('{}').map(esc).join('(.+?)') + '$'), TPL[k], k.replace(/\{\}/g, '').replace(/[^A-Za-z]/g, '').length]);
     return tplList;
   }
   const exact = t => AR[t] != null ? AR[t] : null;
   function core(t){
     let v = exact(t); if (v != null) return v;
     for (const [re, fn] of RULES) { const m = t.match(re); if (m) return fn.apply(null, m); }
-    for (const [re, val] of tpls()) {
+    const e0 = t.match(/^([←→›‹·:(\[\-–|\s]*)(.*?)([←→›‹·:,)\]\-–|\s]*)$/);
+    if (e0 && (e0[1] || e0[3]) && e0[2]) { const w = exact(e0[2]); if (w != null) return e0[1] + w + e0[3]; }
+    for (const [re, val, lit] of tpls()) {
       const m = t.match(re); if (!m) continue;
+      if (lit <= 4 && m.slice(1).some(x => !/\d/.test(x) && exact(x.trim()) == null)) continue;   // "{} to {}" only for numbers or known words, never "Back to sign in"
       if (m.slice(1).some(x => x.length > 60 || x.trim().split(/\s+/).length > 6)) continue;   // the changing part is a name, number or date, never a sentence
       const slots = m.slice(1).map(x => { const y = exact(x.trim()); return y != null ? x.replace(x.trim(), y) : x; });
       let i = 0; return val.replace(/\{(\d)?\}/g, (all, d) => d ? (slots[d - 1] || '') : (slots[i++] || ''));
@@ -154,7 +157,9 @@
     new MutationObserver(list => {
       list.forEach(r => pending.add(r.type === 'characterData' ? r.target.parentNode : r.target));
       if (queued) return; queued = true;
-      requestAnimationFrame(() => { queued = false; const s = pending; pending = new Set(); s.forEach(el => el && el.isConnected && walk(el)); });
+      // Next frame, or after 150 ms when the page is hidden (hidden pages pause animation frames)
+      const flush = () => { if (!queued) return; queued = false; const s = pending; pending = new Set(); s.forEach(el => el && el.isConnected && walk(el)); };
+      requestAnimationFrame(flush); setTimeout(flush, 150);
     }).observe(document.body, { childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:['placeholder','aria-label','title'] });
   }
   // The switch, at the bottom of the menu (and on the sign-in card)
