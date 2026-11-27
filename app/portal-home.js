@@ -307,7 +307,7 @@
       .concat(reqs.slice(0, 6).map(x => ({ tag:'Team', text:'Missed-shift request from ' + first(x.name || names[x.user_id]) + (x.shift_date ? ' for ' + day(x.shift_date) : ''), href:'#requests', act:'Approve or decline' })))
       .concat(extra || []);
     if (!items.length) return '<p class="p-card p-empty">Nothing is waiting for you. Nice.</p>';
-    return '<div class="p-card p-wait">' + items.map(x => '<div class="p-wait-row"><span class="p-pill">' + esc(x.tag) + '</span><span class="p-wait-txt">' + esc(x.text) + '</span><a href="' + esc(x.href) + '"' + (x.bell ? ' data-open-bell' : '') + '>' + esc(x.act) + '</a></div>').join('') + '</div>';
+    return '<div class="p-card p-wait">' + items.map(x => '<div class="p-wait-row"><span class="p-pill">' + esc(x.tag) + '</span><span class="p-wait-txt">' + esc(x.text) + (x.more ? ' <span>' + esc(x.more) + '</span>' : '') + '</span><a href="' + esc(x.href) + '"' + (x.bell ? ' data-open-bell' : '') + '>' + esc(x.act) + '</a></div>').join('') + '</div>';
   }
   async function nameMap(db){
     const r = await safe(db.from('members').select('user_id,name'));
@@ -431,7 +431,7 @@
     if ((fb.data || []).length) waits.push({ tag:'Feedback', text:plural(fb.data.length, 'problem or idea', 'problems or ideas') + ' not marked done', href:'#logs/feedback', act:'Read' });
     if (window.R29Learn) (await window.R29Learn.waits(db).catch(() => [])).forEach(w => waits.push(w));   // round 29 (E1): lesson questions
     if (window.R35Site) (await window.R35Site.waits(db).catch(() => [])).forEach(w => waits.push(w));   // round 35 (S9, S3): site messages, sign-up requests
-    if (other.length) waits.push({ tag:'Alerts', text:plural(other.length, 'unread alert') + ': ' + other.slice(0, 2).map(n => n.title).join(' · '), href:'#', act:'Open the bell', bell:true });
+    if (other.length) waits.push({ tag:'Alerts', text:plural(other.length, 'unread alert') + ':', more:other.slice(0, 2).map(n => n.title).join(' · '), href:'#', act:'Open the bell', bell:true });
     // Round 21: Me today (routine, study, work log, follow-ups, goal steps), from r21-me.js
     const meRows = window.R21Me ? await window.R21Me.summary(db).catch(() => null) : null;
     const meBox = meRows ? box5('Me today', 'Only you see this', meRows.map(m => row(m[0], m[3] ? pillR(m[1]) : muted(m[1]), m[2]))) : '';

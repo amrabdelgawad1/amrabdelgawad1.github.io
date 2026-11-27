@@ -5271,6 +5271,9 @@
   // Phrases with a name or number: {} is the changing part
   if (L.TPL) Object.assign(L.TPL, {
     'Move to {}':'انقل إلى {}',
+    "Free checkout (100% discount) for {}. Open the course by hand if it's meant to be free.":'دفع مجاني (خصم 100%) لـ {}. افتح الدورة يدويًا إن كان المقصود أن تكون مجانية.',
+    '{} unread alerts:':'{} تنبيهات غير مقروءة:',
+    '{} unread alert:':'{} تنبيه غير مقروء:',
     'Email to {}':'رسالة إلى {}',
     'Last week: {} – {}':'الأسبوع الماضي: {} – {}',
     'Tag: {}':'وسم: {}',
