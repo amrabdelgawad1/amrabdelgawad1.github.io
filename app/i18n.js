@@ -87,6 +87,14 @@
     // Edges: "Saved:" or "· Late" or "(Cash" find "Saved", "Late", "Cash"
     const e = t.match(/^([·:(\[\-–|\s]*)(.*?)([·:,)\]\-–|\s]*)$/);
     if (e && (e[1] || e[3]) && e[2]) { const w = exact(e[2]); if (w != null) return e[1] + w + e[3]; }
+    // "e.g. Polk County land": the example itself is usually data, so only the lead-in changes
+    if (/^e\.g\. /.test(t)) { const r = t.slice(5), c = core(r); return 'مثلًا ' + (c != null ? c : r); }
+    // Lines built from parts, like "6 areas · 0 things waiting for you" or "Text · Sellers · Team": each part on its own
+    if (t.indexOf(' · ') > 0) {
+      let any = false;
+      const parts = t.split(' · ').map(x => { const c = x.trim() ? core(x.trim()) : null; if (c != null) { any = true; return x.replace(x.trim(), c); } return x; });
+      if (any) return parts.join(' · ');
+    }
     return null;
   }
   // AM/PM shown as ص / م, and left/right arrows swapped, so they point the way Arabic reads
@@ -118,7 +126,7 @@
     const c = core(t);
     let v = c != null ? s.replace(t, c) : s;
     v = fix(v);
-    if (c == null && /[A-Za-z]{3,}/.test(t) && !/^[\w.+-]+@[\w.-]+$/.test(t) && t.length < 400) {
+    if (c == null && /[A-Za-z]{3,}/.test(v) && !/^[\w.+-]+@[\w.-]+$/.test(t) && t.length < 400) {   // v: after dates and AM/PM, so "Nov 21" isn't listed
       const k = t.length > 160 ? t.slice(0, 160) + '…' : t; const was = missing.get(k);
       missing.set(k, { n: (was ? was.n : 0) + 1, page: location.hash || location.pathname });
       keepMissing();
