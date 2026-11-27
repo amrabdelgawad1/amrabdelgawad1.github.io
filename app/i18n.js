@@ -80,7 +80,7 @@
     for (const [re, fn] of RULES) { const m = t.match(re); if (m) return fn.apply(null, m); }
     for (const [re, val] of tpls()) {
       const m = t.match(re); if (!m) continue;
-      if (m.slice(1).some(x => x.length > 60 || x.trim().split(/\s+/).length > 4)) continue;   // the changing part is a name, number or date, never a sentence
+      if (m.slice(1).some(x => x.length > 60 || x.trim().split(/\s+/).length > 6)) continue;   // the changing part is a name, number or date, never a sentence
       const slots = m.slice(1).map(x => { const y = exact(x.trim()); return y != null ? x.replace(x.trim(), y) : x; });
       let i = 0; return val.replace(/\{(\d)?\}/g, (all, d) => d ? (slots[d - 1] || '') : (slots[i++] || ''));
     }
